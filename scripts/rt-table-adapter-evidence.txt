@@ -1,0 +1,414 @@
+
+==============================================================================
+## §0 被测代码快照（sha256 前 16 位 + mtime + 字节数）
+==============================================================================
+src/app/table/tableAdapter.ts              ac4ef748a39603ec  mtime=2026-09-13T05:05:22.789Z  chars=6541
+src/app/table/tablePreview.ts              4c0d51745055d866  mtime=2026-09-13T05:17:22.116Z  chars=18106
+src/app/table/tableOps.ts                  87aa2d143ff32602  mtime=2026-09-13T05:16:21.020Z  chars=11150
+src/app/table/tableApi.ts                  edb44ebfc912e005  mtime=2026-09-13T05:23:26.145Z  chars=27598
+src/app/table/tableState.ts                2cbe1e96fd9fc402  mtime=2026-09-13T05:06:32.349Z  chars=7778
+src/app/table/seatLifecycle.ts             49f7729516159f55  mtime=2026-09-13T05:23:30.825Z  chars=35724
+src/app/table/table.types.ts               0812db7ad78c2e99  mtime=2026-09-13T05:18:56.097Z  chars=12756
+src/app/web/table.js                       0501c1a7483ff53c  mtime=2026-09-13T05:23:20.718Z  chars=36162
+src/app/webServer.ts                       b52c3a79c72ff59a  mtime=2026-09-13T05:18:39.010Z  chars=13511
+src/app/manualInput/manualInput.ts         f4cfd65839dd3b0c  mtime=2026-09-13T04:40:34.175Z  chars=21575
+src/app/manualInput/reconstruct.ts         06d435b96db79855  mtime=2026-09-13T04:38:42.082Z  chars=24201
+src/app/manualInput/legalActions.ts        377f3ebc1f905561  mtime=2026-09-13T02:01:28.645Z  chars=6200
+
+==============================================================================
+## 向量 10：卡牌映射（rank/suit ↔ 代码；4×13 网格 vs 后端解析）
+==============================================================================
+  table.js 网格生成的代码（52 张）：As Ks Qs Js Ts 9s 8s 7s 6s 5s 4s 3s 2s Ah Kh Qh Jh Th 9h 8h 7h 6h 5h 4h 3h 2h Ad Kd Qd Jd Td 9d 8d 7d 6d 5d 4d 3d 2d Ac Kc Qc Jc Tc 9c 8c 7c 6c 5c 4c 3c 2c
+[OK] V10a 网格 52 张牌全部被 SET_HERO_CARD 原样接受（代码逐字不变）
+      屏幕手牌=['As','Kd'] → 引擎 holeCards=["As","Kd"]
+      屏幕翻牌=['Kh','7c','2d'] → 引擎 flop=["Kh","7c","2d"]
+[OK] V10b 4×13 网格代码 = 引擎 rank/suit（As 处处都是黑桃 A，花色字母 s/h/d/c 一一对应）
+[OK] V10c 重复牌：hero→Kh 拒绝(CARD_ALREADY_USED) / board→As 拒绝(CARD_ALREADY_USED)
+[OK] V10d 同一张牌点两次 = 取消选择（heroCards=[]），不会出现 ['As','As']
+[OK] V10e 网格去重后 52 张（应为 52）
+
+==============================================================================
+## 向量 11：视觉座位序号 vs 逻辑位置
+==============================================================================
+[OK] V11a 6 个 Hero 位置下提交给管线的 seatStacksBB/actionHistory 逐位一致（归一化后不同取值数=1）
+      seats(logical,visual,angle)=[["UTG",2,120],["HJ",3,180],["CO",4,240],["BTN",5,300],["SB",0,0],["BB",1,60]]
+[OK] V11b Hero(SB) visualIndex=0；全部视觉序号=0,1,2,3,4,5（双射且 Hero=0）
+      table.js 使用 visualIndex/angleDeg 的位置：
+        L14: *   - 视觉位置（用 seat.visualIndex / seat.angleDeg，也是后端算的）
+        L357: * ⚠️ 位置完全由后端的 `angleDeg` 决定 —— 前端不把视觉序号换算成
+        L375: * 椭圆布局：`angleDeg` 的约定是 **0° = 6 点钟（正下方）**，
+        L378: * 🔴 红队命中：修复前用 `(angleDeg - 90)`，于是 Hero 被画在**正上方**
+        L380: * 现在用 `(angleDeg + 90)`：0° → 90° → sin=1 → y 最大 → 正下方。
+        L382: var rad = ((seat.angleDeg + 90) * Math.PI) / 180;
+        L823: visualIndex: s.visualIndex,
+        L824: angleDeg: s.angleDeg,
+[OK] V11c 客户端把视觉序号用于逻辑判断的位置数=0
+
+==============================================================================
+## §90 三方一致：屏幕显示 == 实际提交 == 后端重建状态
+==============================================================================
+  屏幕：街道=翻牌 底池=2.5BB 当前注=0BB 需跟注=0BB 行动者=BTN HeroTurn=true
+  屏幕按钮：弃牌 / 过牌 / 下注（选尺寸） / 下注到 1BB / 下注到 1.25BB / 下注到 1.67BB / 下注到 1.88BB / 下注到 2.5BB / 下注到 99BB / 全下（99BB）
+  屏幕座位[位置,玩家,起始BB,剩余BB,弃牌]=[["UTG","p2",100,100,true],["HJ","p3",100,100,true],["CO","p4",100,100,true],["BTN","p1",100,99,false],["SB","p5",100,99.5,true],["BB","p6",100,99,false]]
+  提交（ManualHandInput）hash=249ffa0ad3963096
+  提交内容={"tableSize":6,"heroPosition":"BTN","heroCards":["Ah","Qh"],"board":["Kh","7c","2d"],"street":"FLOP","effectiveStackBB":100,"actionHistory":[{"position":"UTG","type":"FOLD","street":"PREFLOP"},{"position":"HJ","type":"FOLD","street":"PREFLOP"},{"position":"CO","type":"FOLD","street":"PREFLOP"},{"position":"BTN","type":"CALL","amountBB":1,"street":"PREFLOP"},{"position":"SB","type":"FOLD","street":"PREFLOP"},{"position":"BB","type":"CHECK","street":"PREFLOP"},{"position":"BB","type":"CHECK","street":"FLOP"}],"environment":"MID_LOW_STAKES","bigBlindBB":100,"villain":{"playerId":"seat_BB","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","stackBB":100},"seatStacksBB":{"UTG":100,"HJ":100,"CO":100,"BTN":100,"SB":100,"BB":100}}
+  后端指纹={"tableSize":6,"smallBlind":50,"bigBlind":100,"dealer":"BTN","street":"FLOP","phase":"BETTING","currentBet":0,"minRaiseTo":100,"pot":250,"bettingRoundComplete":false,"board":[3,0,0],"actions":[[0,"PREFLOP","SB","POST_SB",50],[1,"PREFLOP","BB","POST_BB",100],[2,"PREFLOP","UTG","FOLD",0],[3,"PREFLOP","HJ","FOLD",0],[4,"PREFLOP","CO","FOLD",0],[5,"PREFLOP","BTN","CALL",100],[6,"PREFLOP","SB","FOLD",0],[7,"PREFLOP","BB","CHECK",0],[8,"FLOP","BB","CHECK",0]],"players":[{"position":"BB","startingStack":10000,"remainingStack":9900,"committed":100,"folded":false,"allIn":false},{"position":"BTN","startingStack":10000,"remainingStack":9900,"committed":100,"folded":false,"allIn":false},{"position":"CO","startingStack":10000,"remainingStack":10000,"committed":0,"folded":true,"allIn":false},{"position":"HJ","startingStack":10000,"remainingStack":10000,"committed":0,"folded":true,"allIn":false},{"position":"SB","startingStack":10000,"remainingStack":9950,"committed":50,"folded":true,"allIn":false},{"position":"UTG","startingStack":10000,"remainingStack":10000,"committed":0,"folded":true,"allIn":false}]}
+  后端底池=250 筹码 = 2.5BB
+  引擎台账=PREFLOP|SB|POST_SB ; PREFLOP|BB|POST_BB ; PREFLOP|UTG|FOLD ; PREFLOP|HJ|FOLD ; PREFLOP|CO|FOLD ; PREFLOP|BTN|CALL ; PREFLOP|SB|FOLD ; PREFLOP|BB|CHECK ; FLOP|BB|CHECK
+  屏幕时间线=PREFLOP|UTG|FOLD|- ; PREFLOP|HJ|FOLD|- ; PREFLOP|CO|FOLD|- ; PREFLOP|BTN|CALL|1 ; PREFLOP|SB|FOLD|- ; PREFLOP|BB|CHECK|- ; FLOP|BB|CHECK|-
+  有效筹码：屏幕 99BB vs 决策引擎 99BB（math.effectiveStack=9900 筹码）
+  决策引擎首要对手=(未知)；适配器首要对手位置=BB
+[OK] V90 三方比对不一致项 0 条
+
+==============================================================================
+## 有效筹码口径：屏幕 vs 决策引擎（两名活跃对手、筹码不同）
+==============================================================================
+  轮到 CO（HeroTurn=true）活跃对手=2
+  屏幕 preview.effectiveStackBB=99BB；各座位剩余={"UTG":100,"HJ":99,"CO":99,"BTN":19,"SB":99.5,"BB":99}
+  适配器首要对手位置=HJ（= contextBuilder 的 opponents[0]）
+  决策引擎 math.effectiveStack=9900 筹码 = 99BB；SPR=22
+  决策引擎可分析？activeOpponentCount=2（门槛 3）
+[OK] V-EFF 屏幕与决策引擎的有效筹码一致（99BB）
+
+  屏幕 preview.effectiveStackBB=0BB；座位剩余={"UTG":0,"HJ":100,"CO":100,"BTN":100,"SB":99.5,"BB":99}
+  决策引擎 math.effectiveStack=0 筹码 = 0BB；SPR=0
+  分析结果 debug.math 行：[{"label":"底池","value":"10150 筹码（101.5BB）"},{"label":"有效筹码","value":"0 筹码（0.00BB）"},{"label":"SPR","value":"0.00"},{"label":"底池赔率","value":"49.6%"}]
+  分析建议=当前无法给出可靠打法 置信度=低
+[OK] V-EFF-B 场景 B：屏幕「有效筹码」=0BB，决策引擎实际使用=0BB
+
+==============================================================================
+## 向量 14/15：上一手残留、NEW_TABLE、离桌玩家是否仍被发牌
+==============================================================================
+  第 1 手打到转牌：街头=转牌 底池=3.5BB 历史=9 条
+      heroCards      上一手=["Ah","Qh"]  下一手=[]
+      board          上一手=["Kh","7c","2d","9s"]  下一手=[]
+      actionHistory  上一手=9  下一手=0
+      handActive     上一手=true  下一手=false
+      tableId        上一手=local  下一手=local
+      heroPosition   上一手=BTN  下一手=BTN
+      environment    上一手=MID_LOW_STAKES  下一手=MID_LOW_STAKES
+      座位状态           上一手=FOLDED_THIS_HAND,SEATED_ACTIVE,FOLDED_THIS_HAND,SEATED_ACTIVE,FOLDED_THIS_HAND,SEATED_ACTIVE  下一手=SEATED_ACTIVE,SEATED_ACTIVE,SEATED_ACTIVE,SEATED_ACTIVE,SEATED_ACTIVE,SEATED_ACTIVE
+      座位筹码           上一手=100,40,100,100,100,100  下一手=100,39,100,99,99.5,99
+      玩家对象数          上一手=6  下一手=6
+      UTG 画像         上一手=CALLING_STATION  下一手=CALLING_STATION
+[OK] V14a NEXT_HAND 清理矩阵：手牌/公共牌/历史/弃牌全下状态全部清空，座位绑定与画像保留
+      下一手提示=["座位筹码已按上一手结束时的剩余筹码更新。⚠️ 底池**未分配**（本项目不建模牌局结果），赢家请用座位菜单的「编辑筹码」手动改回。"]
+
+  RESET_HAND 后 UTG 座位：status=EMPTY playerId=null handActive=false
+  预览：ok=false canAnalyze=false 阻塞项=["有 1 个空座位（枪口位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。","Hero 手牌还没选满（已选 0 / 2 张）"]
+  屏幕上 UTG 显示：statusZh=空座
+[OK] V14c 对照：NEXT_HAND 后 UTG 座位 playerId=null status=EMPTY（离桌在这里才生效）
+
+  NEW_TABLE：座位=[["UTG",null,"EMPTY",100],["HJ",null,"EMPTY",100],["CO",null,"EMPTY",100],["BTN","p1","SEATED_ACTIVE",100],["SB",null,"EMPTY",100],["BB",null,"EMPTY",100]]
+  NEW_TABLE：heroCards=[] board=[] 历史=0 handActive=false nextPlayerNumber=2
+[OK] V15a NEW_TABLE 清空其他座位与全部 Villain 画像/动态：true
+  NEW_TABLE 后撤销栈深度=24
+[INFO] V15b NEW_TABLE 之后 UNDO 恢复了 6 个玩家对象（撤销栈刻意保留旧牌桌；若要「清干净」需先丢弃撤销栈）
+
+==============================================================================
+## seatStacksBB：完整性、缺位置回退、逐座位不同筹码
+==============================================================================
+  6 人桌全座：seatStacksBB={"UTG":100,"HJ":100,"CO":100,"BTN":100,"SB":100,"BB":100}
+[OK] V-STACK-a 适配器写入的位置数=6（BB,BTN,CO,HJ,SB,UTG）—— 全座时完整
+
+==============================================================================
+## 空座位 / 暂离：必须干净拒绝（不崩、不静默发牌）
+==============================================================================
+  空桌：ok=false canAnalyze=false 阻塞项=["有 5 个空座位（枪口位、劫持位、关煞位、小盲位、大盲位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。","Hero 手牌还没选满（已选 0 / 2 张）"]
+[OK] V-SIT-a 只有 Hero 时预览干净拒绝（ok=false、无行动者、底池 0）
+  暂离：ok=false canAnalyze=false 按钮数=0 阻塞项=["有 1 个座位处于「暂离」（枪口位）。当前引擎**无法**把暂离玩家排除在牌局之外，因此暂离状态下不能分析 —— 请先「重新入座」，或「清空座位」后再加入玩家。"]
+[OK] V-SIT-b 暂离座位 → 拒绝分析、不提供任何动作按钮
+[OK] V-SIT-c 暂离状态下适配器返回失败：["SEAT_EMPTY"]
+  暂离+空座：阻塞项=["有 1 个空座位（劫持位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。","有 1 个座位处于「暂离」（枪口位）。当前引擎**无法**把暂离玩家排除在牌局之外，因此暂离状态下不能分析 —— 请先「重新入座」，或「清空座位」后再加入玩家。","Hero 手牌还没选满（已选 0 / 2 张）"]
+[OK] V-SIT-d 阻塞原因去重（同一条原因不显示两遍）
+
+==============================================================================
+## §27/§29：预览给出的按钮 ⇒ 后端必须接受（穷举 5 层决策树）
+==============================================================================
+      场景 preflop-fullstack      本次新增按钮失败=0（累计试 3095 个）
+      场景 preflop-shortstacks    本次新增按钮失败=0（累计试 6501 个）
+      场景 flop-hu                本次新增按钮失败=0（累计试 8126 个）
+      场景 fractional-bb3         本次新增按钮失败=0（累计试 11201 个）
+
+  按按钮标签汇总：（无）
+  按后端原因汇总：
+[OK] V27 共试 11201 个按钮，其中 0 个被后端拒绝
+[OK] V90f 按钮生效后「预览指纹 vs 重放指纹」不一致次数=0
+
+==============================================================================
+## ALL_IN 专项（预览按钮携带的金额 vs 引擎对 ALL_IN 的语义）
+==============================================================================
+  复现 1：UTG..BTN 弃牌，轮到 SB（本街已投入 0.5BB 盲注）
+  预览按钮：弃牌[PRIMARY] / 跟注 0.5BB[PRIMARY chips=50] / 加注（选尺寸）[EXPAND] / 加注到 2BB[SIZE chips=200] / 加注到 100BB[SIZE chips=10000] / 全下（100BB）[PRIMARY]
+  ALL_IN 按钮：{"type":"ALL_IN","labelZh":"全下（100BB）","amountBB":100,"isAllIn":true,"group":"PRIMARY"}
+  引擎口径：行动者剩余=9950 本街已投入=50 → doAllIn 要求 amount === 9950
+  按钮携带 amountChips = undefined（= 已投入 + 剩余）
+[OK] V-ALLIN-1 点 ALL_IN 按钮被后端接受
+  对照 A：ALL_IN amountChips=9950（剩余筹码）→ ok=true
+  对照 B（同一条规则的另一条 UI 路径）：RAISE 尺寸按钮=加注到 2BB / 加注到 100BB
+    RAISE(amountChips=10000) → ok=true
+
+  预览按钮：弃牌 / 跟注 1BB / 加注（选尺寸） / 加注到 3BB / 加注到 3.38BB / 加注到 4.5BB / 加注到 100BB / 全下（100BB）
+[OK] V-ALLIN-2 点 ALL_IN（全下（100BB），chips=undefined）→ ok=true
+
+  预览按钮：弃牌 / 跟注 1BB / 加注（选尺寸） / 加注到 3BB / 加注到 100BB / 全下（100BB）
+[OK] V-ALLIN-3 点 ALL_IN（全下（100BB），chips=undefined）→ ok=true
+
+    UTG（本街已投入 0）全下成功：记录={"position":"UTG","type":"ALL_IN","street":"PREFLOP"} 引擎口径 committed=10000
+    → 已投入为 0 时「本街总额」与「剩余筹码」恰好相等，因此这条记录能重放；一旦已投入 > 0，两者分叉
+
+[OK] V-ALLIN-4 按引擎语义提交 ALL_IN 成功
+
+
+==============================================================================
+## 向量 12/13：陈旧响应、重复提交、RevisionGuard（真实 HTTP）
+==============================================================================
+  建桌：status=200 tableId=t1 revision=0
+  准备完毕：revision=7
+  并发同版本：ok=1 stale=1 status=200/200 码=["ok","STALE_REVISION"]
+[OK] V13a 并发同版本请求：恰好 1 个被应用（ok=1, stale=1），HTTP 200 无 500
+  被应用后的 revision=8 历史长度=1（请求前 0）
+[OK] V13a2 行动历史恰好 +1（没有重复落账）：0 → 1
+  旧版本（revision=7）请求：ok=false code=STALE_REVISION 回传 state.revision=7 preview.revision=7
+[OK] V12a 迟到的旧版本请求被水位线拒绝，且回传的状态与预览都属于旧版本（客户端会丢弃）
+[OK] V12b 客户端丢弃判据成立：tableId 相同 且 回传 revision(7) <= 已应用 revision(8)
+  UNDO：ok=true revision 8 → 9
+[OK] V12c UNDO 之后 revision 仍单调递增（客户端单调水位线不会卡住合法撤销）
+  非变更 op：ok=true/true/true revision=5/5/5 码=[]
+[INFO] V13b 同版本重放在「无副作用 op」上被接受且无累积效应；其他 op 一律 +1 revision，因此重复提交被水位线挡住
+
+==============================================================================
+## 畸形载荷：不得 500、不得半应用（真实 HTTP）
+==============================================================================
+  null 载荷                                  status=200 ok=false code=INTERNAL_ERROR
+  数组载荷                                     status=200 ok=false code=INTERNAL_ERROR
+  字符串载荷                                    status=200 ok=false code=INTERNAL_ERROR
+  空对象（无 state → 新建牌桌）                      status=200 ok=true code=ACCEPTED
+      ⚠ 被接受：revision 9→0 历史长度=0 座位筹码=[100,100,100,100,100,100] 预览ok=false 预览阻塞=["有 5 个空座位（枪口位、劫持位、关煞位、小盲位、大盲位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。","Hero 手牌还没选满（已选 0 / 2 张）"]
+  state=null                               status=200 ok=false code=INTERNAL_ERROR
+  state=字符串                                status=200 ok=false code=INTERNAL_ERROR
+  未知 op                                    status=200 ok=false code=INTERNAL_ERROR
+  op 是数组                                   status=200 ok=false code=INTERNAL_ERROR
+  op 缺 kind                                status=200 ok=false code=INTERNAL_ERROR
+  ACT 无 action                             status=200 ok=false code=INTERNAL_ERROR
+  ACT action=null                          status=200 ok=false code=INTERNAL_ERROR
+  ACT 未知类型                                 status=200 ok=false code=INTERNAL_ERROR
+  ACT RAISE 负金额                            status=200 ok=false code=ILLEGAL_ACTION
+  ACT RAISE 字符串金额                          status=200 ok=false code=INTERNAL_ERROR
+  ACT RAISE 数组金额                           status=200 ok=false code=INTERNAL_ERROR
+  ACT CALL 0                               status=200 ok=false code=ILLEGAL_ACTION
+  ACT ALL_IN 1                             status=200 ok=false code=ILLEGAL_ACTION
+  ACT CHECK 带金额                            status=200 ok=false code=ILLEGAL_ACTION
+  SET_BOARD_CARD 非法牌面                      status=200 ok=false code=INTERNAL_ERROR
+  SET_BOARD_CARD 数字牌面                      status=200 ok=false code=INTERNAL_ERROR
+  SET_STACK null                           status=200 ok=false code=INVALID_STACK
+  SET_STACK 字符串                            status=200 ok=false code=INVALID_STACK
+  seats 少一个                                status=200 ok=false code=INTERNAL_ERROR
+  座位位置重复                                   status=200 ok=false code=INTERNAL_ERROR
+  visualIndex 重复                           status=200 ok=false code=INTERNAL_ERROR
+  visualIndex 整体偏移 3                       status=200 ok=false code=INTERNAL_ERROR
+  heroCards 三张                             status=200 ok=false code=INTERNAL_ERROR
+  board 含空串                                status=200 ok=false code=INTERNAL_ERROR
+  board 重复牌                                status=200 ok=false code=INTERNAL_ERROR
+  bigBlindBB=2                             status=200 ok=true code=ACCEPTED
+      ⚠ 被接受：revision 9→10 历史长度=2 座位筹码=[100,100,100,100,100,100] 预览ok=true 预览阻塞=["现在轮到「关煞位」行动。请先录入他的行动，轮到 Hero 时即可分析。","本手有 3 名活跃对手（未弃牌），超过第一版的支持上限（2 名）。点分析会返回「信息不足」—— 请先在牌桌上录完其他人的弃牌，或把这个决策点留到翻牌后再看。"]
+  bigBlindBB=0                             status=200 ok=false code=INTERNAL_ERROR
+  undo 塞伪造快照                               status=200 ok=false code=INTERNAL_ERROR
+  undo 塞垃圾                                 status=200 ok=false code=INTERNAL_ERROR
+  undo 61 条（超上限）                           status=200 ok=false code=INTERNAL_ERROR
+  handActive 伪造 false + SET_STACK          status=200 ok=false code=INTERNAL_ERROR
+  handActive 伪造 false + CLEAR_ALL_VILLAINS status=200 ok=false code=INTERNAL_ERROR
+  坏 JSON                                   status=400 ok=false code=BAD_JSON
+[OK] V-MAL-a 畸形载荷共 37 例，HTTP 5xx 数量=0，传输层错误=0
+[INFO] V-MAL-b 畸形载荷中被**接受**的例数=2（逐条见上；「客户端自持状态」是设计前提，但被接受的每一条都要能自洽）
+
+==============================================================================
+## GET /api/table/meta 与前端硬编码枚举
+==============================================================================
+  条目数：positions=9 tableSizes=2 seatStatuses=6 quickProfiles=11 dynamicHints=7 environments=3 actionTypes=6 streets=4 leaveChoices=3
+  quickProfiles=UNKNOWN,VERY_TIGHT,TIGHT,NORMAL,LOOSE,VERY_LOOSE,CALLING_STATION,AGGRESSIVE,BLUFF_HEAVY,UNDERBLUFFER,MANIAC
+  streets=PREFLOP,FLOP,TURN,RIVER actionTypes=FOLD,CHECK,CALL,BET,RAISE,ALL_IN
+  leaveChoices=FOLD_AND_LEAVE(本手视为弃牌并离桌) / LEAVE_AFTER_HAND(仅标记手后离桌) / CANCEL(取消)
+[OK] V-META-a meta.quickProfiles 全部被 SET_PROFILE 接受（11 项）
+[OK] V-META-b 6 人桌位置全部被 SET_HERO_POSITION 接受（UTG,HJ,CO,BTN,SB,BB）
+  客户端硬编码枚举字面量：LEAVING_AFTER_HAND×1 SITTING_OUT×4 FOLD_AND_LEAVE×1 PREFLOP×1 PRIMARY×1 SIZE×1
+[OK] V-META-c 前端未硬编码离桌选项
+[OK] V-META-d table.js 中出现的牌局规则函数名：（无）
+  客户端消费的 meta 字段：positions,tableSizes,environments,quickProfiles,dynamicHints,streets,actionTypes,leaveChoices
+  客户端**未**消费的 meta 字段：seatStatuses,occupiedStatuses
+[INFO] V-META-e 未被 table.js 消费的 meta 字段：seatStatuses,occupiedStatuses
+
+==============================================================================
+## 性能：POST /api/table 延迟
+==============================================================================
+  浅状态（满座+手牌，40 次 SET_DYNAMIC_HINT）：min=5.7ms p50=18.2ms p95=35.8ms max=35.8ms
+  深状态：历史=24 条 公共牌=5 张 街道=河牌 handComplete=false
+  深状态请求体大小 = 87.7 KB（服务端上限 1024 KB，见 webServer.ts 的 MAX_BODY_BYTES）
+  深状态构成：历史 24 条 + 撤销栈 36 层
+  深状态（20 次 SET_DYNAMIC_HINT）：min=16.7ms p50=31.9ms p95=50.9ms max=50.9ms
+[INFO] V-SIZE 超过旧上限（228KB）的请求体得到结构化响应 ok=false（上限已提到 1024KB）
+  超限之后的小请求：ok=true（连接池未损坏）
+[OK] V-PERF 最慢一次 POST /api/table = 50.9ms（目标 <100ms）
+
+==============================================================================
+## 汇总
+==============================================================================
+OK=36  HIT=0  INFO=5
+预览按钮被后端拒绝：0 个（共试 11201 个）
+
+
+##############################################################################
+# 探针 #2（真实 table.js + DOM 桩）
+##############################################################################
+==============================================================================
+## 探针 #2 快照
+==============================================================================
+src/app/web/table.js                 0501c1a7483ff53c mtime=2026-09-13T05:23:20.718Z
+src/app/web/index.html               093af6a2e85cdf09 mtime=2026-09-13T04:50:19.991Z
+src/app/table/tablePreview.ts        4c0d51745055d866 mtime=2026-09-13T05:17:22.116Z
+src/app/table/tableApi.ts            edb44ebfc912e005 mtime=2026-09-13T05:23:26.145Z
+服务已启动：http://127.0.0.1:65263
+
+==============================================================================
+## §A 启动：客户端真的消费了 /api/table/meta 并建桌
+==============================================================================
+请求序列：/api/table/meta(200) → /api/table(200)
+[OK] A1 客户端先取 meta（是）再建桌（是），建桌载荷={"tableSize":6,"heroPosition":"BTN"}
+  座位区文本：+ 加入玩家枪口位（UTG）+ 加入玩家劫持位（HJ）+ 加入玩家关煞位（CO）D我（Hero）庄家位（BTN）100BBHero · 在座+ 加入玩家小盲位（SB）+ 加入玩家大盲位（BB）
+  街道行：—
+  底池行：底池 0BB
+  行动者行：本街下注轮已结束
+
+==============================================================================
+## §B 4×13 网格点击 → 浏览器真正提交的牌面代码
+==============================================================================
+  加满玩家后座位区：玩家2枪口位（UTG）100BB在座玩家3劫持位（HJ）100BB在座玩家4关煞位（CO）100BB在座D我（Hero）庄家位（BTN）100BBHero · 在座玩家5小盲位（SB）100BB在座玩家6大盲位（BB）100BB在座
+  点击 As/Qs 之后发出的请求：{"state":{"tableId":"t1","revision":5,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":"p5","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":"p6","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p5":{"playerId":"p5","displayName":"玩家5","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p6":{"playerId":"p6","displayName":"玩家6","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":7,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false,"undo":[{"tableId":"t1","revision":4,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":"p5","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p5":{"playerId":"p5","displayName":"玩家5","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":6,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":3,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":5,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":2,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":4,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":1,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":3,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":0,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":2,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false}]},"op":{"kind":"SET_HERO_CARD","card":"As"}} / {"state":{"tableId":"t1","revision":6,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":"p5","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":"p6","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p5":{"playerId":"p5","displayName":"玩家5","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p6":{"playerId":"p6","displayName":"玩家6","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":["As"],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":true,"nextPlayerNumber":7,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false,"undo":[{"tableId":"t1","revision":5,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":"p5","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":"p6","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p5":{"playerId":"p5","displayName":"玩家5","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p6":{"playerId":"p6","displayName":"玩家6","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":7,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":4,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":"p5","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p5":{"playerId":"p5","displayName":"玩家5","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":6,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":3,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":"p4","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p4":{"playerId":"p4","displayName":"玩家4","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":5,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":2,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":"p3","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false},"p3":{"playerId":"p3","displayName":"玩家3","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":4,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":1,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":"p2","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true},"p2":{"playerId":"p2","displayName":"玩家2","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":false}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":3,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false},{"tableId":"t1","revision":0,"tableSize":6,"heroPosition":"BTN","heroPlayerId":"p1","seats":[{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_HJ","logicalPosition":"HJ","visualIndex":4,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_CO","logicalPosition":"CO","visualIndex":5,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BTN","logicalPosition":"BTN","visualIndex":0,"playerId":"p1","status":"SEATED_ACTIVE","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_SB","logicalPosition":"SB","visualIndex":1,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100},{"seatId":"seat_BB","logicalPosition":"BB","visualIndex":2,"playerId":null,"status":"EMPTY","sitOutNextHand":false,"stackBB":100}],"playersById":{"p1":{"playerId":"p1","displayName":"我（Hero）","quickProfile":"UNKNOWN","dynamicHint":"UNKNOWN","handsPlayed":0,"isHero":true}},"heroCards":[],"board":[],"actionHistory":[],"environment":"MID_LOW_STAKES","bigBlindBB":100,"defaultStackBB":100,"handActive":false,"nextPlayerNumber":2,"lastHandRemainingStacksBB":null,"notices":[],"lastHandComplete":false}]},"op":{"kind":"SET_HERO_CARD","card":"Kd"}}
+  屏幕 debugInput.heroCards=["As","Kd"]
+[OK] B1 网格点击 → 提交代码与屏幕一致；已用牌被禁用（禁用集合=As,Kd）
+
+==============================================================================
+## §C 双击（同一按钮连点两次）
+==============================================================================
+  连点两次「弃牌」→ 实际发出 1 个 /api/table 请求
+[OK] C1 双击只发出 1 个请求（客户端 inflight 守卫）
+
+==============================================================================
+## §E §90 三方一致：屏幕渲染文本 vs 提交载荷 vs 后端状态
+==============================================================================
+  翻牌前收尾后：街道行=翻牌前 行动者行=本街下注轮已结束
+  选完三张公共牌：街道行=翻牌 槽位=K♥,7♣,2♦,+,+
+  街道行=翻牌 底池行=底池 2.5BB 行动者行=现在轮到你（我（Hero））
+  按钮=弃牌 / 过牌 / 下注（选尺寸） / 全下（99BB）
+  阻塞项=
+  分析按钮：disabled=false 文本=分析当前决策
+  分析响应：ok=true stage=- actionZh=建议：下注
+  分析面板内容：建议：下注1.00BB（100 筹码） · 中低 · 边缘决策对对手范围估计权益 89.3% 且明显领先，当前牌力（顶对 K，A踢脚）适合主动下注取值牌局环境「中低级别」提供了 1 条方向参考（无幅度，仅方向）抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水口径）抽水模型：未计入（本项目尚无 Ra
+  debugDecision={ "decision": { "action": "BET", "sizeChips": 100, "sizeBB": 1, "confidence": 0.3, "band": "MEDIUM_LOW", "classification
+  提交的牌桌状态：revision=17 heroCards=["As","Kd"] board=["Kh","7c","2d"] 历史=7 条
+    屏幕 debugInput（归一化）== 后端适配结果（730 字符）
+    后端重放指纹={"tableSize":6,"smallBlind":50,"bigBlind":100,"dealer":"BTN","street":"FLOP","phase":"BETTING","currentBet":0,"minRaiseT…
+    屏幕统计区=当前底池2.5BB需要跟注0BB当前注额0BB最小加注到1BB有效筹码99BB我的剩余筹码99BB
+[OK] E1 屏幕显示的提交内容 / 指纹 / 底池 / 行动者 与后端由同一状态重建出的结果逐位一致
+
+==============================================================================
+## §F 成功分析后建议面板是否真的渲染（同时看陈旧性）
+==============================================================================
+  后端返回的建议=建议：下注
+  屏幕 #result 的内容=建议：下注1.00BB（100 筹码） · 中低 · 边缘决策对对手范围估计权益 89.3% 且明显领先，当前牌力（顶对 K，A踢脚）适合主动下注取值牌局环境「中低级别」提供了 1 条方向参考（无幅度，仅方向）抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水
+  捕获到的前端异常：（无）
+[OK] F1 成功分析的建议确实渲染到了 #result
+  座位菜单打开=true；后端返回 leaveDecision=true
+  弹层 class=show；弹层内容=该玩家本手已参与牌局 —— 请选择处理方式玩家6（BB）现在没有轮到他行动；若要让他本手不再行动，请先在牌桌上录到他的回合再弃牌。「仅标记手后离桌」只影响下一手，本手的行动记录保持不变。仅标记手后离桌取消为什么不能直接清空：本手的底池与行动
+  「仅标记手后离桌」按钮存在=true
+[OK] F2 离桌选择弹层正常显示（或本步不适用）
+
+==============================================================================
+## §G 全下按钮（真实 UI 点击，重新开一桌）
+==============================================================================
+  现在轮到：玩家5 当前行动
+  按钮：弃牌 / 跟注 0.5BB / 加注（选尺寸） / 全下（100BB）
+  点击载荷={"kind":"ACT","action":{"type":"ALL_IN"}}
+  提示条：本手正在进行中。该玩家已经进入本手牌局（筹码与行动台账里都有他的记录），因此不能直接从牌局中删除。请明确选择处理方式。
+  指纹是否变化：true（请求数 31→32）
+[OK] G1 全下按钮被后端接受
+
+==============================================================================
+## 探针 #2 汇总
+==============================================================================
+OK=7 HIT=0 INFO=0
+
+
+
+##############################################################################
+# 探针 #3：增量复验（RT-L6 / RT-L7 / RT-L8 / RT-L9）
+##############################################################################
+==============================================================================
+## §0 增量复验快照（sha256 前 16 位 + mtime）
+==============================================================================
+src/app/web/table.js                       0501c1a7483ff53c  mtime=2026-09-13T05:23:20.718Z
+src/app/table/tableApi.ts                  edb44ebfc912e005  mtime=2026-09-13T05:23:26.145Z
+src/app/table/seatLifecycle.ts             49f7729516159f55  mtime=2026-09-13T05:23:30.825Z
+src/app/table/tablePreview.ts              4c0d51745055d866  mtime=2026-09-13T05:17:22.116Z
+src/app/table/tableOps.ts                  87aa2d143ff32602  mtime=2026-09-13T05:16:21.020Z
+src/app/table/table.types.ts               0812db7ad78c2e99  mtime=2026-09-13T05:18:56.097Z
+src/app/table/tableAdapter.ts              ac4ef748a39603ec  mtime=2026-09-13T05:05:22.789Z
+src/app/table/tableState.ts                2cbe1e96fd9fc402  mtime=2026-09-13T05:06:32.349Z
+src/app/webServer.ts                       b52c3a79c72ff59a  mtime=2026-09-13T05:18:39.010Z
+src/app/manualInput/manualInput.ts         f4cfd65839dd3b0c  mtime=2026-09-13T04:40:34.175Z
+src/app/manualInput/reconstruct.ts         06d435b96db79855  mtime=2026-09-13T04:38:42.082Z
+src/app/manualInput/legalActions.ts        377f3ebc1f905561  mtime=2026-09-13T02:01:28.645Z
+
+==============================================================================
+## §1 RT-L7：POST /api/table 新建分支（真实 HTTP）
+==============================================================================
+服务已启动：http://127.0.0.1:49166
+  {tableSize:6, heroPosition:"UTG1"} → status=200 ok=false code=SEAT_NOT_FOUND
+    原因：6 人桌上没有「UTG1」这个位置。可选：UTG / HJ / CO / BTN / SB / BB
+[OK] L7-a 6 人桌 + heroPosition="UTG1" 必须被拒绝、给出可读原因（含可选列表），且不得返回任何状态
+  {tableSize:6}                      status=200 ok=true heroPosition=BTN 座位数=6 自校验=true Hero绑定=true
+[OK] L7-b:{tableSize:6} 返回 ok:true，且状态通过 parseTableState、Hero 正确绑定
+  {tableSize:9, heroPosition:"UTG2"} status=200 ok=true heroPosition=UTG2 座位数=9 自校验=true Hero绑定=true
+[OK] L7-b:{tableSize:9, heroPosition:"UTG2"} 返回 ok:true，且状态通过 parseTableState、Hero 正确绑定
+  {heroPosition:"BTN"}               status=200 ok=true heroPosition=BTN 座位数=6 自校验=true Hero绑定=true
+[OK] L7-b:{heroPosition:"BTN"} 返回 ok:true，且状态通过 parseTableState、Hero 正确绑定
+  {tableSize:9, heroPosition:"LJ"}   status=200 ok=true heroPosition=LJ 座位数=9 自校验=true Hero绑定=true
+[OK] L7-b:{tableSize:9, heroPosition:"LJ"} 返回 ok:true，且状态通过 parseTableState、Hero 正确绑定
+
+==============================================================================
+## §2 RT-L8/L9：notice 文案必须点名被顶掉的玩家 / 如实说明 Hero 筹码
+==============================================================================
+  被顶掉的玩家 = 玩家7；Hero 位置 UTG1 → BTN
+    notice: 桌型已切换为 6 人桌。
+    notice: UTG1、UTG2、LJ 这些位置在新桌型里不存在，对应座位已移除（玩家对象仍保留在历史里，不再绑定任何座位）。
+    notice: Hero 原位置 UTG1 在 6 人桌不存在，已自动改到庄家位。
+    notice: 庄家位 座位上原本是「玩家7」—— 该座位已交给 Hero，他不再绑定任何座位（玩家对象仍保留在历史里）。
+    notice: 座位筹码保持不变；Hero 的筹码跟着 Hero 走。
+[OK] L8 notice 点名了「玩家7」并说明座位已交给 Hero
+[OK] L8-b 「Hero 的筹码跟着 Hero 走」：切换前 100BB → 切换后 100BB
+  NEW_TABLE 之前：Hero 250BB / UTG 42BB；之后：全部座位=[100,100,100,100,100,100]
+    notice: 已新建牌桌：其他座位与玩家画像、动态观察、行动历史全部清空。
+    notice: 所有座位筹码重置为默认 100BB（**包括 Hero**）—— Hero 的位置、环境、默认筹码设置保持不变。
+[OK] L9 notice 如实写出「所有座位筹码重置为默认 100BB（包括 Hero）」，且实际状态与文案一致（Hero=100BB）
+
+==============================================================================
+## §3 RT-L6：「下一手暂离」必须有取消入口（真实 table.js + DOM 桩）
+==============================================================================
+  标记前的预览指纹（长度 915）：{"tableSize":6,"smallBlind":50,"bigBlind":100,"dealer":"BTN","street":"PREFLOP","phase":"BETTING…
+  点击「暂时离座」：ok=true UTG.sitOutNextHand=true UTG.status=SEATED_ACTIVE
+  当前手是否变化：指纹 未变；底池 底池 1.5BB　当前注 1BB → 底池 1.5BB　当前注 1BB；行动者 玩家2 当前行动 → 玩家2 当前行动
+[OK] L6-a 本手进行中点「暂时离座」→ 只设 sitOutNextHand=true，座位状态仍是 SEATED_ACTIVE（本手不受影响）
+[OK] L6-b 标记下一手暂离后，当前手的指纹（长度 915）与底池显示均未变化
+  座位区文本：玩家2枪口位（UTG）100BB在座（下一手暂离）
+  座位菜单内容：玩家2 枪口位状态：在座（下一手暂离） 筹码：100BB快速画像（只作为输入证据，不直接改结论）未知很紧偏紧正常偏松很松跟注站主动型爱诈唬很少诈唬疯狂型近期观察正常最近变松最近变紧最近很激进疑似上头疑似追损未知座位管理取消「下一手暂离」更换玩家清空座位编辑筹码（仅在本手未开始时可用）保存筹码「弃牌」请用右侧的行动按钮（
+[OK] L6-c 座位菜单里出现了「取消「下一手暂离」」按钮
+  点击载荷={"kind":"SIT_IN","seatId":"seat_UTG"}
+  取消后：UTG.sitOutNextHand=false UTG.status=SEATED_ACTIVE 历史长度=0 handActive=true
+[OK] L6-d 点击后 sitOutNextHand 变回 false，座位回到 SEATED_ACTIVE，当前手状态未变
+
+==============================================================================
+## §4 增量复验汇总
+==============================================================================
+OK=12 HIT=0 INFO=0
+前端异常捕获：（无）
+[OK] L6-e 驱动真实 table.js 期间没有未处理的 Promise 异常

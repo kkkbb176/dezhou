@@ -1,0 +1,94 @@
+================================================================
+GTOpen 真实联调证据（阶段一：多桌人数翻前）
+生成时间（本地）: 2026-09-13T22:51:15.850Z
+GTOpen 端点      : http://127.0.0.1:3737
+求解预算         : 开池 2.5BB · 再加注 3× · 加注上限 2 · 跛入 关闭 · 全下 提供
+迭代数（按人数）  : {"4":{"addAllin":true,"iterations":60},"5":{"addAllin":true,"iterations":60},"6":{"addAllin":true,"iterations":40},"8":{"addAllin":false,"iterations":20},"9":{"addAllin":false,"iterations":12}}
+================================================================
+
+健康检查: reachable=true endpoint=http://127.0.0.1:3737
+          GTOpen 已响应；当前没有翻前会话（这是正常的，查询时会自动建树）
+
+=== 4 人桌 / 100BB / CO / RFI（无人入池）
+    场景哈希: ge84e835d
+    ✅ 成功，耗时 4752 ms（4.8 秒）；迭代 60 / 请求 60；BR gap 之和 0.03412694；模型 coupled_deck_v1
+    求解状态 RUNNING / 可信度 APPROXIMATE / 未收敛=true
+    动作菜单: Fold | Raise 2.5(=to 2.5BB) | All-in 100(=to 100BB)
+    节点底池: 1.5 BB
+      AA   reach=1.000  FOLD=0.0%  RAISE@2.5BB=98.8%  ALL_IN@100BB=1.2%
+      AKs  reach=1.000  FOLD=0.0%  RAISE@2.5BB=99.6%  ALL_IN@100BB=0.4%
+      AKo  reach=1.000  FOLD=0.0%  RAISE@2.5BB=99.7%  ALL_IN@100BB=0.3%
+      A5s  reach=1.000  FOLD=2.4%  RAISE@2.5BB=97.6%  ALL_IN@100BB=0.0%
+      A5o  reach=1.000  FOLD=74.9%  RAISE@2.5BB=25.1%  ALL_IN@100BB=0.0%
+      KQs  reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.9%  ALL_IN@100BB=0.0%
+      22   reach=1.000  FOLD=47.5%  RAISE@2.5BB=52.5%  ALL_IN@100BB=0.0%
+      72o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%  ALL_IN@100BB=0.0%
+    169 类构成: 混合 169 · 纯弃牌 0 · 纯加注 0 · 其它 0
+
+=== 5 人桌 / 100BB / HJ / RFI（无人入池）
+    场景哈希: g029facdc
+    ✅ 成功，耗时 18374 ms（18.4 秒）；迭代 60 / 请求 60；BR gap 之和 0.08084305；模型 coupled_deck_v1
+    求解状态 RUNNING / 可信度 APPROXIMATE / 未收敛=true
+    动作菜单: Fold | Raise 2.5(=to 2.5BB) | All-in 100(=to 100BB)
+    节点底池: 1.5 BB
+      AA   reach=1.000  FOLD=0.0%  RAISE@2.5BB=98.6%  ALL_IN@100BB=1.4%
+      AKs  reach=1.000  FOLD=0.0%  RAISE@2.5BB=99.7%  ALL_IN@100BB=0.3%
+      AKo  reach=1.000  FOLD=0.0%  RAISE@2.5BB=99.8%  ALL_IN@100BB=0.2%
+      A5s  reach=1.000  FOLD=42.5%  RAISE@2.5BB=57.5%  ALL_IN@100BB=0.0%
+      A5o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%  ALL_IN@100BB=0.0%
+      KQs  reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.8%  ALL_IN@100BB=0.0%
+      22   reach=1.000  FOLD=99.9%  RAISE@2.5BB=0.1%  ALL_IN@100BB=0.0%
+      72o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%  ALL_IN@100BB=0.0%
+    169 类构成: 混合 169 · 纯弃牌 0 · 纯加注 0 · 其它 0
+
+=== 6 人桌 / 100BB / UTG / RFI（无人入池）
+    场景哈希: g715ed521
+    ✅ 成功，耗时 46977 ms（47.0 秒）；迭代 40 / 请求 40；BR gap 之和 0.16526006；模型 coupled_deck_v1
+    求解状态 RUNNING / 可信度 APPROXIMATE / 未收敛=true
+    动作菜单: Fold | Raise 2.5(=to 2.5BB) | All-in 100(=to 100BB)
+    节点底池: 1.5 BB
+      AA   reach=1.000  FOLD=0.0%  RAISE@2.5BB=93.4%  ALL_IN@100BB=6.6%
+      AKs  reach=1.000  FOLD=0.0%  RAISE@2.5BB=98.9%  ALL_IN@100BB=1.1%
+      AKo  reach=1.000  FOLD=0.0%  RAISE@2.5BB=99.2%  ALL_IN@100BB=0.7%
+      A5s  reach=1.000  FOLD=92.7%  RAISE@2.5BB=7.3%  ALL_IN@100BB=0.0%
+      A5o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%  ALL_IN@100BB=0.0%
+      KQs  reach=1.000  FOLD=0.9%  RAISE@2.5BB=98.9%  ALL_IN@100BB=0.2%
+      22   reach=1.000  FOLD=99.8%  RAISE@2.5BB=0.2%  ALL_IN@100BB=0.0%
+      72o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%  ALL_IN@100BB=0.0%
+    169 类构成: 混合 169 · 纯弃牌 0 · 纯加注 0 · 其它 0
+
+=== 8 人桌 / 100BB / UTG / RFI（无人入池）
+    场景哈希: g3864fe67
+    ✅ 成功，耗时 87552 ms（87.6 秒）；迭代 20 / 请求 20；BR gap 之和 0.00417911；模型 coupled_deck_v1
+    求解状态 RUNNING / 可信度 APPROXIMATE / 未收敛=true
+    动作菜单: Fold | Raise 2.5(=to 2.5BB)
+    节点底池: 1.5 BB
+      AA   reach=1.000  FOLD=0.0%  RAISE@2.5BB=100.0%
+      AKs  reach=1.000  FOLD=0.0%  RAISE@2.5BB=100.0%
+      AKo  reach=1.000  FOLD=0.0%  RAISE@2.5BB=100.0%
+      A5s  reach=1.000  FOLD=99.8%  RAISE@2.5BB=0.2%
+      A5o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%
+      KQs  reach=1.000  FOLD=0.0%  RAISE@2.5BB=100.0%
+      22   reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%
+      72o  reach=1.000  FOLD=100.0%  RAISE@2.5BB=0.0%
+    169 类构成: 混合 169 · 纯弃牌 0 · 纯加注 0 · 其它 0
+
+=== 9 人桌 / 100BB / UTG / RFI（无人入池）
+    场景哈希: g799d4c74
+    ✅ 成功，耗时 164418 ms（164.4 秒）；迭代 12 / 请求 12；BR gap 之和 0.02102956；模型 coupled_deck_v1
+    求解状态 RUNNING / 可信度 APPROXIMATE / 未收敛=true
+    动作菜单: Fold | Raise 2.5(=to 2.5BB)
+    节点底池: 1.5 BB
+      AA   reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.9%
+      AKs  reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.9%
+      AKo  reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.9%
+      A5s  reach=1.000  FOLD=99.2%  RAISE@2.5BB=0.8%
+      A5o  reach=1.000  FOLD=99.9%  RAISE@2.5BB=0.1%
+      KQs  reach=1.000  FOLD=0.1%  RAISE@2.5BB=99.9%
+      22   reach=1.000  FOLD=99.9%  RAISE@2.5BB=0.1%
+      72o  reach=1.000  FOLD=99.9%  RAISE@2.5BB=0.1%
+    169 类构成: 混合 169 · 纯弃牌 0 · 纯加注 0 · 其它 0
+
+================================================================
+探针结束
+证据文件: D:\德州\reports\evidence\gto-live-evidence.txt

@@ -1,0 +1,309 @@
+================================================================
+GTO「Hero 开池后面对 3Bet」几何真实联调（Phase 1.1 第二轮）
+生成时间 : 2026-09-14T13:03:52.551Z
+端点     : http://127.0.0.1:3737
+断言     : 走到路径终点时的行动者必须**逐位等于 Hero**
+================================================================
+
+──────── 4 人桌（CO → BTN → SB → BB）────────
+  [CO 开池 vs BTN 3Bet] CO加2.5 → BTN加7.5 → SB弃 → BB弃
+      ✅ 4.4 秒 · 行动者 CO（= Hero）
+         场景：4 人桌 / 100BB / CO / VS_3BET（CO 加注到 2.5BB → BTN 加注到 7.5BB → SB 弃牌 → BB 弃牌）
+         哈希 g3c9b75eb · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 60 / 请求 60 · gap 0.03412694 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=0.0%  CALL@7.5=100.0%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.0%  CALL@7.5=100.0%
+           72o  FOLD=13.5%  CALL@7.5=86.5%
+         169 类里混合策略 169 个
+
+──────── 5 人桌（HJ → CO → BTN → SB → BB）────────
+  [HJ 开池 vs CO 3Bet] HJ加2.5 → CO加7.5 → BTN弃 → SB弃 → BB弃
+      ✅ 19.2 秒 · 行动者 HJ（= Hero）
+         场景：5 人桌 / 100BB / HJ / VS_3BET（HJ 加注到 2.5BB → CO 加注到 7.5BB → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 g11a9c3bc · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 60 / 请求 60 · gap 0.08084305 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=0.0%  CALL@7.5=100.0%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.2%  CALL@7.5=99.8%
+           72o  FOLD=10.6%  CALL@7.5=89.4%
+         169 类里混合策略 169 个
+
+  [HJ 开池 vs BTN 3Bet] HJ加2.5 → CO弃 → BTN加7.5 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 HJ（= Hero）
+         场景：5 人桌 / 100BB / HJ / VS_3BET（HJ 加注到 2.5BB → CO 弃牌 → BTN 加注到 7.5BB → SB 弃牌 → BB 弃牌）
+         哈希 g7db2c370 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 60 / 请求 60 · gap 0.08084305 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=0.0%  CALL@7.5=100.0%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.2%  CALL@7.5=99.8%
+           72o  FOLD=10.6%  CALL@7.5=89.4%
+         169 类里混合策略 169 个
+
+──────── 6 人桌（UTG → HJ → CO → BTN → SB → BB）────────
+  [UTG 开池 vs HJ 3Bet] UTG加2.5 → HJ加7.5 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 62.0 秒 · 行动者 UTG（= Hero）
+         场景：6 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → HJ 加注到 7.5BB → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 g9fd6f3cf · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 40 / 请求 40 · gap 0.16526006 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=19.4%  CALL@7.5=80.6%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.5%  CALL@7.5=99.5%
+           72o  FOLD=9.3%  CALL@7.5=90.7%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs CO 3Bet] UTG加2.5 → HJ弃 → CO加7.5 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：6 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → HJ 弃牌 → CO 加注到 7.5BB → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 ged677837 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 40 / 请求 40 · gap 0.16526006 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=0.0%  CALL@7.5=100.0%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.5%  CALL@7.5=99.5%
+           72o  FOLD=9.3%  CALL@7.5=90.7%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs BTN 3Bet] UTG加2.5 → HJ弃 → CO弃 → BTN加7.5 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：6 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → HJ 弃牌 → CO 弃牌 → BTN 加注到 7.5BB → SB 弃牌 → BB 弃牌）
+         哈希 g41dabf27 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 40 / 请求 40 · gap 0.16526006 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=8.7%  CALL@7.5=91.3%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=0.5%  CALL@7.5=99.5%
+           72o  FOLD=9.3%  CALL@7.5=90.7%
+         169 类里混合策略 169 个
+
+──────── 8 人桌（UTG → UTG1 → LJ → HJ → CO → BTN → SB → BB）────────
+  [UTG 开池 vs UTG1 3Bet] UTG加2.5 → UTG1加7.5 → LJ弃 → HJ弃 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 116.6 秒 · 行动者 UTG（= Hero）
+         场景：8 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 加注到 7.5BB → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 gf1144cfc · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 20 / 请求 20 · gap 0.00417911 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs LJ 3Bet] UTG加2.5 → UTG1弃 → LJ加7.5 → HJ弃 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：8 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → LJ 加注到 7.5BB → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 g673d3c58 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 20 / 请求 20 · gap 0.00417911 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs HJ 3Bet] UTG加2.5 → UTG1弃 → LJ弃 → HJ加7.5 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：8 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → LJ 弃牌 → HJ 加注到 7.5BB → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 gf16db114 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 20 / 请求 20 · gap 0.00417911 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs CO 3Bet] UTG加2.5 → UTG1弃 → LJ弃 → HJ弃 → CO加7.5 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：8 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 7.5BB → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 gee44dcac · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 20 / 请求 20 · gap 0.00417911 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs BTN 3Bet] UTG加2.5 → UTG1弃 → LJ弃 → HJ弃 → CO弃 → BTN加7.5 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：8 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 7.5BB → SB 弃牌 → BB 弃牌）
+         哈希 gbd603420 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 20 / 请求 20 · gap 0.00417911 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+──────── 9 人桌（UTG → UTG1 → UTG2 → LJ → HJ → CO → BTN → SB → BB）────────
+  [UTG 开池 vs UTG1 3Bet] UTG加2.5 → UTG1加7.5 → UTG2弃 → LJ弃 → HJ弃 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 199.5 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 加注到 7.5BB → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 ge3d6138d · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs UTG2 3Bet] UTG加2.5 → UTG1弃 → UTG2加7.5 → LJ弃 → HJ弃 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 加注到 7.5BB → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 gc16c3e19 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs LJ 3Bet] UTG加2.5 → UTG1弃 → UTG2弃 → LJ加7.5 → HJ弃 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 弃牌 → LJ 加注到 7.5BB → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 gb76f5f25 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs HJ 3Bet] UTG加2.5 → UTG1弃 → UTG2弃 → LJ弃 → HJ加7.5 → CO弃 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 加注到 7.5BB → CO 弃牌 → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 ga11a22c1 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs CO 3Bet] UTG加2.5 → UTG1弃 → UTG2弃 → LJ弃 → HJ弃 → CO加7.5 → BTN弃 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 7.5BB → BTN 弃牌 → SB 弃牌 → BB 弃牌）
+         哈希 g7c0d33b9 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+  [UTG 开池 vs BTN 3Bet] UTG加2.5 → UTG1弃 → UTG2弃 → LJ弃 → HJ弃 → CO弃 → BTN加7.5 → SB弃 → BB弃
+      ✅ 0.1 秒 · 行动者 UTG（= Hero）
+         场景：9 人桌 / 100BB / UTG / VS_3BET（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 7.5BB → SB 弃牌 → BB 弃牌）
+         哈希 g46ba3f69 · heroAlreadyActed true
+         菜单：FOLD · CALL@7.5
+         菜单完整性：残缺（无加注项）
+         迭代 12 / 请求 12 · gap 0.02102956 · 状态 SOLVED
+           AA   FOLD=0.0%  CALL@7.5=100.0%
+           AKs  FOLD=0.0%  CALL@7.5=100.0%
+           AKo  FOLD=0.0%  CALL@7.5=100.0%
+           A5s  FOLD=4.8%  CALL@7.5=95.2%
+           KQs  FOLD=0.0%  CALL@7.5=100.0%
+           22   FOLD=50.0%  CALL@7.5=50.0%
+           72o  FOLD=50.0%  CALL@7.5=50.0%
+         169 类里混合策略 169 个
+
+================================================================
+汇总
+----------------------------------------------------------------
+✅ 4-CO-VS_3BET-BTN                 4.4s  行动者 CO             残缺（无加注项）
+✅ 5-HJ-VS_3BET-CO                 19.2s  行动者 HJ             残缺（无加注项）
+✅ 5-HJ-VS_3BET-BTN                 0.1s  行动者 HJ             残缺（无加注项）
+✅ 6-UTG-VS_3BET-HJ                62.0s  行动者 UTG            残缺（无加注项）
+✅ 6-UTG-VS_3BET-CO                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 6-UTG-VS_3BET-BTN                0.1s  行动者 UTG            残缺（无加注项）
+✅ 8-UTG-VS_3BET-UTG1             116.6s  行动者 UTG            残缺（无加注项）
+✅ 8-UTG-VS_3BET-LJ                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 8-UTG-VS_3BET-HJ                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 8-UTG-VS_3BET-CO                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 8-UTG-VS_3BET-BTN                0.1s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-UTG1             199.5s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-UTG2               0.1s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-LJ                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-HJ                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-CO                 0.1s  行动者 UTG            残缺（无加注项）
+✅ 9-UTG-VS_3BET-BTN                0.1s  行动者 UTG            残缺（无加注项）
+----------------------------------------------------------------
+成功 17 / 共 17
+其中菜单完整（有再加注项）0 条 · 残缺 17 条
+证据文件: D:\德州\reports\evidence\gto-vs3bet-live-evidence.txt
+================================================================

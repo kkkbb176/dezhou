@@ -1,0 +1,548 @@
+================================================================
+GTO 扩展节点真实联调（Phase 1.1）
+生成时间 : 2026-09-14T00:24:15.285Z
+端点     : http://127.0.0.1:3737
+求解设置 : 开池 [2.5]BB · 再加注 [3]× · 加注上限 2 · 跛入 关闭
+全下 / 迭代数（按桌人数）：
+  4 人桌：全下 提供 · 迭代 60 · 目标 gap 0.05
+  6 人桌：全下 提供 · 迭代 40 · 目标 gap 0.2
+  5 人桌：全下 提供 · 迭代 60 · 目标 gap 0.1
+  8 人桌：全下 不提供 · 迭代 20 · 目标 gap 0.05
+  9 人桌：全下 不提供 · 迭代 12 · 目标 gap 0.05
+================================================================
+
+──────── 4 人桌 ────────
+  [4MAX SB vs BTN Open] ✅ 2.7 秒 · 行动者 SB
+      场景：4 人桌 / 100BB / SB / VS_OPEN（CO 弃牌 → BTN 加注到 2.5BB）
+      哈希 gff203cf4
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=0.0%  ALL_IN@100=99.9%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.7%  ALL_IN@100=0.2%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.8%  ALL_IN@100=0.2%
+        A5s  FOLD=0.5%  CALL@2.5=41.3%  RAISE@7.5=1.9%  ALL_IN@100=56.3%
+        A5o  FOLD=24.0%  CALL@2.5=72.4%  RAISE@7.5=0.5%  ALL_IN@100=3.1%
+        KQs  FOLD=0.0%  CALL@2.5=7.5%  RAISE@7.5=92.5%  ALL_IN@100=0.0%
+        22   FOLD=2.1%  CALL@2.5=97.5%  RAISE@7.5=0.3%  ALL_IN@100=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX BB vs BTN Open] ✅ 0.0 秒 · 行动者 BB
+      场景：4 人桌 / 100BB / BB / VS_OPEN（CO 弃牌 → BTN 加注到 2.5BB → SB 弃牌）
+      哈希 g4daef918
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.2%  ALL_IN@100=0.8%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.5%  ALL_IN@100=0.5%
+        A5s  FOLD=0.0%  CALL@2.5=14.4%  RAISE@7.5=0.0%  ALL_IN@100=85.5%
+        A5o  FOLD=0.0%  CALL@2.5=99.9%  RAISE@7.5=0.1%  ALL_IN@100=0.1%
+        KQs  FOLD=0.0%  CALL@2.5=1.0%  RAISE@7.5=98.9%  ALL_IN@100=0.1%
+        22   FOLD=0.1%  CALL@2.5=99.8%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+        72o  FOLD=54.8%  CALL@2.5=45.1%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX BTN vs CO Open] ✅ 0.0 秒 · 行动者 BTN
+      场景：4 人桌 / 100BB / BTN / VS_OPEN（CO 加注到 2.5BB）
+      哈希 g63d11521
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=1.1%  RAISE@7.5=82.1%  ALL_IN@100=16.8%
+        AKs  FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=99.6%  ALL_IN@100=0.4%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.7%  ALL_IN@100=0.3%
+        A5s  FOLD=70.1%  CALL@2.5=0.6%  RAISE@7.5=1.1%  ALL_IN@100=28.2%
+        A5o  FOLD=99.5%  CALL@2.5=0.1%  RAISE@7.5=0.4%  ALL_IN@100=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=0.7%  RAISE@7.5=99.3%  ALL_IN@100=0.0%
+        22   FOLD=99.3%  CALL@2.5=0.0%  RAISE@7.5=0.7%  ALL_IN@100=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX SB vs CO Open] ✅ 0.0 秒 · 行动者 SB
+      场景：4 人桌 / 100BB / SB / VS_OPEN（CO 加注到 2.5BB → BTN 弃牌）
+      哈希 gb156ec28
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=0.0%  ALL_IN@100=99.9%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.2%  ALL_IN@100=0.8%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.6%  ALL_IN@100=0.3%
+        A5s  FOLD=4.7%  CALL@2.5=56.5%  RAISE@7.5=0.4%  ALL_IN@100=38.4%
+        A5o  FOLD=63.8%  CALL@2.5=34.9%  RAISE@7.5=0.2%  ALL_IN@100=1.1%
+        KQs  FOLD=0.0%  CALL@2.5=79.4%  RAISE@7.5=20.6%  ALL_IN@100=0.0%
+        22   FOLD=9.6%  CALL@2.5=90.1%  RAISE@7.5=0.2%  ALL_IN@100=0.1%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX BB vs CO Open] ✅ 0.1 秒 · 行动者 BB
+      场景：4 人桌 / 100BB / BB / VS_OPEN（CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 gba5790d6
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=82.0%  ALL_IN@100=18.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.5%  RAISE@7.5=90.0%  ALL_IN@100=9.5%
+        A5s  FOLD=1.3%  CALL@2.5=76.3%  RAISE@7.5=2.0%  ALL_IN@100=20.5%
+        A5o  FOLD=3.9%  CALL@2.5=92.2%  RAISE@7.5=1.4%  ALL_IN@100=2.5%
+        KQs  FOLD=0.0%  CALL@2.5=65.9%  RAISE@7.5=33.8%  ALL_IN@100=0.3%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+        72o  FOLD=66.5%  CALL@2.5=33.4%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX BB vs CO Open（首位开池）] ✅ 0.0 秒 · 行动者 BB
+      场景：4 人桌 / 100BB / BB / VS_OPEN（CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 g46db67d7
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.03412694 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=82.0%  ALL_IN@100=18.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.5%  RAISE@7.5=90.0%  ALL_IN@100=9.5%
+        A5s  FOLD=1.3%  CALL@2.5=76.3%  RAISE@7.5=2.0%  ALL_IN@100=20.5%
+        A5o  FOLD=3.9%  CALL@2.5=92.2%  RAISE@7.5=1.4%  ALL_IN@100=2.5%
+        KQs  FOLD=0.0%  CALL@2.5=65.9%  RAISE@7.5=33.8%  ALL_IN@100=0.3%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+        72o  FOLD=66.5%  CALL@2.5=33.4%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [4MAX BB vs 3Bet] ⛔ 本项目无法表达：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+
+  [4MAX SB vs 4Bet] ⛔ 本项目无法表达：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+
+──────── 6 人桌 ────────
+  [6MAX SB vs BTN Open] ✅ 54.0 秒 · 行动者 SB
+      场景：6 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB）
+      哈希 gc0c677c0
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=3.2%  RAISE@7.5=0.0%  ALL_IN@100=96.8%
+        AKs  FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=83.9%  ALL_IN@100=16.1%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=92.2%  ALL_IN@100=7.8%
+        A5s  FOLD=1.9%  CALL@2.5=60.6%  RAISE@7.5=12.2%  ALL_IN@100=25.3%
+        A5o  FOLD=33.1%  CALL@2.5=56.6%  RAISE@7.5=1.2%  ALL_IN@100=9.1%
+        KQs  FOLD=0.0%  CALL@2.5=6.2%  RAISE@7.5=93.8%  ALL_IN@100=0.0%
+        22   FOLD=5.8%  CALL@2.5=93.3%  RAISE@7.5=0.8%  ALL_IN@100=0.1%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX BB vs BTN Open] ✅ 0.1 秒 · 行动者 BB
+      场景：6 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB → SB 弃牌）
+      哈希 g788a1ca6
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=98.4%  ALL_IN@100=1.6%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.1%  ALL_IN@100=0.9%
+        A5s  FOLD=0.0%  CALL@2.5=5.2%  RAISE@7.5=0.1%  ALL_IN@100=94.7%
+        A5o  FOLD=0.1%  CALL@2.5=99.6%  RAISE@7.5=0.2%  ALL_IN@100=0.1%
+        KQs  FOLD=0.0%  CALL@2.5=1.8%  RAISE@7.5=98.1%  ALL_IN@100=0.1%
+        22   FOLD=0.2%  CALL@2.5=99.5%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+        72o  FOLD=53.2%  CALL@2.5=46.5%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX BTN vs CO Open] ✅ 0.0 秒 · 行动者 BTN
+      场景：6 人桌 / 100BB / BTN / VS_OPEN（UTG 弃牌 → HJ 弃牌 → CO 加注到 2.5BB）
+      哈希 gd46f433f
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=11.7%  RAISE@7.5=14.6%  ALL_IN@100=73.8%
+        AKs  FOLD=0.0%  CALL@2.5=0.5%  RAISE@7.5=93.0%  ALL_IN@100=6.5%
+        AKo  FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=96.4%  ALL_IN@100=3.5%
+        A5s  FOLD=55.0%  CALL@2.5=14.3%  RAISE@7.5=14.5%  ALL_IN@100=16.2%
+        A5o  FOLD=97.9%  CALL@2.5=0.6%  RAISE@7.5=0.9%  ALL_IN@100=0.6%
+        KQs  FOLD=0.0%  CALL@2.5=2.4%  RAISE@7.5=97.5%  ALL_IN@100=0.0%
+        22   FOLD=97.8%  CALL@2.5=0.5%  RAISE@7.5=1.5%  ALL_IN@100=0.2%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX SB vs CO Open] ✅ 0.1 秒 · 行动者 SB
+      场景：6 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌）
+      哈希 gb7c3a920
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.4%  RAISE@7.5=0.1%  ALL_IN@100=99.5%
+        AKs  FOLD=0.0%  CALL@2.5=0.3%  RAISE@7.5=94.0%  ALL_IN@100=5.7%
+        AKo  FOLD=0.0%  CALL@2.5=0.3%  RAISE@7.5=97.3%  ALL_IN@100=2.4%
+        A5s  FOLD=15.6%  CALL@2.5=56.9%  RAISE@7.5=1.6%  ALL_IN@100=25.8%
+        A5o  FOLD=54.1%  CALL@2.5=37.5%  RAISE@7.5=0.4%  ALL_IN@100=8.1%
+        KQs  FOLD=0.0%  CALL@2.5=93.9%  RAISE@7.5=6.1%  ALL_IN@100=0.0%
+        22   FOLD=15.5%  CALL@2.5=84.1%  RAISE@7.5=0.4%  ALL_IN@100=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX BB vs CO Open] ✅ 0.1 秒 · 行动者 BB
+      场景：6 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 geb80f2fc
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=61.5%  ALL_IN@100=38.4%
+        AKo  FOLD=0.0%  CALL@2.5=2.8%  RAISE@7.5=78.5%  ALL_IN@100=18.7%
+        A5s  FOLD=2.5%  CALL@2.5=81.8%  RAISE@7.5=2.9%  ALL_IN@100=12.8%
+        A5o  FOLD=3.1%  CALL@2.5=93.3%  RAISE@7.5=1.1%  ALL_IN@100=2.4%
+        KQs  FOLD=0.0%  CALL@2.5=90.8%  RAISE@7.5=8.9%  ALL_IN@100=0.3%
+        22   FOLD=0.3%  CALL@2.5=99.5%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+        72o  FOLD=58.3%  CALL@2.5=41.4%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX BB vs UTG Open（首位开池）] ✅ 0.1 秒 · 行动者 BB
+      场景：6 人桌 / 100BB / BB / VS_OPEN（UTG 加注到 2.5BB → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌）
+      哈希 gab1b5b13
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 40 / 请求 40 · gap 0.16526006 · 目标 0.2 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=8.2%  ALL_IN@100=91.8%
+        AKs  FOLD=0.0%  CALL@2.5=3.0%  RAISE@7.5=81.9%  ALL_IN@100=15.0%
+        AKo  FOLD=0.0%  CALL@2.5=2.5%  RAISE@7.5=90.3%  ALL_IN@100=7.2%
+        A5s  FOLD=35.1%  CALL@2.5=58.7%  RAISE@7.5=4.4%  ALL_IN@100=1.9%
+        A5o  FOLD=26.4%  CALL@2.5=72.8%  RAISE@7.5=0.5%  ALL_IN@100=0.3%
+        KQs  FOLD=1.2%  CALL@2.5=95.0%  RAISE@7.5=2.1%  ALL_IN@100=1.7%
+        22   FOLD=0.0%  CALL@2.5=99.9%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+        72o  FOLD=88.4%  CALL@2.5=11.5%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [6MAX BB vs 3Bet] ⛔ 本项目无法表达：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+
+  [6MAX SB vs 4Bet] ⛔ 本项目无法表达：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+
+──────── 5 人桌 ────────
+  [5MAX SB vs BTN Open] ✅ 17.3 秒 · 行动者 SB
+      场景：5 人桌 / 100BB / SB / VS_OPEN（HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB）
+      哈希 g6345f97b
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.2%  RAISE@7.5=0.0%  ALL_IN@100=99.8%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=97.5%  ALL_IN@100=2.5%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=98.9%  ALL_IN@100=1.1%
+        A5s  FOLD=0.6%  CALL@2.5=48.1%  RAISE@7.5=2.3%  ALL_IN@100=49.0%
+        A5o  FOLD=25.4%  CALL@2.5=68.6%  RAISE@7.5=0.4%  ALL_IN@100=5.6%
+        KQs  FOLD=0.0%  CALL@2.5=4.9%  RAISE@7.5=95.1%  ALL_IN@100=0.0%
+        22   FOLD=2.6%  CALL@2.5=97.0%  RAISE@7.5=0.3%  ALL_IN@100=0.1%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX BB vs BTN Open] ✅ 0.1 秒 · 行动者 BB
+      场景：5 人桌 / 100BB / BB / VS_OPEN（HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB → SB 弃牌）
+      哈希 gc896771f
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.4%  ALL_IN@100=0.6%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.6%  ALL_IN@100=0.4%
+        A5s  FOLD=0.0%  CALL@2.5=30.3%  RAISE@7.5=0.6%  ALL_IN@100=69.1%
+        A5o  FOLD=0.0%  CALL@2.5=99.4%  RAISE@7.5=0.0%  ALL_IN@100=0.6%
+        KQs  FOLD=0.0%  CALL@2.5=0.7%  RAISE@7.5=99.2%  ALL_IN@100=0.0%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+        72o  FOLD=54.9%  CALL@2.5=45.0%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX BTN vs CO Open] ✅ 0.0 秒 · 行动者 BTN
+      场景：5 人桌 / 100BB / BTN / VS_OPEN（HJ 弃牌 → CO 加注到 2.5BB）
+      哈希 g9980ecc8
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=2.2%  RAISE@7.5=44.9%  ALL_IN@100=52.8%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=92.3%  ALL_IN@100=7.7%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=96.1%  ALL_IN@100=3.9%
+        A5s  FOLD=71.6%  CALL@2.5=6.9%  RAISE@7.5=6.9%  ALL_IN@100=14.5%
+        A5o  FOLD=99.2%  CALL@2.5=0.1%  RAISE@7.5=0.3%  ALL_IN@100=0.4%
+        KQs  FOLD=0.0%  CALL@2.5=1.4%  RAISE@7.5=98.6%  ALL_IN@100=0.0%
+        22   FOLD=99.4%  CALL@2.5=0.1%  RAISE@7.5=0.4%  ALL_IN@100=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX SB vs CO Open] ✅ 0.0 秒 · 行动者 SB
+      场景：5 人桌 / 100BB / SB / VS_OPEN（HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌）
+      哈希 g0c8377e1
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=0.0%  ALL_IN@100=99.9%
+        AKs  FOLD=0.0%  CALL@2.5=0.6%  RAISE@7.5=96.7%  ALL_IN@100=2.7%
+        AKo  FOLD=0.0%  CALL@2.5=0.8%  RAISE@7.5=97.9%  ALL_IN@100=1.3%
+        A5s  FOLD=3.4%  CALL@2.5=51.5%  RAISE@7.5=0.3%  ALL_IN@100=44.7%
+        A5o  FOLD=60.4%  CALL@2.5=37.1%  RAISE@7.5=0.2%  ALL_IN@100=2.3%
+        KQs  FOLD=0.0%  CALL@2.5=59.9%  RAISE@7.5=40.0%  ALL_IN@100=0.0%
+        22   FOLD=12.7%  CALL@2.5=87.0%  RAISE@7.5=0.2%  ALL_IN@100=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX BB vs CO Open] ✅ 0.1 秒 · 行动者 BB
+      场景：5 人桌 / 100BB / BB / VS_OPEN（HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 gc4056427
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%  ALL_IN@100=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.2%  RAISE@7.5=82.3%  ALL_IN@100=17.5%
+        AKo  FOLD=0.0%  CALL@2.5=2.0%  RAISE@7.5=89.4%  ALL_IN@100=8.7%
+        A5s  FOLD=1.6%  CALL@2.5=73.3%  RAISE@7.5=1.2%  ALL_IN@100=23.9%
+        A5o  FOLD=1.6%  CALL@2.5=96.5%  RAISE@7.5=0.4%  ALL_IN@100=1.5%
+        KQs  FOLD=0.0%  CALL@2.5=89.3%  RAISE@7.5=10.5%  ALL_IN@100=0.2%
+        22   FOLD=0.6%  CALL@2.5=99.0%  RAISE@7.5=0.3%  ALL_IN@100=0.1%
+        72o  FOLD=62.2%  CALL@2.5=37.7%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX BB vs HJ Open（首位开池）] ✅ 0.1 秒 · 行动者 BB
+      场景：5 人桌 / 100BB / BB / VS_OPEN（HJ 加注到 2.5BB → CO 弃牌 → BTN 弃牌 → SB 弃牌）
+      哈希 ga3022796
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+      迭代 60 / 请求 60 · gap 0.08084305 · 目标 0.1 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=0.4%  ALL_IN@100=99.6%
+        AKs  FOLD=0.0%  CALL@2.5=1.9%  RAISE@7.5=90.4%  ALL_IN@100=7.7%
+        AKo  FOLD=0.0%  CALL@2.5=3.5%  RAISE@7.5=92.4%  ALL_IN@100=4.1%
+        A5s  FOLD=0.6%  CALL@2.5=82.3%  RAISE@7.5=0.2%  ALL_IN@100=16.8%
+        A5o  FOLD=0.6%  CALL@2.5=99.2%  RAISE@7.5=0.1%  ALL_IN@100=0.2%
+        KQs  FOLD=0.0%  CALL@2.5=99.1%  RAISE@7.5=0.7%  ALL_IN@100=0.2%
+        22   FOLD=0.0%  CALL@2.5=99.9%  RAISE@7.5=0.0%  ALL_IN@100=0.1%
+        72o  FOLD=91.1%  CALL@2.5=8.8%  RAISE@7.5=0.1%  ALL_IN@100=0.0%
+      169 类里混合策略 169 个
+
+  [5MAX BB vs 3Bet] ⛔ 本项目无法表达：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+
+  [5MAX SB vs 4Bet] ⛔ 本项目无法表达：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+
+──────── 8 人桌 ────────
+  [8MAX SB vs BTN Open] ✅ 99.8 秒 · 行动者 SB
+      场景：8 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB）
+      哈希 ge422447b
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        A5s  FOLD=0.0%  CALL@2.5=99.7%  RAISE@7.5=0.3%
+        A5o  FOLD=0.2%  CALL@2.5=99.6%  RAISE@7.5=0.2%
+        KQs  FOLD=0.0%  CALL@2.5=6.5%  RAISE@7.5=93.5%
+        22   FOLD=0.1%  CALL@2.5=99.8%  RAISE@7.5=0.2%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX BB vs BTN Open] ✅ 0.1 秒 · 行动者 BB
+      场景：8 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB → SB 弃牌）
+      哈希 g50b18b73
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        A5s  FOLD=0.0%  CALL@2.5=99.9%  RAISE@7.5=0.0%
+        A5o  FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        22   FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        72o  FOLD=98.6%  CALL@2.5=1.3%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX BTN vs CO Open] ✅ 0.1 秒 · 行动者 BTN
+      场景：8 人桌 / 100BB / BTN / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB）
+      哈希 g60884940
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        A5s  FOLD=98.6%  CALL@2.5=1.1%  RAISE@7.5=0.3%
+        A5o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=0.3%  RAISE@7.5=99.7%
+        22   FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX SB vs CO Open] ✅ 0.1 秒 · 行动者 SB
+      场景：8 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌）
+      哈希 gbfd06d2f
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        A5s  FOLD=0.1%  CALL@2.5=99.8%  RAISE@7.5=0.1%
+        A5o  FOLD=97.7%  CALL@2.5=2.3%  RAISE@7.5=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=91.7%  RAISE@7.5=8.3%
+        22   FOLD=0.2%  CALL@2.5=99.8%  RAISE@7.5=0.0%
+        72o  FOLD=100.0%  CALL@2.5=0.0%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX BB vs CO Open] ✅ 0.1 秒 · 行动者 BB
+      场景：8 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 g8759c605
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        A5s  FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        A5o  FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=1.5%  RAISE@7.5=98.5%
+        22   FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        72o  FOLD=99.6%  CALL@2.5=0.3%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX BB vs UTG Open（首位开池）] ✅ 0.1 秒 · 行动者 BB
+      场景：8 人桌 / 100BB / BB / VS_OPEN（UTG 加注到 2.5BB → UTG1 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌）
+      哈希 g49f19396
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 20 / 请求 20 · gap 0.00417911 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKs  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=100.0%
+        AKo  FOLD=0.0%  CALL@2.5=0.0%  RAISE@7.5=99.9%
+        A5s  FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        A5o  FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        KQs  FOLD=0.0%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        22   FOLD=0.0%  CALL@2.5=100.0%  RAISE@7.5=0.0%
+        72o  FOLD=99.8%  CALL@2.5=0.2%  RAISE@7.5=0.0%
+      169 类里混合策略 169 个
+
+  [8MAX BB vs 3Bet] ⛔ 本项目无法表达：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+
+  [8MAX SB vs 4Bet] ⛔ 本项目无法表达：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+
+──────── 9 人桌 ────────
+  [9MAX SB vs BTN Open] ✅ 185.2 秒 · 行动者 SB
+      场景：9 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB）
+      哈希 ged093cce
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKo  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        A5s  FOLD=0.1%  CALL@2.5=98.8%  RAISE@7.5=1.1%
+        A5o  FOLD=1.1%  CALL@2.5=98.2%  RAISE@7.5=0.7%
+        KQs  FOLD=0.1%  CALL@2.5=21.7%  RAISE@7.5=78.3%
+        22   FOLD=0.3%  CALL@2.5=98.9%  RAISE@7.5=0.7%
+        72o  FOLD=99.8%  CALL@2.5=0.1%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX BB vs BTN Open] ✅ 0.1 秒 · 行动者 BB
+      场景：9 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 加注到 2.5BB → SB 弃牌）
+      哈希 g768aacde
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.8%
+        AKo  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.8%
+        A5s  FOLD=0.1%  CALL@2.5=99.8%  RAISE@7.5=0.2%
+        A5o  FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        KQs  FOLD=0.1%  CALL@2.5=0.4%  RAISE@7.5=99.6%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        72o  FOLD=94.7%  CALL@2.5=5.3%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX BTN vs CO Open] ✅ 0.1 秒 · 行动者 BTN
+      场景：9 人桌 / 100BB / BTN / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB）
+      哈希 gae1a191b
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKo  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        A5s  FOLD=93.7%  CALL@2.5=5.1%  RAISE@7.5=1.2%
+        A5o  FOLD=99.9%  CALL@2.5=0.1%  RAISE@7.5=0.1%
+        KQs  FOLD=0.1%  CALL@2.5=1.5%  RAISE@7.5=98.4%
+        22   FOLD=99.8%  CALL@2.5=0.1%  RAISE@7.5=0.1%
+        72o  FOLD=99.9%  CALL@2.5=0.1%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX SB vs CO Open] ✅ 0.1 秒 · 行动者 SB
+      场景：9 人桌 / 100BB / SB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌）
+      哈希 gd2beb0cc
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKo  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        A5s  FOLD=0.5%  CALL@2.5=98.9%  RAISE@7.5=0.6%
+        A5o  FOLD=90.7%  CALL@2.5=9.3%  RAISE@7.5=0.1%
+        KQs  FOLD=0.1%  CALL@2.5=98.7%  RAISE@7.5=1.2%
+        22   FOLD=0.9%  CALL@2.5=99.1%  RAISE@7.5=0.1%
+        72o  FOLD=99.8%  CALL@2.5=0.1%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX BB vs CO Open] ✅ 0.1 秒 · 行动者 BB
+      场景：9 人桌 / 100BB / BB / VS_OPEN（UTG 弃牌 → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 加注到 2.5BB → BTN 弃牌 → SB 弃牌）
+      哈希 g535d1ac6
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.8%
+        AKo  FOLD=0.1%  CALL@2.5=0.2%  RAISE@7.5=99.8%
+        A5s  FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        A5o  FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        KQs  FOLD=0.1%  CALL@2.5=5.5%  RAISE@7.5=94.4%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        72o  FOLD=98.5%  CALL@2.5=1.4%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX BB vs UTG Open（首位开池）] ✅ 0.1 秒 · 行动者 BB
+      场景：9 人桌 / 100BB / BB / VS_OPEN（UTG 加注到 2.5BB → UTG1 弃牌 → UTG2 弃牌 → LJ 弃牌 → HJ 弃牌 → CO 弃牌 → BTN 弃牌 → SB 弃牌）
+      哈希 g34fedac1
+      菜单：FOLD · CALL@2.5BB · RAISE@7.5BB
+      迭代 12 / 请求 12 · gap 0.02102956 · 目标 0.05 · 状态 SOLVED
+        AA   FOLD=0.1%  CALL@2.5=0.1%  RAISE@7.5=99.9%
+        AKs  FOLD=0.1%  CALL@2.5=0.2%  RAISE@7.5=99.8%
+        AKo  FOLD=0.1%  CALL@2.5=3.0%  RAISE@7.5=96.9%
+        A5s  FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        A5o  FOLD=0.1%  CALL@2.5=99.8%  RAISE@7.5=0.1%
+        KQs  FOLD=0.1%  CALL@2.5=88.9%  RAISE@7.5=11.1%
+        22   FOLD=0.1%  CALL@2.5=99.9%  RAISE@7.5=0.1%
+        72o  FOLD=99.2%  CALL@2.5=0.7%  RAISE@7.5=0.1%
+      169 类里混合策略 169 个
+
+  [9MAX BB vs 3Bet] ⛔ 本项目无法表达：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+
+  [9MAX SB vs 4Bet] ⛔ 本项目无法表达：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+
+================================================================
+汇总
+----------------------------------------------------------------
+✅ 4MAX SB vs BTN Open             2.7s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 4MAX BB vs BTN Open             0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 4MAX BTN vs CO Open             0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 4MAX SB vs CO Open              0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 4MAX BB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 4MAX BB vs CO Open（首位开池）        0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+⛔ 4MAX BB vs 3Bet                    —  —
+     原因：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+⛔ 4MAX SB vs 4Bet                    —  —
+     原因：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+✅ 6MAX SB vs BTN Open            54.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 6MAX BB vs BTN Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 6MAX BTN vs CO Open             0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 6MAX SB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 6MAX BB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 6MAX BB vs UTG Open（首位开池）       0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+⛔ 6MAX BB vs 3Bet                    —  —
+     原因：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+⛔ 6MAX SB vs 4Bet                    —  —
+     原因：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+✅ 5MAX SB vs BTN Open            17.3s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 5MAX BB vs BTN Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 5MAX BTN vs CO Open             0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 5MAX SB vs CO Open              0.0s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 5MAX BB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+✅ 5MAX BB vs HJ Open（首位开池）        0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB · ALL_IN@100BB
+⛔ 5MAX BB vs 3Bet                    —  —
+     原因：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+⛔ 5MAX SB vs 4Bet                    —  —
+     原因：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+✅ 8MAX SB vs BTN Open            99.8s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 8MAX BB vs BTN Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 8MAX BTN vs CO Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 8MAX SB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 8MAX BB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 8MAX BB vs UTG Open（首位开池）       0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+⛔ 8MAX BB vs 3Bet                    —  —
+     原因：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+⛔ 8MAX SB vs 4Bet                    —  —
+     原因：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+✅ 9MAX SB vs BTN Open           185.2s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 9MAX BB vs BTN Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 9MAX BTN vs CO Open             0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 9MAX SB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 9MAX BB vs CO Open              0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+✅ 9MAX BB vs UTG Open（首位开池）       0.1s  FOLD · CALL@2.5BB · RAISE@7.5BB
+⛔ 9MAX BB vs 3Bet                    —  —
+     原因：本项目当前的场景模型只能表达「Hero 是当前行动者」，而「Hero 开池后被 3Bet，再轮到 Hero」需要「Hero 已经行动过」这种形态。树里**存在**这个节点（求解器支持），是我们的场景结构暂时表达不了它 —— 因此标为未支持，而不是伪造一条路径。
+⛔ 9MAX SB vs 4Bet                    —  —
+     原因：「面对 4Bet」需要动作树支持 3 次加注（开池 + 3Bet + 4Bet），而本阶段的生产配置是 max_raises = 2。树里根本没有这条路径 —— 因此标为未支持，不用相近场景顶替。（把 max_raises 提到 3 并接受更长的求解时间后，本模板即可用。）
+----------------------------------------------------------------
+成功 30 / 共 40
+其中 VS_OPEN 30 条
+其中 3Bet 0 条
+不支持 10 条（原因逐条列在上面）
+================================================================
+证据文件: D:\德州\reports\evidence\gto-extended-live-evidence.txt

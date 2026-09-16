@@ -1,0 +1,951 @@
+{
+  "manifestVersion": "1.0.0",
+  "generatedAt": "2026-09-16",
+  "generator": "npm run manifest（src/infra/artifactManifest.ts）",
+  "exclusions": [
+    {
+      "path": "data/artifact-manifest.json",
+      "reason": "清单无法包含自身的哈希（自指）。因此它由定义表 + 文件系统共同决定，无需自绑定"
+    }
+  ],
+  "entries": [
+    {
+      "path": "data/knowledge/source-registry.json",
+      "category": "KNOWLEDGE",
+      "sha256": "b4e7f0e85fb00ec00b3772b5a93bf3ffc095f95a3953b479d75351c7e8606c17",
+      "bytes": 21981,
+      "impact": "知识来源注册表变化 → 某条策略结论的出处、许可证门禁或可推导性发生变化"
+    },
+    {
+      "path": "data/knowledge/strategy-rules.json",
+      "category": "KNOWLEDGE",
+      "sha256": "08786052f4311a3a6b11cc0b9b4a4f6e0615232d8d5a8d1286352f168e76836e",
+      "bytes": 24492,
+      "impact": "策略规则变化 → 方向性调整（或未来的幅度）发生变化，直接影响建议"
+    },
+    {
+      "path": "docs/KNOWLEDGE_POLICY.md",
+      "category": "KNOWLEDGE",
+      "sha256": "d079c2d1abcdd6b24bfa63d5cc3d517aac25c5e663d6fe3e14805c2faf42a312",
+      "bytes": 10496,
+      "impact": "知识政策变化 → 来源优先级链或使用纪律发生变化"
+    },
+    {
+      "path": "src/domain/knowledge/knowledge.types.ts",
+      "category": "KNOWLEDGE",
+      "sha256": "9a372696dd1bb1a6372f1840ae63c0b322bdd010f8615a3c307b4d666bd3734d",
+      "bytes": 23783,
+      "impact": "知识类型与校验变化 → 许可证门禁或「不编造」硬校验的强度发生变化"
+    },
+    {
+      "path": "src/domain/knowledge/knowledge.ts",
+      "category": "KNOWLEDGE",
+      "sha256": "dabbcf70154ed0e828652b4d99db51d24d4d33fb1f2d92801bf1d18d58ffc89e",
+      "bytes": 20786,
+      "impact": "知识加载与索引变化 → 校验严格程度或查询语义发生变化"
+    },
+    {
+      "path": "src/domain/knowledge/knowledgeLoader.ts",
+      "category": "KNOWLEDGE",
+      "sha256": "98b1b6e25efe7c453be91a01426a986c3e6ca03c42f78ac9272b2d276945fa58",
+      "bytes": 5613,
+      "impact": "知识文件加载变化 → Fail-Closed 行为或 BOM 容忍度发生变化"
+    },
+    {
+      "path": "src/domain/range/gameEnvironment.ts",
+      "category": "ENVIRONMENT",
+      "sha256": "6dda60d4997131c6afea6f1dfa1604af43a70a9ab2b7cdc5d2f6ddff60d525dd",
+      "bytes": 16989,
+      "impact": "**环境参数变化 → 三种模式的范围/似然调整幅度变化，直接影响建议**（这是「昨天 CALL 今天 FOLD」最可能的来源之一）"
+    },
+    {
+      "path": "src/domain/range/range.types.ts",
+      "category": "RANGE",
+      "sha256": "899410d70eae2da90133f9783072e18f0ffbd661ebe5ec2c83c45687aff70d6c",
+      "bytes": 15786,
+      "impact": "范围类型与 EPSILON 变化 → 归一化容差与来源语义发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeUpdate.ts",
+      "category": "RANGE",
+      "sha256": "1c71d65c45f151b3f5d8edcda067973753fbfedf879bf408717333e1162f9826",
+      "bytes": 26090,
+      "impact": "贝叶斯更新变化 → 后验范围计算方式或外部调整者的接入方式发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeLogSpace.ts",
+      "category": "RANGE",
+      "sha256": "7fbf5b99529eb6fd392596f5be25780a32c9d8b57851b8731b2f689ab6b210f3",
+      "bytes": 11070,
+      "impact": "对数域归一化变化 → 极端似然下的数值行为发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeNormalize.ts",
+      "category": "RANGE",
+      "sha256": "8719dc26ea08e886a258f442b1cf31a039eadf532d646118b7f283095c01dcfa",
+      "bytes": 6810,
+      "impact": "归一化策略变化 → 权重到概率的映射发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeProvenance.ts",
+      "category": "RANGE",
+      "sha256": "b5c6a5d2bd8eb007307504f53cc90d03fadd2d721adf072d5bf24523e829cc35",
+      "bytes": 7979,
+      "impact": "来源校验与可信度上限变化 → 范围可信度判定发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeValidator.ts",
+      "category": "RANGE",
+      "sha256": "f403dd56d565891ff288663ba4d7b73314110f697b55a39ed6ef0de8aef42feb",
+      "bytes": 8579,
+      "impact": "范围校验变化 → 非法范围的拦截范围发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeMetrics.ts",
+      "category": "RANGE",
+      "sha256": "fbc940a9b029c3d2479d03cbe3cfeb572cfd6f7050342234181a695a57cf7f03",
+      "bytes": 9140,
+      "impact": "范围度量变化 → 收窄程度与 KL 散度的计算发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeBlockers.ts",
+      "category": "RANGE",
+      "sha256": "10aa44ac3662d7004fc500a52bc26ebb94341a3efae48d413983623249f71477",
+      "bytes": 7541,
+      "impact": "死牌过滤变化 → 被阻断组合的判定发生变化"
+    },
+    {
+      "path": "src/domain/range/range.ts",
+      "category": "RANGE",
+      "sha256": "0566288dc3a2603e18a0dd7cdfe9f462bb818289d21d2d360b5ba439d69cff4d",
+      "bytes": 13802,
+      "impact": "范围构建变化 → 初始权重与冻结行为发生变化"
+    },
+    {
+      "path": "src/domain/range/rangeCache.ts",
+      "category": "RANGE",
+      "sha256": "ccd51dbb7fc52a2b5e8c5ffee3d5bc0b7120f476dd061345c7eb2a42b5f70296",
+      "bytes": 8505,
+      "impact": "范围缓存变化 → 缓存 key 与失效行为发生变化"
+    },
+    {
+      "path": "src/domain/range/combo.ts",
+      "category": "RANGE",
+      "sha256": "0352bb477892433d32e635a95585939f1bf222937a5e16ba62ede8cf3bdd3072",
+      "bytes": 9950,
+      "impact": "组合宇宙变化 → 1326 组合的 id / 类别 / 索引发生变化"
+    },
+    {
+      "path": "src/domain/range/handPotential.ts",
+      "category": "RANGE",
+      "sha256": "be9888cb305c59a2a94e0130b479d46d9a6c82b2cbed9e405ca2028806d71155",
+      "bytes": 3206,
+      "impact": "手牌潜力标尺变化 → 画像调整的强度梯度发生变化"
+    },
+    {
+      "path": "src/domain/range/profileProvider.ts",
+      "category": "RANGE",
+      "sha256": "df4bfc073e61009980a35b1b0c30dd7315556b64886f596c7ba72ea98802811d",
+      "bytes": 20833,
+      "impact": "画像/环境到范围的桥接变化 → 调整因子的计算与归一化方式发生变化"
+    },
+    {
+      "path": "src/domain/player/player.types.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "bbec252ae5f92ecc169bb46f431d907df940d54fe5220dc572e456dec3c677a2",
+      "bytes": 14634,
+      "impact": "指标定义与先验表变化 → 所有指标的收缩目标发生变化"
+    },
+    {
+      "path": "src/domain/player/playerStats.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "8dfcafe13f08817b32fd06366a889eea703cd3e02b3ecc41bc2f267daad5dd2b",
+      "bytes": 15264,
+      "impact": "统计机制变化（衰减 / 有效样本量 / 单手影响上限 / 收缩）→ **所有画像数值发生变化**"
+    },
+    {
+      "path": "src/domain/player/playerProfile.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "2c71a2a2fa1497eb074b54150244a7f4e602260da575709e0ab5cf3cf8dad3fe",
+      "bytes": 21456,
+      "impact": "画像引擎变化 → 幂等、修正历史、冻结行为或 seq 校验发生变化"
+    },
+    {
+      "path": "src/domain/player/playerClassifier.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "7da99c130e4172c421b3254a84bc1329ea80d99cfcd92bc6f57ea97b74cbdb2a",
+      "bytes": 19492,
+      "impact": "分类与调整因子变化（含维度中立点、标签阈值）→ **画像对范围的影响幅度发生变化**"
+    },
+    {
+      "path": "src/domain/dynamic/dynamic.types.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "47813523c8feda2efc2a958f19b9bc89b9716a27728a4499ed88c827dfcb678b",
+      "bytes": 27981,
+      "impact": "动态行为的类型、9 状态集合、组上限与**收缩/置信度刻度**变化 → 所有动态判定阈值发生变化（该文件改动必须升 `DYNAMIC_MODEL_VERSION`）"
+    },
+    {
+      "path": "src/domain/dynamic/dynamicStats.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "c04886808748a4c9ac240abe0aed0ae45f6db31aa9a9d7abf6b94ec7e694af0e",
+      "bytes": 24497,
+      "impact": "窗口统计变化（规范化 / 机会感知分母 / 向基线收缩强度）→ **近期行为率的估计值发生变化**"
+    },
+    {
+      "path": "src/domain/dynamic/dynamicDeviation.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "79fb6714ad5f899481d16188776ad2855517e7856b1f78cec6a2f809163542d5",
+      "bytes": 22066,
+      "impact": "偏差计算变化（有界归一化 / 组聚合 / 方向噪声检验）→ **DeviationScore 与方向判定发生变化**"
+    },
+    {
+      "path": "src/domain/dynamic/dynamicBehavior.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "607ef489d2d0736cbb911bf169c8a361a2f1a34010ae5ba6c9cbfac783f371ab",
+      "bytes": 42132,
+      "impact": "动态主引擎变化（状态推导 / 置信度 / 上下文锚点 / 人工 Hint）→ **输出状态与调整方向发生变化**"
+    },
+    {
+      "path": "src/domain/dynamic/dynamicAdapter.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "292f4b771e7ac4d3e77259b5d6abd443e4442d9f2858ffbe14cdf791dc016511",
+      "bytes": 9166,
+      "impact": "适配层变化（UNVERIFIED_MAGNITUDE 幅度）→ 下游可用的乘数发生变化（**该幅度未经校验，不得冒充已校准参数**）"
+    },
+    {
+      "path": "src/domain/environment/environmentAccess.ts",
+      "category": "ENVIRONMENT",
+      "sha256": "1cfc49c68f265728479b8bfd4decde6860528dbada1719b0ceab2e3cccfa4fd4",
+      "bytes": 15035,
+      "impact": "环境接入层变化（规则目标映射 / 优先级裁决）→ **环境方向建议的集合发生变化**（该层不得输出任何幅度）"
+    },
+    {
+      "path": "src/domain/decision/decision.types.ts",
+      "category": "DECISION",
+      "sha256": "8db882c164c8e681bbb0b3a5c4411826e8bd21fc391e38919fded05106a686f6",
+      "bytes": 46211,
+      "impact": "决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ **所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）"
+    },
+    {
+      "path": "src/app/manualInput/preflopPriors.ts",
+      "category": "RANGE",
+      "sha256": "0d366a247be7c94b7acc9a62b756d9ef9bfbab09ec6eae04e851b6aba44f467d",
+      "bytes": 38018,
+      "impact": "启发式翻牌前范围先验变化 → **对手范围形状与权益估计发生变化**（该数据**不是**求解器输出，改动必须同步更新 provenance 说明）"
+    },
+    {
+      "path": "src/app/manualInput/likelihoodModel.ts",
+      "category": "RANGE",
+      "sha256": "867739c74e1a1dae5c9eae2fff76f0e0e1676946b6b05f1e535b86e19ffb23f5",
+      "bytes": 25213,
+      "impact": "启发式似然模型变化（档位权重 / 归一化 / 下限）→ **行动历史对范围的收缩方式发生变化**"
+    },
+    {
+      "path": "src/app/manualInput/manualInput.ts",
+      "category": "DECISION",
+      "sha256": "2c4599a06cb3083e32df7cad7b79ae016cd34bf2d1639ede44875d1a2c387dc2",
+      "bytes": 34038,
+      "impact": "手动输入结构变化（字段 / 牌面格式 / 街道与公共牌约束）→ **输入解析与校验行为发生变化**（影响所有录入路径）"
+    },
+    {
+      "path": "src/app/manualInput/reconstruct.ts",
+      "category": "DECISION",
+      "sha256": "b4391348bb9fed3249934037dc0b3925a1930b23bd58da553e0ed2080dec660a",
+      "bytes": 35056,
+      "impact": "输入 → 牌局状态重建变化（行动重放 / 街道推进 / 决策点检查 / 底池对照）→ **哪些输入被接受、哪些被阻断发生变化**"
+    },
+    {
+      "path": "src/app/manualInput/legalActions.ts",
+      "category": "DECISION",
+      "sha256": "918673605cd25c53fe7587282668322501bf123f9c21d2aac562966989a73885",
+      "bytes": 16682,
+      "impact": "合法动作与尺寸网格变化 → **决策可输出的动作集合与尺寸集合发生变化**（必须与 Poker Core 的校验保持一致）"
+    },
+    {
+      "path": "src/app/manualInput/contextBuilder.ts",
+      "category": "DECISION",
+      "sha256": "8a57133a2962c16dcd62154642e739c37e96da028320f6f704fb780c4e0436b7",
+      "bytes": 76325,
+      "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
+    },
+    {
+      "path": "src/app/decision/decisionEngine.ts",
+      "category": "DECISION",
+      "sha256": "1a5cc676ca311e260f989c5ea7192211af11c6cd603469134b63f8ee9ec3369d",
+      "bytes": 98132,
+      "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
+    },
+    {
+      "path": "src/app/alphaPipeline.ts",
+      "category": "DECISION",
+      "sha256": "783793978eb5e31b0897482b7a062ff0424793d5b44cfe964fb08c620b97f9b0",
+      "bytes": 58546,
+      "impact": "端到端管线变化（阶段顺序 / 失败阶段划分 / 最终数学一致性检查 / 日志）→ **整条链的失败行为与输出结构发生变化**"
+    },
+    {
+      "path": "src/app/decisionLog.ts",
+      "category": "DECISION",
+      "sha256": "4f2728915e409c5ea6ceed61fbc9b2c3d07e07c113aeca44df5276ec50cff417",
+      "bytes": 3822,
+      "impact": "决策日志结构变化 → **追溯链（输入哈希 / 版本 / 抽水口径）记录发生变化**"
+    },
+    {
+      "path": "src/app/webServer.ts",
+      "category": "DECISION",
+      "sha256": "faeb3939ed6174ab59554d5cc83f887abd4438c753942e3ad4134998d707390a",
+      "bytes": 52353,
+      "impact": "内部测试服务器变化（路由 / 请求校验 / 响应结构 / 监听范围）→ **网页入口的可用性与隐私边界发生变化**"
+    },
+    {
+      "path": "src/app/web/index.html",
+      "category": "DECISION",
+      "sha256": "e8b14cf73fe0c390062033f464f0f3ccbf32632cc1cec682e09e10c4a6c13cd1",
+      "bytes": 6460,
+      "impact": "中文输入表单与结果页变化 → **使用者看到的界面与输入方式发生变化**（界面不得包含任何策略判断）"
+    },
+    {
+      "path": "src/viewmodels/decisionViewModel.ts",
+      "category": "DECISION",
+      "sha256": "1216705535930c1dfa0da18a9cb6ff6162f4ff5df3f0def6eb82ddf03404d7d7",
+      "bytes": 33080,
+      "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
+    },
+    {
+      "path": "src/app/decisionDeadline.ts",
+      "category": "DECISION",
+      "sha256": "68b06a083ddc96f55d466d0189663fe4c1255e9a14509dcffa68fc542365a2a3",
+      "bytes": 7391,
+      "impact": "时间预算变化 → 软/硬上限与提前中止行为发生变化"
+    },
+    {
+      "path": "src/app/decisionPipeline.ts",
+      "category": "DECISION",
+      "sha256": "13ead4f2fe0077bc17e5a774bd1150bb491aef6c9eaa769f9000bc0ec4559fc6",
+      "bytes": 16002,
+      "impact": "决策管线变化 → 阶段预算与 Abort 传播行为发生变化"
+    },
+    {
+      "path": "src/domain/gto/gto.types.ts",
+      "category": "DECISION",
+      "sha256": "79883b507b59e3076bc130099fe2d9a38e160b8b993c1799e43d25506d7ee49e",
+      "bytes": 32044,
+      "impact": "GTO 领域类型变化 → **GtoScenario / GtoBaseline / 求解状态与可信度的语义发生变化**；🔴 这个文件里**不允许**出现任何真人信息字段（Tilt / 画像 / 动态提示），它是「真人信息不得污染理论基线」的类型级防线"
+    },
+    {
+      "path": "src/domain/gto/gtopenHandMatrix.ts",
+      "category": "DECISION",
+      "sha256": "9515c8d3f19e49f0a2308bd00ed32079ae0856c124eb7765316a2f82cab3f341",
+      "bytes": 17991,
+      "impact": "169 类矩阵变化 → **AKs/AKo 或同花/不同花可能互换**、类号与求解器数组错位；这类错误在界面上完全看不出来（名字都对）"
+    },
+    {
+      "path": "src/domain/gto/gtoScenario.ts",
+      "category": "DECISION",
+      "sha256": "56b0360ac3e1cb70af805bfdd151f607c340562920991d78f492914dadce8642",
+      "bytes": 49635,
+      "impact": "场景构造与哈希变化 → **桌人数隔离、缓存键、场景可表达性判定发生变化**；哈希口径变化会让旧缓存全部失效（这是好事，但必须知道）"
+    },
+    {
+      "path": "src/domain/gto/gtoSafeLookup.ts",
+      "category": "DECISION",
+      "sha256": "b980bc281af841138a6e5c4949febe0e194fad39878f2a99ab9f50f22dc845e5",
+      "bytes": 29431,
+      "impact": "安全查询层（缓存 + 硬超时 + 回退）变化 → **「求解器故障时 Alpha 仍可用」这条保证的强度发生变化**"
+    },
+    {
+      "path": "src/domain/gto/providers/gtopenCapabilities.ts",
+      "category": "DECISION",
+      "sha256": "3c1f716ba9561fd658cd1675303f39ff8c8795a26cc664fde14b93989da4cbe4",
+      "bytes": 9290,
+      "impact": "GTOpen 能力表变化 → **各桌人数/场景的支持级别与「翻前是近似模型」这一结论发生变化**；🔴 把 preflopApproximateModel 改成 false 等于声称一个近似模型是精确的"
+    },
+    {
+      "path": "src/domain/gto/providers/gtopenHttpClient.ts",
+      "category": "DECISION",
+      "sha256": "1a7392de6ed45c6c91301391762e30ba42c36c455c4cb016794dd87c848a32a3",
+      "bytes": 9199,
+      "impact": "GTOpen 传输层变化 → **超时 / 连接失败 / 坏响应 / 超大响应的处置方式发生变化**"
+    },
+    {
+      "path": "src/domain/gto/providers/gtopenMapping.ts",
+      "category": "DECISION",
+      "sha256": "65638c094963f8a96c5464e0d357deeda8267fa08e74070420ae86cac5241784",
+      "bytes": 10353,
+      "impact": "位置与动作映射变化 → **座位错位一格或 SB/BB、Hero/Villain 反转**；这是「读到别人策略」的直接入口"
+    },
+    {
+      "path": "src/domain/gto/providers/gtopenProvider.ts",
+      "category": "DECISION",
+      "sha256": "4de7b9c7a25d98a3b5c8dc80cbb4df7c9449fd7868a40ae711828fd341d32da8",
+      "bytes": 54773,
+      "impact": "GTOpen 适配器变化 → **外部 JSON → 内部统一格式的全部转换规则发生变化**（含会话串行化、求解预算、近似标记）"
+    },
+    {
+      "path": "src/domain/gto/providers/providerRegistry.ts",
+      "category": "DECISION",
+      "sha256": "3aa43a7994ed1993302cc403366095f265b793f9b36aa7e6f37b589127db46dd",
+      "bytes": 5793,
+      "impact": "Provider 注册表变化 → **新增求解器（交叉验证）的接入方式发生变化**；这里是「禁止 if engine === GTOPEN 散布全项目」的实现点"
+    },
+    {
+      "path": "src/app/gto/gtoScenarioCatalog.ts",
+      "category": "DECISION",
+      "sha256": "bc0ebdd4a5dfa2c825e8be1fcd37da638dc06fc075b7ed8e6f2ff5177d0c920d",
+      "bytes": 12588,
+      "impact": "场景目录变化 → **界面上能选哪些桌人数/位置/场景、以及每个场景的前序动作发生变化**"
+    },
+    {
+      "path": "src/app/gto/gtoApi.ts",
+      "category": "DECISION",
+      "sha256": "b6070d667ba4713523fa9db0f269519c10b148b885f0eac782a65f64698b4f9f",
+      "bytes": 25774,
+      "impact": "GTO 应用层装配变化 → **Alpha 与 Provider 的连接点、关闭开关（ALPHA_GTO）、以及界面消费的响应形状发生变化**"
+    },
+    {
+      "path": "src/app/web/gto.html",
+      "category": "DECISION",
+      "sha256": "94e1ef79c1b900e84cbb8700d617ad5db407b9b40798e5acd8a21bd7e44bfe6e",
+      "bytes": 5234,
+      "impact": "中文 GTO 范围页变化 → **使用者看到的界面的变化**；🔴 本页不得把近似结果表述成「绝对 GTO」或「已验证」"
+    },
+    {
+      "path": "src/app/web/gto.css",
+      "category": "DECISION",
+      "sha256": "ad80cce3e93f9ef7be2420f5ea7e1c8f2173453c9a97b9e799298e9673630e83",
+      "bytes": 5066,
+      "impact": "GTO 范围页样式变化 → 矩阵配色与「主要动作」的可读性发生变化（不影响数据）"
+    },
+    {
+      "path": "src/app/web/gto.js",
+      "category": "DECISION",
+      "sha256": "23ef165e86515e3963dcde65a34e4f5a0c41f1dbffb16fb257c958fdb3069434",
+      "bytes": 32842,
+      "impact": "GTO 范围页脚本变化 → **13×13 矩阵渲染、混合策略展示、百分比格式化发生变化**；🔴 ×100 只允许出现在 fmtPercent 一处（否则会出「0.65 显示成 0.65%」）"
+    },
+    {
+      "path": "GTOopen/start-gtopen.ps1",
+      "category": "DECISION",
+      "sha256": "fe1943d9d458b0cc9687280b34fb79624638a403ff796c94943d8f8a7dec99da",
+      "bytes": 2228,
+      "impact": "GTOpen 启动脚本变化 → **本地求解器的端口、内存上限与线程数发生变化**；这些限制决定了「哪些场景能建树」，是能力审计的一部分"
+    },
+    {
+      "path": "test/helpers/fakeGtopen.ts",
+      "category": "DECISION",
+      "sha256": "55bf44a9892b6e44501ac636eb38393c52107e34375346c4425241ace71297ca",
+      "bytes": 18002,
+      "impact": "假求解器变化 → **GTO 适配层测试的有效性发生变化**；它必须与真实响应结构一致，否则测试会「绿着通过、生产里失败」"
+    },
+    {
+      "path": "test/gtoHandMatrix.test.ts",
+      "category": "REPORT",
+      "sha256": "80700133748094338816056a2172ee46ad0f84dbba704c38c2b9db679a9ec354",
+      "bytes": 8803,
+      "impact": "169 类矩阵测试变化 → 同花/不同花与类号方向的防线强度发生变化"
+    },
+    {
+      "path": "test/gtoProviderAdapter.test.ts",
+      "category": "REPORT",
+      "sha256": "bc9a83790c6da3d260d2adf85c64b7b7585f49a064bf1e8eee6b380ff07fd944",
+      "bytes": 35376,
+      "impact": "GTO 适配层测试变化 → 失败回退与墨菲定律审计的覆盖范围发生变化"
+    },
+    {
+      "path": "test/gtoScenarioIsolation.test.ts",
+      "category": "REPORT",
+      "sha256": "c2de4ef91138546e577ded3be488db44835fd5485b13339807b3474c554b7043",
+      "bytes": 25777,
+      "impact": "桌人数隔离与契约边界测试变化 → **「不同桌人数不得复用」与「只有适配层能碰求解器」的防线强度发生变化**"
+    },
+    {
+      "path": "test/gtoWebUi.test.ts",
+      "category": "REPORT",
+      "sha256": "e9e989a30fa5f68bfc3657be3f8119430da4c0fe71af4f5991810c0e8febc52f",
+      "bytes": 35380,
+      "impact": "GTO 界面与接口测试变化 → 「求解器离线时 Alpha 仍可用」的防线强度发生变化"
+    },
+    {
+      "path": "test/newTableModal.test.ts",
+      "category": "REPORT",
+      "sha256": "6837c8de556462e1996b7c06074c4af160b6c611b5cd5f3b7a1d8cd88d21cb67",
+      "bytes": 10365,
+      "impact": "新建牌桌弹层测试变化 → **「桌型 / Hero 座位到底能不能选」这条防线强度发生变化**。🔴 它防的是一个真实缺陷：弹层里点桌型之后，`openNewTableModal()` 重进函数时把局部变量 `chosenSize` 重置回 `app.state`，使用者的选择当场丢失 —— 界面表现是「桌型根本选不动」，只能建出与当前桌型相同的桌子。"
+    },
+    {
+      "path": "test/raiseSizeGrid.test.ts",
+      "category": "REPORT",
+      "sha256": "9d9149e09600a856737b92fd9e6edfaedb59bfc506fb2705bc992f8bc0b2c5cc",
+      "bytes": 12357,
+      "impact": "加注尺寸网格测试变化 → **「加注到底有没有得选」这条防线强度发生变化**。🔴 它防的是一个真实缺陷：`buildSizeGrid` 对 BET 与 RAISE 共用同一份底池百分比网格，而加注的基准应当是「跟注额的倍数」—— 百分比算出的数额低于最小加注额后被去重成一项，于是菜单只剩「最小加注 + 全下」。⚠️ 既有的 `hotfix001ActionDedup.test.ts` **抓不到它**（它只断言 `raises.length >= 1`，1 个尺寸就满足了）—— 这两个文件的防线是互补的，不得互相替代。"
+    },
+    {
+      "path": "test/handClassOrdering.test.ts",
+      "category": "REPORT",
+      "sha256": "74e2cf28d1966a0a748714b6942cac724e1d028911d9c48d4dad30b28aa62ca2",
+      "bytes": 7015,
+      "impact": "**169 类手牌顺序的桥接防线**变化 → 「接 GTO 时会不会静默错位」这条防线强度发生变化。🔴 项目里有**两套** 169 类顺序（GTO 显示顺序 `AA AKs AQs…` vs 先验顺序 `AA AKs AKo…`），实测只有 **5/169** 个位置相同。按序号直接对接会把约 164 个牌型的频率灌到别的牌上，而且**长度对得上、类型对得上、没有任何报错**。这个文件钉住两套顺序的差异，并提供按**牌名**对齐的转换器。"
+    },
+    {
+      "path": "test/solverRangePrior.test.ts",
+      "category": "REPORT",
+      "sha256": "5ce5c9715db7b3b180a0a24e3d874e0d58b07752264e47f71ced1413123f221c",
+      "bytes": 23912,
+      "impact": "**翻前 GTO 范围接入**的防线变化 → 「对手范围是算的还是猜的」这条链的可信度发生变化。🔴 它防三类**会静默出错**的缺陷：① 按序号对接 169 类（约 164 个牌型错位）；② 尺寸/筹码对不上却照用（读到的是**另一个牌局**的策略，数字看起来正常）；③ 对求解器范围再乘一次似然（重复计票，范围被收缩两次）。"
+    },
+    {
+      "path": "src/app/manualInput/solverRangePrior.ts",
+      "category": "DECISION",
+      "sha256": "466ec96cd0d6dff672f958ca37919c61a587f9d7df8b82883aadb30c3399d8b2",
+      "bytes": 12543,
+      "impact": "🔴 **范围先验的来源开关**：这个文件决定「对手范围来自求解器还是启发式」。它变化会直接影响所有翻前决策的输入数据。⚠️ 它内含三道拒绝闸（动作可达性 / 配置匹配 / 行动者一致性），放宽任何一道都会让**别的牌局**的策略被当成这个牌局的。"
+    },
+    {
+      "path": "src/app/manualInput/solverScenarioForOpponent.ts",
+      "category": "DECISION",
+      "sha256": "8d721489fe8bfcdf3f09781f73a01ee2ca1ac39b160f9cb87d6ddd950240e305",
+      "bytes": 8420,
+      "impact": "「对手动作 → 求解节点」的映射表变化 → **哪些情形能用 GTO 范围**发生变化。⚠️ 只支持 `RFI` 与 `VS_OPEN` 两种；多轮加注 / 跛入 / 补盲**一律返回 null** 并回落。把「用相近节点顶替」加进来会读到别人的策略 —— 这是本项目反复修掉的那类缺陷。"
+    },
+    {
+      "path": "src/app/gto/backgroundSolve.ts",
+      "category": "DECISION",
+      "sha256": "9cc5e184270c63914a120b1c6122dcbfd77fb700cc4d338ba10131cecd83d6b4",
+      "bytes": 16896,
+      "impact": "🔴 **前台响应速度与 GTO 覆盖率的分离机制**变化 → 「分析要等多久」与「多久之后能用上 GTO 范围」这两件事都发生变化。⚠️ 它承载 Phase 1.3 的核心交易：前台**只读缓存、绝不求解**（冷求解实测 6 人桌 59 秒 / 9 人桌 195 秒），未命中则把场景排进后台队列，求解成功后**自动落盘**，于是第二次同样的局面直接命中 GTO 范围。把 `lookupWithStats`（会落盘）换成 `lookupScenario`（不落盘）会让「算完了但没存」—— 表现为每次重启都要重算几十分钟，且**没有任何报错**。把前台改成等待后台任务会让响应时间退化到分钟级。"
+    },
+    {
+      "path": "test/backgroundSolve.test.ts",
+      "category": "REPORT",
+      "sha256": "a2167c49735210f00cd20a3d79af3886a3eefd72f11b84b78e87feeb0e39e01c",
+      "bytes": 30170,
+      "impact": "**前台不等求解器**这条保证的防线变化 → 「1～3 秒给建议」这个核心指标的强度发生变化。🔴 它钉住三件事：① 缓存未命中时前台耗时必须是毫秒级（不得退化成等待求解）；② 同一场景只入队一次（连点十次不等于算十次）；③ 落盘路径走的是会写缓存的那一层（否则第二次查询永远还是启发式）。"
+    },
+    {
+      "path": "scripts/gto-phase13-probe.ts",
+      "category": "REPORT",
+      "sha256": "ed5498bae6b5ed3e57d84fa683129bfa3d4442e4d0bc3e6198e9967d3da2d29a",
+      "bytes": 8981,
+      "impact": "**Phase 1.3 实况判据**变化 → 「前台不等求解器 / 后台会补算 / 第二次自动用上 GTO」这三条保证的验证强度发生变化。⚠️ 它对接**真实服务**（默认 5173）断言四件事：① 前台回答与求解耗时**无关**；② 未命中时如实标注「正在后台计算」且说明之后会自动改用 GTO；③ 后台算完后同样的查询**自动**变成 `fromSolver=true`；④ 结构上算不了的局面对「等也不会变」说清楚，不误导成「稍后就有」。"
+    },
+    {
+      "path": "src/domain/poker/pots.ts",
+      "category": "DECISION",
+      "sha256": "4ac6c864c35799b457b35876df4ddc36a394a6610a03a22c87b446dbbd1a1c17",
+      "bytes": 45715,
+      "impact": "🔴 **分层底池与「会被争夺的量」**变化 → 底池赔率、跟注 EV、可赢上限**全线**变化。⚠️ 这个模块回答三个规则问题：① 无人能跟的超额筹码必须**退回**（不是底池）；② 多路不同筹码全下时按主池/边池**分层**（短筹码赢不了整池）；③ 弃牌者的钱是**死钱** —— 留在池里、并入可争夺的量，但不算「退回」。🔴 不变量：`主池 + 边池 + 退回 === 所有人投入之和`（`selfCheckLayeredPot` 在服务器启动时强制，失败即拒绝启动）。最容易写错的两种情形：把「只有一名未弃牌玩家投到的层」当成边池（它该退回）；把「我还没跟注」造成的暂时性未跟注当成永久退回（它会被我跟，不该退）。"
+    },
+    {
+      "path": "test/pokerRules.test.ts",
+      "category": "REPORT",
+      "sha256": "b72b2863b0f4562dfd0c2578ee3af98edd7c2d8e2d1e46bc2ea61a2be8548578",
+      "bytes": 14257,
+      "impact": "🔴 **德州扑克规则对照（含独立参考实现）**变化 → 「引擎是否符合真实规则」这条保证的强度发生变化。⚠️ 它刻意**不调用**项目的评估函数，自己穷举全部 5 张组合写了一份最朴素的参考实现 —— 因为 `handEval` 与 `fastEval` 是同一套规则的两份实现，它们**共享错误**时差分测试恒为 0（2026-09 真的发生过：两对踢脚在三对共存时取错，62 万+ 随机 7 张差异为 0）。钉住的规则：两对踢脚（三对共存）、大盲的选择权（引擎/推导跨层一致性）、短大盲不降低入池代价、短全下不关闭未行动者的加注权。"
+    },
+    {
+      "path": "scripts/gto-live-probe.ts",
+      "category": "REPORT",
+      "sha256": "f3055498bc4c75ae71287c01a5cc6111b3e8c69457696a9c1b0433329cea359b",
+      "bytes": 7163,
+      "impact": "真实求解器联调探针变化 → 5 个桌人数真实数据验证的可复现性发生变化"
+    },
+    {
+      "path": "scripts/start-alpha.cmd",
+      "category": "ENVIRONMENT",
+      "sha256": "d7fd2b9d7c94a050870858494282db8767c88d129f08500a75380913c250853b",
+      "bytes": 2456,
+      "impact": "**Alpha 的唯一启动入口** → 启动方式变化意味着「网页打不开」这类问题的排查起点变化。⚠️ 这个文件必须是**纯 ASCII**：`cmd.exe` 用 OEM 代码页（本机是 GBK）读取 `.cmd`，写成 UTF-8 的中文会被解析成残缺命令（实测过）。"
+    },
+    {
+      "path": "scripts/stop-alpha.cmd",
+      "category": "ENVIRONMENT",
+      "sha256": "b14a04e0b1240ddb8947b699294751e57062011e504f753ad2109ef6c4c62404",
+      "bytes": 1207,
+      "impact": "Alpha 的停止入口 → 它必须**只杀监听指定端口的进程**，否则会误伤 GTOpen 求解器（3737）与其它 node 进程。同样是纯 ASCII。"
+    },
+    {
+      "path": "scripts/gto-vs3bet-live-probe.ts",
+      "category": "REPORT",
+      "sha256": "05bf8bedecf3bdb511145f67cb2bfeb0f70678027e6ce3bb0997754834efabbb",
+      "bytes": 8227,
+      "impact": "「开池后面对 3Bet」几何联调探针变化 → **「Hero 是否会真的轮到」这条结论的证据强度发生变化**（该几何被实测推翻过六次，探针是唯一的守卫）"
+    },
+    {
+      "path": "scripts/gto-node-walk.raw.mjs",
+      "category": "REPORT",
+      "sha256": "1c12192bb1b18e047c3353578e654d469c57cdf0d2387770f7b63989b3f9d0e8",
+      "bytes": 1754,
+      "impact": "裸节点行走工具变化 → **「不经过本项目任何场景模型、直接问求解器每一步轮到谁」的能力发生变化**（六次几何修正中的每一次都靠它定案）"
+    },
+    {
+      "path": "reports/evidence/gto-vs3bet-live-evidence.txt",
+      "category": "REPORT",
+      "sha256": "532e6de5734b3036911088b92b09157393122ce6b4bca3bc21c17f3c762722e7",
+      "bytes": 17779,
+      "impact": "「面对 3Bet」联调证据变化 → **「17/17 都真的走到 Hero」与「菜单只有 Fold·Call」两条结论的证据发生变化**"
+    },
+    {
+      "path": "CURRENT_PROJECT_STATUS.md",
+      "category": "REPORT",
+      "sha256": "2c558b77673d91b48c7205a39671e68469aab0e3895f8a83a9924082fcc37185",
+      "bytes": 95764,
+      "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
+    },
+    {
+      "path": "docs/ALPHA_USAGE.md",
+      "category": "REPORT",
+      "sha256": "68a3e99c890136e86571ecf5b88513d221ae501a179034bcb01d6a6c33c612ff",
+      "bytes": 9299,
+      "impact": "Alpha 使用说明变化 → **使用者理解如何输入与如何解读结果的方式发生变化**（含金额语义、行动顺序、已知限制的说明）"
+    },
+    {
+      "path": "reports/EXTERNAL_KNOWLEDGE_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "07459fbbd6b644752370ae9a6da1e4350c36c8c70726170d014848b7dae33e3e",
+      "bytes": 39790,
+      "impact": "外部知识审计结论变化 → 「哪些来源可用」的记录发生变化"
+    },
+    {
+      "path": "reports/KNOWLEDGE_REDTEAM_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "1ce4bec5c15c4c3e72cafca67fa7ec2bb7fa7a72d1c1bb86125093ef87ff4b4a",
+      "bytes": 61908,
+      "impact": "知识层红队报告变化 → 已知缺陷清单发生变化"
+    },
+    {
+      "path": "reports/PLAYER_REDTEAM_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "9392b09ad02a4327cd3f7f46fc6a691d64668806998e3bcb2b2bec9e85642f77",
+      "bytes": 102720,
+      "impact": "玩家画像红队报告变化 → 已知缺陷清单发生变化"
+    },
+    {
+      "path": "reports/NUMSTAB_REDTEAM_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "8172aebd58438d6f4fb1424a6d17f5d74defa4384c252e5a5c3a1f986fda82b1",
+      "bytes": 31635,
+      "impact": "数值稳定性红队报告变化 → 已知缺陷清单发生变化"
+    },
+    {
+      "path": "reports/RANGE_REDTEAM_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "9b4542f6088e2ff320573933f385098d5120f18b53076ce3db8cf4b8f65e0e38",
+      "bytes": 33913,
+      "impact": "范围引擎红队报告变化 → 已知缺陷清单发生变化"
+    },
+    {
+      "path": "reports/DYNAMIC_REDTEAM_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "cc669ab0403ce0bdd8d0a48a49c3628a0e8f3adfba0dea09d52b7d5d3712c8a8",
+      "bytes": 24618,
+      "impact": "动态行为红队报告变化 → 已知缺陷清单与「假阴性」风险的记录发生变化（该报告记录了两轮审计：作者自查 3 CRITICAL + 2 MAJOR，独立红队 3 CRITICAL + 9 MAJOR，全部为测试全绿时存在的缺陷）"
+    },
+    {
+      "path": "reports/DYNAMIC_INDEPENDENT_REDTEAM.md",
+      "category": "REPORT",
+      "sha256": "1959f154d9c28b9ac360e1a49e3989d5fbc89375730101bd1a95bac1a79796b9",
+      "bytes": 31655,
+      "impact": "**独立**红队报告变化 → 第三方视角的缺陷清单与判定结论发生变化（该报告由未参与实现的审计员产出，方法为批量确定性种子统计 / 边界扫描 / 源码死代码检查，判定从 FAIL 到全部修复的追溯链依赖它）"
+    },
+    {
+      "path": "src/infra/artifactManifest.ts",
+      "category": "DECISION",
+      "sha256": "0f03e9b575d67f99567be99c5a6ff4db960cc2de4a8bf1d67739400b58f728e6",
+      "bytes": 8919,
+      "impact": "产物清单的生成与校验逻辑变化 → hash 绑定的可信度发生变化"
+    },
+    {
+      "path": "src/infra/artifactDefinitions.ts",
+      "category": "DECISION",
+      "sha256": "e0957bd024ebf1f6f1bf97544c3250920c0d92e02ed1801948b2666876db0262",
+      "bytes": 46588,
+      "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
+    },
+    {
+      "path": "scripts/generateManifest.ts",
+      "category": "DECISION",
+      "sha256": "fe722425188286e8162fb47b217312aee03d7a4ccda8b1550e3b526b44a3162c",
+      "bytes": 2717,
+      "impact": "清单生成脚本变化 → 生成与校验行为发生变化"
+    },
+    {
+      "path": "scripts/alpha-demo.ts",
+      "category": "DECISION",
+      "sha256": "f1be515b7b5c28441eb290aa469d6844b45fe902f2e6a1a1340755696ac6d15a",
+      "bytes": 4702,
+      "impact": "端到端命令行演示变化 → **「输入一手牌 → 打印完整建议与诊断」的可复现证据发生变化**"
+    },
+    {
+      "path": "reports/ALPHA_INDEPENDENT_REDTEAM.md",
+      "category": "REPORT",
+      "sha256": "f174b35320c40ac5abac59b10d80f8cdfbb3ebec3c4a9d26b56dba1181d84630",
+      "bytes": 48127,
+      "impact": "Alpha 决策链独立红队报告变化 → **已知缺陷清单（F-01 … F-13）发生变化**；每个编号必须有对应的永久回归测试（`test/alphaRedteamRegression.test.ts`）。⚠️ 修复轮中又自查出 F-14 / F-15（同族缺陷，红队未报），它们的记录在 `reports/TEST_MATRIX.md` §0.4 与本文件对应的回归测试里 —— **不得因为红队报告里没有就把它们当成不存在**"
+    },
+    {
+      "path": "test/alphaRedteamRegression.test.ts",
+      "category": "DECISION",
+      "sha256": "92de766a4ccd560987ca34e1304303f8806ad6e2f738fe08dca1384d30218472",
+      "bytes": 53370,
+      "impact": "红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；本文件删掉任何一条断言都等于放弃对应的修复"
+    },
+    {
+      "path": "test/manualInputPriors.test.ts",
+      "category": "RANGE",
+      "sha256": "a0b8f3f7aa6b1229b19c3505e2d1035ce7ce6993ff02b1e330ae48bd78f42062",
+      "bytes": 18875,
+      "impact": "翻牌前先验与似然模型的单元测试变化 → **范围表结构性不变量（单调性 / 覆盖度 / 3Bet 更紧 / 来源标注）的保护强度发生变化**（这两个模块曾零覆盖，是红队 F-02 的根因）"
+    },
+    {
+      "path": "scripts/alpha-perf.ts",
+      "category": "DECISION",
+      "sha256": "05495ce682140d1a7fa83b12274fb9cd7bf8761728e3bae213e1a85f891108e5",
+      "bytes": 4770,
+      "impact": "端到端性能实测脚本变化 → **「1–3 秒内给出建议」这一锁定指标的证据发生变化**；本脚本只测量、不做判断，数字必须原样进报告"
+    },
+    {
+      "path": "reports/ALPHA_FINAL_REPORT.md",
+      "category": "REPORT",
+      "sha256": "21389e47d4b38e9357da5da372d3d04e115ed35f9b43f81aaa7797f66ece6b6d",
+      "bytes": 21074,
+      "impact": "Alpha 最终报告变化 → **判定（`INTERNAL ALPHA TESTABLE — PASS/FAIL`）与全部证据发生变化**；本文件是「能不能开始用真实牌局测试」的唯一依据，数字必须可由命令复现"
+    },
+    {
+      "path": "src/app/table/table.types.ts",
+      "category": "DECISION",
+      "sha256": "227e144f4d6d0b59b98a9202d7ae8329f14e8a23549e7a6d2f645ebc610c0754",
+      "bytes": 27566,
+      "impact": "牌桌数据模型变化（座位状态 / 座位 / 玩家 / 牌桌状态 / 操作）→ **「Fold ≠ Leave」「Seat ≠ Player」这两条铁律的表达能力发生变化**；`SeatStatus` 少一个成员就等于把两种语义混成一种，必须同步全部生命周期测试"
+    },
+    {
+      "path": "src/app/table/tableState.ts",
+      "category": "DECISION",
+      "sha256": "b322b445c0992ef49cf539239023749c296d58766677783b404f2841c3560a03",
+      "bytes": 19136,
+      "impact": "牌桌创建与**视觉旋转**变化 → **Hero 的视觉位置与逻辑位置是否仍然分离**发生变化（视觉位置一旦参与计算，就会出现「Hero 显示在底部所以他是 BB」这类致命错误）；`staffingProblems` 同时是「能不能分析」的判据来源"
+    },
+    {
+      "path": "src/app/table/seatLifecycle.ts",
+      "category": "DECISION",
+      "sha256": "1aaaf015b8b01134254e93c0037265de1cf7d51f4e3baba646b891268f587221",
+      "bytes": 54452,
+      "impact": "座位生命周期变化（加入 / 清空 / 换人 / 暂离 / 手后离桌 / 下一手 / 新牌桌 / 撤销 / 手牌与公共牌）→ **哪些操作会改动座位绑定、玩家画像、筹码与手牌历史发生变化**；本文件里任何「按座位删除历史」的改动都会破坏筹码守恒与行动台账"
+    },
+    {
+      "path": "src/app/table/tableOps.ts",
+      "category": "DECISION",
+      "sha256": "981e4a1fec9ea0ff7a2f0b350603564096aa934a1ad47abd32d3e97c947ffa89",
+      "bytes": 14891,
+      "impact": "牌桌操作分发变化（尤其是 `applyTableAction` 的**重放等价自检**）→ **「牌桌显示的状态」与「分析时重放出的状态」是否仍然一致**发生变化；去掉那一段自检等于放弃这条保证"
+    },
+    {
+      "path": "src/app/table/tableAdapter.ts",
+      "category": "DECISION",
+      "sha256": "5277112870ad2597b9c462a493ed1bc501e2e78908b2ddac05eb355eeca648dd",
+      "bytes": 12631,
+      "impact": "牌桌状态 → `ManualHandInput` 的**唯一转换点**变化 → **「屏幕显示 = 实际提交 = 后端状态」三者一致**这一保证发生变化（首要对手的画像必须按 playerId 解析；引擎侧 id 必须用 `seat_<位置>` 口径，否则动态层的事件匹配会静默失效）"
+    },
+    {
+      "path": "src/app/table/tablePreview.ts",
+      "category": "DECISION",
+      "sha256": "1319ef12f545d70b2ccfd6013dda648b7da88d44880764439f27987a8e2d30b9",
+      "bytes": 38409,
+      "impact": "牌桌预览变化（街道 / 当前行动者 / 合法动作按钮 / 底池筹码 / 座位视图 / 状态指纹）→ **使用者看到的牌局与合法动作集合发生变化**；本文件必须继续复用 `reconstruct` + `deriveLegalActions` + Poker Core 校验器，一旦自己实现规则，前端与引擎就会分叉"
+    },
+    {
+      "path": "src/app/table/tableApi.ts",
+      "category": "DECISION",
+      "sha256": "5c2d37a091bcb61349fb61db34e98d28641cfd6c20ef62784cb6177b8c75f4af",
+      "bytes": 32157,
+      "impact": "牌桌 API 变化（请求形状校验 / Fail-Closed / **版本水位线** / 元数据）→ **畸形载荷是否被拒绝、迟到请求是否会被丢弃**发生变化；`parseTableState` 是「客户端状态不可信」这条纪律的唯一执行点（撤销栈也必须逐条校验）"
+    },
+    {
+      "path": "src/app/web/table.js",
+      "category": "DECISION",
+      "sha256": "2efb3a989fcaec086011288086a468044627e430af07a0a0129155b1d6340f10",
+      "bytes": 83381,
+      "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
+    },
+    {
+      "path": "src/app/web/table.css",
+      "category": "DECISION",
+      "sha256": "11b8cc51a60212a98213dc1b547a8653217b10eb9695806a89dcaad8367e6642",
+      "bytes": 14366,
+      "impact": "牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）"
+    },
+    {
+      "path": "test/interactiveTable.test.ts",
+      "category": "DECISION",
+      "sha256": "02d932c0b122739f7d8220d73ffdf8d3cc837dd1bdbc92c8e0912abe97e2a34c",
+      "bytes": 48976,
+      "impact": "座位生命周期与三条铁律的永久回归测试变化 → **「Fold ≠ Leave」「Seat ≠ Player」「当前手历史不可删」这三条保证的强度发生变化**；删掉任何一条断言都等于放弃对应的修复"
+    },
+    {
+      "path": "test/interactiveTableDifferential.test.ts",
+      "category": "DECISION",
+      "sha256": "e0b6b53a0ea4bff73f343120dd4c715546d48174c09cff8286580857ea59871c",
+      "bytes": 19489,
+      "impact": "差分测试变化 → **「牌桌点选」与「直接构造输入」两条路径逐位一致**这一保证发生变化；这是「界面在撒谎」的主防线"
+    },
+    {
+      "path": "test/interactiveTableApi.test.ts",
+      "category": "DECISION",
+      "sha256": "b1f1b1c79c4b6ca8ac0346371295b12e0dee9ded870434cfcb83d9e2b9b641d9",
+      "bytes": 19207,
+      "impact": "API/HTTP 层测试变化 → **畸形载荷被拒、竞态被挡、双击不重复提交**这些保证发生变化"
+    },
+    {
+      "path": "scripts/table-walkthrough.ts",
+      "category": "DECISION",
+      "sha256": "7fde10fab472755f4b1e7c0fa50c5540ce0bb6be3a33b4ee090a11d90e825115",
+      "bytes": 22539,
+      "impact": "现场走查脚本变化 → **每个 Spot 的点击次数与服务端耗时证据发生变化**；点击次数决定了录入效率上限，效率退化必须立刻可见"
+    },
+    {
+      "path": "docs/TABLE_INPUT_USAGE.md",
+      "category": "REPORT",
+      "sha256": "00c87eca6f2659a25a110b2bf9a45e108ac1fb25b33040fbdf2db43397bcb629",
+      "bytes": 7849,
+      "impact": "牌桌录入使用说明变化 → **使用者「怎么点」的方式发生变化**（含三条铁律的行为说明）"
+    },
+    {
+      "path": "reports/TABLE_INTERACTIVE_REDTEAM_LIFECYCLE.md",
+      "category": "REPORT",
+      "sha256": "6a072c905611ee9894e3488db091b194321d65ca236c206b2dfffd193f7ec4f7",
+      "bytes": 29260,
+      "impact": "牌桌录入**座位生命周期/玩家身份**独立红队报告变化 → **该视角的已知缺陷清单发生变化**；每个编号（RT-Lx）必须有对应的永久回归测试"
+    },
+    {
+      "path": "reports/TABLE_INTERACTIVE_REDTEAM_ADAPTER.md",
+      "category": "REPORT",
+      "sha256": "bf3823be740c8dff4db3bf49bfa1454284d3f738807a127333db05dba135b88c",
+      "bytes": 40947,
+      "impact": "牌桌录入**适配器/卡牌映射/竞态/前端诚实性**独立红队报告变化 → **该视角的已知缺陷清单与增量复验结论发生变化**；每个编号（F-xx / V-xx）必须有对应的永久回归测试"
+    },
+    {
+      "path": "reports/TABLE_INTERACTIVE_REPORT.md",
+      "category": "REPORT",
+      "sha256": "dd213153612e286e205fba23b34cb41229a4adb313a4296fd43dc304319eca38",
+      "bytes": 30768,
+      "impact": "牌桌录入最终报告变化 → **判定（`INTERACTIVE TABLE INPUT — PASS/FAIL`）与全部证据发生变化**；本文件是「能不能停止开发 UI、转入真实牌局测试」的唯一依据"
+    },
+    {
+      "path": "test/interactiveTableRedteam.test.ts",
+      "category": "DECISION",
+      "sha256": "0f8aa527daef75793e567c837ff942fdd7241136ff1f8222c016aeba3d8d96b9",
+      "bytes": 24965,
+      "impact": "红队第一轮（RT-L1…L5）的永久回归测试变化 → 对应修复的保护强度发生变化"
+    },
+    {
+      "path": "test/interactiveTableRedteam2.test.ts",
+      "category": "DECISION",
+      "sha256": "36e77464555fe42d6da916a8bd0bef6fb886531818e8a30fcce899141f53c602",
+      "bytes": 31566,
+      "impact": "红队第二轮（F-01/F-02/V-xx）的永久回归测试变化 → 对应修复的保护强度发生变化；含一个 **DOM 桩**真实执行 `table.js`（能抓到「渲染残骸让整块面板不再更新」这类缺陷）"
+    },
+    {
+      "path": "scripts/table-probe-buttons.ts",
+      "category": "DECISION",
+      "sha256": "38ef78a9addf16c4ad430028fd3d0a0cbd7c79f5f71a074a9ba56d67071f2f02",
+      "bytes": 9480,
+      "impact": "按钮合法性穷举 + 畸形载荷 HTTP 穷举脚本变化 → **「预览给出的按钮 100% 被后端接受」与「畸形载荷 0×5xx」这两条不变量的证据发生变化**"
+    },
+    {
+      "path": "scripts/rt-table-adapter-probe3.ts",
+      "category": "DECISION",
+      "sha256": "c7f78a4f979572f2a8688085ad9367e580f98800c7df9319ea79ad9f70f4ab39",
+      "bytes": 23077,
+      "impact": "红队**最终快照增量复验**探针变化 → 「最后一轮修复没有破坏任何既有结论」这一结论的证据发生变化；本文件是「交付依据 = 最终快照 + 增量复验 PASS」的支撑"
+    },
+    {
+      "path": "test/tableTopology.test.ts",
+      "category": "DECISION",
+      "sha256": "b85b1f7c8ef086b80e2ce10ce101d5b05ccdf21f3c731d5d32ae00bc422ba027",
+      "bytes": 54634,
+      "impact": "桌型拓扑（Table Topology Correction）**黄金用例 + 产品路径**回归测试变化 → **「9 座桌 8 人可分析」「空座位不阻断」「单挑顺序」「Button 轮转」**这些保证发生变化；含一条**反证**：域层放行时表层不得拦回（拦截点搬家是本轮的头号缺陷形态）"
+    },
+    {
+      "path": "test/tableTopology.property.test.ts",
+      "category": "DECISION",
+      "sha256": "1c1e8ece88a117f2cddbcd076cb15e604cfbe88afdaa7ad569fbd061033cf6b1",
+      "bytes": 68715,
+      "impact": "桌型拓扑**属性测试**（穷举 9,481 组拓扑组合 + 5,551 组 Button 轮转）变化 → 「容量 × 本手人数 × Button 座位的每一个组合都成立」这一保证发生变化"
+    },
+    {
+      "path": "reports/TABLE_SIZE_SEMANTICS_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "3d17bcedeb9eaf34c6b3327590e31fb852883ac3e8916585ef09a6a731128b38",
+      "bytes": 53006,
+      "impact": "**桌型语义独立审计**报告变化 → 「`tableSize` 这个字段在 185 处引用里哪些真需要容量、哪些真需要本手人数」这一分桶结论与未收敛清单发生变化"
+    },
+    {
+      "path": "scripts/rt-topology-verify.ts",
+      "category": "DECISION",
+      "sha256": "0ab99627d0bbd416ff7fa860bbf788c2bf1c1704d6b2abc3d267dca5cf421f3f",
+      "bytes": 21314,
+      "impact": "桌型拓扑**端到端复验**探针变化 → 「产品路径上真的能分析 9 座 8 人」这一结论的证据发生变化；本文件刻意**只走产品入口**（applyTableOp / buildTablePreview / handleTableRequest），因为「域层修好了、表层拦回来」这种缺陷只有产品路径能发现"
+    },
+    {
+      "path": "reports/TABLE_TOPOLOGY_CORRECTION.md",
+      "category": "REPORT",
+      "sha256": "acfd5296ec137f096531a48a575a4ce3d13e51f89b17204cd11de90f70a62b1e",
+      "bytes": 35862,
+      "impact": "桌型拓扑修正最终报告变化 → **判定（`TABLE TOPOLOGY CORRECTION — PASS/FAIL`）与全部证据发生变化**；本文件是「容量 ≠ 本手人数」这一结构修正能否收尾、可否转入真实牌局测试的唯一依据"
+    },
+    {
+      "path": "test/hotfix001BoardLeak.test.ts",
+      "category": "DECISION",
+      "sha256": "fc649348bc9d91cdab383b971835e4e21c7af21ea8066b1fd4be0a37eedce4cc",
+      "bytes": 22318,
+      "impact": "**决策时刻可见性不变量**（`DecisionContext` 只能包含该决策时已公开的信息）的永久回归变化 → **「未来牌泄漏进更早的决策快照」这一 CRITICAL 风险的保护强度发生变化**；含「绕过 Parser 直接攻击 ContextBuilder」与「少了也要拒（exact 而非 at-most）」两类反证"
+    },
+    {
+      "path": "test/autoAnalyze.test.ts",
+      "category": "DECISION",
+      "sha256": "59de177bec6a50730ac64befcb6f38c6accf2645360d7234c11c382fbbba8824",
+      "bytes": 26853,
+      "impact": "**Hero Decision Ready ⇒ Auto Analyze** 后端闸门 + 12 条规范回归的永久测试变化 → **「手牌没选满 / 公共牌还在选 / 轮到别人 / 人员不足 / 本手已结束时绝不就绪」这些保证的强度发生变化**；本文件直接跑真实的 `tablePreview.decision`（不是模型），并钉住 8 个原因码的优先级 —— `WAITING_HERO_CARDS` 与 `WAITING_BOARD` 曾因 `STATE_INVALID` 抢在前面而**恒不可达**，删掉任何一条断言都等于放弃对应修复"
+    },
+    {
+      "path": "test/autoAnalyzeHistoryEntry.test.ts",
+      "category": "DECISION",
+      "sha256": "42b8322dce1bef9e9eeac141f0f93866b49cde222d0ed01493ba97e371df3cc4",
+      "bytes": 19927,
+      "impact": "**真实 `table.js` 的 `HISTORY_ENTRY` 模式闸门**永久回归变化 → **「录入历史下不自动分析 / 已发出的请求在录入历史期间返回不得写进用户可见决策 UI / 切回当前决策也不得让旧 epoch 的响应复活 / 开新一手必须主动取消旧 debounce timer」这些保证的强度发生变化**；本文件用真实 DOM 桩 + 可控 fake timer **执行生产脚本**，闭合静态审计 F-8（此前没有任何测试执行过生产模式闸门：`autoAnalyze.test.ts` 跑的是自建模型，唯一跑 `table.js` 的 DOM 桩测试 `setTimeout` 是 no-op 且从未进入 `HISTORY_ENTRY`）"
+    },
+    {
+      "path": "test/helpers/tableJsHarness.ts",
+      "category": "DECISION",
+      "sha256": "64e31d54de60b3d5636ca62d1d0494f6fb4baa494fe9985c370a13a69c9b56fe",
+      "bytes": 26149,
+      "impact": "**执行 `table.js` 的 harness**（DOM 桩 / 可控 fake timer / 真后端语义 fetch 桩 / bootstrap）变化 → **依赖它的生产路径回归可能「假绿」**：例如 fake timer 若不再支持取消或不再能精确 fire，Case B / Case E 会静默失去鉴别力，而测试仍然全绿；因此它不是普通测试工具，而是上述保证证据链的组成部分。本文件刻意**不含**任何 `CURRENT_DECISION` / `HISTORY_ENTRY` 业务判断"
+    },
+    {
+      "path": "scripts/rt-hotfix001-diverge.ts",
+      "category": "DECISION",
+      "sha256": "5fc61a1686e6f5fd84f62102f84d8d7c258923380496ab15de101878c11552d9",
+      "bytes": 13729,
+      "impact": "**增量应用 vs 完整重放**分叉定位探针变化 → 「`DIVERGENCE_FIRST_OCCURS_AT` 是哪一条动作、差在哪些字段」这一根因结论的证据发生变化；本探针逐字段差分（street / phase / currentBet / minRaiseTo / board / 逐玩家筹码），不是只比最终状态"
+    },
+    {
+      "path": "test/hotfix001StreetReconciliation.test.ts",
+      "category": "DECISION",
+      "sha256": "695a46e523e0bcad7ab6a690083c9e8660649470e4e032b04d0c86b8a0c10e2a",
+      "bytes": 16104,
+      "impact": "**街道结算（D）与 All-In 发牌（E）**的永久回归变化 → **「应用动作之后必须结算下注轮，且只有公共牌真的够才推进街道」与 「无人可行动 ≠ 已经进入摊牌，绝不凭空发牌」这两条保证的强度发生变化**；含现场分叉场景（9 座桌 SB `CALL 1.75` 关掉翻牌前下注轮）的 12 步逐步对拍，以及「停住不是分叉」「全下不得越过新开启的下注轮」两类反证。删掉任何一条断言都等于让「内部一致性检查失败」重新可复现"
+    },
+    {
+      "path": "test/hotfix001CallContract.test.ts",
+      "category": "DECISION",
+      "sha256": "54348b84b931558c0980ee28cf3072f6de506cde29045425149f2ab8e4c20ead",
+      "bytes": 11478,
+      "impact": "**CALL / 全下跟注金额契约（G）**的永久回归变化 → **「`CALL` 的金额 = 本次实际投入且被夹到剩余筹码」「全下跟注必须标成 isAllIn 并写明全下」「不得同时显示两个等价按钮」「跟不完整时没有加注权」这些保证的强度发生变化**；含「每一个可执行按钮都必须被后端接受」的契约扫描与「传未夹的差额必须被拒绝」的反证"
+    },
+    {
+      "path": "test/hotfix001ActionDedup.test.ts",
+      "category": "DECISION",
+      "sha256": "7cf197f791cacb1841902216120b7d4031f1e1f917b6ce6878998fa690cfc83a",
+      "bytes": 10957,
+      "impact": "**UI ACTION DEDUP**（BET/RAISE 尺寸项 ↔ 独立 `ALL_IN`）的永久回归变化 → **「全下必须有一个入口且只能有一个」这条呈现纪律的保护强度发生变化**；覆盖「最小加注/下注 == 全下 ⇒ 由尺寸项承担、不再生成独立 ALL_IN」「正常加注 < 全下 ⇒ RAISE 与 ALL_IN 是两个不同动作」「短码全下低于最小加注 ⇒ 独立 ALL_IN 不得被误删」三类情形与跨场景不变量"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# 依赖与构建产物
+node_modules/
+dist/
+coverage/
+
+# 运行时日志与本地临时文件
+*.log
+logs/
+data/decision-log.jsonl
+scripts/tmp-*
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 🔴 GTOpen 是**外部求解器**（第三方源码 + 工具链 + 分发包，约 260 MB），
+# 不属于本项目的版本控制范围 —— 它按 commit `92c86ed` 固定在本地，
+# 能力与限制见 reports/GTOPEN_MULTI_TABLE_AUDIT.md。
+# 本目录下**只有**项目自己写的启动脚本纳入版本控制。
+GTOopen/*
+!GTOopen/start-gtopen.ps1

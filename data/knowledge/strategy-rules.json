@@ -1,0 +1,392 @@
+{
+  "knowledgeVersion": "1.0.0",
+  "auditPhase": "Phase 4.5",
+  "auditDate": "2026-09-13",
+  "magnitudePolicy": "没有可靠量化依据时必须缺省 magnitude（规范第 17 节）。本文件中带 magnitude 的规则，其来源必须至少有一个 derivableQuantitativeData=true。",
+  "rules": [
+    {
+      "ruleId": "priority.individual-over-environment",
+      "street": "ANY",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "环境先验与个体玩家数据冲突时（例如环境假设「低级别河牌诈唬不足」，但该玩家实测河牌诈唬频率明显更高且可信）",
+      "adjustment": "CONTEXT_DEPENDENT",
+      "target": "BLUFF_WEIGHT",
+      "evidenceLevel": "PRIMARY",
+      "confidence": 0.95,
+      "sources": ["internal.spec-priority"],
+      "exceptions": [
+        "个体数据可信度低（有效样本量不足、置信度低）时不得覆盖环境先验",
+        "个体数据本身来自与当前局面不同的街道/人数/筹码深度时，需先确认可比性",
+        "冲突未被显式记录时不得静默采用任一方 —— 必须留下可审计的裁决记录"
+      ],
+      "notes": "优先级顺序：Math Truth > Verified Individual Data > Reliable Node-specific Data > Game Environment Prior > Generic Heuristic。这是规范性要求（一手证据），因此 confidence 可以很高。**它不提供数值，只提供裁决顺序。**"
+    },
+    {
+      "ruleId": "priority.environment-never-overrides-math",
+      "street": "ANY",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "任何牌局环境（低级别线上 / 中低级别 / 理论参考）下",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "PRIMARY",
+      "confidence": 0.99,
+      "sources": ["internal.spec-priority"],
+      "exceptions": [
+        "无例外 —— 这是一条硬约束"
+      ],
+      "notes": "底池、筹码、底池赔率、所需权益、牌力大小、权益算法**永远不因环境而改变**。环境只允许影响范围先验、动作似然与决策阈值。落地方式：结构化断言（源码 import 扫描 + 模块导出扫描 + 行为 deepEqual 对照）。"
+    },
+    {
+      "ruleId": "theory.no-solver-output-available",
+      "street": "ANY",
+      "gameEnvironment": "THEORY_REFERENCE",
+      "situation": "任何需要在界面上说明「理论参考」含义的场合",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "PRIMARY",
+      "confidence": 0.99,
+      "sources": ["internal.spec-priority", "internal.environment-priors"],
+      "exceptions": [
+        "将来若接入可靠 solver 输出且场景抽象匹配，可改为显示「Solver Reference」—— 但那需要单独审计，不能靠本条规则自动升级"
+      ],
+      "notes": "本项目**没有**任何求解器输出。因此 THEORY_REFERENCE 是**结构性平衡假设**（平衡、无系统性漏洞），只能在界面上显示为「理论参考」，**绝不允许**显示为「GTO 最优」。这是规范第 19 节的硬约束。"
+    },
+    {
+      "ruleId": "profile.preflop-type-does-not-predict-postflop",
+      "street": "FLOP",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "打算用「翻牌前玩家类型」（如 Nit / TAG / Whale）直接推断该玩家翻牌后的行为时",
+      "adjustment": "NEUTRAL",
+      "target": "VALUE_WEIGHT",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "confidence": 0.8,
+      "sources": ["github.gtopen"],
+      "exceptions": [
+        "本条只否定「翻牌前类型 → 翻牌后行为」的预测力，**不否定**翻牌前类型对翻牌前行为的作用（该来源报告翻牌前指标的解释力显著高于翻牌后）",
+        "对手池与其 2009 年 25–50NL 数据集差异很大时，解释力的具体数值不可迁移，但「翻牌前与翻牌后应分开统计」这一结论方向仍然成立",
+        "样本量不足时不得据此下任何结论"
+      ],
+      "notes": "GTOpen 对其自有数据集做无监督聚类后报告：翻牌前 VPIP/PFR 类型对翻牌前行为解释力强，但对翻牌后几乎无解释力（fold-to-flop-bet、fold-to-turn-bet、c-bet、raise-vs-bet、fold-to-3-bet 的解释力都远低于翻牌前指标）。**该来源为 RED 门禁（无许可证），因此本项目不仅不得复制其代码，也不得复制其数值** —— 具体方差解释度请查阅其 docs/player_types.md 原文。本项目只引用「方向性结论」并自行验证。对本项目的意义：Player Profile 必须把翻牌前与翻牌后当作**独立维度**，不能用一个「玩家类型」标签贯穿全街 —— 这与本项目已有的连续维度设计一致。"
+    },
+    {
+      "ruleId": "profile.player-stats-are-continuum-not-clusters",
+      "street": "ANY",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "考虑给玩家贴「类型标签」并据此分桶时",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "confidence": 0.85,
+      "sources": ["github.gtopen"],
+      "exceptions": [
+        "「不应据标签计算」不等于「不应有标签」—— 标签作为**人类可读摘要**仍然有价值",
+        "本条不得被用来删除标签功能"
+      ],
+      "notes": "GTOpen 的聚类报告：无论用 K-means 还是 GMM，都得不到清晰的类别数拐点 —— 即「任何类别数量都是建模选择」。**具体轮廓系数与 BIC 数值属 RED 门禁来源，本项目不复制**，请查阅其原文。本项目据此确认已有的架构决定：**底层保存连续数据，标签只是摘要**，所有调整因子由连续维度计算而非由标签计算。该结论与本项目独立得出的设计一致，构成交叉印证。"
+    },
+    {
+      "ruleId": "range.aggregated-per-combo-not-range-nash",
+      "street": "RIVER",
+      "gameEnvironment": "THEORY_REFERENCE",
+      "situation": "打算用「逐组合完全信息求解后按组合数加权」的结果回答范围层面的诈唬抓取或极化下注问题时",
+      "adjustment": "NEUTRAL",
+      "target": "CALL_WEIGHT",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "confidence": 0.9,
+      "sources": ["github.poker-solver"],
+      "exceptions": [
+        "在「价值牌 vs 空气牌」主导的干燥面上，聚合器与真纳什结论接近，此时可有限使用",
+        "本轮审计**未在本项目内复现**该项目的数值示例，因此引用的是其**方法论论证**而非具体数字"
+      ],
+      "notes": "poker_solver 明确论证：聚合器对每个（我方组合, 对方组合）跑完全信息 1v1 纳什后按组合数加权，得到的是「篮子选择」而非范围纳什 —— 每个子博弈都能看到对方确切底牌，因此**永远不会**做范围驱动的诈唬抓取或极化下注。其文档给出的示例是：某手牌在聚合器下弃牌 7.69%，而该数字恰好等于对方范围中某一手牌的占比（3/39），属确定性产物而非混合频率。**结论**：本项目若将来引入求解器参考，必须记录其求解的是**哪个数学对象**，并拒绝用聚合结果回答范围级问题。"
+    },
+    {
+      "ruleId": "validation.compare-ev-not-per-hand-frequency",
+      "street": "ANY",
+      "gameEnvironment": "THEORY_REFERENCE",
+      "situation": "两个求解器/两份理论结果在同一 Spot 上给出不同的每手频率时，判断这是 Bug 还是不同有效均衡",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "confidence": 0.85,
+      "sources": ["github.dcfr-solver", "github.poker-solver"],
+      "exceptions": [
+        "纯策略（100% 下注或 100% 过牌）方向相反时**仍然**必须进入 CRITICAL REVIEW —— 这条例外是必须的，否则会漏掉真 Bug",
+        "EV 差距的具体阈值需要本项目自行标定，不得直接照搬外部数字",
+        "本项目当前**没有**求解器，本条目前只用于约束未来的交叉验证流程"
+      ],
+      "notes": "DCFR-SOLVER 报告：不同 CFR 实现的每手下注频率差约 12–15%，但其中 241/499 手的 EV 差小于 0.1 筹码 —— 这些无差异手牌解释了全部差异，而**纯策略在所有被测求解器间 100% 一致**。poker_solver 的独立案例也把一处 33 个百分点的差异最终归因为「同一无差异流形上的不同点」而非 Bug。**两国独立项目得出同一方法论结论**，因此证据等级可标为 VERIFIED_SECONDARY。"
+    },
+    {
+      "ruleId": "validation.beware-test-harness-encoding-artifacts",
+      "street": "ANY",
+      "gameEnvironment": "THEORY_REFERENCE",
+      "situation": "差分测试报告出巨大差异（数十个百分点）并准备判定为被测实现有 Bug 时",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "confidence": 0.85,
+      "sources": ["github.poker-solver"],
+      "exceptions": [
+        "本条不是「先怀疑测试」的借口 —— 结构性审查与经验校验必须**同时**做，而不是用一方否定另一方"
+      ],
+      "notes": "poker_solver 报告：一处 22–42 个百分点的验收信号最终被证实是**三个测试侧编码瑕疵** —— 动作轴列序（对方输出 [c, f, r_low, r_med, r_jam]，本实现按动作 id 排序输出 [f, c, r_low, r_med, A]，位置索引错位）、范围与玩家槽位反转、手牌字符串花色序规范化（`cdhs` vs `shdc`）。修正包装层后原信号消失。**对本项目的意义**：任何跨实现差分测试，都必须先锁定坐标轴约定、玩家槽位约定与字符串规范化，否则测的是包装层而不是算法。"
+    },
+    {
+      "ruleId": "validation.suit-isomorphism-permutation-direction",
+      "street": "FLOP",
+      "gameEnvironment": "THEORY_REFERENCE",
+      "situation": "实现或审计花色同构（suit isomorphism）时",
+      "adjustment": "NEUTRAL",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "SECONDARY",
+      "confidence": 0.7,
+      "sources": ["github.dcfr-solver"],
+      "exceptions": [
+        "本项目**当前未实现花色同构**，因此本条目前不适用于现有代码 —— 它是一条**前置警告**",
+        "仅在「未来决定引入花色同构」时生效"
+      ],
+      "notes": "DCFR-SOLVER 报告：chance node 的 `chance_utility` 聚合用了**正向**排列而非**逆向**排列。对换位（交换两个花色）正向等于逆向，所以普通牌面正常；但对 S3 中的 3-循环（单调面有三个等价花色）正向 ≠ 逆向，聚合会把效用值**静默**散播到错误的组合上。症状：配对与单调面的可利用度停在 0.65%–0.73%，普通面则为 0.016%。**仅凭 README 记载，未在本项目内复现**，故证据等级为 SECONDARY 而非 VERIFIED_SECONDARY。"
+    },
+    {
+      "ruleId": "profile.nit-and-maniac-most-valuable-reads",
+      "street": "PREFLOP",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "现场读牌时间有限，只能优先识别少数几类玩家时",
+      "adjustment": "CONTEXT_DEPENDENT",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["github.gtopen"],
+      "exceptions": [
+        "该结论来自**单一类型满桌**与**不会自适应的刚性画像**，作者自述绝对 EV 是上限值、混合桌会更温和",
+        "其场景为 8-max 150bb/200bb、$2/2 与 $2/5 —— 与本项目默认场景不同",
+        "翻牌前模型使用**近似延续模型**，其自述可能与真实多路求解存在明显偏差",
+        "**本项目未复现其任何数值**，因此不得据此设定任何阈值或优先级权重"
+      ],
+      "notes": "GTOpen 的 cross-exploit 研究报告：把「误读修正策略」的代价按玩家类型列表，结论是 Nit 与 Maniac 是「最值得优先识别」的两类（误读代价最高），而中间五种类型从利用角度会「坍缩」。**证据等级刻意标为 HEURISTIC**：该结论虽来自有方法的实验，但依赖作者自建的近似翻牌前模型、单一类型满桌假设与权利不明的 2009 年数据集，且本项目无法独立复核 —— 因此只能作为**待验证假设**，不能作为参数依据。"
+    },
+    {
+      "ruleId": "env.low-stakes-online-directional-only",
+      "street": "ANY",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上环境中，对手池整体的松紧、被动程度与诈唬占比",
+      "adjustment": "CONTEXT_DEPENDENT",
+      "target": "RANGE_WIDTH",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.35,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "**必须**允许被个体玩家数据覆盖（见 priority.individual-over-environment）",
+        "不得用于 9-max 与 6-max 之间的迁移推断（未验证）",
+        "不得套用到锦标赛（本项目不涉及）",
+        "对手池构成与假设不符时（例如明显是常客局）整条规则失效"
+      ],
+      "notes": "方向性假设：低级别线上整体偏松偏被动、诈唬占比偏低、河牌大额下注更可能是真牌。**magnitude 刻意缺省** —— 本轮审计确认：四个被审计的 GitHub 项目**都不提供**可直接引用的低级别线上人口统计（三个是求解器；GTOpen 的玩家原型统计来自 2009 年数据且权利不明）。因此本规则只能给方向，等真实牌局数据校准。"
+    },
+    {
+      "ruleId": "env.mid-low-stakes-not-simply-less-bluff",
+      "street": "ANY",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别环境中的对手池假设",
+      "adjustment": "CONTEXT_DEPENDENT",
+      "target": "BLUFF_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "不得把「中低级别」当成「低级别但不那么极端」的线性插值 —— 若只是线性插值，说明建模失败",
+        "同样必须允许被个体玩家数据覆盖",
+        "无数据支撑，不得用于声称任何具体频率"
+      ],
+      "notes": "规范第 38 节明确要求：中低级别**不能**继续简单套用「低级别 = 不诈唬」。应体现的是对手能力的**结构性变化**（更宽的 3Bet、更合格的盲注防守、双管、河牌诈唬、极化下注尺寸、基于阻断牌的诈唬、对 Hero 的适应），而不是「诈唬少一点」。**magnitude 缺省**：本轮审计未发现任何提供中低级别人口统计的可引用来源。"
+    },
+    {
+      "ruleId": "env.low.river-bluff-tendency-down",
+      "street": "RIVER",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上：对手在河牌做出进攻动作时，其中诈唬的占比",
+      "adjustment": "DECREASE",
+      "target": "BLUFF_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖（见 priority.individual-over-environment）",
+        "对手明显是常客局时不适用",
+        "**没有任何分级别统计数据支撑**，不得用于声称任何具体频率"
+      ],
+      "notes": "方向：河牌诈唬倾向 ↓。**刻意不写幅度** —— 本轮审计确认四个被审计项目都不提供可引用的低级别线上人口统计，因此任何百分比都是编造（规范第 17 节）。"
+    },
+    {
+      "ruleId": "env.low.bluff-frequency-down",
+      "street": "ANY",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上：对手整体主动诈唬的频率",
+      "adjustment": "DECREASE",
+      "target": "BLUFF_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "对已识别为「爱诈唬」的个体不适用",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：诈唬频率 ↓。与 env.low.river-bluff-tendency-down 的区别是范围（全街 vs 仅河牌）。**无幅度。**"
+    },
+    {
+      "ruleId": "env.low.calling-tendency-up",
+      "street": "ANY",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上：对手面对下注时的跟注倾向",
+      "adjustment": "INCREASE",
+      "target": "CALL_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "对已识别为「过度弃牌」的个体不适用",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：跟注倾向 ↑。直接推论是「我们的诈唬成功率下降」，因此本规则与 bluff-frequency 方向一致（都指向少诈唬）。**无幅度。**"
+    },
+    {
+      "ruleId": "env.low.multiway-value-threshold-up",
+      "street": "ANY",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上多人池：需要多强的牌才值得下注取值",
+      "adjustment": "INCREASE",
+      "target": "MULTIWAY_VALUE_THRESHOLD",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "单挑时本规则不适用（门槛不应被抬高）",
+        "必须允许被个体玩家数据覆盖",
+        "不得用于声称任何具体门槛数值"
+      ],
+      "notes": "方向：多人池价值下注门槛 ↑（对手越多，跟注的人越多，需要更強的牌才值得下注取值）。**无幅度。**"
+    },
+    {
+      "ruleId": "env.low.thin-value-up",
+      "street": "RIVER",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上：用中等强度牌做薄价值下注的倾向",
+      "adjustment": "INCREASE",
+      "target": "THIN_VALUE_TENDENCY",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "与 env.low.calling-tendency-up 同源：对手跟注更多 → 薄价值更有利",
+        "但对已识别为「过度弃牌」的个体应反向",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：薄价值 ↑。这是「跟注倾向 ↑」的直接推论 —— 对手跟得越宽，边际牌值就越值得下注。**无幅度。**"
+    },
+    {
+      "ruleId": "env.low.passive-large-aggression-credibility-up",
+      "street": "RIVER",
+      "gameEnvironment": "LOW_STAKES_ONLINE",
+      "situation": "低级别线上：被识别为被动型的玩家做出大额河牌进攻时，该动作代表强牌的可信度",
+      "adjustment": "INCREASE",
+      "target": "PASSIVE_LARGE_AGGRESSION_CREDIBILITY",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "**仅适用于已被识别为被动型的个体**，不适用于未知或已识别为激进的对手",
+        "个体被动度数据样本不足时不得套用",
+        "不得用于声称任何具体可信度数值"
+      ],
+      "notes": "方向：被动玩家大额河牌进攻的可信度 ↑。这是环境先验与个体画像的**联合**规则 —— 环境提供方向，个体画像提供是否适用。**无幅度。**"
+    },
+    {
+      "ruleId": "env.mid.three-bet-bluff-likelihood-up",
+      "street": "PREFLOP",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别：对手在翻牌前用非顶端牌做 3Bet 的可能性",
+      "adjustment": "INCREASE",
+      "target": "BLUFF_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "不得与低级别的「诈唬 ↓」直接叠加 —— 两者是**不同环境**的不同假设，不可混用",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：3Bet 诈唬可能性 ↑（对手能力相对低级别提升的**结构性**变化之一）。**无幅度。**"
+    },
+    {
+      "ruleId": "env.mid.river-polarization-up",
+      "street": "RIVER",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别：对手在河牌下注范围的极化程度",
+      "adjustment": "INCREASE",
+      "target": "RIVER_POLARIZATION",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "**极化 ↑ 不代表诈唬占比 ↑** —— 极化的另一端是更强的价值牌，两者不可混淆",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：河牌极化 ↑。⚠️ 这条与低级别的「诈唬 ↓」并不矛盾：极化说的是**范围形状**（两端更极端），诈唬占比说的是**构成比例**。把两者混为一谈是最容易犯的误读，故显式写入 exceptions。**无幅度。**"
+    },
+    {
+      "ruleId": "env.mid.bluff-catcher-viability-up",
+      "street": "RIVER",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别：用只能赢诈唬的牌做抓诈唬（bluff catch）的可行性",
+      "adjustment": "INCREASE",
+      "target": "BLUFF_CATCH_VIABILITY",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "与 env.low.river-bluff-tendency-down 方向相反，**两者不可同时适用**（它们是不同环境的假设）",
+        "不得用于声称任何具体频率"
+      ],
+      "notes": "方向：抓诈唬可行性 ↑。逻辑链：对手诈唬能力提升 → 其极化范围中的诈唬端更真实 → 用抓诈唬牌跟注更有价值。**无幅度。**"
+    },
+    {
+      "ruleId": "env.mid.blocker-relevance-up",
+      "street": "ANY",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别：阻断牌（blocker）在决策中应有的权重",
+      "adjustment": "INCREASE",
+      "target": "BLOCKER_RELEVANCE",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "必须允许被个体玩家数据覆盖",
+        "**阻断牌的数学效果永远由本项目自己的组合数学计算**，本规则只影响「是否优先考虑它」，不影响组合计数本身",
+        "不得用于声称任何具体权重"
+      ],
+      "notes": "方向：阻断牌相关性 ↑（对手越会利用阻断牌，我们做决策时也越需要考虑它）。⚠️ **硬边界**：阻断牌的**效果**（哪些组合被排除、还剩多少）永远由确定性代码计算，本规则只能影响注意力分配，绝不能改变组合数学。**无幅度。**"
+    },
+    {
+      "ruleId": "env.mid.player-data-weight-up",
+      "street": "ANY",
+      "gameEnvironment": "MID_LOW_STAKES",
+      "situation": "中低级别：个体玩家数据相对环境先验应占的权重",
+      "adjustment": "INCREASE",
+      "target": "PLAYER_DATA_WEIGHT",
+      "evidenceLevel": "HEURISTIC",
+      "confidence": 0.3,
+      "sources": ["internal.environment-priors"],
+      "exceptions": [
+        "⚠️ **绝不允许覆盖优先级链**：个体数据权重再高，也不能越过 priority.individual-over-environment 的既有规则；本条只是把「同一优先级层内的相对权重」调高",
+        "个体数据样本不足时不得套用",
+        "不得用于声称任何具体权重"
+      ],
+      "notes": "方向：个体玩家数据权重 ↑。逻辑：中低级别对手**更会针对 Hero 调整**，因此「这个人的实际打法」比「这个级别的平均打法」更有解释力。⚠️ 这条容易被误读成「可以放宽样本门槛」—— **不可以**，样本量门槛是硬校验，不因环境而改变。**无幅度。**"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "dezhou-poker-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "德州扑克决策与复盘训练系统 V1 - 核心正确性内核（中文优先）",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\"",
+    "test:watch": "node --test --watch --experimental-strip-types \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run manifest:check && npm test",
+    "manifest": "node --experimental-strip-types scripts/generateManifest.ts",
+    "manifest:check": "node --experimental-strip-types scripts/generateManifest.ts --check",
+    "demo": "node --experimental-strip-types src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.0"
+  }
+}

@@ -1,0 +1,812 @@
+﻿=== Step 7 独立红队审计证据日志（UTF-8，probe1–probe9，最终定格）===
+复现时刻：2026-09-13T09:20:03.3716175+08:00    node：v24.19.0
+运行：node.exe --experimental-strip-types scripts/rt7-probeN.ts（工作目录 D:\德州）
+★ 审计期间 src/domain/dynamic/ 被并发修改（见报告第 0 节）。本次运行的源码修订（开始）：
+40308713CF4096C8  dynamic.types.ts
+47F6855048D2B06D  dynamicAdapter.ts
+71A94961032ED05D  dynamicBehavior.ts
+5C913E03E346F1E1  dynamicDeviation.ts
+E3099258340BEA8B  dynamicStats.ts
+8DFCAFE13F08817B  playerStats.ts
+
+################ scripts/rt7-probe1.ts ################
+==============================================================================
+A. 假阴性边界：基线 VPIP 15% → 近期 45%，手数 N 从 6 扫到 80
+   （每手 1 次 VPIP 机会，另附 1 次 PFR 机会但不命中；成功率按 45% 均匀铺开）
+==============================================================================
+N   成功  原始率    窗口机会  收缩后     deviation  状态               LOOSER p  置信     调整数
+──  ──  ─────  ────  ──────  ─────────  ───────────────  ────────  ─────  ───
+6   3   0.500  6     0.2965  8          NORMAL           -         0.500  0  
+7   3   0.429  7     0.2912  7          NORMAL           -         0.583  0  
+8   4   0.500  8     0.3486  21         LOOSER_RECENTLY  0.794     0.667  1  
+10  5   0.500  10    0.3875  25         LOOSER_RECENTLY  0.950     0.833  1  
+12  5   0.417  12    0.3570  22         LOOSER_RECENTLY  0.828     0.900  1  
+15  7   0.467  15    0.4203  26         LOOSER_RECENTLY  1.000     0.900  1  
+18  8   0.444  18    0.4170  13         NORMAL           -         0.900  0  
+20  9   0.450  20    0.4200  13         NORMAL           -         0.900  0  
+25  11  0.440  20    0.4200  13         NORMAL           -         0.900  0  
+30  14  0.467  20    0.4650  13         NORMAL           -         0.900  0  
+40  18  0.450  20    0.4200  13         NORMAL           -         0.900  0  
+50  23  0.460  20    0.4650  13         NORMAL           -         0.900  0  
+60  27  0.450  20    0.4200  13         NORMAL           -         0.900  0  
+80  36  0.450  20    0.4200  13         NORMAL           -         0.900  0  
+
+==============================================================================
+B. 20 次机会固定，成功率从 15% 单调抬到 100% —— deviationScore 是否单调不减
+==============================================================================
+成功     原始率   收缩后     偏差      ENTRY分  deviation  状态                LOOSER p  置信   
+─────  ────  ──────  ──────  ──────  ─────────  ────────────────  ────────  ─────
+3/20   0.15  0.1500  0.0000  0.4320  11         TIGHTER_RECENTLY  -         0.900
+4/20   0.20  0.1950  0.0450  0.4320  11         TIGHTER_RECENTLY  -         0.900
+5/20   0.25  0.2400  0.0900  0.4320  11         TIGHTER_RECENTLY  -         0.900
+6/20   0.30  0.2850  0.1350  0.2700  7 ← 下降!    NORMAL            -         0.900
+7/20   0.35  0.3300  0.1800  0.3600  9          NORMAL            -         0.900
+8/20   0.40  0.3750  0.2250  0.4500  12         NORMAL            -         0.900
+9/20   0.45  0.4200  0.2700  0.5000  13         NORMAL            -         0.900
+10/20  0.50  0.4650  0.3150  0.5000  13         NORMAL            -         0.900
+11/20  0.55  0.5100  0.3600  0.5000  13         NORMAL            -         0.900
+12/20  0.60  0.5550  0.4050  0.5000  13         NORMAL            -         0.900
+13/20  0.65  0.6000  0.4500  0.5000  13         NORMAL            -         0.900
+14/20  0.70  0.6450  0.4950  0.5000  13         NORMAL            -         0.900
+15/20  0.75  0.6900  0.5400  0.5000  13         NORMAL            -         0.900
+16/20  0.80  0.7350  0.5850  0.5000  13         NORMAL            -         0.900
+17/20  0.85  0.7800  0.6300  0.5000  13         NORMAL            -         0.900
+18/20  0.90  0.8250  0.6750  0.5000  13         NORMAL            -         0.900
+19/20  0.95  0.8700  0.7200  0.5000  13         NORMAL            -         0.900
+20/20  1.00  0.9150  0.7650  0.5000  13         NORMAL            -         0.900
+单调不减：否 —— 存在下降台阶；LOOSER_RECENTLY 首次出现于 null/20
+
+==============================================================================
+C. 单指标偏离幅度递增（固定 20 次机会）—— 全窗口 10/20/50 与总分
+==============================================================================
+成功率   rawRate  adjustedRate  ENTRY   方向     deviation  状态                RANGE_WIDTH调整
+────  ───────  ────────────  ──────  ─────  ─────────  ────────────────  ─────────────
+0.15  0.150    0.1500        0.4320  LOWER  11         TIGHTER_RECENTLY  有            
+0.20  0.200    0.1950        0.4320  LOWER  11         TIGHTER_RECENTLY  有            
+0.25  0.250    0.2400        0.4320  LOWER  11         TIGHTER_RECENTLY  有            
+0.30  0.300    0.2850        0.2700  NONE   7          NORMAL            无            
+0.35  0.350    0.3300        0.3600  NONE   9          NORMAL            无            
+0.40  0.400    0.3750        0.4500  NONE   12         NORMAL            无            
+0.45  0.450    0.4200        0.5000  NONE   13         NORMAL            无            
+0.50  0.500    0.4650        0.5000  NONE   13         NORMAL            无            
+0.60  0.600    0.5550        0.5000  NONE   13         NORMAL            无            
+0.70  0.700    0.6450        0.5000  NONE   13         NORMAL            无            
+0.80  0.800    0.7350        0.5000  NONE   13         NORMAL            无            
+0.90  0.900    0.8250        0.5000  NONE   13         NORMAL            无            
+1.00  1.000    0.9150        0.5000  NONE   13         NORMAL            无            
+
+==============================================================================
+D. 样本保护：1/1 100%  vs  20/9 45%  —— 谁的影响更大？
+==============================================================================
+场景                        窗口机会  收缩后     强度      deviation  状态               LOOSER p  置信     调整数
+────────────────────────  ────  ──────  ──────  ─────────  ───────────────  ────────  ─────  ───
+1 次机会 1 次命中（100%）         1     0.1657  0.0628  2          UNKNOWN          -         0.083  0  
+1 次机会 1 次命中（100%，重复 3 手）  3     0.2744  0.4976  13         UNKNOWN          -         0.250  0  
+5 次机会 5 次命中（100%）         5     0.4266  1.0000  26         LOOSER_RECENTLY  1.000     0.417  1  
+8 次机会 8 次命中（100%）         8     0.6244  1.0000  26         LOOSER_RECENTLY  1.000     0.667  1  
+20 次机会 20 次命中（100%）       20    0.9150  0.5000  13         NORMAL           -         0.900  0  
+20 次机会 9 次命中（45%）         20    0.4200  0.5000  13         NORMAL           -         0.900  0  
+20 次机会 12 次命中（60%）        20    0.5550  0.5000  13         NORMAL           -         0.900  0  
+60 次机会 27 次命中（45%）        20    0.4200  0.5000  13         NORMAL           -         0.900  0  
+
+==============================================================================
+E. 收缩公式核对：实现到底给了基线多少权重？
+   REF = SHRINKAGE_REFERENCE_OPPORTUNITIES = 60
+   SUFFICIENT_RECENT_OPPORTUNITIES = 60
+==============================================================================
+20 次机会的原始权重（age 19..0，半衰期 30）：
+  Σw(原始) = 16.201356，Σw(capped) = 16.201356
+  capped 权重去重后个数 = 1（**完全均匀 —— 时间衰减被单手影响上限抹平**）
+  effectiveSampleSize(原始) = 19.6524；capped = 20.0000
+
+场景：20 次机会、12 次命中、基线率 0.15、基线 confidence 0.9
+  快照给出的 adjustedRate = 0.555003（rawRate = 0.6000，successes = 12）
+  实现所用 k = ((REF − c)/c) × quality = ((60 − 20)/20) × 0.9 = 1.8000
+  文档声称「基线 : 近期 = (REF − c) : c = 40 : 20」，即 k 应为 36.0
+  实测权重占比：基线 = 0.1000（10.0%），近期 = 0.9000
+  若 k = 36.0（文档口径）→ adjustedRate = 0.289663
+  若 k = 1.8000（实现口径）→ adjustedRate = 0.555003
+  ⇒ 实现与文档口径的 adjustedRate 差异 = 0.265340
+
+  关键刻度（文档声称 vs 实现）：
+c（机会数）  k（实现）    基线权重占比  文档声称占比  是否为文档口径
+──────  ───────  ──────  ──────  ───────
+1       59.0000  98.3%   98.3%   是      
+2       29.0000  93.5%   96.7%   否      
+5       11.0000  68.8%   91.7%   否      
+10      5.0000   33.3%   83.3%   否      
+20      2.0000   9.1%    66.7%   否      
+30      1.0000   3.2%    50.0%   否      
+40      0.5000   1.2%    33.3%   否      
+50      0.2000   0.4%    16.7%   否      
+59      0.0169   0.0%    1.7%    否      
+60      0.0000   0.0%    0.0%    是      
+  注：文档称「c = REF/2 → 基线与近期等权」。以 c=30 计，实现给出基线权重 3.2%。
+
+==============================================================================
+F. 非单调台阶搜索：同组内两个反向指标同时远离基线
+==============================================================================
+d   VPIP   LIMP  ENTRY方向  ENTRY分  最强指标  deviation  状态                冲突
+──  ─────  ────  ───────  ──────  ────  ─────────  ────────────────  ──
+0   3/20   2/20  LOWER    0.4320  PFR   11         TIGHTER_RECENTLY  0 
+1   4/20   2/20  LOWER    0.4320  PFR   11         TIGHTER_RECENTLY  0 
+2   5/20   1/20  LOWER    0.4320  PFR   11         TIGHTER_RECENTLY  0 
+3   6/20   1/20  NONE     0.2700  VPIP  7 ← 下降     NORMAL            0 
+4   7/20   0/20  NONE     0.3600  VPIP  9          NORMAL            1 
+5   8/20   0/20  NONE     0.4500  VPIP  12         NORMAL            1 
+6   9/20   0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+7   10/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+8   11/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+9   12/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+10  13/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+11  14/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+12  15/20  0/20  NONE     0.5000  VPIP  13         NORMAL            1 
+本扫描中 deviationScore 下降台阶数 = 1
+---- probe1 exit=0 ----
+
+################ scripts/rt7-probe2.ts ################
+================================================================================================
+变体 A 仅 VPIP（无 PFR 机会）
+基线：{"VPIP":0.15}，基线 confidence 0.9；近期成功率 = 基线 15% → 目标值
+================================================================================================
+目标率   VPIP   PFR  VPIP方向  ENTRY方向  ENTRY分  最强    deviation  状态               LOOSER p  置信     RANGE调整   冲突数
+────  ─────  ───  ──────  ───────  ──────  ────  ─────────  ───────────────  ────────  ─────  ────────  ───
+0.15  3/20   —    -       NONE     0.0000  VPIP  0          NORMAL           -         0.000  无         0  
+0.25  5/20   —    -       NONE     0.1800  VPIP  5          NORMAL           -         0.833  无         0  
+0.35  7/20   —    -       HIGHER   0.7200  VPIP  19         LOOSER_RECENTLY  0.720     0.833  INCREASE  0  
+0.45  9/20   —    -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.833  INCREASE  0  
+0.60  12/20  —    -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.833  INCREASE  0  
+0.80  16/20  —    -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.833  INCREASE  0  
+1.00  20/20  —    -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.833  INCREASE  0  
+  [VPIP 20/20 = 100%] 状态=LOOSER_RECENTLY 分数=26
+     explanation = ["翻牌前入池高于个人基线（主要指标：VPIP）"]
+     conflicts   = []
+     adjustments = [["RANGE_WIDTH","INCREASE","0.833"]]
+
+================================================================================================
+变体 B VPIP↑ + PFR↓（被动跟注变多，最经典）
+基线：{"VPIP":0.15,"PFR":0.12}，基线 confidence 0.9；近期成功率 = 基线 15% → 目标值
+================================================================================================
+目标率   VPIP   PFR   VPIP方向  ENTRY方向  ENTRY分  最强    deviation  状态                LOOSER p  置信     RANGE调整   冲突数
+────  ─────  ────  ──────  ───────  ──────  ────  ─────────  ────────────────  ────────  ─────  ────────  ───
+0.15  3/20   0/20  -       LOWER    0.4320  PFR   11         TIGHTER_RECENTLY  -         0.900  DECREASE  0  
+0.25  5/20   0/20  -       LOWER    0.4320  PFR   11         TIGHTER_RECENTLY  -         0.900  DECREASE  0  
+0.35  7/20   0/20  -       NONE     0.3600  VPIP  9          NORMAL            -         0.900  无         1  
+0.45  9/20   0/20  -       NONE     0.5000  VPIP  13         NORMAL            -         0.900  无         1  
+0.60  12/20  0/20  -       NONE     0.5000  VPIP  13         NORMAL            -         0.900  无         1  
+0.80  16/20  0/20  -       NONE     0.5000  VPIP  13         NORMAL            -         0.900  无         1  
+1.00  20/20  0/20  -       NONE     0.5000  VPIP  13         NORMAL            -         0.900  无         1  
+  [VPIP 20/20 = 100%] 状态=NORMAL 分数=13
+     explanation = ["翻牌前入池偏离个人基线（主要指标：VPIP）","入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"]
+     conflicts   = ["入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"]
+     adjustments = []
+
+================================================================================================
+变体 C VPIP↑ + PFR↑（整体变松且更激进）
+基线：{"VPIP":0.15,"PFR":0.12}，基线 confidence 0.9；近期成功率 = 基线 15% → 目标值
+================================================================================================
+目标率   VPIP   PFR   VPIP方向  ENTRY方向  ENTRY分  最强    deviation  状态               LOOSER p  置信     RANGE调整   冲突数
+────  ─────  ────  ──────  ───────  ──────  ────  ─────────  ───────────────  ────────  ─────  ────────  ───
+0.15  3/20   7/20  -       HIGHER   0.8280  PFR   22         LOOSER_RECENTLY  0.828     0.900  INCREASE  0  
+0.25  5/20   7/20  -       HIGHER   0.8280  PFR   22         LOOSER_RECENTLY  0.828     0.900  INCREASE  0  
+0.35  7/20   7/20  -       HIGHER   0.8280  PFR   22         LOOSER_RECENTLY  0.828     0.900  INCREASE  0  
+0.45  9/20   7/20  -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.900  INCREASE  0  
+0.60  12/20  7/20  -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.900  INCREASE  0  
+0.80  16/20  7/20  -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.900  INCREASE  0  
+1.00  20/20  7/20  -       HIGHER   1.0000  VPIP  26         LOOSER_RECENTLY  1.000     0.900  INCREASE  0  
+  [VPIP 20/20 = 100%] 状态=LOOSER_RECENTLY 分数=26
+     explanation = ["翻牌前入池高于个人基线（主要指标：VPIP）"]
+     conflicts   = []
+     adjustments = [["RANGE_WIDTH","INCREASE","0.900"]]
+
+================================================================================================
+D. 「冲突 → LOOSER_RECENTLY」分支可达性：是否存在 ENTRY 方向仍为 HIGHER 的冲突场景
+================================================================================================
+VPIP   PFR   3Bet   ENTRY方向  状态               deviation  冲突  冲突首条                        
+─────  ────  ─────  ───────  ───────────────  ─────────  ──  ────────────────────────────
+18/20  0/20  0/20   NONE     NORMAL           16         1   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+36/40  0/40  0/40   NONE     AGGRESSION_DOWN  19         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+54/60  0/60  0/60   NONE     AGGRESSION_DOWN  19         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+18/20  0/20  6/20   NONE     NORMAL           33         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+36/40  0/40  12/40  NONE     NORMAL           33         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+54/60  0/60  18/60  NONE     NORMAL           33         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+36/40  4/40  0/40   HIGHER   LOOSER_RECENTLY  32         1   入池率上升但 3Bet 下降 —— 更可能是跟注变多，而
+54/60  6/60  0/60   HIGHER   LOOSER_RECENTLY  32         1   入池率上升但 3Bet 下降 —— 更可能是跟注变多，而
+20/20  0/20  0/20   NONE     NORMAL           16         1   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+40/40  0/40  0/40   NONE     AGGRESSION_DOWN  19         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+60/60  0/60  0/60   NONE     AGGRESSION_DOWN  19         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+20/20  0/20  6/20   NONE     NORMAL           33         2   入池率上升但主动加注率下降 —— 更可能是被动跟注变多，
+出现冲突的配置数 = 16
+其中「被动跟注变多」冲突但 ENTRY 方向 ≠ NONE 的配置数 = 0
+（说明 deriveState 里 `aggressionBlocked && entry?.direction === "HIGHER"` → LOOSER_RECENTLY 分支
+  在「VPIP↑ 但 PFR↓」这一经典冲突下不可达：ENTRY 组自身已把方向判成 NONE）
+而 ENTRY=HIGHER 且状态恰为 LOOSER_RECENTLY 的配置数 = 4
+---- probe2 exit=0 ----
+
+################ scripts/rt7-probe3.ts ################
+================================================================================================
+A. 假阳性：数据**完全由基线率生成**（真值 = 基线），任何报告都是误报
+   指标数 = 13，基线 confidence 0.9 / opportunities 400
+================================================================================================
+
+—— 20 手历史（每手几乎全指标出现）（400 个种子，每手出现概率 0.95）——
+指标                      值             
+──────────────────────  ──────────────
+deviationScore 均值       19.82         
+deviationScore P50      17            
+deviationScore P95      35            
+deviationScore MAX      49            
+confidence 均值           0.866         
+UNKNOWN 比例              0/400 = 0.0%  
+状态 ≠ NORMAL 比例（误报）      48/400 = 12.0%
+  ↳ LOOSER_RECENTLY     19 = 4.8%     
+  ↳ TIGHTER_RECENTLY    27 = 6.8%     
+出现「方向冲突」提示的比例           0/400 = 0.0%  
+产生调整（非空 adjustments）比例  48/400 = 12.0%
+deviationScore > 20 比例  142 = 35.5%   
+deviationScore > 30 比例  44 = 11.0%    
+误报调整的最大幅度 |因子−1|        0.2523        
+   状态分布：{"NORMAL":352,"LOOSER_RECENTLY":19,"TIGHTER_RECENTLY":27,"AGGRESSION_UP":2}
+   一个误报样例：seed=110866 状态=LOOSER_RECENTLY 分数=48 冲突=[] 调整=[["RANGE_WIDTH","INCREASE","0.900"]]
+
+—— 40 手历史（每手几乎全指标出现）（400 个种子，每手出现概率 0.95）——
+指标                      值              
+──────────────────────  ───────────────
+deviationScore 均值       24.90          
+deviationScore P50      24             
+deviationScore P95      41             
+deviationScore MAX      54             
+confidence 均值           0.848          
+UNKNOWN 比例              0/400 = 0.0%   
+状态 ≠ NORMAL 比例（误报）      158/400 = 39.5%
+  ↳ LOOSER_RECENTLY     64 = 16.0%     
+  ↳ TIGHTER_RECENTLY    77 = 19.3%     
+出现「方向冲突」提示的比例           20/400 = 5.0%  
+产生调整（非空 adjustments）比例  158/400 = 39.5%
+deviationScore > 20 比例  261 = 65.3%    
+deviationScore > 30 比例  118 = 29.5%    
+误报调整的最大幅度 |因子−1|        0.2523         
+   状态分布：{"NORMAL":242,"LOOSER_RECENTLY":64,"TIGHTER_RECENTLY":77,"AGGRESSION_UP":17}
+   一个误报样例：seed=15838 状态=LOOSER_RECENTLY 分数=39 冲突=[] 调整=[["RANGE_WIDTH","INCREASE","0.900"]]
+
+—— 20 手历史（每指标出现概率 0.4，样本较稀疏）（400 个种子，每手出现概率 0.4）——
+指标                      值             
+──────────────────────  ──────────────
+deviationScore 均值       17.53         
+deviationScore P50      15            
+deviationScore P95      31            
+deviationScore MAX      43            
+confidence 均值           0.864         
+UNKNOWN 比例              0/400 = 0.0%  
+状态 ≠ NORMAL 比例（误报）      56/400 = 14.0%
+  ↳ LOOSER_RECENTLY     14 = 3.5%     
+  ↳ TIGHTER_RECENTLY    40 = 10.0%    
+出现「方向冲突」提示的比例           3/400 = 0.8%  
+产生调整（非空 adjustments）比例  56/400 = 14.0%
+deviationScore > 20 比例  119 = 29.8%   
+deviationScore > 30 比例  25 = 6.3%     
+误报调整的最大幅度 |因子−1|        0.2523        
+   状态分布：{"NORMAL":344,"LOOSER_RECENTLY":14,"TIGHTER_RECENTLY":40,"AGGRESSION_UP":2}
+   一个误报样例：seed=23757 状态=LOOSER_RECENTLY 分数=22 冲突=[] 调整=[["RANGE_WIDTH","INCREASE","0.900"]]
+
+================================================================================================
+B. 「宽度冒充深度」：机会总数把足够的门槛骗过去了吗
+   MIN_RECENT_OPPORTUNITIES = 8（总机会数门槛）
+   SUFFICIENT_RECENT_OPPORTUNITIES = 60（confidence 的样本刻度分母 ÷3 = 24）
+================================================================================================
+手数  总机会数  每指标机会(最大)  状态      deviation  置信      调整数  调整幅度
+──  ────  ─────────  ──────  ─────────  ──────  ───  ────
+1   10    1          NORMAL  2          0.4167  0        
+2   21    2          NORMAL  5          0.8750  0        
+3   34    3          NORMAL  6          0.9000  0        
+5   60    5          NORMAL  14         0.9000  0        
+8   99    8          NORMAL  14         0.9000  0        
+20  248   10         NORMAL  21         0.9000  0        
+
+  极端构造：1 手牌里塞进 13 个指标的机会，且 VPIP 命中（真实率无从谈起）
+    1 手 / 13 个机会 → 状态=NORMAL 置信=0.5417 分数=2 调整=0
+    explanation = ["翻牌前入池高于个人基线（主要指标：VPIP）"]
+  极端构造：同一手牌塞进 24 个机会（含 12 个未登记进 METRIC_GROUP 的真实指标）
+    1 手 / 25 个机会 → 状态=NORMAL 置信=0.9000 分数=2 调整=0
+    explanation = ["翻牌前入池高于个人基线（主要指标：VPIP）"]
+
+================================================================================================
+C. 同一构造成真值时，系统给了多少置信度 / 多大调整
+================================================================================================
+手数  状态             deviation  置信      调整                                                                                             
+──  ─────────────  ─────────  ──────  ───────────────────────────────────────────────────────────────────────────────────────────────
+1   NORMAL         6          0.5417                                                                                                 
+2   AGGRESSION_UP  22         0.9000  AGGRESSION_LIKELIHOOD=1.2523 BLUFF_LIKELIHOOD=1.2523 RANGE_WIDTH=1.2523 VALUE_LIKELIHOOD=1.2523
+3   AGGRESSION_UP  46         0.9000  AGGRESSION_LIKELIHOOD=1.2523 BLUFF_LIKELIHOOD=1.2523 RANGE_WIDTH=1.2523 VALUE_LIKELIHOOD=1.2523
+5   AGGRESSION_UP  84         0.9000  AGGRESSION_LIKELIHOOD=1.2523 BLUFF_LIKELIHOOD=1.2523 RANGE_WIDTH=1.2523 VALUE_LIKELIHOOD=1.2523
+20  AGGRESSION_UP  84         0.9000  AGGRESSION_LIKELIHOOD=1.2523 BLUFF_LIKELIHOOD=1.2523 RANGE_WIDTH=1.2523 VALUE_LIKELIHOOD=1.2523
+   （该构造中每手每个指标都记为「命中」，即行为极端；用于观察置信度与幅度的天花板）
+---- probe3 exit=0 ----
+
+################ scripts/rt7-probe4.ts ################
+================================================================================================
+A. 数值稳定性：极端输入是否产生 NaN / Infinity / 越界 / 崩溃
+================================================================================================
+  ✔ asOf = NaN → {"ok":true,"value":{"playerId":"p1","asOf":null,"deviationScore":37,"confidence":0.9,"dominantState":"TIGHTER_RECENTLY","signals":[{"state":"TIGHTER_RECENTLY","probability":0.6120051210577523,"confidence":0.23076923076923078,"drivers":["PFR"]}],"groupScores":[{"group":"ENTRY","score":0.6120051210577523,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.09720081334446654,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05653114356240364,"baselineRate":0.17,"deviation":-0.11346885643759637,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.12636373266890225,"baselineRate":0.38,"deviation":-0.2536362673310978,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.019952168316142462,"baselineRate":0.06,"deviation":-0.04004783168385753,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":3,"opportunities":10,"rawRate":0.3,"adjustedRate":0.27886481710031974,"baselineRate":0.22,"deviation":0.05886481710031974,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":6,"opportunities":20,"rawRate":0.3,"adjustedRate":0.29200060247738263,"baselineRate":0.22,"deviation":0.07200060247738263,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":30,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.005528403899345309,"baselineRate":0.14,"deviation":-0.1344715961006547,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"PFR","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0067130618777764455,"baselineRate":0.17,"deviation":-0.16328693812222356,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"RIVER_CALL","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.015005667726794406,"baselineRate":0.38,"deviation":-0.3649943322732056,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"THREE_BET","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0023693159568622746,"baselineRate":0.06,"deviation":-0.057630684043137724,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"VPIP","successes":8,"opportunities":30,"rawRate":0.26666666666666666,"adjustedRate":0.27528197022280576,"baselineRate":0.22,"deviation":0.05528197022280576,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[{"target":"RANGE_WIDTH","direction":"DECREASE","confidence":0.9,"reasons":["近期入池频率低于个人基线"],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"]}],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"ignoredEvents":[],"conflicts":[],"explanation":["被动跟注低于个人基线（主要指标：RIVER_CALL）"],"version":"1.1.0"}}
+  ✔ asOf = Infinity → {"ok":true,"value":{"playerId":"p1","asOf":null,"deviationScore":37,"confidence":0.9,"dominantState":"TIGHTER_RECENTLY","signals":[{"state":"TIGHTER_RECENTLY","probability":0.6120051210577523,"confidence":0.23076923076923078,"drivers":["PFR"]}],"groupScores":[{"group":"ENTRY","score":0.6120051210577523,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.09720081334446654,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05653114356240364,"baselineRate":0.17,"deviation":-0.11346885643759637,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.12636373266890225,"baselineRate":0.38,"deviation":-0.2536362673310978,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.019952168316142462,"baselineRate":0.06,"deviation":-0.04004783168385753,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":3,"opportunities":10,"rawRate":0.3,"adjustedRate":0.27886481710031974,"baselineRate":0.22,"deviation":0.05886481710031974,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":6,"opportunities":20,"rawRate":0.3,"adjustedRate":0.29200060247738263,"baselineRate":0.22,"deviation":0.07200060247738263,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":30,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.005528403899345309,"baselineRate":0.14,"deviation":-0.1344715961006547,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"PFR","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0067130618777764455,"baselineRate":0.17,"deviation":-0.16328693812222356,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"RIVER_CALL","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.015005667726794406,"baselineRate":0.38,"deviation":-0.3649943322732056,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"THREE_BET","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0023693159568622746,"baselineRate":0.06,"deviation":-0.057630684043137724,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"VPIP","successes":8,"opportunities":30,"rawRate":0.26666666666666666,"adjustedRate":0.27528197022280576,"baselineRate":0.22,"deviation":0.05528197022280576,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[{"target":"RANGE_WIDTH","direction":"DECREASE","confidence":0.9,"reasons":["近期入池频率低于个人基线"],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"]}],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"ignoredEvents":[],"conflicts":[],"explanation":["被动跟注低于个人基线（主要指标：RIVER_CALL）"],"version":"1.1.0"}}
+  ✔ asOf = -Infinity（全部事件成为未来事件） → {"ok":true,"value":{"playerId":"p1","asOf":null,"deviationScore":0,"confidence":0,"dominantState":"UNKNOWN","signals":[],"groupScores":[{"group":"ENTRY","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"AGGRESSION","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"CALLING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":0,"eventIds":[],"stats":[]},{"size":20,"hands":0,"eventIds":[],"stats":[]},{"size":50,"hands":0,"eventIds":[],"stats":[]}],"tilt":{"probability":0,"confidence":0,"evidence":["近期机会数不足，无法判断行为是否偏移"]},"adjustments":[],"evidenceEventIds":[],"ignoredEvents":[{"eventId":"e1","reason":"未来事件（timestamp 2026-01-01T00:01:00.000Z > asOf）"},{"eventId":"e2","reason":"未来事件（timestamp 2026-01-01T00:02:00.000Z > asOf）"},{"eventId":"e3","reason":"未来事件（timestamp 2026-01-01T00:03:00.000Z > asOf）"},{"eventId":"e4","reason":"未来事件（timestamp 2026-01-01T00:04:00.000Z > asOf）"},{"eventId":"e5","reason":"未来事件（timestamp 2026-01-01T00:05:00.000Z > asOf）"},{"eventId":"e6","reason":"未来事件（timestamp 2026-01-01T00:06:00.000Z > asOf）"},{"eventId":"e7","reason":"未来事件（timestamp 2026-01-01T00:07:00.000Z > asOf）"},{"eventId":"e8","reason":"未来事件（timestamp 2026-01-01T00:08:00.000Z > asOf）"},{"eventId":"e9","reason":"未来事件（timestamp 2026-01-01T00:09:00.000Z > asOf）"},{"eventId":"e10","reason":"未来事件（timestamp 2026-01-01T00:10:00.000Z > asOf）"},{"eventId":"e11","reason":"未来事件（timestamp 2026-01-01T00:11:00.000Z > asOf）"},{"eventId":"e12","reason":"未来事件（timestamp 2026-01-01T00:12:00.000Z > asOf）"},{"eventId":"e13","reason":"未来事件（timestamp 2026-01-01T00:13:00.000Z > asOf）"},{"eventId":"e14","reason":"未来事件（timestamp 2026-01-01T00:14:00.000Z > asOf）"},{"eventId":"e15","reason":"未来事件（timestamp 2026-01-01T00:15:00.000Z > asOf）"},{"eventId":"e16","reason":"未来事件（timestamp 2026-01-01T00:16:00.000Z > asOf）"},{"eventId":"e17","reason":"未来事件（timestamp 2026-01-01T00:17:00.000Z > asOf）"},{"eventId":"e18","reason":"未来事件（timestamp 2026-01-01T00:18:00.000Z > asOf）"},{"eventId":"e19","reason":"未来事件（timestamp 2026-01-01T00:19:00.000Z > asOf）"},{"eventId":"e20","reason":"未来事件（timestamp 2026-01-01T00:20:00.000Z > asOf）"},{"eventId":"e21","reason":"未来事件（timestamp 2026-01-01T00:21:00.000Z > asOf）"},{"eventId":"e22","reason":"未来事件（timestamp 2026-01-01T00:22:00.000Z > asOf）"},{"eventId":"e23","reason":"未来事件（timestamp 2026-01-01T00:23:00.000Z > asOf）"},{"eventId":"e24","reason":"未来事件（timestamp 2026-01-01T00:24:00.000Z > asOf）"},{"eventId":"e25","reason":"未来事件（timestamp 2026-01-01T00:25:00.000Z > asOf）"},{"eventId":"e26","reason":"未来事件（timestamp 2026-01-01T00:26:00.000Z > asOf）"},{"eventId":"e27","reason":"未来事件（timestamp 2026-01-01T00:27:00.000Z > asOf）"},{"eventId":"e28","reason":"未来事件（timestamp 2026-01-01T00:28:00.000Z > asOf）"},{"eventId":"e29","reason":"未来事件（timestamp 2026-01-01T00:29:00.000Z > asOf）"},{"eventId":"e30","reason":"未来事件（timestamp 2026-01-01T00:30:00.000Z > asOf）"}],"conflicts":[],"explanation":["近期机会数不足，无法判断行为是否偏移"],"version":"1.1.0"}}
+  ✔ asOf = 0 → {"ok":true,"value":{"playerId":"p1","asOf":0,"deviationScore":0,"confidence":0,"dominantState":"UNKNOWN","signals":[],"groupScores":[{"group":"ENTRY","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"AGGRESSION","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"CALLING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":0,"eventIds":[],"stats":[]},{"size":20,"hands":0,"eventIds":[],"stats":[]},{"size":50,"hands":0,"eventIds":[],"stats":[]}],"tilt":{"probability":0,"confidence":0,"evidence":["近期机会数不足，无法判断行为是否偏移"]},"adjustments":[],"evidenceEventIds":[],"ignoredEvents":[{"eventId":"e1","reason":"未来事件（timestamp 2026-01-01T00:01:00.000Z > asOf）"},{"eventId":"e2","reason":"未来事件（timestamp 2026-01-01T00:02:00.000Z > asOf）"},{"eventId":"e3","reason":"未来事件（timestamp 2026-01-01T00:03:00.000Z > asOf）"},{"eventId":"e4","reason":"未来事件（timestamp 2026-01-01T00:04:00.000Z > asOf）"},{"eventId":"e5","reason":"未来事件（timestamp 2026-01-01T00:05:00.000Z > asOf）"},{"eventId":"e6","reason":"未来事件（timestamp 2026-01-01T00:06:00.000Z > asOf）"},{"eventId":"e7","reason":"未来事件（timestamp 2026-01-01T00:07:00.000Z > asOf）"},{"eventId":"e8","reason":"未来事件（timestamp 2026-01-01T00:08:00.000Z > asOf）"},{"eventId":"e9","reason":"未来事件（timestamp 2026-01-01T00:09:00.000Z > asOf）"},{"eventId":"e10","reason":"未来事件（timestamp 2026-01-01T00:10:00.000Z > asOf）"},{"eventId":"e11","reason":"未来事件（timestamp 2026-01-01T00:11:00.000Z > asOf）"},{"eventId":"e12","reason":"未来事件（timestamp 2026-01-01T00:12:00.000Z > asOf）"},{"eventId":"e13","reason":"未来事件（timestamp 2026-01-01T00:13:00.000Z > asOf）"},{"eventId":"e14","reason":"未来事件（timestamp 2026-01-01T00:14:00.000Z > asOf）"},{"eventId":"e15","reason":"未来事件（timestamp 2026-01-01T00:15:00.000Z > asOf）"},{"eventId":"e16","reason":"未来事件（timestamp 2026-01-01T00:16:00.000Z > asOf）"},{"eventId":"e17","reason":"未来事件（timestamp 2026-01-01T00:17:00.000Z > asOf）"},{"eventId":"e18","reason":"未来事件（timestamp 2026-01-01T00:18:00.000Z > asOf）"},{"eventId":"e19","reason":"未来事件（timestamp 2026-01-01T00:19:00.000Z > asOf）"},{"eventId":"e20","reason":"未来事件（timestamp 2026-01-01T00:20:00.000Z > asOf）"},{"eventId":"e21","reason":"未来事件（timestamp 2026-01-01T00:21:00.000Z > asOf）"},{"eventId":"e22","reason":"未来事件（timestamp 2026-01-01T00:22:00.000Z > asOf）"},{"eventId":"e23","reason":"未来事件（timestamp 2026-01-01T00:23:00.000Z > asOf）"},{"eventId":"e24","reason":"未来事件（timestamp 2026-01-01T00:24:00.000Z > asOf）"},{"eventId":"e25","reason":"未来事件（timestamp 2026-01-01T00:25:00.000Z > asOf）"},{"eventId":"e26","reason":"未来事件（timestamp 2026-01-01T00:26:00.000Z > asOf）"},{"eventId":"e27","reason":"未来事件（timestamp 2026-01-01T00:27:00.000Z > asOf）"},{"eventId":"e28","reason":"未来事件（timestamp 2026-01-01T00:28:00.000Z > asOf）"},{"eventId":"e29","reason":"未来事件（timestamp 2026-01-01T00:29:00.000Z > asOf）"},{"eventId":"e30","reason":"未来事件（timestamp 2026-01-01T00:30:00.000Z > asOf）"}],"conflicts":[],"explanation":["近期机会数不足，无法判断行为是否偏移"],"version":"1.1.0"}}
+  ✔ recentEvents = [] → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":0,"confidence":0,"dominantState":"UNKNOWN","signals":[],"groupScores":[{"group":"ENTRY","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"AGGRESSION","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"CALLING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":0,"eventIds":[],"stats":[]},{"size":20,"hands":0,"eventIds":[],"stats":[]},{"size":50,"hands":0,"eventIds":[],"stats":[]}],"tilt":{"probability":0,"confidence":0,"evidence":["近期机会数不足，无法判断行为是否偏移"]},"adjustments":[],"evidenceEventIds":[],"ignoredEvents":[],"conflicts":[],"explanation":["近期机会数不足，无法判断行为是否偏移"],"version":"1.1.0"}}
+  ✔ baseline.metrics = {} → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":0,"confidence":0,"dominantState":"NORMAL","signals":[],"groupScores":[{"group":"ENTRY","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"AGGRESSION","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"CALLING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":3,"opportunities":10,"rawRate":0.3,"adjustedRate":0.3,"baselineRate":null,"deviation":null,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":6,"opportunities":20,"rawRate":0.3,"adjustedRate":0.3,"baselineRate":null,"deviation":null,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":30,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"PFR","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"RIVER_CALL","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"THREE_BET","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0,"baselineRate":null,"deviation":null,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"VPIP","successes":8,"opportunities":30,"rawRate":0.26666666666666666,"adjustedRate":0.26666666666666666,"baselineRate":null,"deviation":null,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"ignoredEvents":[],"conflicts":[],"explanation":["近期打法与个人基线接近"],"version":"1.1.0"}}
+  ✔ 基线率恰为 0（VPIP=0）且近期 20/20 → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":68,"confidence":0.9,"dominantState":"AGGRESSION_UP","signals":[{"state":"AGGRESSION_UP","probability":1,"confidence":0.23076923076923078,"drivers":["THREE_BET"]},{"state":"LOOSER_RECENTLY","probability":1,"confidence":0.23076923076923078,"drivers":["PFR"]}],"groupScores":[{"group":"ENTRY","score":1,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.9,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"CALL_OPEN","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7140189208019581,"baselineRate":0.14,"deviation":0.574018920801958,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7239950049600293,"baselineRate":0.17,"deviation":0.5539950049600293,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7938275940665278,"baselineRate":0.38,"deviation":0.4138275940665278,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.687416029713768,"baselineRate":0.06,"deviation":0.6274160297137681,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.6674638613976256,"baselineRate":0,"deviation":0.6674638613976256,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9140064766318631,"baselineRate":0.14,"deviation":0.7740064766318631,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9170062507028447,"baselineRate":0.17,"deviation":0.7470062507028447,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9380046691997154,"baselineRate":0.38,"deviation":0.5580046691997154,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9060070791092458,"baselineRate":0.06,"deviation":0.8460070791092458,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9000075309672827,"baselineRate":0,"deviation":0.9000075309672827,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9140064766318631,"baselineRate":0.14,"deviation":0.7740064766318631,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9170062507028447,"baselineRate":0.17,"deviation":0.7470062507028447,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9380046691997154,"baselineRate":0.38,"deviation":0.5580046691997154,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9060070791092458,"baselineRate":0.06,"deviation":0.8460070791092458,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9000075309672827,"baselineRate":0,"deviation":0.9000075309672827,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]}],"tilt":{"probability":0.3,"confidence":0.9,"evidence":["主动进攻频率高于个人基线"]},"adjustments":[{"target":"RANGE_WIDTH","direction":"INCREASE","confidence":0.9,"reasons":["近期入池频率高于个人基线"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"AGGRESSION_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["近期主动进攻频率高于个人基线"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"BLUFF_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["进攻性上升可能包含更多诈唬"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"VALUE_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["进攻性上升也可能包含更多价值下注"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]}],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"ignoredEvents":[],"conflicts":[],"explanation":["翻牌前入池高于个人基线（主要指标：PFR）","存在上头迹象（概率 0.30）"],"version":"1.1.0"}}
+  ✔ 基线率恰为 1（VPIP=1）且近期 0/20 → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":47,"confidence":0.9,"dominantState":"TIGHTER_RECENTLY","signals":[{"state":"TIGHTER_RECENTLY","probability":1,"confidence":0.23076923076923078,"drivers":["VPIP"]}],"groupScores":[{"group":"ENTRY","score":1,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"VPIP","comparedMetrics":2},{"group":"AGGRESSION","score":0.09720081334446654,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05653114356240364,"baselineRate":0.17,"deviation":-0.11346885643759637,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.12636373266890225,"baselineRate":0.38,"deviation":-0.2536362673310978,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.019952168316142462,"baselineRate":0.06,"deviation":-0.04004783168385753,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.33253613860237435,"baselineRate":1,"deviation":-0.6674638613976256,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.09999246903271722,"baselineRate":1,"deviation":-0.9000075309672828,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.09999246903271722,"baselineRate":1,"deviation":-0.9000075309672828,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[{"target":"RANGE_WIDTH","direction":"DECREASE","confidence":0.9,"reasons":["近期入池频率低于个人基线"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]}],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"ignoredEvents":[],"conflicts":[],"explanation":["翻牌前入池低于个人基线（主要指标：VPIP）"],"version":"1.1.0"}}
+  ✔ 全部时间戳相同 + 全部 seq 相同 → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":34,"confidence":0.9,"dominantState":"NORMAL","signals":[],"groupScores":[{"group":"ENTRY","score":0.5,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"VPIP","comparedMetrics":2},{"group":"AGGRESSION","score":0.09908256880733944,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e28","e29","e3","e30","e4","e5","e6","e7","e8","e9"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04344827586206897,"baselineRate":0.14,"deviation":-0.09655172413793103,"effectiveSample":10,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05275862068965517,"baselineRate":0.17,"deviation":-0.11724137931034484,"effectiveSample":10,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.11793103448275861,"baselineRate":0.38,"deviation":-0.2620689655172414,"effectiveSample":10,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.018620689655172416,"baselineRate":0.06,"deviation":-0.041379310344827586,"effectiveSample":10,"confidence":0.038461538461538464},{"metric":"VPIP","successes":5,"opportunities":10,"rawRate":0.5,"adjustedRate":0.4131034482758621,"baselineRate":0.22,"deviation":0.1931034482758621,"effectiveSample":10,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e19","e2","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e3","e30","e4","e5","e6","e7","e8","e9"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.011559633027522939,"baselineRate":0.14,"deviation":-0.12844036697247707,"effectiveSample":20,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.014036697247706424,"baselineRate":0.17,"deviation":-0.1559633027522936,"effectiveSample":20,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.031376146788990825,"baselineRate":0.38,"deviation":-0.3486238532110092,"effectiveSample":20,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.004954128440366972,"baselineRate":0.06,"deviation":-0.055045871559633024,"effectiveSample":20,"confidence":0.23076923076923078},{"metric":"VPIP","successes":10,"opportunities":20,"rawRate":0.5,"adjustedRate":0.47688073394495417,"baselineRate":0.22,"deviation":0.25688073394495414,"effectiveSample":20,"confidence":0.23076923076923078}]},{"size":50,"hands":30,"eventIds":["e1","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e2","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e3","e30","e4","e5","e6","e7","e8","e9"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.004077669902912622,"baselineRate":0.14,"deviation":-0.1359223300970874,"effectiveSample":30,"confidence":0.4230769230769231},{"metric":"PFR","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.004951456310679613,"baselineRate":0.17,"deviation":-0.1650485436893204,"effectiveSample":30,"confidence":0.4230769230769231},{"metric":"RIVER_CALL","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.011067961165048545,"baselineRate":0.38,"deviation":-0.36893203883495146,"effectiveSample":30,"confidence":0.4230769230769231},{"metric":"THREE_BET","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0017475728155339806,"baselineRate":0.06,"deviation":-0.058252427184466014,"effectiveSample":30,"confidence":0.4230769230769231},{"metric":"VPIP","successes":15,"opportunities":30,"rawRate":0.5,"adjustedRate":0.4918446601941748,"baselineRate":0.22,"deviation":0.27184466019417475,"effectiveSample":30,"confidence":0.4230769230769231}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[],"evidenceEventIds":["e19","e2","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e3","e30","e4","e5","e6","e7","e8","e9"],"ignoredEvents":[],"conflicts":["入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"],"explanation":["被动跟注低于个人基线（主要指标：RIVER_CALL）","入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"],"version":"1.1.0"}}
+  ✔ seq = Number.MAX_SAFE_INTEGER → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":34,"confidence":0.9,"dominantState":"NORMAL","signals":[],"groupScores":[{"group":"ENTRY","score":0.5,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"VPIP","comparedMetrics":2},{"group":"AGGRESSION","score":0.09720081334446654,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05653114356240364,"baselineRate":0.17,"deviation":-0.11346885643759637,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.12636373266890225,"baselineRate":0.38,"deviation":-0.2536362673310978,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.019952168316142462,"baselineRate":0.06,"deviation":-0.04004783168385753,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":5,"opportunities":10,"rawRate":0.5,"adjustedRate":0.40303463024889513,"baselineRate":0.22,"deviation":0.18303463024889513,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":10,"opportunities":20,"rawRate":0.5,"adjustedRate":0.4720021086708392,"baselineRate":0.22,"deviation":0.25200210867083916,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":10,"opportunities":20,"rawRate":0.5,"adjustedRate":0.4720021086708392,"baselineRate":0.22,"deviation":0.25200210867083916,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"ignoredEvents":[],"conflicts":["入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"],"explanation":["被动跟注低于个人基线（主要指标：RIVER_CALL）","入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"],"version":"1.1.0"}}
+  ✔ seq = 0 且为小数 seq = 1.5 → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":6,"confidence":0.08333333333333333,"dominantState":"UNKNOWN","signals":[],"groupScores":[{"group":"ENTRY","score":0.21739940258120616,"direction":"HIGHER","confidence":0,"strongestMetric":"VPIP","comparedMetrics":1},{"group":"AGGRESSION","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"CALLING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":2,"eventIds":["e1","e3"],"stats":[{"metric":"VPIP","successes":2,"opportunities":2,"rawRate":1,"adjustedRate":0.27434985064530154,"baselineRate":0.22,"deviation":0.05434985064530154,"effectiveSample":1.9989332757502256,"confidence":0}]},{"size":20,"hands":2,"eventIds":["e1","e3"],"stats":[{"metric":"VPIP","successes":2,"opportunities":2,"rawRate":1,"adjustedRate":0.27434985064530154,"baselineRate":0.22,"deviation":0.05434985064530154,"effectiveSample":1.9989332757502256,"confidence":0}]},{"size":50,"hands":2,"eventIds":["e1","e3"],"stats":[{"metric":"VPIP","successes":2,"opportunities":2,"rawRate":1,"adjustedRate":0.27434985064530154,"baselineRate":0.22,"deviation":0.05434985064530154,"effectiveSample":1.9989332757502256,"confidence":0}]}],"tilt":{"probability":0,"confidence":0,"evidence":["近期机会数不足，无法判断行为是否偏移"]},"adjustments":[],"evidenceEventIds":["e1","e3"],"ignoredEvents":[{"eventId":"e2","reason":"结构非法：seq 非法（1.5）"}],"conflicts":[],"explanation":["近期机会数不足，无法判断行为是否偏移"],"version":"1.1.0"}}
+  ✔ 500 手事件（超大样本） → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":11,"confidence":0.9,"dominantState":"NORMAL","signals":[],"groupScores":[{"group":"ENTRY","score":0.054000451858036924,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.016200135557411087,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.3528029521391749,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"CALL_OPEN","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e491","e492","e493","e494","e495","e496","e497","e498","e499","e500"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":2,"opportunities":10,"rawRate":0.2,"adjustedRate":0.19160193814871124,"baselineRate":0.17,"deviation":0.021601938148711225,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":3,"opportunities":10,"rawRate":0.3,"adjustedRate":0.32880801077123145,"baselineRate":0.38,"deviation":-0.05119198922876855,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":1,"opportunities":10,"rawRate":0.1,"adjustedRate":0.08428317337761247,"baselineRate":0.06,"deviation":0.024283173377612474,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":2,"opportunities":10,"rawRate":0.2,"adjustedRate":0.2049678974109032,"baselineRate":0.22,"deviation":-0.01503210258909679,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e481","e482","e483","e484","e485","e486","e487","e488","e489","e490","e491","e492","e493","e494","e495","e496","e497","e498","e499","e500"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":4,"opportunities":20,"rawRate":0.2,"adjustedRate":0.19700022592901847,"baselineRate":0.17,"deviation":0.027000225929018462,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":7,"opportunities":20,"rawRate":0.35,"adjustedRate":0.3529997740709815,"baselineRate":0.38,"deviation":-0.027000225929018518,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":1,"opportunities":20,"rawRate":0.05,"adjustedRate":0.05099992469032717,"baselineRate":0.06,"deviation":-0.009000075309672825,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":5,"opportunities":20,"rawRate":0.25,"adjustedRate":0.24700022592901846,"baselineRate":0.22,"deviation":0.027000225929018462,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":50,"eventIds":["e451","e452","e453","e454","e455","e456","e457","e458","e459","e460","e461","e462","e463","e464","e465","e466","e467","e468","e469","e470","e471","e472","e473","e474","e475","e476","e477","e478","e479","e480","e481","e482","e483","e484","e485","e486","e487","e488","e489","e490","e491","e492","e493","e494","e495","e496","e497","e498","e499","e500"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":50,"rawRate":0,"adjustedRate":0.0008352096232648492,"baselineRate":0.14,"deviation":-0.13916479037673515,"effectiveSample":45.09505902811103,"confidence":0.8076923076923077},{"metric":"PFR","successes":9,"opportunities":50,"rawRate":0.18,"adjustedRate":0.17935207311823523,"baselineRate":0.17,"deviation":0.009352073118235216,"effectiveSample":45.09505902811103,"confidence":0.8076923076923077},{"metric":"RIVER_CALL","successes":17,"opportunities":50,"rawRate":0.34,"adjustedRate":0.3370319859891683,"baselineRate":0.38,"deviation":-0.04296801401083172,"effectiveSample":45.09505902811103,"confidence":0.8076923076923077},{"metric":"THREE_BET","successes":3,"opportunities":50,"rawRate":0.06,"adjustedRate":0.06184444811704056,"baselineRate":0.06,"deviation":0.0018444481170405633,"effectiveSample":45.09505902811103,"confidence":0.8076923076923077},{"metric":"VPIP","successes":12,"opportunities":50,"rawRate":0.24,"adjustedRate":0.23605750214556276,"baselineRate":0.22,"deviation":0.016057502145562758,"effectiveSample":45.09505902811103,"confidence":0.8076923076923077}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[],"evidenceEventIds":["e481","e482","e483","e484","e485","e486","e487","e488","e489","e490","e491","e492","e493","e494","e495","e496","e497","e498","e499","e500"],"ignoredEvents":[],"conflicts":[],"explanation":["被动跟注低于个人基线（主要指标：CALL_OPEN）"],"version":"1.1.0"}}
+  ✔ 所有指标全部极端（20 手全命中） → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":68,"confidence":0.9,"dominantState":"AGGRESSION_UP","signals":[{"state":"AGGRESSION_UP","probability":1,"confidence":0.23076923076923078,"drivers":["THREE_BET"]},{"state":"LOOSER_RECENTLY","probability":1,"confidence":0.23076923076923078,"drivers":["PFR"]}],"groupScores":[{"group":"ENTRY","score":1,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.9,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"HIGHER","confidence":0.23076923076923078,"strongestMetric":"CALL_OPEN","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7140189208019581,"baselineRate":0.14,"deviation":0.574018920801958,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7239950049600293,"baselineRate":0.17,"deviation":0.5539950049600293,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.7938275940665278,"baselineRate":0.38,"deviation":0.4138275940665278,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.687416029713768,"baselineRate":0.06,"deviation":0.6274160297137681,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":10,"opportunities":10,"rawRate":1,"adjustedRate":0.740621811890148,"baselineRate":0.22,"deviation":0.520621811890148,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9140064766318631,"baselineRate":0.14,"deviation":0.7740064766318631,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9170062507028447,"baselineRate":0.17,"deviation":0.7470062507028447,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9380046691997154,"baselineRate":0.38,"deviation":0.5580046691997154,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9060070791092458,"baselineRate":0.06,"deviation":0.8460070791092458,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9220058741544805,"baselineRate":0.22,"deviation":0.7020058741544806,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":20,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"stats":[{"metric":"CALL_OPEN","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9140064766318631,"baselineRate":0.14,"deviation":0.7740064766318631,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9170062507028447,"baselineRate":0.17,"deviation":0.7470062507028447,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9380046691997154,"baselineRate":0.38,"deviation":0.5580046691997154,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9060070791092458,"baselineRate":0.06,"deviation":0.8460070791092458,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":20,"opportunities":20,"rawRate":1,"adjustedRate":0.9220058741544805,"baselineRate":0.22,"deviation":0.7020058741544806,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]}],"tilt":{"probability":0.3,"confidence":0.9,"evidence":["主动进攻频率高于个人基线"]},"adjustments":[{"target":"RANGE_WIDTH","direction":"INCREASE","confidence":0.9,"reasons":["近期入池频率高于个人基线"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"AGGRESSION_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["近期主动进攻频率高于个人基线"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"BLUFF_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["进攻性上升可能包含更多诈唬"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]},{"target":"VALUE_LIKELIHOOD","direction":"INCREASE","confidence":0.9,"reasons":["进攻性上升也可能包含更多价值下注"],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"]}],"evidenceEventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20"],"ignoredEvents":[],"conflicts":[],"explanation":["翻牌前入池高于个人基线（主要指标：PFR）","存在上头迹象（概率 0.30）"],"version":"1.1.0"}}
+  ✔ 重复 eventId ×3（幂等） → {"ok":true,"value":{"playerId":"p1","asOf":1780272000000,"deviationScore":37,"confidence":0.9,"dominantState":"TIGHTER_RECENTLY","signals":[{"state":"TIGHTER_RECENTLY","probability":0.6120051210577523,"confidence":0.23076923076923078,"drivers":["PFR"]}],"groupScores":[{"group":"ENTRY","score":0.6120051210577523,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"PFR","comparedMetrics":2},{"group":"AGGRESSION","score":0.09720081334446654,"direction":"NONE","confidence":0.23076923076923078,"strongestMetric":"THREE_BET","comparedMetrics":1},{"group":"CALLING","score":0.7,"direction":"LOWER","confidence":0.23076923076923078,"strongestMetric":"RIVER_CALL","comparedMetrics":2},{"group":"SIZING","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0},{"group":"RIVER","score":0,"direction":"NONE","confidence":0,"strongestMetric":null,"comparedMetrics":0}],"windows":[{"size":10,"hands":10,"eventIds":["e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.04655505940433242,"baselineRate":0.14,"deviation":-0.0934449405956676,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"PFR","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.05653114356240364,"baselineRate":0.17,"deviation":-0.11346885643759637,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"RIVER_CALL","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.12636373266890225,"baselineRate":0.38,"deviation":-0.2536362673310978,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"THREE_BET","successes":0,"opportunities":10,"rawRate":0,"adjustedRate":0.019952168316142462,"baselineRate":0.06,"deviation":-0.04004783168385753,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464},{"metric":"VPIP","successes":3,"opportunities":10,"rawRate":0.3,"adjustedRate":0.27886481710031974,"baselineRate":0.22,"deviation":0.05886481710031974,"effectiveSample":9.956192709949876,"confidence":0.038461538461538464}]},{"size":20,"hands":20,"eventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.013998945664580414,"baselineRate":0.14,"deviation":-0.1260010543354196,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"PFR","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.01699871973556193,"baselineRate":0.17,"deviation":-0.15300128026443807,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"RIVER_CALL","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.037997138232432545,"baselineRate":0.38,"deviation":-0.34200286176756745,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"THREE_BET","successes":0,"opportunities":20,"rawRate":0,"adjustedRate":0.005999548141963033,"baselineRate":0.06,"deviation":-0.054000451858036966,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078},{"metric":"VPIP","successes":6,"opportunities":20,"rawRate":0.3,"adjustedRate":0.29200060247738263,"baselineRate":0.22,"deviation":0.07200060247738263,"effectiveSample":20.00000000000001,"confidence":0.23076923076923078}]},{"size":50,"hands":30,"eventIds":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"stats":[{"metric":"CALL_OPEN","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.005528403899345309,"baselineRate":0.14,"deviation":-0.1344715961006547,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"PFR","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0067130618777764455,"baselineRate":0.17,"deviation":-0.16328693812222356,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"RIVER_CALL","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.015005667726794406,"baselineRate":0.38,"deviation":-0.3649943322732056,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"THREE_BET","successes":0,"opportunities":30,"rawRate":0,"adjustedRate":0.0023693159568622746,"baselineRate":0.06,"deviation":-0.057630684043137724,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231},{"metric":"VPIP","successes":8,"opportunities":30,"rawRate":0.26666666666666666,"adjustedRate":0.27528197022280576,"baselineRate":0.22,"deviation":0.05528197022280576,"effectiveSample":28.85518441224874,"confidence":0.4230769230769231}]}],"tilt":{"probability":0,"confidence":0,"evidence":[]},"adjustments":[{"target":"RANGE_WIDTH","direction":"DECREASE","confidence":0.9,"reasons":["近期入池频率低于个人基线"],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"]}],"evidenceEventIds":["e11","e12","e13","e14","e15","e16","e17","e18","e19","e20","e21","e22","e23","e24","e25","e26","e27","e28","e29","e30"],"ignoredEvents":[{"eventId":"e1","reason":"重复事件（幂等保护）"},{"eventId":"e2","reason":"重复事件（幂等保护）"},{"eventId":"e3","reason":"重复事件（幂等保护）"},{"eventId":"e4","reason":"重复事件（幂等保护）"},{"eventId":"e5","reason":"重复事件（幂等保护）"},{"eventId":"e6","reason":"重复事件（幂等保护）"},{"eventId":"e7","reason":"重复事件（幂等保护）"},{"eventId":"e8","reason":"重复事件（幂等保护）"},{"eventId":"e9","reason":"重复事件（幂等保护）"},{"eventId":"e10","reason":"重复事件（幂等保护）"},{"eventId":"e11","reason":"重复事件（幂等保护）"},{"eventId":"e12","reason":"重复事件（幂等保护）"},{"eventId":"e13","reason":"重复事件（幂等保护）"},{"eventId":"e14","reason":"重复事件（幂等保护）"},{"eventId":"e15","reason":"重复事件（幂等保护）"},{"eventId":"e16","reason":"重复事件（幂等保护）"},{"eventId":"e17","reason":"重复事件（幂等保护）"},{"eventId":"e18","reason":"重复事件（幂等保护）"},{"eventId":"e19","reason":"重复事件（幂等保护）"},{"eventId":"e20","reason":"重复事件（幂等保护）"},{"eventId":"e21","reason":"重复事件（幂等保护）"},{"eventId":"e22","reason":"重复事件（幂等保护）"},{"eventId":"e23","reason":"重复事件（幂等保护）"},{"eventId":"e24","reason":"重复事件（幂等保护）"},{"eventId":"e25","reason":"重复事件（幂等保护）"},{"eventId":"e26","reason":"重复事件（幂等保护）"},{"eventId":"e27","reason":"重复事件（幂等保护）"},{"eventId":"e28","reason":"重复事件（幂等保护）"},{"eventId":"e29","reason":"重复事件（幂等保护）"},{"eventId":"e30","reason":"重复事件（幂等保护）"},{"eventId":"e1","reason":"重复事件（幂等保护）"},{"eventId":"e2","reason":"重复事件（幂等保护）"},{"eventId":"e3","reason":"重复事件（幂等保护）"},{"eventId":"e4","reason":"重复事件（幂等保护）"},{"eventId":"e5","reason":"重复事件（幂等保护）"},{"eventId":"e6","reason":"重复事件（幂等保护）"},{"eventId":"e7","reason":"重复事件（幂等保护）"},{"eventId":"e8","reason":"重复事件（幂等保护）"},{"eventId":"e9","reason":"重复事件（幂等保护）"},{"eventId":"e10","reason":"重复事件（幂等保护）"},{"eventId":"e11","reason":"重复事件（幂等保护）"},{"eventId":"e12","reason":"重复事件（幂等保护）"},{"eventId":"e13","reason":"重复事件（幂等保护）"},{"eventId":"e14","reason":"重复事件（幂等保护）"},{"eventId":"e15","reason":"重复事件（幂等保护）"},{"eventId":"e16","reason":"重复事件（幂等保护）"},{"eventId":"e17","reason":"重复事件（幂等保护）"},{"eventId":"e18","reason":"重复事件（幂等保护）"},{"eventId":"e19","reason":"重复事件（幂等保护）"},{"eventId":"e20","reason":"重复事件（幂等保护）"},{"eventId":"e21","reason":"重复事件（幂等保护）"},{"eventId":"e22","reason":"重复事件（幂等保护）"},{"eventId":"e23","reason":"重复事件（幂等保护）"},{"eventId":"e24","reason":"重复事件（幂等保护）"},{"eventId":"e25","reason":"重复事件（幂等保护）"},{"eventId":"e26","reason":"重复事件（幂等保护）"},{"eventId":"e27","reason":"重复事件（幂等保护）"},{"eventId":"e28","reason":"重复事件（幂等保护）"},{"eventId":"e29","reason":"重复事件（幂等保护）"},{"eventId":"e30","reason":"重复事件（幂等保护）"}],"conflicts":[],"explanation":["被动跟注低于个人基线（主要指标：RIVER_CALL）"],"version":"1.1.0"}}
+  ✔ 同一 eventId、不同内容、顺序相反 —— 是否依赖输入顺序 → {"正序":"{\"ok\":true,\"value\":{\"playerId\":\"p1\",\"asOf\":1780272000000,\"deviationScore\":2,\"confidence\":0.041666666666666664,\"dominantState\":\"UNKNOWN\",\"signals\":[],\"groupScores\":[{\"group\":\"ENTRY\",\"score\":0.05767097966728285,\"direction\":\"HIGHER\",\"confidence\":0,\"strongestMetric\":\"VPIP\",\"comparedMetrics\":1},{\"group\":\"AGGRESSION\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"CALLING\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"SIZING\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"RIVER\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0}],\"windows\":[{\"size\":10,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":1,\"opportunities\":1,\"rawRate\":1,\"adjustedRate\":0.23441774491682071,\"baselineRate\":0.22,\"deviation\":0.014417744916820713,\"effectiveSample\":1,\"confidence\":0}]},{\"size\":20,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":1,\"opportunities\":1,\"rawRate\":1,\"adjustedRate\":0.23441774491682071,\"baselineRate\":0.22,\"deviation\":0.014417744916820713,\"effectiveSample\":1,\"confidence\":0}]},{\"size\":50,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":1,\"opportunities\":1,\"rawRate\":1,\"adjustedRate\":0.23441774491682071,\"baselineRate\":0.22,\"deviation\":0.014417744916820713,\"effectiveSample\":1,\"confidence\":0}]}],\"tilt\":{\"probability\":0,\"confidence\":0,\"evidence\":[\"近期机会数不足，无法判断行为是否偏移\"]},\"adjustments\":[],\"evidenceEventIds\":[\"dup\"],\"ignoredEvents\":[{\"eventId\":\"dup\",\"reason\":\"重复事件（幂等保护）\"}],\"conflicts\":[],\"explanation\":[\"近期机会数不足，无法判断行为是否偏移\"],\"version\":\"1.1.0\"}}","逆序":"{\"ok\":true,\"value\":{\"playerId\":\"p1\",\"asOf\":1780272000000,\"deviationScore\":0,\"confidence\":0.041666666666666664,\"dominantState\":\"UNKNOWN\",\"signals\":[],\"groupScores\":[{\"group\":\"ENTRY\",\"score\":0.008133086876155271,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":\"VPIP\",\"comparedMetrics\":1},{\"group\":\"AGGRESSION\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"CALLING\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"SIZING\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0},{\"group\":\"RIVER\",\"score\":0,\"direction\":\"NONE\",\"confidence\":0,\"strongestMetric\":null,\"comparedMetrics\":0}],\"windows\":[{\"size\":10,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":0,\"opportunities\":1,\"rawRate\":0,\"adjustedRate\":0.21593345656192237,\"baselineRate\":0.22,\"deviation\":-0.0040665434380776355,\"effectiveSample\":1,\"confidence\":0}]},{\"size\":20,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":0,\"opportunities\":1,\"rawRate\":0,\"adjustedRate\":0.21593345656192237,\"baselineRate\":0.22,\"deviation\":-0.0040665434380776355,\"effectiveSample\":1,\"confidence\":0}]},{\"size\":50,\"hands\":1,\"eventIds\":[\"dup\"],\"stats\":[{\"metric\":\"VPIP\",\"successes\":0,\"opportunities\":1,\"rawRate\":0,\"adjustedRate\":0.21593345656192237,\"baselineRate\":0.22,\"deviation\":-0.0040665434380776355,\"effectiveSample\":1,\"confidence\":0}]}],\"tilt\":{\"probability\":0,\"confidence\":0,\"evidence\":[\"近期机会数不足，无法判断行为是否偏移\"]},\"adjustments\":[],\"evidenceEventIds\":[\"dup\"],\"ignoredEvents\":[{\"eventId\":\"dup\",\"reason\":\"重复事件（幂等保护）\"}],\"conflicts\":[],\"explanation\":[\"近期机会数不足，无法判断行为是否偏移\"],\"version\":\"1.1.0\"}}","逐位一致":false}
+
+—— 全部极端用例的数值不变量检查 ——
+  发现 3 处问题：
+    - asOf=NaN snapshot.asOf = NaN
+    - asOf=Inf snapshot.asOf = Infinity
+    - asOf=-Inf snapshot.asOf = -Infinity
+
+================================================================================================
+B. 脏数据 / 结构非法：Fail Closed 还是静默接受 / 崩溃
+================================================================================================
+  ✖ opportunities = {}（非数组、非可迭代） → 崩溃 TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
+  ✖ opportunities = 42 → 崩溃 TypeError: number 42 is not iterable (cannot read property Symbol(Symbol.iterator))
+  · opportunities = null → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=0 ignored=1
+  ✖ opportunities = [null] → 崩溃 TypeError: Cannot read properties of null (reading 'metric')
+  · opportunities = [{}]（缺 metric 与 success） → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=1 ignored=0
+  · success 为字符串 "yes" → ok 状态=UNKNOWN 置信=0.0417 分数=2 指标数(W20)=1 ignored=0
+  · success 缺失（{metric:"VPIP"}） → ok 状态=UNKNOWN 置信=0.0417 分数=0 指标数(W20)=1 ignored=0
+  · metric = "NOT_A_METRIC" → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=1 ignored=0
+  · betSizePotRatio = -1（字段本身不参与任何计算） → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=0 ignored=1
+  · betSizePotRatio = NaN → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=0 ignored=1
+  · timestamp 不可解析 → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=0 ignored=1
+  · eventId 为空字符串 → ok 状态=UNKNOWN 置信=0.0000 分数=0 指标数(W20)=0 ignored=1
+  · baseline.metrics 注入伪造指标键 → ok 状态=TIGHTER_RECENTLY 置信=0.9068 分数=37 指标数(W20)=5 ignored=0
+
+—— 关键：伪造指标键是否抬高了 confidence？ ——
+  干净基线 confidence = 0.900000；注入 20 个伪造指标后 = 0.906846
+
+================================================================================================
+C. 确定性：逐位一致（JSON.stringify 比较）
+================================================================================================
+  同一输入跑两次逐位一致：true
+  正序 vs 逆序（无重复 id）逐位一致：true
+  基线 metrics 键顺序：相同=false
+  基线键顺序不同的两份基线（同数值）输出逐位一致：true
+  追加一条「已存在 id」的事件（内容相同）→ 逐位一致：true
+
+================================================================================================
+D. 不可变性：尝试改写嵌套元素（ESM 严格模式，写入冻结对象会抛错）
+================================================================================================
+修改尝试                                被拒绝  异常         深层已冻结
+──────────────────────────────────  ───  ─────────  ─────
+snapshot.deviationScore = 0         是    TypeError  是    
+groupScores[0].score = 0            是    TypeError  是    
+groupScores.push(...)               是    TypeError  是    
+windows[0].stats[0].confidence = 1  是    TypeError  是    
+windows[0].stats[0].metric = "X"    是    TypeError  是    
+windows[0].eventIds[0] = "X"        是    TypeError  是    
+windows[0].eventIds.push("X")       是    TypeError  是    
+tilt.evidence[0] = "X"              是    TypeError  是    
+tilt.probability = 1                是    TypeError  是    
+signals[0].drivers.push("X")        是    TypeError  是    
+adjustments[0].reasons[0] = "X"     是    TypeError  是    
+adjustments[0].confidence = 0       是    TypeError  是    
+ignoredEvents[0].reason = "X"       是    TypeError  是    
+evidenceEventIds.push("X")          是    TypeError  是    
+conflicts.push("X")                 是    TypeError  是    
+explanation.push("X")               是    TypeError  是    
+  递归遍历发现未冻结对象：无
+
+================================================================================================
+E. 类型层隔离的真实性：强行注入下游字段 / 原型链
+================================================================================================
+  · 多余属性直接挂在 input 上（as any）：与干净输入逐位一致 = true
+  · 原型链注入（Object.setPrototypeOf）：与干净输入逐位一致 = true
+  · 注入到 baseline 快照上：与干净输入逐位一致 = true
+  · 注入到每条事件上：与干净输入逐位一致 = true
+  · 注入到 baseline.metrics 的每一项上：与干净输入逐位一致 = true
+
+  —— 结果隔离对照：同行为 + 不同 contextEvents（COOLER / LOST_BIG_POT）——
+    无上下文 vs 两次重大损失上下文 → 逐位一致 = true
+    输的上下文 vs 赢的上下文（同 seq 锚点）→ 逐位一致 = true
+---- probe4 exit=0 ----
+
+################ scripts/rt7-probe5.ts ################
+================================================================================================
+A. asOf = NaN / Infinity：未来事件过滤失效 + 快照字段被污染
+================================================================================================
+asOf           快照 asOf        JSON 后         未来事件被忽略数  W20 机会数  状态       分数
+─────────────  ─────────────  ─────────────  ────────  ───────  ───────  ──
+1780272000000  1780272000000  1780272000000  20        0        UNKNOWN  0 
+NaN            NaN            null           0         100      NORMAL   34
+Infinity       Infinity       null           0         100      NORMAL   34
+-Infinity      -Infinity      null           20        0        UNKNOWN  0 
+  说明：asOf=NaN / Infinity 时 `time > asOf` 恒为 false → **全部未来事件照常参与计算**。
+
+================================================================================================
+B. 脏机会数组：Fail Closed 还是静默接受 / 崩溃
+================================================================================================
+输入                                          结果                W20 统计项           ignored
+──────────────────────────────────────────  ────────────────  ────────────────  ───────
+opportunities = {}                          **崩溃** TypeError  -                 -      
+opportunities = 42                          **崩溃** TypeError  -                 -      
+opportunities = [null]                      **崩溃** TypeError  -                 -      
+opportunities = [{}]（无 metric / 无 success）  ok（未拒绝）           undefined:0/1     0      
+success = "yes"（字符串）                        ok（未拒绝）           VPIP:1/1          0      
+success 缺失                                  ok（未拒绝）           VPIP:0/1          0      
+metric = "NOT_A_METRIC"                     ok（未拒绝）           NOT_A_METRIC:1/1  0      
+metric = null                               ok（未拒绝）           null:1/1          0      
+  success: true（20 手全命中） → successes=20 rawRate=1.000 状态=LOOSER_RECENTLY
+  success: "yes"（20 手全命中） → successes=20 rawRate=1.000 状态=LOOSER_RECENTLY
+  success: 1（20 手全命中） → successes=20 rawRate=1.000 状态=LOOSER_RECENTLY
+  success 缺失（20 手） → successes=0 rawRate=0.000 状态=TIGHTER_RECENTLY
+
+================================================================================================
+C. betSizePotRatio：一个**不参与任何计算**的字段，却能让整条事件被丢弃
+================================================================================================
+场景                                 W20 机会数  被丢弃事件  状态               分数  调整
+─────────────────────────────────  ───────  ─────  ───────────────  ──  ──
+无 betSizePotRatio                  8        0      LOOSER_RECENTLY  26  1 
+betSizePotRatio = 0.75（合法）         8        0      LOOSER_RECENTLY  26  1 
+betSizePotRatio = -1（非法）           0        8      UNKNOWN          0   0 
+betSizePotRatio = NaN              0        8      UNKNOWN          0   0 
+isOverbet = true / isAllIn = true  8        0      LOOSER_RECENTLY  26  1 
+isOverbet = "垃圾值"                  8        0      LOOSER_RECENTLY  26  1 
+  说明：betSizePotRatio 只被 validateEvent 校验，从未被任何计算读取；
+  但一次非法值会让**整条事件的所有机会**被丢弃（Fail Closed 用错了对象）。
+
+================================================================================================
+D. SIZING 组与「未登记进 METRIC_GROUP 的真实指标」= 死代码
+================================================================================================
+  超池/全下/尺寸比全开 vs 完全不提供 → JSON 逐位一致 = true
+  SIZING 组：score=0 direction=NONE comparedMetrics=0
+  是否出现过 SIZE_ANOMALY 信号：false；状态=AGGRESSION_UP
+指标                  W20 机会总数  状态      分数  该指标是否进入偏差计算
+──────────────────  ────────  ──────  ──  ───────────
+RIVER_OVERBET（未登记）  20        NORMAL  0   否          
+CBET（未登记）           20        NORMAL  0   否          
+TURN_BARREL（未登记）    20        NORMAL  0   否          
+RIVER_CALL（已登记）     20        NORMAL  18  是          
+  1 手牌 / 8 个机会（7 个未登记指标）→ 状态=NORMAL 置信=0.3333 explanation=["翻牌前入池高于个人基线（主要指标：VPIP）"]
+  （MIN_RECENT_OPPORTUNITIES = 8：门槛被未登记指标的机会数凑满，因此不再是 UNKNOWN）
+
+================================================================================================
+E. 上下文事件：playerId / timestamp / observedAfterEventIds 全部不参与校验
+================================================================================================
+变体                                        与无上下文逐位一致  tilt概率
+────────────────────────────────────────  ─────────  ──────
+无上下文事件                                    —          0.0000
+正确 playerId                               否          0.6248
+playerId = somebody-else（别人的损失）           否          0.6248
+timestamp = 2099（未来）                      否          0.6248
+observedAfterEventIds = ["e21"]（应只看 1 条）  否          0.6248
+handId 不存在                                否          0.6248
+  有上下文时 tilt.probability = 0.6248（说明上下文确实生效）
+
+================================================================================================
+F. 人工 Hint：时间戳被忽略 / 静默丢弃 / 与 tilt.probability 自相矛盾
+================================================================================================
+  无 Hint                ：状态=NORMAL 分数=8 置信=0.333 tilt=0.000 信号=[] 调整=[] 冲突=0
+  Hint 时间戳 = 2099（未来）：状态=TILT_SIGNAL 分数=8 置信=0.317 tilt=0.000 信号=[] 调整=[CALL_LIKELIHOOD,FOLD_LIKELIHOOD] 冲突=0
+  Hint 时间戳 = 2020（过去）：状态=TILT_SIGNAL 分数=8 置信=0.317 tilt=0.000 信号=[] 调整=[CALL_LIKELIHOOD,FOLD_LIKELIHOOD] 冲突=0
+  未来 Hint 与过去 Hint 输出逐位一致 = true
+  → 结果：dominantState=TILT_SIGNAL，但 tilt.probability=0，signals=[]
+     而调整：["CALL_LIKELIHOOD INCREASE ×1.0824","FOLD_LIKELIHOOD DECREASE ×0.9239"]
+  → 快照里**没有任何 provenance 字段**标明该状态来自人工观察而非真实数据。
+  [NORMAL(新), SUSPECT_TILT(旧)] → TILT_SIGNAL；[SUSPECT_TILT(旧), NORMAL(新)] → NORMAL
+  → 采用「数组最后一条」，而不是「时间戳最新的一条」；逐位一致 = false
+  充足真实数据（opportunities=100, 置信=0.900）：
+    无 Hint：状态=AGGRESSION_UP 分数=68 置信=0.900 tilt=0.300 信号=[AGGRESSION_UP:1.00,LOOSER_RECENTLY:1.00] 调整=[RANGE_WIDTH,AGGRESSION_LIKELIHOOD,BLUFF_LIKELIHOOD,VALUE_LIKELIHOOD] 冲突=0
+    加一条 TIGHTER_RECENTLY Hint：状态=AGGRESSION_UP 分数=68 置信=0.900 tilt=0.300 信号=[AGGRESSION_UP:1.00,LOOSER_RECENTLY:1.00] 调整=[RANGE_WIDTH,AGGRESSION_LIKELIHOOD,BLUFF_LIKELIHOOD,VALUE_LIKELIHOOD] 冲突=1
+    冲突记录变化：[] → ["人工观察（TIGHTER_RECENTLY）与真实数据（AGGRESSION_UP）不一致 —— 真实数据优先，人工观察仅作记录"]
+    resolveUserHints(机会数=12, 置信=0.9) → {"state":"TIGHTER_RECENTLY","confidence":0.43000000000000005,"conflicts":[],"overridden":false}
+    → Hint 被**静默丢弃**：没有 conflict 记录，overridden 仍为 false（调用方无法察觉）。
+
+================================================================================================
+G. 适配层：同一目标两个相反方向的调整相乘 → direction 与 multiplier 自相矛盾
+================================================================================================
+  快照：状态=AGGRESSION_DOWN 分数=34 置信=0.870 tilt=0.000 信号=[AGGRESSION_DOWN:0.90] 调整=[AGGRESSION_LIKELIHOOD,FOLD_LIKELIHOOD] 冲突=2
+  adjustments = [["AGGRESSION_LIKELIHOOD","DECREASE","0.870","近期主动进攻频率低于个人基线"],["FOLD_LIKELIHOOD","INCREASE","0.870","进攻性下降通常伴随更愿意弃牌"]]
+    AGGRESSION_LIKELIHOOD DECREASE（因子 0.805，UNVERIFIED_MAGNITUDE）  reasons=["近期主动进攻频率低于个人基线"]
+    FOLD_LIKELIHOOD INCREASE（因子 1.243，UNVERIFIED_MAGNITUDE）  reasons=["进攻性下降通常伴随更愿意弃牌"]
+  自相矛盾的输出条数 = 0（direction 说调整，multiplier 说没调整或其反）
+  multiplierOf 是导出 API：multiplierOf(INCREASE, 1) = 1.284025；UNVERIFIED_MAGNITUDE.maxMagnitude = 0.25
+  → 导出 API 可以直接拿到一个**没有任何 provenance 标注**的乘性因子。
+
+================================================================================================
+H. MAX_SINGLE_EVENT_SHARE / RecentBehaviorStat.effectiveSample 是否为死代码
+================================================================================================
+  源码事实（grep 结果）：
+    src/domain/dynamic/dynamicBehavior.ts:41  import { MAX_SINGLE_EVENT_SHARE }
+    src/domain/dynamic/dynamicBehavior.ts:874 export { MAX_SINGLE_EVENT_SHARE }  ← 仅转出，无任何计算使用
+    src/domain/dynamic/dynamicStats.ts:282    capSingleHandWeight(bucket.weights, DEFAULT_DECAY.maxSingleHandShare)
+    → 实际生效的是 Step 6 的 DEFAULT_DECAY.maxSingleHandShare（同为 0.05），
+      Dynamic 自己声明的 MAX_SINGLE_EVENT_SHARE 改不动任何输出。
+  RecentBehaviorStat.effectiveSample 的实际值（只有输出，无消费者）：
+    CALL_OPEN=20.000  PFR=20.000  RIVER_CALL=20.000  THREE_BET=20.000  VPIP=20.000
+  组置信度（来自 stat.confidence = 机会数映射，与 effectiveSample 无关）：ENTRY:0.231 AGGRESSION:0.231 CALLING:0.231 SIZING:0.000 RIVER:0.000
+---- probe5 exit=0 ----
+
+################ scripts/rt7-probe6.ts ################
+================================================================================================
+A. 适配层：FOLD_LIKELIHOOD 同时收到 INCREASE 与 DECREASE → 因子恰好回到 1
+================================================================================================
+  快照：状态=CHASE_LOSS_SIGNAL 分数=66 置信=0.9000 tilt=0.3949
+  signals = [["LOOSER_RECENTLY","1.000"],["AGGRESSION_DOWN","0.900"],["CHASE_LOSS_SIGNAL","0.564"]]
+  adjustments = [["RANGE_WIDTH","INCREASE","0.9000"],["AGGRESSION_LIKELIHOOD","DECREASE","0.9000"],["FOLD_LIKELIHOOD","INCREASE","0.9000"],["CALL_LIKELIHOOD","INCREASE","0.9000"],["FOLD_LIKELIHOOD","DECREASE","0.9000"]]
+  adaptAdjustments 输出：
+    AGGRESSION_LIKELIHOOD DECREASE（因子 0.799，UNVERIFIED_MAGNITUDE）
+      reasons = ["近期主动进攻频率低于个人基线"]
+    CALL_LIKELIHOOD INCREASE（因子 1.252，UNVERIFIED_MAGNITUDE）
+      reasons = ["损失之后行为偏移，可能更倾向于跟注"]
+    FOLD_LIKELIHOOD INCREASE（因子 1.000，方向冲突已抵消，UNVERIFIED_MAGNITUDE）
+      reasons = ["进攻性下降通常伴随更愿意弃牌","损失之后行为偏移，可能更不愿意弃牌"]
+    RANGE_WIDTH INCREASE（因子 1.252，UNVERIFIED_MAGNITUDE）
+      reasons = ["近期入池频率高于个人基线"]
+  ⇒ 自相矛盾条数 = 1
+     FOLD_LIKELIHOOD: direction=INCREASE multiplier=1.000000000000 reasons=["进攻性下降通常伴随更愿意弃牌","损失之后行为偏移，可能更不愿意弃牌"]
+
+================================================================================================
+B. 误报率 vs 历史长度：数据恒等于基线，只有「近多少手进入统计」在变
+   （每手 13 个已登记指标全部出现；真值 = 基线率；400 个确定性种子）
+================================================================================================
+历史手数  每手机会数  W20 内每指标机会  状态≠NORMAL  有冲突提示  有调整    分数均值  分数P95
+────  ─────  ──────────  ─────────  ─────  ─────  ────  ─────
+20    13     20          12.3%      0.3%   12.3%  20.2  36   
+30    13     20          29.5%      3.5%   29.5%  22.2  40   
+40    13     20          38.8%      5.5%   38.8%  24.7  41   
+60    13     20          50.7%      12.5%  50.7%  25.4  41   
+100   13     20          50.7%      10.8%  50.7%  26.0  40   
+200   13     20          46.3%      30.0%  46.3%  24.3  36   
+  机制：方向检验用的样本量 = countOpportunities(全部近期事件)（随手数增长而增长），
+        强度与窗口统计只用 W20（恒为 ~20 次机会）；两者样本量不一致 →
+        历史越长，方向越容易被判成 HIGHER/LOWER，而窗口内的随机波动没变 → 误报率随历史上升。
+---- probe6 exit=0 ----
+
+################ scripts/rt7-probe7.ts ################
+================================================================================================
+热路径性能（每个事件 5 次机会；基线含 25 个指标）目标 P95 < 20ms
+================================================================================================
+事件数   观测数    W50 事件数  迭代    P50(ms)  P95(ms)  MAX(ms)  均值(ms)   P95 达标
+────  ─────  ───────  ────  ───────  ───────  ───────  ───────  ──────
+1     5      1        3000  0.1458   0.2774   5.0471   0.1637   是     
+10    50     10       3000  0.1742   0.3454   1.2884   0.2031   是     
+50    250    50       2000  0.4156   0.8394   2.3239   0.5285   是     
+200   1000   50       1000  0.8106   1.4781   1.9285   1.0068   是     
+1000  5000   50       300   3.3344   5.9618   10.1159  4.0667   是     
+5000  25000  50       100   13.7149  20.9171  27.0660  15.0062  否     
+
+增长曲线（以 P50 为准，检查是否线性）：
+      1 →    10 事件：规模 ×10.00，耗时 ×1.19（超线性指数 ≈ 0.077）
+     10 →    50 事件：规模 ×5.00，耗时 ×2.39（超线性指数 ≈ 0.540）
+     50 →   200 事件：规模 ×4.00，耗时 ×1.95（超线性指数 ≈ 0.482）
+    200 →  1000 事件：规模 ×5.00，耗时 ×4.11（超线性指数 ≈ 0.879）
+   1000 →  5000 事件：规模 ×5.00，耗时 ×4.11（超线性指数 ≈ 0.879）
+
+最坏情况：每个事件 25 次机会（全部指标都记）
+事件数   观测数    P50(ms)  P95(ms)  MAX(ms)  P95 达标
+────  ─────  ───────  ───────  ───────  ──────
+50    1250   1.0912   1.9453   2.4148   是     
+200   5000   1.7046   2.9911   3.3183   是     
+1000  25000  4.5330   5.1746   7.8903   是     
+
+更长历史：2500 / 10000 事件（观察是否继续超线性）
+事件数    P50(ms)  P95(ms)  MAX(ms)  P95 达标
+─────  ───────  ───────  ───────  ──────
+2500   6.066    8.155    10.535   是     
+10000  23.713   28.628   30.887   否     
+
+成本归因：normalizeEvents 的排序比较器里**每次比较都调用 Date.parse**
+  130000 次 Date.parse（≈5000 条排序的两次/比较上界）耗时 = 47.604ms（sink=3）
+  5000 条排序：比较器内 Date.parse = 3.576ms；预解析后排序 = 0.359ms
+  仅排序一项就占 5000 事件总耗时（P50 ≈ 20ms）的 17.9%
+
+estimateWorkload 开销（目标：不做实际计算即给出估算）
+  1000 事件：P50=1.9147ms P95=3.4778ms MAX=3.8999ms
+  估算结果 = {"events":1000,"observations":5000,"windowEvents":50}
+---- probe7 exit=0 ----
+
+################ scripts/rt7-probe8.ts ################
+====================================================================================================
+A. 干净场景（只有 VPIP，无任何组内冲突）：基线 15%，近期真实率 45%，N 从 1 扫到 60
+====================================================================================================
+n   命中  实际率    窗口机会  收缩后     分数  状态               LOOSER p  置信     RANGE↑
+──  ──  ─────  ────  ──────  ──  ───────────────  ────────  ─────  ──────
+1   0   0.000  1     0.1472  0   UNKNOWN          -         0.042  无     
+2   1   0.500  2     0.1751  1   UNKNOWN          -         0.083  无     
+3   1   0.333  3     0.1780  1   UNKNOWN          -         0.125  无     
+4   2   0.500  4     0.2335  4   UNKNOWN          -         0.167  无     
+5   2   0.400  5     0.2344  4   UNKNOWN          -         0.208  无     
+6   3   0.500  6     0.2965  8   UNKNOWN          -         0.250  无     
+7   3   0.429  7     0.2912  7   UNKNOWN          -         0.292  无     
+8   4   0.500  8     0.3486  21  LOOSER_RECENTLY  0.794     0.333  有     
+9   4   0.444  9     0.3380  10  NORMAL           -         0.375  无     
+10  5   0.500  10    0.3875  25  LOOSER_RECENTLY  0.950     0.417  有     
+11  5   0.455  11    0.3737  24  LOOSER_RECENTLY  0.895     0.458  有     
+12  5   0.417  12    0.3570  22  LOOSER_RECENTLY  0.828     0.500  有     
+13  6   0.462  13    0.4003  26  LOOSER_RECENTLY  1.000     0.542  有     
+14  6   0.429  14    0.3818  24  LOOSER_RECENTLY  0.927     0.583  有     
+15  7   0.467  15    0.4203  26  LOOSER_RECENTLY  1.000     0.625  有     
+16  7   0.438  16    0.4022  26  LOOSER_RECENTLY  1.000     0.667  有     
+17  8   0.471  17    0.4355  26  LOOSER_RECENTLY  1.000     0.708  有     
+18  8   0.444  18    0.4170  26  LOOSER_RECENTLY  1.000     0.750  有     
+19  9   0.474  19    0.4472  26  LOOSER_RECENTLY  1.000     0.792  有     
+20  9   0.450  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+21  9   0.429  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+22  10  0.455  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+23  10  0.435  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+24  11  0.458  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+25  11  0.440  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+26  12  0.462  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+27  12  0.444  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+28  13  0.464  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+29  13  0.448  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+30  14  0.467  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+31  14  0.452  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+32  14  0.438  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+33  15  0.455  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+34  15  0.441  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+35  16  0.457  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+36  16  0.444  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+37  17  0.459  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+38  17  0.447  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+39  18  0.462  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+40  18  0.450  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+41  18  0.439  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+42  19  0.452  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+43  19  0.442  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+44  20  0.455  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+45  20  0.444  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+46  21  0.457  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+47  21  0.447  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+48  22  0.458  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+49  22  0.449  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+50  23  0.460  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+51  23  0.451  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+52  23  0.442  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+53  24  0.453  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+54  24  0.444  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+55  25  0.455  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+56  25  0.446  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+57  26  0.456  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+58  26  0.448  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+59  27  0.458  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+60  27  0.450  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+最早报出「变松 + 范围放宽」的 N = 8
+报出之后又丢失检测的最小 N = 9
+
+====================================================================================================
+B. 干净场景：样本保护倒挂 —— 少样本反而更容易触发调整
+====================================================================================================
+场景                   n   命中  实际率    窗口机会  收缩后     分数  状态               LOOSER p  置信     RANGE↑
+───────────────────  ──  ──  ─────  ────  ──────  ──  ───────────────  ────────  ─────  ──────
+1 次机会 1 次命中（100%）    1   1   1.000  1     0.1657  2   UNKNOWN          -         0.042  无     
+2 次机会 2 次命中（100%）    2   2   1.000  2     0.2099  6   UNKNOWN          -         0.083  无     
+3 次机会 3 次命中（100%）    3   3   1.000  3     0.2744  13  UNKNOWN          -         0.125  无     
+5 次机会 5 次命中（100%）    5   5   1.000  5     0.4266  26  UNKNOWN          -         0.208  无     
+8 次机会 8 次命中（100%）    8   8   1.000  8     0.6244  26  LOOSER_RECENTLY  1.000     0.333  有     
+10 次机会 10 次命中（100%）  10  10  1.000  10    0.7173  26  LOOSER_RECENTLY  1.000     0.417  有     
+20 次机会 20 次命中（100%）  20  20  1.000  20    0.9150  26  LOOSER_RECENTLY  1.000     0.833  有     
+20 次机会 9 次命中（45%）    20  9   0.450  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+30 次机会 14 次命中（47%）   30  14  0.467  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+50 次机会 23 次命中（46%）   50  23  0.460  20    0.4650  26  LOOSER_RECENTLY  1.000     0.833  有     
+60 次机会 27 次命中（45%）   60  27  0.450  20    0.4200  26  LOOSER_RECENTLY  1.000     0.833  有     
+注意：10/10（10 次机会全命中）与 20/9（45%）相比 —— 前者报出调整，后者不报。
+
+====================================================================================================
+C. n × 真实率 的检出矩阵（状态 / 是否放宽范围）
+====================================================================================================
+n  0.15  0.20  0.25  0.30  0.35  0.40  0.45  0.50  0.60  0.80  1.00
+  8  ·     ·     ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑   
+ 10  ·     ·     ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑   
+ 12  ·     ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑   
+ 15  ·     ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑   
+ 18  ·     ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑   
+ 20  ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑     ↑   
+ 30  ·     ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑     ↑   
+ 50  ·     ·     ↑     ↑     ↑     ↑     ↑     ↑     ↑     ↑     ↑   
+ 60  ·     ·     ·     ↑     ↑     ↑     ↑     ↑     ↑     ↑     ↑   
+  ↑ = 报出 LOOSER_RECENTLY 且放宽范围；↓ = 报出 TIGHTER_RECENTLY；· = NORMAL；? = UNKNOWN
+---- probe8 exit=0 ----
+
+################ scripts/rt7-probe9.ts ################
+################################################################################################
+头条 1：40 手，VPIP 15%→90%、PFR 12%→0%、3Bet 7%→0%（被动跟注变多）
+################################################################################################
+### 场景 1-A：三条指标都记（信息更完整）
+  dominantState = AGGRESSION_DOWN   deviationScore = 19   confidence = 0.900
+  conflicts     = ["入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进","入池率上升但 3Bet 下降 —— 更可能是跟注变多，而非进攻性上升"]
+  explanation   = ["翻牌前入池偏离个人基线（主要指标：VPIP）","入池率上升但主动加注率下降 —— 更可能是被动跟注变多，而非整体变激进"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = [["AGGRESSION_DOWN",0.252,["THREE_BET"]]]
+  groupScores   = [["ENTRY",0.5,"NONE","VPIP"],["AGGRESSION",0.227,"LOWER","THREE_BET"],["CALLING",0,"NONE",null],["SIZING",0,"NONE",null],["RIVER",0,"NONE",null]]
+  adjustments   = [["AGGRESSION_LIKELIHOOD","DECREASE",0.9],["FOLD_LIKELIHOOD","INCREASE",0.9]]
+  adapters      = [["AGGRESSION_LIKELIHOOD","DECREASE",0.7985,"UNVERIFIED_MAGNITUDE"],["FOLD_LIKELIHOOD","INCREASE",1.2523,"UNVERIFIED_MAGNITUDE"]]
+
+### 场景 1-B：只记 VPIP（信息更少）
+  dominantState = LOOSER_RECENTLY   deviationScore = 26   confidence = 0.833
+  conflicts     = []
+  explanation   = ["翻牌前入池高于个人基线（主要指标：VPIP）"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = [["LOOSER_RECENTLY",1,["VPIP"]]]
+  groupScores   = [["ENTRY",1,"HIGHER","VPIP"],["AGGRESSION",0,"NONE",null],["CALLING",0,"NONE",null],["SIZING",0,"NONE",null],["RIVER",0,"NONE",null]]
+  adjustments   = [["RANGE_WIDTH","INCREASE",0.833]]
+  adapters      = [["RANGE_WIDTH","INCREASE",1.2316,"UNVERIFIED_MAGNITUDE"]]
+
+################################################################################################
+头条 2：置信度与幅度不看「每个指标有多少机会」，只看「跨指标机会总数」
+################################################################################################
+### 2a) 真实行为**恰好等于基线**的玩家，只观测 1 手（每手 13 个指标机会）
+  dominantState = NORMAL   deviationScore = 3   confidence = 0.542
+  conflicts     = []
+  explanation   = ["翻牌前入池高于个人基线（主要指标：OPEN）"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = []
+  groupScores   = [["ENTRY",0.053,"HIGHER","OPEN"],["AGGRESSION",0.002,"NONE","THREE_BET"],["CALLING",0.036,"HIGHER","CALL_THREE_BET"],["SIZING",0,"NONE",null],["RIVER",0.012,"NONE","RIVER_FOLD"]]
+  adjustments   = []
+  adapters      = []
+
+### 2a) 真实行为**恰好等于基线**的玩家，只观测 2 手（每手 13 个指标机会）
+  dominantState = NORMAL   deviationScore = 3   confidence = 0.900
+  conflicts     = []
+  explanation   = ["河牌行为偏离个人基线（主要指标：RIVER_FOLD）"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = []
+  groupScores   = [["ENTRY",0.031,"NONE","VPIP"],["AGGRESSION",0.008,"NONE","THREE_BET"],["CALLING",0.041,"NONE","CALL_CBET"],["SIZING",0,"NONE",null],["RIVER",0.044,"NONE","RIVER_FOLD"]]
+  adjustments   = []
+  adapters      = []
+
+### 2a) 真实行为**恰好等于基线**的玩家，只观测 3 手（每手 13 个指标机会）
+  dominantState = NORMAL   deviationScore = 9   confidence = 0.900
+  conflicts     = []
+  explanation   = ["河牌行为高于个人基线（主要指标：RIVER_FOLD）"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = []
+  groupScores   = [["ENTRY",0.05,"NONE","PFR"],["AGGRESSION",0.016,"NONE","THREE_BET"],["CALLING",0.086,"NONE","CALL_CBET"],["SIZING",0,"NONE",null],["RIVER",0.183,"HIGHER","RIVER_FOLD"]]
+  adjustments   = []
+  adapters      = []
+
+### 2a) 真实行为**恰好等于基线**的玩家，只观测 20 手（每手 13 个指标机会）
+  dominantState = NORMAL   deviationScore = 17   confidence = 0.851
+  conflicts     = []
+  explanation   = ["翻牌前入池偏离个人基线（主要指标：OPEN）"]
+  tilt          = {"p":0,"c":0,"e":[]}
+  signals       = []
+  groupScores   = [["ENTRY",0.234,"NONE","OPEN"],["AGGRESSION",0.065,"NONE","THREE_BET"],["CALLING",0.164,"NONE","RIVER_CALL"],["SIZING",0,"NONE",null],["RIVER",0.184,"NONE","RIVER_FOLD"]]
+  adjustments   = []
+  adapters      = []
+
+### 2b) 行为极端偏离的玩家，只有 2 手数据（每手 13 个指标机会）
+  dominantState = AGGRESSION_UP   deviationScore = 17   confidence = 0.900
+  conflicts     = []
+  explanation   = ["主动进攻高于个人基线（主要指标：FOUR_BET）"]
+  tilt          = {"p":0.08281251114759158,"c":0.9000000000000002,"e":["主动进攻频率高于个人基线"]}
+  signals       = [["AGGRESSION_UP",0.276,["FOUR_BET"]]]
+  groupScores   = [["ENTRY",0.22,"HIGHER","VPIP"],["AGGRESSION",0.248,"HIGHER","FOUR_BET"],["CALLING",0.122,"HIGHER","RIVER_CALL"],["SIZING",0,"NONE",null],["RIVER",0.044,"NONE","RIVER_FOLD"]]
+  adjustments   = [["AGGRESSION_LIKELIHOOD","INCREASE",0.9],["BLUFF_LIKELIHOOD","INCREASE",0.9],["VALUE_LIKELIHOOD","INCREASE",0.9]]
+  adapters      = [["AGGRESSION_LIKELIHOOD","INCREASE",1.2523,"UNVERIFIED_MAGNITUDE"],["BLUFF_LIKELIHOOD","INCREASE",1.2523,"UNVERIFIED_MAGNITUDE"],["VALUE_LIKELIHOOD","INCREASE",1.2523,"UNVERIFIED_MAGNITUDE"]]
+
+################################################################################################
+头条 3：W20 窗口统计完全相同，仅历史长度不同 → 方向从 NONE 翻成 HIGHER
+################################################################################################
+ n   全历史机会数   W20 raw  W20 机会  W20 adjusted    ENTRY 方向  状态             分数  RANGE↑
+ 40           40      0.25        20      0.240001         NONE  NORMAL               5  无
+ 50           50       0.3        20      0.285001       HIGHER  LOOSER_RECENTLY     14  有
+ 60           60      0.25        20      0.240001         NONE  NORMAL               5  无
+ 70           70       0.3        20      0.285001       HIGHER  LOOSER_RECENTLY     14  有
+ 80           80      0.25        20      0.240001       HIGHER  LOOSER_RECENTLY      9  有
+100          100      0.25        20      0.240001       HIGHER  LOOSER_RECENTLY      9  有
+200          200      0.25        20      0.240001       HIGHER  LOOSER_RECENTLY      9  有
+ 真实率恒为 25%（n=40/60/200 时 s/n 恰好 0.250）。
+---- probe9 exit=0 ----
+★ 本次运行的源码修订（结束）：
+40308713CF4096C8  dynamic.types.ts
+47F6855048D2B06D  dynamicAdapter.ts
+71A94961032ED05D  dynamicBehavior.ts
+5C913E03E346F1E1  dynamicDeviation.ts
+E3099258340BEA8B  dynamicStats.ts
+全部完成 2026-09-13T09:20:29.3679098+08:00

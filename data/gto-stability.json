@@ -1,0 +1,37 @@
+{
+  "c0e16ca71": {
+    "runs": 2,
+    "maxAbsFrequencyDelta": 0,
+    "meanAbsFrequencyDelta": 0,
+    "actionMenuStable": true,
+    "note": "scripts/gto-stability-probe.ts 实测：2 次「重新建树 + 从迭代 0 求解」，桌人数 4，迭代 60 次，gap 0.03412694 → 0.03412694。实测于 D:\\德州\\reports\\evidence\\"
+  },
+  "cc7d6eaa0": {
+    "runs": 2,
+    "maxAbsFrequencyDelta": 0,
+    "meanAbsFrequencyDelta": 0,
+    "actionMenuStable": true,
+    "note": "scripts/gto-stability-probe.ts 实测：2 次「重新建树 + 从迭代 0 求解」，桌人数 6，迭代 40 次，gap 0.16526006 → 0.16526006。实测于 D:\\德州\\reports\\evidence\\"
+  },
+  "c8465e24b": {
+    "runs": 2,
+    "maxAbsFrequencyDelta": 0,
+    "meanAbsFrequencyDelta": 0,
+    "actionMenuStable": true,
+    "note": "scripts/gto-stability-probe.ts 实测：2 次「重新建树 + 从迭代 0 求解」，桌人数 5，迭代 60 次，gap 0.08084305 → 0.08084305。实测于 D:\\德州\\reports\\evidence\\"
+  },
+  "c75d5f34c": {
+    "runs": 2,
+    "maxAbsFrequencyDelta": 0,
+    "meanAbsFrequencyDelta": 0,
+    "actionMenuStable": true,
+    "note": "scripts/gto-stability-probe.ts 实测：2 次「重新建树 + 从迭代 0 求解」，桌人数 8，迭代 20 次，gap 0.00417911 → 0.00417911。实测于 D:\\德州\\reports\\evidence\\"
+  },
+  "c9b049135": {
+    "runs": 2,
+    "maxAbsFrequencyDelta": 0,
+    "meanAbsFrequencyDelta": 0,
+    "actionMenuStable": true,
+    "note": "scripts/gto-stability-probe.ts 实测：2 次「重新建树 + 从迭代 0 求解」，桌人数 9，迭代 12 次，gap 0.02102956 → 0.02102956。实测于 D:\\德州\\reports\\evidence\\"
+  }
+}

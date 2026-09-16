@@ -1,0 +1,5 @@
+# 🔴 本仓库对**文件字节**敏感：`data/artifact-manifest.json` 记录 134 个产物的
+# SHA-256，`npm run verify` 的 `manifest:check` 会逐字节核对。
+# 因此**禁止任何行尾转换**（Windows 上 git 默认的 autocrlf 会把 LF 换成 CRLF，
+# 导致换台机器 clone 之后 manifest 校验全红）。
+* -text

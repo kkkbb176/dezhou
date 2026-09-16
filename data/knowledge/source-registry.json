@@ -1,0 +1,347 @@
+{
+  "registryVersion": "1.0.0",
+  "auditPhase": "Phase 4.5",
+  "auditDate": "2026-09-13",
+  "licenseGateLegend": {
+    "GREEN": "MIT / Apache / BSD 等宽松许可证 —— 满足许可证条件时可借鉴或移植",
+    "YELLOW": "GPL / AGPL / LGPL —— 默认只研究思想，未经明确评估禁止复制代码",
+    "RED": "无许可证 / 权利不明 —— 只研究概念，禁止复制"
+  },
+  "evidenceLevelLegend": {
+    "PRIMARY": "一手证据：原始数据、求解器输出、规范文本、可复现实验",
+    "VERIFIED_SECONDARY": "经独立复核的二手证据：有方法与样本量、可追溯原始数据",
+    "SECONDARY": "二手证据：有出处但无法独立复核原始数据",
+    "HEURISTIC": "启发式：依据公认原理构造，无数据支撑"
+  },
+  "sources": [
+    {
+      "id": "github.gtopen",
+      "title": "GTOpen —— open-source GTO poker solver (heads-up postflop CFR, multiway Preflop Lab, player profiling & max-exploitation)",
+      "type": "GITHUB",
+      "author": "MatthewPDingle",
+      "license": "NONE",
+      "url": "https://github.com/MatthewPDingle/GTOpen",
+      "auditDate": "2026-09-13",
+      "commitHash": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+      "lastActivity": "2026-09-11T03:06:25Z",
+      "language": "Rust（含零构建浏览器 UI）",
+      "evidenceLevel": "PRIMARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": true,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "No-Limit Hold'em cash",
+        "tableSize": "2–9 人（Preflop Lab）/ 单挑（Postflop）",
+        "stackDepthBB": "资料中常见 150bb / 200bb",
+        "stakes": "资料中为 $2/$2 与 $2/$5",
+        "street": "全街（Postflop 仅单挑）"
+      },
+      "notes": "仓库根目录、完整 git 树（3,242 项）、README 与 Cargo.toml **均无任何许可证声明**，GitHub API 的 license 字段为 null。因此门禁为 RED，只能研究思想。其 docs/model_evidence.md 提供了一套「证据标签」词汇（History-backed / Extrapolated / Contextual estimate / Stat-derived / Stored policy / Point lock），明确区分「来源」与「置信度」，与本项目的 RangeProvenance 是同一设计思路。其 docs/player_types.md 给出了基于 2009 年 25–50NL 线上现金牌局（HandHQ 经多伦多大学 PHH 数据集）的 7 种玩家原型统计，并诚实报告了聚类结论。",
+      "limitations": [
+        "无许可证 —— 任何代码、文档、数据的复制都不被允许",
+        "Postflop 仅支持单挑；无 ICM；不支持多路底池的完整求解",
+        "Preflop 使用**近似延续模型**；作者自述「不求解完整多路游戏到河牌，且重叠紧范围仍可能暴露较大的去牌错误」",
+        "玩家模型混合观测与推断；作者自述「数据集标签不等于每一个显示的手牌频率都被观测过」",
+        "cross-exploit 数值基于**单一类型满桌**与**不会自适应**的刚性画像，作者自述绝对 EV 是上限值",
+        "其数据集为 2009 年牌局，存在作者自己指出的幸存者偏差（1500+ 手玩家中仅 6% 是松的）",
+        "文档可能带非商业/禁止演绎类许可，本项目**不得**引用其文本或数据"
+      ]
+    },
+    {
+      "id": "github.poker-lab",
+      "title": "Poker Lab（davidvayn/pokersolver）—— 私人德州学习工作区（preflop charts / practice / EV-loss stats / postflop CFR+ WASM）",
+      "type": "GITHUB",
+      "author": "davidvayn",
+      "license": "MIT",
+      "url": "https://github.com/davidvayn/pokersolver",
+      "auditDate": "2026-09-13",
+      "commitHash": "687ce51938a92f002d7b71230a552a8af633b314",
+      "lastActivity": "2026-09-09T21:40:09Z",
+      "language": "TypeScript / Rust(WASM) / Next.js",
+      "evidenceLevel": "PRIMARY",
+      "allowedUsage": "CODE_REFERENCE",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": true,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "No-Limit Hold'em cash（主要单挑练习）",
+        "tableSize": "单挑（练习）/ 6-max 与 9-max（翻牌前图表）",
+        "stackDepthBB": "push/fold 语料覆盖 2/3/5/8/10/12/15/20bb",
+        "street": "翻牌前（图表与 push/fold）+ 单街全下权益近似（浏览器求解器）"
+      },
+      "notes": "MIT 许可证，门禁 GREEN。最有价值的机制是**Fail-Closed**：README 明确写出「Practice never substitutes fabricated strategy when a model or shard is unavailable」，并且「完整手牌输出在**两个独立种子**通过全部验证与存储门禁之前，对 Practice 保持隐藏」。`/api/practice/resolve` 在返回策略前**校验每个组件的哈希**。Stats 使用 EV-loss / confidence / response-time / costly-decision 分析。诚实标注：浏览器求解器只是「单街全下权益近似」，并**公开报告其可利用度（exploitability）**。",
+      "limitations": [
+        "浏览器求解器是**单街全下权益抽象**，不是完整多街求解 —— 其自身 README 已明确标注并给出可利用度",
+        "`preflop-solver/` 的 Rust blueprint trainer 是**抽象单挑**模型，其输出自述为 advisory",
+        "README 自述 `npm run lint` 尚不适合无人值守验证（仓库未提交 ESLint 配置）",
+        "翻牌前图表数据的**上游来源未在本轮审计中确认**；即使 MIT 覆盖代码，数据本身的权利仍需单独核实",
+        "本项目未安装 Node/Rust 求解器，因此其数值输出**未在本项目内独立复现**"
+      ]
+    },
+    {
+      "id": "github.dcfr-solver",
+      "title": "DCFR-SOLVER（exinori/DCFR-SOLVER）—— 基于 DCFR 的德州扑克求解器",
+      "type": "GITHUB",
+      "author": "exinori",
+      "license": "MIT",
+      "url": "https://github.com/exinori/DCFR-SOLVER",
+      "auditDate": "2026-09-13",
+      "commitHash": "4ade6a9e15a841c41867afde1258b9d110cd6fb1",
+      "lastActivity": "2026-03-16T08:46:06Z",
+      "language": "Rust",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": true,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "No-Limit Hold'em",
+        "tableSize": "翻牌后单挑；翻牌前为 6-max",
+        "street": "翻牌前 / 翻牌 / 转牌 / 河牌"
+      },
+      "notes": "MIT 许可证，门禁 GREEN。仓库体量很小（约 192 KB，单一初始提交），因此**未经过时间检验**，其 README 中的性能与可利用度数字**未在本项目内复现**，故整体证据等级标为 VERIFIED_SECONDARY 而非 PRIMARY。其最大价值是三份**方法论结论**：(1) 不同求解器之间每手频率差 12–15% **不是 Bug**，而是多重纳什均衡 —— 499 手中 241 手的 EV 差小于 0.1 筹码，纯策略（100% 下注或 100% 过牌）在所有求解器间 100% 一致；(2) 花色同构的排列方向错误（正向 vs 逆向）会让单调面收敛停在 0.73% 可利用度，而正向=逆向的换位情形却正常 —— 这是极隐蔽的一类缺陷；(3) 给出 DCFR 的论文默认折扣参数 α=1.5、β=0、γ=2.0。",
+      "limitations": [
+        "仓库仅一次提交、体量极小，未经时间与社区检验",
+        "README 中 0.016% 可利用度、+163.8% 优化等数字**未在本项目内独立复现**",
+        "本项目**未实现花色同构**，因此该 Bug 类别目前不适用（但若将来实现，必须复核排列方向）",
+        "其翻牌前求解器为 6-max MCCFR，不适用于 9-max",
+        "仓库依赖的参考实现与本项目不同，数值不可直接对比"
+      ]
+    },
+    {
+      "id": "github.poker-solver",
+      "title": "poker_solver（amaster97/poker_solver）—— 两层（Python 参考 + Rust 核心）HUNL GTO 求解器",
+      "type": "GITHUB",
+      "author": "amaster97",
+      "license": "MIT",
+      "url": "https://github.com/amaster97/poker_solver",
+      "auditDate": "2026-09-13",
+      "commitHash": "f78f1b2bc338dd8cbb5226ecb8398bbdb3635676",
+      "lastActivity": "2026-06-18T17:59:17Z",
+      "language": "Python + Rust（PyO3 / maturin）",
+      "evidenceLevel": "VERIFIED_SECONDARY",
+      "allowedUsage": "CODE_REFERENCE",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": true,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "Heads-Up No-Limit Hold'em（HUNL）",
+        "tableSize": "单挑",
+        "stackDepthBB": "push/fold 覆盖多档；深筹码翻牌求解自述为分钟级",
+        "street": "翻牌前 / 翻牌 / 转牌 / 河牌"
+      },
+      "notes": "MIT 许可证，门禁 GREEN。本项目吸收的核心是**方法论**而非代码：(1) **Reference-first** —— 把算法结论指向原始文献与参考实现（README 列出 DCFR Brown & Sandholm 2019、CFR+ Tammelin 2014、vanilla CFR Zinkevich 等 2007、Libratus、Pluribus），并用 DeepMind `open_spiel`（Apache-2.0）与 Noam Brown `noambrown/poker_solver`（MIT）作为**正确性 oracle**；(2) **两层架构 + 差分测试** —— Python 是可读的 spec/真值，Rust 是工作马，每个算法先进 Python 再移植 Rust，**移植后必须通过差分测试才被信任**；(3) **诚实的算力披露** —— 明确写出深筹码全范围翻牌求解是「分钟级而非即时」，不是实时求解器。其 docs/aggregator_vs_true_nash_explainer.md 精确解释了「聚合器 ≠ 真纳什」：聚合器对每个（我方组合, 对方组合）跑完全信息 1v1 求解后按组合数加权，**结构上无法回答范围层面的诈唬抓取与极化下注问题**，且「迭代更久也无法缩小差距」。",
+      "limitations": [
+        "仅支持单挑（HUNL），**不适用于多路底池**",
+        "README 中的数值与差分测试结论**未在本项目内独立复现**",
+        "其 `references/` 目录下的第三方参考实现**未随仓库分发**，本项目不得依赖",
+        "深筹码全范围翻牌求解为分钟级，与本项目 1–3 秒目标不兼容",
+        "其聚合器路径的输出**不得**用于诈唬抓取类结论（其自身文档已明确警告）"
+      ]
+    },
+    {
+      "id": "book.modern-poker-theory",
+      "title": "Modern Poker Theory: Building an Unbeatable Strategy Based on GTO Principles",
+      "type": "BOOK",
+      "author": "Michael Acevedo",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://www.simonandschuster.com/books/Modern-Poker-Theory/Michael-Acevedo/9781909457898",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "No-Limit Hold'em（现金与锦标赛均涉及，**本项未确认比例**）",
+        "street": "全街"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE —— 本项目**没有**该书正文、合法公开摘录或作者公开文章的可用副本。本轮仅通过官方出版方页面（Simon & Schuster / D&B Poker，ISBN 9781909457898）确认书目信息。**因此不得据此写出任何具体频率、章节结构或结论**；在本知识体系中登记为「待补知识源」，仅保留其**预定角色**（理论锚点）与主题索引占位。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文，无法提炼任何具体策略内容",
+        "不得凭模型记忆编造章节内容或数值",
+        "书籍的具体适用范围（现金 vs 锦标赛、人数、筹码深度）**未确认**",
+        "网络搜索曾返回疑似盗版全文站点；本项目**未读取、未引用、不会使用**此类来源"
+      ]
+    },
+    {
+      "id": "book.mastering-small-stakes",
+      "title": "Mastering Small Stakes No-Limit Hold'em: Strategies to Consistently Beat Small Stakes Tournaments and Cash Games",
+      "type": "BOOK",
+      "author": "Jonathan Little",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://www.goodwillbooks.com/mastering-small-stakes-no-limit-hold-em-664-9781909457775.html",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "**锦标赛与现金混合**（书名明确同时覆盖两者 —— 这是 Scope Audit 的高风险点）",
+        "stakes": "small stakes",
+        "street": "全街"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE。仅通过书店书目页确认（ISBN 9781909457775，D&B Poker）。⚠️ **注意书名同时覆盖锦标赛与现金** —— 规范第 47 节的 Scope Audit 明确要求防止「把锦标赛策略误用于 Cash」。因此本来源在未获得正文并完成范围区分之前，**禁止**用于本项目的现金局 `LOW_STAKES_ONLINE` 环境。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文",
+        "书名同时覆盖锦标赛与现金，**未区分比例与适用条件**",
+        "不得据此写出任何具体频率或数值",
+        "在完成锦标赛/现金范围区分之前禁止用于 LOW_STAKES_ONLINE"
+      ]
+    },
+    {
+      "id": "book.grinders-manual",
+      "title": "The Grinder's Manual: A Complete Course in Online No Limit Holdem 6-Max Cash Games",
+      "type": "BOOK",
+      "author": "Peter Clarke",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://www.mybookmall.co.za/The-Grinders-Manual-A-Complete-Course-in-Online-No-Limit-Holdem-6Max-Cash-Games-ap-B01GBFF890.html",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "Online No-Limit Hold'em **Cash**（书名明确）",
+        "tableSize": "**6-max**（书名明确）",
+        "street": "全街"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE。仅确认书目信息与副标题所载的适用范围（线上 6-max 现金）。其**预定角色**是提供 6-max 现金的结构化 Spot 框架（Position / RFI / Blind defense / 3Bet / SRP / CBet / Turn / River）。⚠️ 范围仅 6-max —— 本项目同时支持 6 人与 9 人桌，套用前必须确认人数匹配。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文",
+        "仅适用于 **6-max 现金**，不得套用于 9-max 或单挑",
+        "网络搜索曾返回疑似盗版全文站点；本项目**未读取、未引用、不会使用**此类来源",
+        "不得据此写出任何具体频率或数值"
+      ]
+    },
+    {
+      "id": "book.small-stakes-cash-games",
+      "title": "Strategies for Beating Small Stakes Poker Cash Games",
+      "type": "BOOK",
+      "author": "Jonathan Little",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://www.biblio.com/9781518655388",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "**Cash**（书名明确）",
+        "stakes": "small stakes",
+        "street": "全街"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE。仅确认为 2015 年 10 月出版的现金局小级别书籍（书店书目页给出的 ISBN 为 9781518655388）。其**预定角色**是「玩家类型 → 潜在调整」的知识映射，但规范第 11 节明确要求**不能直接转成硬编码**。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文",
+        "不得据此写出任何具体频率或数值",
+        "不同书目页给出的 ISBN 存在分歧，本轮仅登记可核实的一种，未做推断",
+        "其「玩家类型 → 调整」内容即使将来获得正文，也必须先经过案例验证才能参数化"
+      ]
+    },
+    {
+      "id": "book.mental-game-of-poker",
+      "title": "The Mental Game of Poker: Proven Strategies for Improving Tilt Control, Confidence, Motivation, and Coping with Variance",
+      "type": "BOOK",
+      "author": "Jared Tendler",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://books.google.com/books?id=J96nLcv6OOcC&newbks=0&hl=en-KH",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CONCEPT_ONLY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "不限（心理与行为层面）",
+        "street": "不适用"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE。仅确认书目信息。其**预定角色**是行为与结果偏差参考（Tilt / chasing losses / fear / confidence / outcome bias / bad beat / cooler / emotional deviation）。⚠️ **硬限制（规范第 12 节）**：心理描述**绝不能成为数学真值**，只能辅助 Dynamic Human Model —— 即只能影响「偏移概率」，绝不能直接决定动作。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文",
+        "心理/行为描述不得作为数学真值使用",
+        "不得据此写出任何具体概率或阈值",
+        "未确认其结论是否基于可复核的样本（属经验性心理教练材料，非受控研究）"
+      ]
+    },
+    {
+      "id": "book.live-no-limit-cash-games",
+      "title": "Jonathan Little on Live No-Limit Cash Games: The Theory (Volume 1)",
+      "type": "BOOK",
+      "author": "Jonathan Little",
+      "license": "COPYRIGHT_ALL_RIGHTS_RESERVED",
+      "url": "https://www.biblio.com/book/jonathan-little-live-limit-cash-games/d/1449153561",
+      "auditDate": "2026-09-13",
+      "evidenceLevel": "SECONDARY",
+      "allowedUsage": "CASE_STUDY",
+      "fullTextAvailable": false,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "**Live** No-Limit Hold'em Cash（书名明确）",
+        "street": "全街"
+      },
+      "notes": "SOURCE_TEXT_NOT_AVAILABLE。仅确认书目信息（ISBN 9781909457232，D&B Poker）。其**预定角色**是实盘案例素材来源。⚠️ 关键区分：本项目面向**线上**低级别环境（`LOW_STAKES_ONLINE`），而本书是 **Live** 现金 —— 现场与线上的对手池、抽水结构、行动节奏均不同，**不得直接套用**。案例入库时必须显式标注 `gameType = LIVE_CASH`。",
+      "limitations": [
+        "SOURCE_TEXT_NOT_AVAILABLE —— 无正文",
+        "适用对象是 **Live** 现金，与项目当前的线上环境不一致",
+        "案例入库必须标注来源类型，且 Decision 与 Result 必须物理分离",
+        "不得据此写出任何具体频率或数值"
+      ]
+    },
+    {
+      "id": "internal.environment-priors",
+      "title": "本项目内部环境假设（GameEnvironment 三种模式的调整因子）",
+      "type": "USER_NOTE",
+      "author": "本项目",
+      "license": "PROJECT_INTERNAL",
+      "url": "src/domain/range/gameEnvironment.ts",
+      "auditDate": "2026-09-13",
+      "version": "1.0.0",
+      "evidenceLevel": "HEURISTIC",
+      "allowedUsage": "STRATEGY_REFERENCE",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {
+        "gameType": "No-Limit Hold'em cash",
+        "tableSize": "2–9 人",
+        "street": "全街"
+      },
+      "notes": "这是本项目 Phase 4.5 之前就已存在的启发式环境调整（低级别线上 / 中低级别 / 理论参考），**没有任何分级别统计数据的支撑**。本轮审计**确认**了这一点：四个被审计的 GitHub 项目都不提供可直接引用的低级别人口统计（GTOpen 的玩家原型统计来自 2009 年数据集且权利不明；其余三个是求解器，不涉及牌池统计）。因此本来源的 `hasQuantitativeData` 为 `false`，其派生的策略规则**一律不得带 magnitude**，只能给方向，等真实牌局数据校准。环境边界（不得覆盖数学）的规范出处见 docs/KNOWLEDGE_POLICY.md 第 4 节。",
+      "limitations": [
+        "无分级别统计数据支撑，属纯启发式",
+        "其数值强度限制在 ±25% 以内，仅表示「比基准更宽/更窄」的定性判断",
+        "不得用于声称任何具体频率",
+        "必须允许被**个体玩家数据**覆盖（见 docs/KNOWLEDGE_POLICY.md 第 1 节优先级链）",
+        "THEORY_REFERENCE 是**结构性平衡假设**，不是求解器输出，不得称为 GTO 最优"
+      ]
+    },
+    {
+      "id": "internal.spec-priority",
+      "title": "本项目知识政策（来源优先级链与使用纪律）",
+      "type": "USER_NOTE",
+      "author": "本项目",
+      "license": "PROJECT_INTERNAL",
+      "url": "docs/KNOWLEDGE_POLICY.md",
+      "auditDate": "2026-09-13",
+      "version": "1.0.0",
+      "evidenceLevel": "PRIMARY",
+      "allowedUsage": "STRATEGY_REFERENCE",
+      "fullTextAvailable": true,
+      "hasQuantitativeData": false,
+      "derivableQuantitativeData": false,
+      "scope": {},
+      "notes": "这是**规范性文本**（一手证据 —— 它就是本项目必须遵守的规则本身），规定了当不同来源冲突时的裁决顺序。它不提供任何数值，只提供优先级。",
+      "limitations": [
+        "这是内部规范，不是外部证据",
+        "规范本身不产生数值参数",
+        "优先级顺序的落地需要代码层强制，而不是靠约定"
+      ]
+    }
+  ]
+}

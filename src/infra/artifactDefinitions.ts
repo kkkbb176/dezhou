@@ -1,0 +1,991 @@
+/**
+ * 全项目产物定义表（规范：Range 数据 / 环境参数 / 模型版本 / 红队报告全部绑定 hash）
+ *
+ * ## 为什么需要一张**集中**的定义表
+ *
+ * 如果每个模块各自登记自己的 hash，就会出现两种漂移：
+ * 1. 新增了一个产物，但没人记得登记
+ * 2. 同一个产物在两处登记了不同的值
+ *
+ * 集中定义后，「已绑定的产物全集」成为**单一事实来源**，
+ * 并有测试断言「定义表里的每个文件都真的在清单里」。
+ *
+ * ## `impact` 字段的作用
+ *
+ * 当校验失败时，报错信息会带上「这个文件一旦变化会影响什么」。
+ * 这样「昨天 CALL、今天 FOLD」的追查可以直接从错误信息开始，
+ * 而不需要先读一遍代码才知道哪个文件重要。
+ */
+
+import { ManifestCategory, type ArtifactDefinition } from './artifactManifest.ts';
+
+export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze([
+  /* ---- 知识层 ---- */
+  {
+    path: 'data/knowledge/source-registry.json',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '知识来源注册表变化 → 某条策略结论的出处、许可证门禁或可推导性发生变化',
+  },
+  {
+    path: 'data/knowledge/strategy-rules.json',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '策略规则变化 → 方向性调整（或未来的幅度）发生变化，直接影响建议',
+  },
+  {
+    path: 'docs/KNOWLEDGE_POLICY.md',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '知识政策变化 → 来源优先级链或使用纪律发生变化',
+  },
+  {
+    path: 'src/domain/knowledge/knowledge.types.ts',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '知识类型与校验变化 → 许可证门禁或「不编造」硬校验的强度发生变化',
+  },
+  {
+    path: 'src/domain/knowledge/knowledge.ts',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '知识加载与索引变化 → 校验严格程度或查询语义发生变化',
+  },
+  {
+    path: 'src/domain/knowledge/knowledgeLoader.ts',
+    category: ManifestCategory.KNOWLEDGE,
+    impact: '知识文件加载变化 → Fail-Closed 行为或 BOM 容忍度发生变化',
+  },
+
+  /* ---- 环境参数 ---- */
+  {
+    path: 'src/domain/range/gameEnvironment.ts',
+    category: ManifestCategory.ENVIRONMENT,
+    impact:
+      '**环境参数变化 → 三种模式的范围/似然调整幅度变化，直接影响建议**' +
+      '（这是「昨天 CALL 今天 FOLD」最可能的来源之一）',
+  },
+
+  /* ---- 范围层 ---- */
+  {
+    path: 'src/domain/range/range.types.ts',
+    category: ManifestCategory.RANGE,
+    impact: '范围类型与 EPSILON 变化 → 归一化容差与来源语义发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeUpdate.ts',
+    category: ManifestCategory.RANGE,
+    impact: '贝叶斯更新变化 → 后验范围计算方式或外部调整者的接入方式发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeLogSpace.ts',
+    category: ManifestCategory.RANGE,
+    impact: '对数域归一化变化 → 极端似然下的数值行为发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeNormalize.ts',
+    category: ManifestCategory.RANGE,
+    impact: '归一化策略变化 → 权重到概率的映射发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeProvenance.ts',
+    category: ManifestCategory.RANGE,
+    impact: '来源校验与可信度上限变化 → 范围可信度判定发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeValidator.ts',
+    category: ManifestCategory.RANGE,
+    impact: '范围校验变化 → 非法范围的拦截范围发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeMetrics.ts',
+    category: ManifestCategory.RANGE,
+    impact: '范围度量变化 → 收窄程度与 KL 散度的计算发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeBlockers.ts',
+    category: ManifestCategory.RANGE,
+    impact: '死牌过滤变化 → 被阻断组合的判定发生变化',
+  },
+  {
+    path: 'src/domain/range/range.ts',
+    category: ManifestCategory.RANGE,
+    impact: '范围构建变化 → 初始权重与冻结行为发生变化',
+  },
+  {
+    path: 'src/domain/range/rangeCache.ts',
+    category: ManifestCategory.RANGE,
+    impact: '范围缓存变化 → 缓存 key 与失效行为发生变化',
+  },
+  {
+    path: 'src/domain/range/combo.ts',
+    category: ManifestCategory.RANGE,
+    impact: '组合宇宙变化 → 1326 组合的 id / 类别 / 索引发生变化',
+  },
+  {
+    path: 'src/domain/range/handPotential.ts',
+    category: ManifestCategory.RANGE,
+    impact: '手牌潜力标尺变化 → 画像调整的强度梯度发生变化',
+  },
+  {
+    path: 'src/domain/range/profileProvider.ts',
+    category: ManifestCategory.RANGE,
+    impact: '画像/环境到范围的桥接变化 → 调整因子的计算与归一化方式发生变化',
+  },
+
+  /* ---- 玩家模型 ---- */
+  {
+    path: 'src/domain/player/player.types.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact: '指标定义与先验表变化 → 所有指标的收缩目标发生变化',
+  },
+  {
+    path: 'src/domain/player/playerStats.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '统计机制变化（衰减 / 有效样本量 / 单手影响上限 / 收缩）→ ' +
+      '**所有画像数值发生变化**',
+  },
+  {
+    path: 'src/domain/player/playerProfile.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact: '画像引擎变化 → 幂等、修正历史、冻结行为或 seq 校验发生变化',
+  },
+  {
+    path: 'src/domain/player/playerClassifier.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '分类与调整因子变化（含维度中立点、标签阈值）→ ' +
+      '**画像对范围的影响幅度发生变化**',
+  },
+
+  /* ---- 动态行为引擎（Step 7） ---- */
+  {
+    path: 'src/domain/dynamic/dynamic.types.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '动态行为的类型、9 状态集合、组上限与**收缩/置信度刻度**变化 → ' +
+      '所有动态判定阈值发生变化（该文件改动必须升 `DYNAMIC_MODEL_VERSION`）',
+  },
+  {
+    path: 'src/domain/dynamic/dynamicStats.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '窗口统计变化（规范化 / 机会感知分母 / 向基线收缩强度）→ ' +
+      '**近期行为率的估计值发生变化**',
+  },
+  {
+    path: 'src/domain/dynamic/dynamicDeviation.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '偏差计算变化（有界归一化 / 组聚合 / 方向噪声检验）→ ' +
+      '**DeviationScore 与方向判定发生变化**',
+  },
+  {
+    path: 'src/domain/dynamic/dynamicBehavior.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '动态主引擎变化（状态推导 / 置信度 / 上下文锚点 / 人工 Hint）→ ' +
+      '**输出状态与调整方向发生变化**',
+  },
+  {
+    path: 'src/domain/dynamic/dynamicAdapter.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '适配层变化（UNVERIFIED_MAGNITUDE 幅度）→ ' +
+      '下游可用的乘数发生变化（**该幅度未经校验，不得冒充已校准参数**）',
+  },
+
+  /* ---- Alpha 决策链（Environment → Manual Input → Decision → Web） ---- */
+  {
+    path: 'src/domain/environment/environmentAccess.ts',
+    category: ManifestCategory.ENVIRONMENT,
+    impact:
+      '环境接入层变化（规则目标映射 / 优先级裁决）→ ' +
+      '**环境方向建议的集合发生变化**（该层不得输出任何幅度）',
+  },
+  {
+    path: 'src/domain/decision/decision.types.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ ' +
+      '**所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）',
+  },
+  {
+    path: 'src/app/manualInput/preflopPriors.ts',
+    category: ManifestCategory.RANGE,
+    impact:
+      '启发式翻牌前范围先验变化 → **对手范围形状与权益估计发生变化**' +
+      '（该数据**不是**求解器输出，改动必须同步更新 provenance 说明）',
+  },
+  {
+    path: 'src/app/manualInput/likelihoodModel.ts',
+    category: ManifestCategory.RANGE,
+    impact:
+      '启发式似然模型变化（档位权重 / 归一化 / 下限）→ ' +
+      '**行动历史对范围的收缩方式发生变化**',
+  },
+  {
+    path: 'src/app/manualInput/manualInput.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '手动输入结构变化（字段 / 牌面格式 / 街道与公共牌约束）→ ' +
+      '**输入解析与校验行为发生变化**（影响所有录入路径）',
+  },
+  {
+    path: 'src/app/manualInput/reconstruct.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '输入 → 牌局状态重建变化（行动重放 / 街道推进 / 决策点检查 / 底池对照）→ ' +
+      '**哪些输入被接受、哪些被阻断发生变化**',
+  },
+  {
+    path: 'src/app/manualInput/legalActions.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '合法动作与尺寸网格变化 → **决策可输出的动作集合与尺寸集合发生变化**' +
+      '（必须与 Poker Core 的校验保持一致）',
+  },
+  {
+    path: 'src/app/manualInput/contextBuilder.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ ' +
+      '**决策层看到的全部输入数据发生变化**',
+  },
+  {
+    path: 'src/app/decision/decisionEngine.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ ' +
+      '**最终建议的动作、尺寸与置信度发生变化**',
+  },
+  {
+    path: 'src/app/alphaPipeline.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '端到端管线变化（阶段顺序 / 失败阶段划分 / 最终数学一致性检查 / 日志）→ ' +
+      '**整条链的失败行为与输出结构发生变化**',
+  },
+  {
+    path: 'src/app/decisionLog.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '决策日志结构变化 → **追溯链（输入哈希 / 版本 / 抽水口径）记录发生变化**',
+  },
+  {
+    path: 'src/app/webServer.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '内部测试服务器变化（路由 / 请求校验 / 响应结构 / 监听范围）→ ' +
+      '**网页入口的可用性与隐私边界发生变化**',
+  },
+  {
+    path: 'src/app/web/index.html',
+    category: ManifestCategory.DECISION,
+    impact:
+      '中文输入表单与结果页变化 → **使用者看到的界面与输入方式发生变化**' +
+      '（界面不得包含任何策略判断）',
+  },
+  {
+    path: 'src/viewmodels/decisionViewModel.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'ViewModel 映射变化 → **界面显示的内容发生变化**' +
+      '（必须忠实映射引擎输出，不得二次推导结论）',
+  },
+
+  /* ---- 决策引擎 ---- */
+  {
+    path: 'src/app/decisionDeadline.ts',
+    category: ManifestCategory.DECISION,
+    impact: '时间预算变化 → 软/硬上限与提前中止行为发生变化',
+  },
+  {
+    path: 'src/app/decisionPipeline.ts',
+    category: ManifestCategory.DECISION,
+    impact: '决策管线变化 → 阶段预算与 Abort 传播行为发生变化',
+  },
+
+  /* ---- GTO 集成（外部求解器作为独立计算引擎） ---- */
+  //
+  // ## 为什么这一组文件必须登记
+  //
+  // GTO 是**第一个外部数据来源**。它一旦漂移，后果与其他产物不同：
+  // 不是「数学算错了」，而是「拿到的是别人的策略」——
+  // 界面上一切正常，只是数据不属于当前场景。
+  // 因此这里的 impact 都要写清楚「哪一个具体的行为会变」。
+  {
+    path: 'src/domain/gto/gto.types.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTO 领域类型变化 → **GtoScenario / GtoBaseline / 求解状态与可信度的语义发生变化**；' +
+      '🔴 这个文件里**不允许**出现任何真人信息字段（Tilt / 画像 / 动态提示），' +
+      '它是「真人信息不得污染理论基线」的类型级防线',
+  },
+  {
+    path: 'src/domain/gto/gtopenHandMatrix.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '169 类矩阵变化 → **AKs/AKo 或同花/不同花可能互换**、类号与求解器数组错位；' +
+      '这类错误在界面上完全看不出来（名字都对）',
+  },
+  {
+    path: 'src/domain/gto/gtoScenario.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '场景构造与哈希变化 → **桌人数隔离、缓存键、场景可表达性判定发生变化**；' +
+      '哈希口径变化会让旧缓存全部失效（这是好事，但必须知道）',
+  },
+  {
+    path: 'src/domain/gto/gtoSafeLookup.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '安全查询层（缓存 + 硬超时 + 回退）变化 → **「求解器故障时 Alpha 仍可用」这条保证的强度发生变化**',
+  },
+  {
+    path: 'src/domain/gto/providers/gtopenCapabilities.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTOpen 能力表变化 → **各桌人数/场景的支持级别与「翻前是近似模型」这一结论发生变化**；' +
+      '🔴 把 preflopApproximateModel 改成 false 等于声称一个近似模型是精确的',
+  },
+  {
+    path: 'src/domain/gto/providers/gtopenHttpClient.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTOpen 传输层变化 → **超时 / 连接失败 / 坏响应 / 超大响应的处置方式发生变化**',
+  },
+  {
+    path: 'src/domain/gto/providers/gtopenMapping.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '位置与动作映射变化 → **座位错位一格或 SB/BB、Hero/Villain 反转**；' +
+      '这是「读到别人策略」的直接入口',
+  },
+  {
+    path: 'src/domain/gto/providers/gtopenProvider.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTOpen 适配器变化 → **外部 JSON → 内部统一格式的全部转换规则发生变化**' +
+      '（含会话串行化、求解预算、近似标记）',
+  },
+  {
+    path: 'src/domain/gto/providers/providerRegistry.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'Provider 注册表变化 → **新增求解器（交叉验证）的接入方式发生变化**；' +
+      '这里是「禁止 if engine === GTOPEN 散布全项目」的实现点',
+  },
+  {
+    path: 'src/app/gto/gtoScenarioCatalog.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '场景目录变化 → **界面上能选哪些桌人数/位置/场景、以及每个场景的前序动作发生变化**',
+  },
+  {
+    path: 'src/app/gto/gtoApi.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTO 应用层装配变化 → **Alpha 与 Provider 的连接点、关闭开关（ALPHA_GTO）、' +
+      '以及界面消费的响应形状发生变化**',
+  },
+  {
+    path: 'src/app/web/gto.html',
+    category: ManifestCategory.DECISION,
+    impact:
+      '中文 GTO 范围页变化 → **使用者看到的界面的变化**；' +
+      '🔴 本页不得把近似结果表述成「绝对 GTO」或「已验证」',
+  },
+  {
+    path: 'src/app/web/gto.css',
+    category: ManifestCategory.DECISION,
+    impact: 'GTO 范围页样式变化 → 矩阵配色与「主要动作」的可读性发生变化（不影响数据）',
+  },
+  {
+    path: 'src/app/web/gto.js',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTO 范围页脚本变化 → **13×13 矩阵渲染、混合策略展示、百分比格式化发生变化**；' +
+      '🔴 ×100 只允许出现在 fmtPercent 一处（否则会出「0.65 显示成 0.65%」）',
+  },
+  {
+    path: 'GTOopen/start-gtopen.ps1',
+    category: ManifestCategory.DECISION,
+    impact:
+      'GTOpen 启动脚本变化 → **本地求解器的端口、内存上限与线程数发生变化**；' +
+      '这些限制决定了「哪些场景能建树」，是能力审计的一部分',
+  },
+  {
+    path: 'test/helpers/fakeGtopen.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '假求解器变化 → **GTO 适配层测试的有效性发生变化**；' +
+      '它必须与真实响应结构一致，否则测试会「绿着通过、生产里失败」',
+  },
+  {
+    path: 'test/gtoHandMatrix.test.ts',
+    category: ManifestCategory.REPORT,
+    impact: '169 类矩阵测试变化 → 同花/不同花与类号方向的防线强度发生变化',
+  },
+  {
+    path: 'test/gtoProviderAdapter.test.ts',
+    category: ManifestCategory.REPORT,
+    impact: 'GTO 适配层测试变化 → 失败回退与墨菲定律审计的覆盖范围发生变化',
+  },
+  {
+    path: 'test/gtoScenarioIsolation.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '桌人数隔离与契约边界测试变化 → **「不同桌人数不得复用」与「只有适配层能碰求解器」的防线强度发生变化**',
+  },
+  {
+    path: 'test/gtoWebUi.test.ts',
+    category: ManifestCategory.REPORT,
+    impact: 'GTO 界面与接口测试变化 → 「求解器离线时 Alpha 仍可用」的防线强度发生变化',
+  },
+  {
+    path: 'test/newTableModal.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '新建牌桌弹层测试变化 → **「桌型 / Hero 座位到底能不能选」这条防线强度发生变化**。' +
+      '🔴 它防的是一个真实缺陷：弹层里点桌型之后，`openNewTableModal()` 重进函数时' +
+      '把局部变量 `chosenSize` 重置回 `app.state`，使用者的选择当场丢失 —— ' +
+      '界面表现是「桌型根本选不动」，只能建出与当前桌型相同的桌子。',
+  },
+  {
+    path: 'test/raiseSizeGrid.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '加注尺寸网格测试变化 → **「加注到底有没有得选」这条防线强度发生变化**。' +
+      '🔴 它防的是一个真实缺陷：`buildSizeGrid` 对 BET 与 RAISE 共用同一份底池百分比网格，' +
+      '而加注的基准应当是「跟注额的倍数」—— 百分比算出的数额低于最小加注额后被去重成一项，' +
+      '于是菜单只剩「最小加注 + 全下」。' +
+      '⚠️ 既有的 `hotfix001ActionDedup.test.ts` **抓不到它**（它只断言 `raises.length >= 1`，' +
+      '1 个尺寸就满足了）—— 这两个文件的防线是互补的，不得互相替代。',
+  },
+  {
+    path: 'test/handClassOrdering.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**169 类手牌顺序的桥接防线**变化 → 「接 GTO 时会不会静默错位」这条防线强度发生变化。' +
+      '🔴 项目里有**两套** 169 类顺序（GTO 显示顺序 `AA AKs AQs…` vs 先验顺序 `AA AKs AKo…`），' +
+      '实测只有 **5/169** 个位置相同。按序号直接对接会把约 164 个牌型的频率灌到别的牌上，' +
+      '而且**长度对得上、类型对得上、没有任何报错**。' +
+      '这个文件钉住两套顺序的差异，并提供按**牌名**对齐的转换器。',
+  },
+  {
+    path: 'test/solverRangePrior.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**翻前 GTO 范围接入**的防线变化 → 「对手范围是算的还是猜的」这条链的可信度发生变化。' +
+      '🔴 它防三类**会静默出错**的缺陷：' +
+      '① 按序号对接 169 类（约 164 个牌型错位）；' +
+      '② 尺寸/筹码对不上却照用（读到的是**另一个牌局**的策略，数字看起来正常）；' +
+      '③ 对求解器范围再乘一次似然（重复计票，范围被收缩两次）。',
+  },
+  {
+    path: 'src/app/manualInput/solverRangePrior.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '🔴 **范围先验的来源开关**：这个文件决定「对手范围来自求解器还是启发式」。' +
+      '它变化会直接影响所有翻前决策的输入数据。' +
+      '⚠️ 它内含三道拒绝闸（动作可达性 / 配置匹配 / 行动者一致性），' +
+      '放宽任何一道都会让**别的牌局**的策略被当成这个牌局的。',
+  },
+  {
+    path: 'src/app/manualInput/solverScenarioForOpponent.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '「对手动作 → 求解节点」的映射表变化 → **哪些情形能用 GTO 范围**发生变化。' +
+      '⚠️ 只支持 `RFI` 与 `VS_OPEN` 两种；多轮加注 / 跛入 / 补盲**一律返回 null** 并回落。' +
+      '把「用相近节点顶替」加进来会读到别人的策略 —— 这是本项目反复修掉的那类缺陷。',
+  },
+  {
+    path: 'src/app/gto/backgroundSolve.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '🔴 **前台响应速度与 GTO 覆盖率的分离机制**变化 → 「分析要等多久」与' +
+      '「多久之后能用上 GTO 范围」这两件事都发生变化。' +
+      '⚠️ 它承载 Phase 1.3 的核心交易：前台**只读缓存、绝不求解**（冷求解实测 6 人桌 59 秒 / ' +
+      '9 人桌 195 秒），未命中则把场景排进后台队列，求解成功后**自动落盘**，' +
+      '于是第二次同样的局面直接命中 GTO 范围。' +
+      '把 `lookupWithStats`（会落盘）换成 `lookupScenario`（不落盘）会让「算完了但没存」—— ' +
+      '表现为每次重启都要重算几十分钟，且**没有任何报错**。' +
+      '把前台改成等待后台任务会让响应时间退化到分钟级。',
+  },
+  {
+    path: 'test/backgroundSolve.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**前台不等求解器**这条保证的防线变化 → 「1～3 秒给建议」这个核心指标的强度发生变化。' +
+      '🔴 它钉住三件事：① 缓存未命中时前台耗时必须是毫秒级（不得退化成等待求解）；' +
+      '② 同一场景只入队一次（连点十次不等于算十次）；' +
+      '③ 落盘路径走的是会写缓存的那一层（否则第二次查询永远还是启发式）。',
+  },
+  {
+    path: 'scripts/gto-phase13-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**Phase 1.3 实况判据**变化 → 「前台不等求解器 / 后台会补算 / 第二次自动用上 GTO」' +
+      '这三条保证的验证强度发生变化。' +
+      '⚠️ 它对接**真实服务**（默认 5173）断言四件事：① 前台回答与求解耗时**无关**；' +
+      '② 未命中时如实标注「正在后台计算」且说明之后会自动改用 GTO；' +
+      '③ 后台算完后同样的查询**自动**变成 `fromSolver=true`；' +
+      '④ 结构上算不了的局面对「等也不会变」说清楚，不误导成「稍后就有」。',
+  },
+  {
+    path: 'src/domain/poker/pots.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '🔴 **分层底池与「会被争夺的量」**变化 → 底池赔率、跟注 EV、可赢上限**全线**变化。' +
+      '⚠️ 这个模块回答三个规则问题：① 无人能跟的超额筹码必须**退回**（不是底池）；' +
+      '② 多路不同筹码全下时按主池/边池**分层**（短筹码赢不了整池）；' +
+      '③ 弃牌者的钱是**死钱** —— 留在池里、并入可争夺的量，但不算「退回」。' +
+      '🔴 不变量：`主池 + 边池 + 退回 === 所有人投入之和`（`selfCheckLayeredPot` 在服务器启动时强制，失败即拒绝启动）。' +
+      '最容易写错的两种情形：把「只有一名未弃牌玩家投到的层」当成边池（它该退回）；' +
+      '把「我还没跟注」造成的暂时性未跟注当成永久退回（它会被我跟，不该退）。',
+  },
+  {
+    path: 'test/pokerRules.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '🔴 **德州扑克规则对照（含独立参考实现）**变化 → 「引擎是否符合真实规则」这条保证的强度发生变化。' +
+      '⚠️ 它刻意**不调用**项目的评估函数，自己穷举全部 5 张组合写了一份最朴素的参考实现 —— ' +
+      '因为 `handEval` 与 `fastEval` 是同一套规则的两份实现，它们**共享错误**时差分测试恒为 0' +
+      '（2026-09 真的发生过：两对踢脚在三对共存时取错，62 万+ 随机 7 张差异为 0）。' +
+      '钉住的规则：两对踢脚（三对共存）、大盲的选择权（引擎/推导跨层一致性）、' +
+      '短大盲不降低入池代价、短全下不关闭未行动者的加注权。',
+  },
+  {
+    path: 'scripts/gto-live-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact: '真实求解器联调探针变化 → 5 个桌人数真实数据验证的可复现性发生变化',
+  },
+  {
+    path: 'scripts/start-alpha.cmd',
+    category: ManifestCategory.ENVIRONMENT,
+    impact:
+      '**Alpha 的唯一启动入口** → 启动方式变化意味着「网页打不开」这类问题的排查起点变化。' +
+      '⚠️ 这个文件必须是**纯 ASCII**：`cmd.exe` 用 OEM 代码页（本机是 GBK）读取 `.cmd`，' +
+      '写成 UTF-8 的中文会被解析成残缺命令（实测过）。',
+  },
+  {
+    path: 'scripts/stop-alpha.cmd',
+    category: ManifestCategory.ENVIRONMENT,
+    impact:
+      'Alpha 的停止入口 → 它必须**只杀监听指定端口的进程**，' +
+      '否则会误伤 GTOpen 求解器（3737）与其它 node 进程。同样是纯 ASCII。',
+  },
+  {
+    path: 'scripts/gto-vs3bet-live-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '「开池后面对 3Bet」几何联调探针变化 → **「Hero 是否会真的轮到」这条结论的证据强度发生变化**' +
+      '（该几何被实测推翻过六次，探针是唯一的守卫）',
+  },
+  {
+    path: 'scripts/gto-node-walk.raw.mjs',
+    category: ManifestCategory.REPORT,
+    impact:
+      '裸节点行走工具变化 → **「不经过本项目任何场景模型、直接问求解器每一步轮到谁」的能力发生变化**' +
+      '（六次几何修正中的每一次都靠它定案）',
+  },
+  {
+    path: 'reports/evidence/gto-vs3bet-live-evidence.txt',
+    category: ManifestCategory.REPORT,
+    impact:
+      '「面对 3Bet」联调证据变化 → **「17/17 都真的走到 Hero」与「菜单只有 Fold·Call」两条结论的证据发生变化**',
+  },
+
+  /* ---- 报告（红队与审计） ---- */
+  {
+    path: 'CURRENT_PROJECT_STATUS.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**阶段状态的单一事实来源变化 → 项目进度声明发生变化**' +
+      '（若它被改动，必须确认新状态与代码事实一致）',
+  },
+  {
+    path: 'docs/ALPHA_USAGE.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'Alpha 使用说明变化 → **使用者理解如何输入与如何解读结果的方式发生变化**' +
+      '（含金额语义、行动顺序、已知限制的说明）',
+  },
+  {
+    path: 'reports/EXTERNAL_KNOWLEDGE_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact: '外部知识审计结论变化 → 「哪些来源可用」的记录发生变化',
+  },
+  {
+    path: 'reports/KNOWLEDGE_REDTEAM_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact: '知识层红队报告变化 → 已知缺陷清单发生变化',
+  },
+  {
+    path: 'reports/PLAYER_REDTEAM_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact: '玩家画像红队报告变化 → 已知缺陷清单发生变化',
+  },
+  {
+    path: 'reports/NUMSTAB_REDTEAM_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact: '数值稳定性红队报告变化 → 已知缺陷清单发生变化',
+  },
+  {
+    path: 'reports/RANGE_REDTEAM_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact: '范围引擎红队报告变化 → 已知缺陷清单发生变化',
+  },
+  {
+    path: 'reports/DYNAMIC_REDTEAM_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '动态行为红队报告变化 → 已知缺陷清单与「假阴性」风险的记录发生变化' +
+      '（该报告记录了两轮审计：作者自查 3 CRITICAL + 2 MAJOR，' +
+      '独立红队 3 CRITICAL + 9 MAJOR，全部为测试全绿时存在的缺陷）',
+  },
+  {
+    path: 'reports/DYNAMIC_INDEPENDENT_REDTEAM.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**独立**红队报告变化 → 第三方视角的缺陷清单与判定结论发生变化' +
+      '（该报告由未参与实现的审计员产出，方法为批量确定性种子统计 / 边界扫描 / 源码死代码检查，' +
+      '判定从 FAIL 到全部修复的追溯链依赖它）',
+  },
+
+  /* ---- 制品工具（生成/校验清单的代码本身） ---- */
+  {
+    path: 'src/infra/artifactManifest.ts',
+    category: ManifestCategory.DECISION,
+    impact: '产物清单的生成与校验逻辑变化 → hash 绑定的可信度发生变化',
+  },
+  {
+    path: 'src/infra/artifactDefinitions.ts',
+    category: ManifestCategory.DECISION,
+    impact: '产物定义表变化 → 哪些文件被 hash 绑定发生变化',
+  },
+  {
+    path: 'scripts/generateManifest.ts',
+    category: ManifestCategory.DECISION,
+    impact: '清单生成脚本变化 → 生成与校验行为发生变化',
+  },
+  {
+    path: 'scripts/alpha-demo.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '端到端命令行演示变化 → **「输入一手牌 → 打印完整建议与诊断」的可复现证据发生变化**',
+  },
+  {
+    path: 'reports/ALPHA_INDEPENDENT_REDTEAM.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'Alpha 决策链独立红队报告变化 → **已知缺陷清单（F-01 … F-13）发生变化**；' +
+      '每个编号必须有对应的永久回归测试（`test/alphaRedteamRegression.test.ts`）。' +
+      '⚠️ 修复轮中又自查出 F-14 / F-15（同族缺陷，红队未报），' +
+      '它们的记录在 `reports/TEST_MATRIX.md` §0.4 与本文件对应的回归测试里 —— ' +
+      '**不得因为红队报告里没有就把它们当成不存在**',
+  },
+  {
+    path: 'test/alphaRedteamRegression.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；' +
+      '本文件删掉任何一条断言都等于放弃对应的修复',
+  },
+  {
+    path: 'test/manualInputPriors.test.ts',
+    category: ManifestCategory.RANGE,
+    impact:
+      '翻牌前先验与似然模型的单元测试变化 → **范围表结构性不变量（单调性 / 覆盖度 / 3Bet 更紧 / 来源标注）' +
+      '的保护强度发生变化**（这两个模块曾零覆盖，是红队 F-02 的根因）',
+  },
+  {
+    path: 'scripts/alpha-perf.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '端到端性能实测脚本变化 → **「1–3 秒内给出建议」这一锁定指标的证据发生变化**；' +
+      '本脚本只测量、不做判断，数字必须原样进报告',
+  },
+  {
+    path: 'reports/ALPHA_FINAL_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'Alpha 最终报告变化 → **判定（`INTERNAL ALPHA TESTABLE — PASS/FAIL`）与全部证据发生变化**；' +
+      '本文件是「能不能开始用真实牌局测试」的唯一依据，数字必须可由命令复现',
+  },
+
+  /* ---- 交互式牌桌录入（UI / 输入工作流重构） ---- */
+  {
+    path: 'src/app/table/table.types.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌数据模型变化（座位状态 / 座位 / 玩家 / 牌桌状态 / 操作）→ ' +
+      '**「Fold ≠ Leave」「Seat ≠ Player」这两条铁律的表达能力发生变化**；' +
+      '`SeatStatus` 少一个成员就等于把两种语义混成一种，必须同步全部生命周期测试',
+  },
+  {
+    path: 'src/app/table/tableState.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌创建与**视觉旋转**变化 → **Hero 的视觉位置与逻辑位置是否仍然分离**发生变化' +
+      '（视觉位置一旦参与计算，就会出现「Hero 显示在底部所以他是 BB」这类致命错误）；' +
+      '`staffingProblems` 同时是「能不能分析」的判据来源',
+  },
+  {
+    path: 'src/app/table/seatLifecycle.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '座位生命周期变化（加入 / 清空 / 换人 / 暂离 / 手后离桌 / 下一手 / 新牌桌 / 撤销 / 手牌与公共牌）→ ' +
+      '**哪些操作会改动座位绑定、玩家画像、筹码与手牌历史发生变化**；' +
+      '本文件里任何「按座位删除历史」的改动都会破坏筹码守恒与行动台账',
+  },
+  {
+    path: 'src/app/table/tableOps.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌操作分发变化（尤其是 `applyTableAction` 的**重放等价自检**）→ ' +
+      '**「牌桌显示的状态」与「分析时重放出的状态」是否仍然一致**发生变化；' +
+      '去掉那一段自检等于放弃这条保证',
+  },
+  {
+    path: 'src/app/table/tableAdapter.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌状态 → `ManualHandInput` 的**唯一转换点**变化 → ' +
+      '**「屏幕显示 = 实际提交 = 后端状态」三者一致**这一保证发生变化' +
+      '（首要对手的画像必须按 playerId 解析；引擎侧 id 必须用 `seat_<位置>` 口径，' +
+      '否则动态层的事件匹配会静默失效）',
+  },
+  {
+    path: 'src/app/table/tablePreview.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌预览变化（街道 / 当前行动者 / 合法动作按钮 / 底池筹码 / 座位视图 / 状态指纹）→ ' +
+      '**使用者看到的牌局与合法动作集合发生变化**；' +
+      '本文件必须继续复用 `reconstruct` + `deriveLegalActions` + Poker Core 校验器，' +
+      '一旦自己实现规则，前端与引擎就会分叉',
+  },
+  {
+    path: 'src/app/table/tableApi.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌桌 API 变化（请求形状校验 / Fail-Closed / **版本水位线** / 元数据）→ ' +
+      '**畸形载荷是否被拒绝、迟到请求是否会被丢弃**发生变化；' +
+      '`parseTableState` 是「客户端状态不可信」这条纪律的唯一执行点（撤销栈也必须逐条校验）',
+  },
+  {
+    path: 'src/app/web/table.js',
+    category: ManifestCategory.DECISION,
+    impact:
+      '客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；' +
+      '🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），' +
+      '一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」',
+  },
+  {
+    path: 'src/app/web/table.css',
+    category: ManifestCategory.DECISION,
+    impact: '牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）',
+  },
+  {
+    path: 'test/interactiveTable.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '座位生命周期与三条铁律的永久回归测试变化 → **「Fold ≠ Leave」「Seat ≠ Player」' +
+      '「当前手历史不可删」这三条保证的强度发生变化**；删掉任何一条断言都等于放弃对应的修复',
+  },
+  {
+    path: 'test/interactiveTableDifferential.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '差分测试变化 → **「牌桌点选」与「直接构造输入」两条路径逐位一致**这一保证发生变化；' +
+      '这是「界面在撒谎」的主防线',
+  },
+  {
+    path: 'test/interactiveTableApi.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'API/HTTP 层测试变化 → **畸形载荷被拒、竞态被挡、双击不重复提交**这些保证发生变化',
+  },
+  {
+    path: 'scripts/table-walkthrough.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '现场走查脚本变化 → **每个 Spot 的点击次数与服务端耗时证据发生变化**；' +
+      '点击次数决定了录入效率上限，效率退化必须立刻可见',
+  },
+  {
+    path: 'docs/TABLE_INPUT_USAGE.md',
+    category: ManifestCategory.REPORT,
+    impact: '牌桌录入使用说明变化 → **使用者「怎么点」的方式发生变化**（含三条铁律的行为说明）',
+  },
+  {
+    path: 'reports/TABLE_INTERACTIVE_REDTEAM_LIFECYCLE.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '牌桌录入**座位生命周期/玩家身份**独立红队报告变化 → **该视角的已知缺陷清单发生变化**；' +
+      '每个编号（RT-Lx）必须有对应的永久回归测试',
+  },
+  {
+    path: 'reports/TABLE_INTERACTIVE_REDTEAM_ADAPTER.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '牌桌录入**适配器/卡牌映射/竞态/前端诚实性**独立红队报告变化 → ' +
+      '**该视角的已知缺陷清单与增量复验结论发生变化**；' +
+      '每个编号（F-xx / V-xx）必须有对应的永久回归测试',
+  },
+  {
+    path: 'reports/TABLE_INTERACTIVE_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '牌桌录入最终报告变化 → **判定（`INTERACTIVE TABLE INPUT — PASS/FAIL`）与全部证据发生变化**；' +
+      '本文件是「能不能停止开发 UI、转入真实牌局测试」的唯一依据',
+  },
+  {
+    path: 'test/interactiveTableRedteam.test.ts',
+    category: ManifestCategory.DECISION,
+    impact: '红队第一轮（RT-L1…L5）的永久回归测试变化 → 对应修复的保护强度发生变化',
+  },
+  {
+    path: 'test/interactiveTableRedteam2.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '红队第二轮（F-01/F-02/V-xx）的永久回归测试变化 → 对应修复的保护强度发生变化；' +
+      '含一个 **DOM 桩**真实执行 `table.js`（能抓到「渲染残骸让整块面板不再更新」这类缺陷）',
+  },
+  {
+    path: 'scripts/table-probe-buttons.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '按钮合法性穷举 + 畸形载荷 HTTP 穷举脚本变化 → **「预览给出的按钮 100% 被后端接受」' +
+      '与「畸形载荷 0×5xx」这两条不变量的证据发生变化**',
+  },
+  {
+    path: 'scripts/rt-table-adapter-probe3.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '红队**最终快照增量复验**探针变化 → 「最后一轮修复没有破坏任何既有结论」这一结论的证据发生变化；' +
+      '本文件是「交付依据 = 最终快照 + 增量复验 PASS」的支撑',
+  },
+  {
+    path: 'test/tableTopology.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌型拓扑（Table Topology Correction）**黄金用例 + 产品路径**回归测试变化 → ' +
+      '**「9 座桌 8 人可分析」「空座位不阻断」「单挑顺序」「Button 轮转」**这些保证发生变化；' +
+      '含一条**反证**：域层放行时表层不得拦回（拦截点搬家是本轮的头号缺陷形态）',
+  },
+  {
+    path: 'test/tableTopology.property.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌型拓扑**属性测试**（穷举 9,481 组拓扑组合 + 5,551 组 Button 轮转）变化 → ' +
+      '「容量 × 本手人数 × Button 座位的每一个组合都成立」这一保证发生变化',
+  },
+  {
+    path: 'reports/TABLE_SIZE_SEMANTICS_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**桌型语义独立审计**报告变化 → 「`tableSize` 这个字段在 185 处引用里哪些真需要容量、' +
+      '哪些真需要本手人数」这一分桶结论与未收敛清单发生变化',
+  },
+  {
+    path: 'scripts/rt-topology-verify.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌型拓扑**端到端复验**探针变化 → 「产品路径上真的能分析 9 座 8 人」这一结论的证据发生变化；' +
+      '本文件刻意**只走产品入口**（applyTableOp / buildTablePreview / handleTableRequest），' +
+      '因为「域层修好了、表层拦回来」这种缺陷只有产品路径能发现',
+  },
+  {
+    path: 'reports/TABLE_TOPOLOGY_CORRECTION.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '桌型拓扑修正最终报告变化 → **判定（`TABLE TOPOLOGY CORRECTION — PASS/FAIL`）与全部证据发生变化**；' +
+      '本文件是「容量 ≠ 本手人数」这一结构修正能否收尾、可否转入真实牌局测试的唯一依据',
+  },
+  {
+    path: 'test/hotfix001BoardLeak.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**决策时刻可见性不变量**（`DecisionContext` 只能包含该决策时已公开的信息）的永久回归变化 → ' +
+      '**「未来牌泄漏进更早的决策快照」这一 CRITICAL 风险的保护强度发生变化**；' +
+      '含「绕过 Parser 直接攻击 ContextBuilder」与「少了也要拒（exact 而非 at-most）」两类反证',
+  },
+  {
+    path: 'test/autoAnalyze.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**Hero Decision Ready ⇒ Auto Analyze** 后端闸门 + 12 条规范回归的永久测试变化 → ' +
+      '**「手牌没选满 / 公共牌还在选 / 轮到别人 / 人员不足 / 本手已结束时绝不就绪」这些保证的强度发生变化**；' +
+      '本文件直接跑真实的 `tablePreview.decision`（不是模型），并钉住 8 个原因码的优先级 —— ' +
+      '`WAITING_HERO_CARDS` 与 `WAITING_BOARD` 曾因 `STATE_INVALID` 抢在前面而**恒不可达**，' +
+      '删掉任何一条断言都等于放弃对应修复',
+  },
+  {
+    path: 'test/autoAnalyzeHistoryEntry.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**真实 `table.js` 的 `HISTORY_ENTRY` 模式闸门**永久回归变化 → ' +
+      '**「录入历史下不自动分析 / 已发出的请求在录入历史期间返回不得写进用户可见决策 UI / ' +
+      '切回当前决策也不得让旧 epoch 的响应复活 / 开新一手必须主动取消旧 debounce timer」' +
+      '这些保证的强度发生变化**；本文件用真实 DOM 桩 + 可控 fake timer **执行生产脚本**，' +
+      '闭合静态审计 F-8（此前没有任何测试执行过生产模式闸门：`autoAnalyze.test.ts` 跑的是自建模型，' +
+      '唯一跑 `table.js` 的 DOM 桩测试 `setTimeout` 是 no-op 且从未进入 `HISTORY_ENTRY`）',
+  },
+  {
+    path: 'test/helpers/tableJsHarness.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**执行 `table.js` 的 harness**（DOM 桩 / 可控 fake timer / 真后端语义 fetch 桩 / bootstrap）变化 → ' +
+      '**依赖它的生产路径回归可能「假绿」**：例如 fake timer 若不再支持取消或不再能精确 fire，' +
+      'Case B / Case E 会静默失去鉴别力，而测试仍然全绿；' +
+      '因此它不是普通测试工具，而是上述保证证据链的组成部分。' +
+      '本文件刻意**不含**任何 `CURRENT_DECISION` / `HISTORY_ENTRY` 业务判断',
+  },
+  {
+    path: 'scripts/rt-hotfix001-diverge.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**增量应用 vs 完整重放**分叉定位探针变化 → ' +
+      '「`DIVERGENCE_FIRST_OCCURS_AT` 是哪一条动作、差在哪些字段」这一根因结论的证据发生变化；' +
+      '本探针逐字段差分（street / phase / currentBet / minRaiseTo / board / 逐玩家筹码），不是只比最终状态',
+  },
+  {
+    path: 'test/hotfix001StreetReconciliation.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**街道结算（D）与 All-In 发牌（E）**的永久回归变化 → ' +
+      '**「应用动作之后必须结算下注轮，且只有公共牌真的够才推进街道」与 ' +
+      '「无人可行动 ≠ 已经进入摊牌，绝不凭空发牌」这两条保证的强度发生变化**；' +
+      '含现场分叉场景（9 座桌 SB `CALL 1.75` 关掉翻牌前下注轮）的 12 步逐步对拍，' +
+      '以及「停住不是分叉」「全下不得越过新开启的下注轮」两类反证。' +
+      '删掉任何一条断言都等于让「内部一致性检查失败」重新可复现',
+  },
+  {
+    path: 'test/hotfix001CallContract.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**CALL / 全下跟注金额契约（G）**的永久回归变化 → ' +
+      '**「`CALL` 的金额 = 本次实际投入且被夹到剩余筹码」「全下跟注必须标成 isAllIn 并写明全下」' +
+      '「不得同时显示两个等价按钮」「跟不完整时没有加注权」这些保证的强度发生变化**；' +
+      '含「每一个可执行按钮都必须被后端接受」的契约扫描与「传未夹的差额必须被拒绝」的反证',
+  },
+  {
+    path: 'test/hotfix001ActionDedup.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**UI ACTION DEDUP**（BET/RAISE 尺寸项 ↔ 独立 `ALL_IN`）的永久回归变化 → ' +
+      '**「全下必须有一个入口且只能有一个」这条呈现纪律的保护强度发生变化**；' +
+      '覆盖「最小加注/下注 == 全下 ⇒ 由尺寸项承担、不再生成独立 ALL_IN」' +
+      '「正常加注 < 全下 ⇒ RAISE 与 ALL_IN 是两个不同动作」' +
+      '「短码全下低于最小加注 ⇒ 独立 ALL_IN 不得被误删」三类情形与跨场景不变量',
+  },
+]);
+
+/** 被排除的文件及原因（清单无法包含自己的哈希） */
+export const MANIFEST_EXCLUSIONS = Object.freeze([
+  {
+    path: 'data/artifact-manifest.json',
+    reason: '清单无法包含自身的哈希（自指）。因此它由定义表 + 文件系统共同决定，无需自绑定',
+  },
+]);
+
+/** 全项目清单文件路径（仓库相对） */
+export const PROJECT_MANIFEST_PATH = 'data/artifact-manifest.json';

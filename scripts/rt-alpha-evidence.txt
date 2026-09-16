@@ -1,0 +1,1217 @@
+﻿================================================================================
+### FILE: scripts/rt-alpha-probe1.ts
+================================================================================
+知识库规则数=23  asOf=1757000000000
+
+==============================================================================
+攻击 1A：环境 × 画像 × 动态提示 全组合 → 数学九项是否逐位不变
+==============================================================================
+  场景「翻牌前(CO开池后BB跟注)」成功样本: 264
+  失败样本: 0
+  不同的数学九项指纹数（应为 1）: 1
+  场景「翻牌(顶对,BB过牌)」成功样本: 264
+  失败样本: 0
+  不同的数学九项指纹数（应为 1）: 1
+  场景「转牌(顶对,BB过牌)」成功样本: 264
+  失败样本: 0
+  不同的数学九项指纹数（应为 1）: 1
+  场景「河牌(顶对,BB下注10BB)」成功样本: 264
+  失败样本: 0
+  不同的数学九项指纹数（应为 1）: 1
+
+==============================================================================
+攻击 1B：villain.stackBB（用户填的对手筹码）是否影响有效筹码/SPR 之外的东西
+==============================================================================
+  villain.stackBB=undefined pot=650 callCost=0 myStack=9700 effStack=9700 spr=14.923076923076923 potOdds=0.000000 reqEq=0.000000 heroEq=0.895600 action=BET size=325
+  villain.stackBB=200       pot=650 callCost=0 myStack=9700 effStack=9700 spr=14.923076923076923 potOdds=0.000000 reqEq=0.000000 heroEq=0.895600 action=BET size=325
+  villain.stackBB=50        pot=650 callCost=0 myStack=9700 effStack=4700 spr=7.230769230769231 potOdds=0.000000 reqEq=0.000000 heroEq=0.895600 action=BET size=325
+  villain.stackBB=20        pot=650 callCost=0 myStack=9700 effStack=1700 spr=2.6153846153846154 potOdds=0.000000 reqEq=0.000000 heroEq=0.895600 action=BET size=325
+  villain.stackBB=5         pot=650 callCost=0 myStack=9700 effStack=200 spr=0.3076923076923077 potOdds=0.000000 reqEq=0.000000 heroEq=0.895600 action=BET size=325
+  villain.stackBB=1: FAILED RECONSTRUCT: [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.ALLIN_PLAYER_ACTED。（记录内容：大盲位 CALL 2BB）"}]
+  villain.stackBB=0.5: FAILED RECONSTRUCT: [{"code":"ACTION_REJECTED","message":"第 5 条行动记录被规则拒绝：ISSUE.ALLIN_PLAYER_ACTED。（记录内容：小盲位 FOLD）"}]
+
+==============================================================================
+攻击 5：动态提示能否把动作从 A 翻成 B（同一输入只改 dynamicHint）
+==============================================================================
+  场景「翻牌前(CO开池后BB跟注)」动作×尺寸的不同取值数 = 1
+    NORMAL               → CALL    size=200    conf=0.2344 cls=CLEAR
+    LOOSER_RECENTLY      → CALL    size=200    conf=0.2344 cls=CLEAR
+    TIGHTER_RECENTLY     → CALL    size=200    conf=0.2344 cls=CLEAR
+    AGGRESSION_UP        → CALL    size=200    conf=0.2344 cls=CLEAR
+    SIZE_ANOMALY         → CALL    size=200    conf=0.2813 cls=CLEAR
+    TILT_SIGNAL          → CALL    size=200    conf=0.2344 cls=CLEAR
+    CHASE_LOSS_SIGNAL    → CALL    size=200    conf=0.2344 cls=CLEAR
+    UNKNOWN              → CALL    size=200    conf=0.3000 cls=CLEAR
+  场景「翻牌(顶对,BB过牌)」动作×尺寸的不同取值数 = 1
+    NORMAL               → BET     size=325    conf=0.2344 cls=MARGINAL
+    LOOSER_RECENTLY      → BET     size=325    conf=0.2344 cls=MARGINAL
+    TIGHTER_RECENTLY     → BET     size=325    conf=0.2344 cls=MARGINAL
+    AGGRESSION_UP        → BET     size=325    conf=0.2344 cls=MARGINAL
+    SIZE_ANOMALY         → BET     size=325    conf=0.2813 cls=MARGINAL
+    TILT_SIGNAL          → BET     size=325    conf=0.2344 cls=MARGINAL
+    CHASE_LOSS_SIGNAL    → BET     size=325    conf=0.2344 cls=MARGINAL
+    UNKNOWN              → BET     size=325    conf=0.3000 cls=MARGINAL
+  场景「转牌(顶对,BB过牌)」动作×尺寸的不同取值数 = 1
+    NORMAL               → BET     size=325    conf=0.2344 cls=MARGINAL
+    LOOSER_RECENTLY      → BET     size=325    conf=0.2344 cls=MARGINAL
+    TIGHTER_RECENTLY     → BET     size=325    conf=0.2344 cls=MARGINAL
+    AGGRESSION_UP        → BET     size=325    conf=0.2344 cls=MARGINAL
+    SIZE_ANOMALY         → BET     size=325    conf=0.2813 cls=MARGINAL
+    TILT_SIGNAL          → BET     size=325    conf=0.2344 cls=MARGINAL
+    CHASE_LOSS_SIGNAL    → BET     size=325    conf=0.2344 cls=MARGINAL
+    UNKNOWN              → BET     size=325    conf=0.3000 cls=MARGINAL
+  场景「河牌(顶对,BB下注10BB)」动作×尺寸的不同取值数 = 1
+    NORMAL               → CALL    size=1000   conf=0.2344 cls=CLEAR
+    LOOSER_RECENTLY      → CALL    size=1000   conf=0.2344 cls=CLEAR
+    TIGHTER_RECENTLY     → CALL    size=1000   conf=0.2344 cls=CLEAR
+    AGGRESSION_UP        → CALL    size=1000   conf=0.2344 cls=CLEAR
+    SIZE_ANOMALY         → CALL    size=1000   conf=0.2813 cls=CLEAR
+    TILT_SIGNAL          → CALL    size=1000   conf=0.2344 cls=CLEAR
+    CHASE_LOSS_SIGNAL    → CALL    size=1000   conf=0.2344 cls=CLEAR
+    UNKNOWN              → CALL    size=1000   conf=0.3000 cls=CLEAR
+
+==============================================================================
+攻击 6：结果信息（多余属性 / 原型链 / 嵌套）能否改变决策
+==============================================================================
+  基准指纹: {"action":"BET","classification":"MARGINAL","confidence":0.3,"math":{"bigBlind":100,"callCost":0,"effectiveStack":9700,"handCategory":2,"handRankZh":"顶对 K，A踢脚","myCommittedThisStreet":0,"myRemainingStack":9700,"pot":650,"potOdds":0,"requiredEquity":0,"spr":14.923076923076923,"street":"FLOP"},"reasons":[{"code":"STRATEGIC_VALUE_BET","data":{"heroEquity":89.6},"textZh":"对对手范围估计权益 89.6% 且明显领先，当前牌力（顶对 K，A踢脚）适合主动下注取值"},{"code":"ENVIRONMENT_DIRECTION","data":{"adviceCount":1},"textZh":"牌局环境「中低级别」提供了 1 条方向参考（无幅度，仅方向）"},{"code":"RAKE_MODEL","textZh":"抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水口径）"}],"sizeChips":325}
+  多余自有属性 result/winner/heroProfit: 一致 ✔
+  多余自有属性 outcome=BAD_BEAT: 一致 ✔
+  原型链注入（Object.create + __proto__）: 一致 ✔
+  嵌套 villain 带 result: 一致 ✔
+  actionHistory 条目带 result: 一致 ✔
+  Symbol 与不可枚举属性: 一致 ✔
+  构造函数原型污染（Object.prototype.result）: 一致 ✔
+
+==============================================================================
+攻击 7：确定性（同输入多次）+ 换种子是否只影响权益
+==============================================================================
+  场景「翻牌前(CO开池后BB跟注)」5 次运行的不同指纹数（应为 1）: 1
+  场景「翻牌(顶对,BB过牌)」5 次运行的不同指纹数（应为 1）: 1
+  场景「转牌(顶对,BB过牌)」5 次运行的不同指纹数（应为 1）: 1
+  场景「河牌(顶对,BB下注10BB)」5 次运行的不同指纹数（应为 1）: 1
+
+==============================================================================
+攻击 7B：换 equitySeed（1000..1004）→ 除权益/EV 外是否逐位一致
+==============================================================================
+  场景「翻牌前(CO开池后BB跟注)」：动作集合 CALL | 尺寸集合 200 | 置信度取值 0.300000
+    seed=1000    action=CALL    size=200    conf=0.300000 eq=0.627425 cls=CLEAR
+    seed=1001    action=CALL    size=200    conf=0.300000 eq=0.632325 cls=CLEAR
+    seed=1002    action=CALL    size=200    conf=0.300000 eq=0.636875 cls=CLEAR
+    seed=1003    action=CALL    size=200    conf=0.300000 eq=0.624500 cls=CLEAR
+    seed=1004    action=CALL    size=200    conf=0.300000 eq=0.630175 cls=CLEAR
+    seed=999999  action=CALL    size=200    conf=0.300000 eq=0.633300 cls=CLEAR
+  场景「翻牌(顶对,BB过牌)」：动作集合 BET | 尺寸集合 325 | 置信度取值 0.300000
+    seed=1000    action=BET     size=325    conf=0.300000 eq=0.901925 cls=MARGINAL
+    seed=1001    action=BET     size=325    conf=0.300000 eq=0.900125 cls=MARGINAL
+    seed=1002    action=BET     size=325    conf=0.300000 eq=0.898025 cls=MARGINAL
+    seed=1003    action=BET     size=325    conf=0.300000 eq=0.899600 cls=MARGINAL
+    seed=1004    action=BET     size=325    conf=0.300000 eq=0.898900 cls=MARGINAL
+    seed=999999  action=BET     size=325    conf=0.300000 eq=0.900600 cls=MARGINAL
+  场景「转牌(顶对,BB过牌)」：动作集合 BET | 尺寸集合 325 | 置信度取值 0.300000
+    seed=1000    action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+    seed=1001    action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+    seed=1002    action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+    seed=1003    action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+    seed=1004    action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+    seed=999999  action=BET     size=325    conf=0.300000 eq=0.901801 cls=MARGINAL
+  场景「河牌(顶对,BB下注10BB)」：动作集合 CALL | 尺寸集合 1000 | 置信度取值 0.300000
+    seed=1000    action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+    seed=1001    action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+    seed=1002    action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+    seed=1003    action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+    seed=1004    action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+    seed=999999  action=CALL    size=1000   conf=0.300000 eq=0.902020 cls=CLEAR
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe2.ts
+================================================================================
+知识库规则数=23
+computePot/minRaiseTo/minBetAmount/requiredCallAmount 可用性检查: functionfunctionfunctionfunction
+
+==============================================================================
+攻击 2A：穷举场景 → 输出动作能否被真实引擎执行
+==============================================================================
+  场景总数: 216
+  结果分布: {"OK":171,"ANALYSIS_FAILED":45}
+  动作分布（仅成功执行的）: {"CALL":113,"BET":13,"FOLD":31,"CHECK":14}
+  --- 问题场景（45）---
+   [ANALYSIS_FAILED] flop达成下注 2h3s@9s8s2h 1BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 2h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 2h3s@9s8s2h 6BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 2h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 2h3s@9s8s2h 30BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 2h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop过牌到Hero 2h3s@9s8s2h
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 2h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 AhAc@AhAd7c 1BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 AhAc@AhAd7c 6BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 AhAc@AhAd7c 30BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop过牌到Hero AhAc@AhAd7c
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 JsTd@QsJsTs 1BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 11s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 JsTd@QsJsTs 6BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 11s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop达成下注 JsTd@QsJsTs 30BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 11s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] flop过牌到Hero JsTd@QsJsTs
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 11s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 2h3s@Kh7c2d3s9h 2BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 3s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 2h3s@Kh7c2d3s9h 10BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 3s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 2h3s@Kh7c2d3s9h 40BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 3s。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AsKd@AhKdQc2s3h 2BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 13d。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AsKd@AhKdQc2s3h 10BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 13d。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AsKd@AhKdQc2s3h 40BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 13d。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AhAc@AhKdQc2s3h 2BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AhAc@AhKdQc2s3h 10BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] river达成下注 AhAc@AhKdQc2s3h 40BB
+      VALIDATE [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 14h。请检查录入内容后重新分析。"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsAd 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsAd 40BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 40BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsAd 1.5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 1.5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsKd 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsKd 40BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 40BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn AsKd 1.5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 1.5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 7h2c 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 7h2c 40BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 40BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 7h2c 1.5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 1.5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 9s9d 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 5BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 9s9d 40BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 40BB）"}]
+   [ANALYSIS_FAILED] vsShortAllIn 9s9d 1.5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 1.5BB）"}]
+   [ANALYSIS_FAILED] heroVs3Bet AsAd 3BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 10BB）"}]
+   [ANALYSIS_FAILED] flop达成下注 AsAd 3BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 7 条行动记录被规则拒绝：ISSUE.ACTION_AFTER_HAND_OVER。（记录内容：大盲位 BET 2BB）"}]
+   [ANALYSIS_FAILED] heroVs3Bet AsAd 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 10BB）"}]
+   [ANALYSIS_FAILED] heroVs3Bet AsAd 8BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 10BB）"}]
+   [ANALYSIS_FAILED] heroVs3Bet AsKd 3BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 10BB）"}]
+   [ANALYSIS_FAILED] flop达成下注 AsKd 3BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 7 条行动记录被规则拒绝：ISSUE.ACTION_AFTER_HAND_OVER。（记录内容：大盲位 BET 2BB）"}]
+   [ANALYSIS_FAILED] heroVs3Bet AsKd 5BB
+      RECONSTRUCT [{"code":"ACTION_REJECTED","message":"第 6 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 10BB）"}]
+
+==============================================================================
+攻击 2B：面对下注时 RAISE 是否可达？
+==============================================================================
+  面对下注的场景数: 136
+  建议 RAISE/ALL_IN 的次数: 0
+  RAISE 合法但未被建议的次数: 133
+   · flop达成下注 AsKd@Kh7c2d 1BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.898 vs 所需 0.118）
+   · flop达成下注 AsKd@Kh7c2d 6BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.898 vs 所需 0.324）
+   · flop达成下注 AsKd@Kh7c2d 30BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.898 vs 所需 0.451）
+   · flop达成下注 AhAc@Kh7c2d 1BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.888 vs 所需 0.118）
+   · flop达成下注 AhAc@Kh7c2d 6BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.888 vs 所需 0.324）
+   · flop达成下注 AhAc@Kh7c2d 30BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.888 vs 所需 0.451）
+   · flop达成下注 7h7d@Kh7c2d 1BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.964 vs 所需 0.118）
+   · flop达成下注 7h7d@Kh7c2d 6BB: 合法集合[FOLD,CALL,RAISE,ALL_IN] 但建议 CALL （权益 0.964 vs 所需 0.324）
+
+==============================================================================
+攻击 2B-2：翻牌前 AA 面对 3bet 的具体输出
+==============================================================================
+  动作=CALL 尺寸=700 分类=CLEAR
+  合法集合=["FOLD","CALL","RAISE","ALL_IN"]
+  权益=0.8398 所需=0.34146341463414637
+  候选=[{"a":"FOLD","ev":0,"f":true},{"a":"CALL","s":700,"ev":1021.59,"f":true},{"a":"RAISE","s":1700,"ev":null,"f":true},{"a":"RAISE","s":10000,"ev":null,"f":true},{"a":"ALL_IN","s":10000,"ev":null,"f":true}]
+  理由=["当前底池赔率需要 34.1% 权益","对当前对手范围估计权益约 84.0%","跟注 在数学上明显占优（EV 差 1021.59 筹码，相当于底池的 75.7% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它","估计权益 84.0% 高于所需 34.1%，跟注在数学上成立","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）","抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水口径）"]
+
+==============================================================================
+攻击 2C：尺寸网格合法性（< 最小下注 / > 剩余筹码 / < 最小加注）
+==============================================================================
+  检查过的 BET/RAISE 候选数: 685
+  违规数: 0
+
+==============================================================================
+攻击 2D：跟注即全下时，输出动作标成 CALL 还是 ALL_IN？
+==============================================================================
+  stack=2.5BB: RECONSTRUCT FAIL [{"code":"ACTION_REJECTED","message":"第 4 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：庄家位 RAISE 3BB）"}]
+  stack=3   BB  callCost=200  myRemainingStack=200  跟注即全下=true  动作=CALL size=200 合法=[FOLD,CALL,ALL_IN]
+  stack=4   BB  callCost=200  myRemainingStack=300  跟注即全下=false  动作=CALL size=200 合法=[FOLD,CALL,RAISE,ALL_IN]
+  stack=6   BB  callCost=200  myRemainingStack=500  跟注即全下=false  动作=CALL size=200 合法=[FOLD,CALL,RAISE,ALL_IN]
+
+==============================================================================
+攻击 3：错误输入是否被静默「自动修正」后仍然给出建议？
+==============================================================================
+  ✔ Hero 手牌与公共牌重复（翻牌 7d vs 手牌 7d）
+      → 阻断(VALIDATE)
+      原因: ISSUE.USER_CARD_ON_BOARD: 数据冲突：Hero 手牌与公共牌出现重复牌 7d。请检查录入内容后重新分析。
+  ✔ 公共牌内部重复（Ks 两次）
+      → 阻断(RECONSTRUCT)
+      原因: HISTORY_DOES_NOT_REACH_STREET: 无法推进到「翻牌」：ISSUE.DUPLICATE_CARD。该街需要 3 张公共牌，当前一共只填了 3 张。
+  ✔ 街道与公共牌张数不符（说翻牌却给 0 张）
+      → 阻断(PARSE)
+      原因: CARD_COUNT_MISMATCH: 翻牌应有 3 张公共牌，当前填了 0 张。请检查「当前街道」与「公共牌」是否对得上
+  ✔ 底池声明与实际不符
+      → 阻断(VALIDATE)
+      原因: ISSUE.POT_MISMATCH: 底池对不上：你填写的是 9900，但按行动记录重算得到 650。请检查行动记录或底池填写（系统不会按填写的底池继续计算）。
+  ✔ 行动顺序错误（跳过 HJ 直接 CO 加注）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_NOT_ACTOR: 第 2 条行动记录是「关煞位」，但按行动顺序现在应该轮到「劫持位」。请检查行动记录的顺序与完整性
+  ✔ 加注额低于最小加注（3BB 开池后加到 3.5BB）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_REJECTED: 第 5 条行动记录被规则拒绝：ISSUE.RAISE_BELOW_MIN。（记录内容：小盲位 RAISE 3.5BB）
+  ✔ 加注超过筹码（100BB 筹码加到 500BB）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_REJECTED: 第 4 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：庄家位 RAISE 500BB）
+  ✔ 无人下注却「跟注」
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_REJECTED: 第 1 条行动记录被规则拒绝：ISSUE.CALL_AMOUNT_ILLEGAL。（记录内容：枪口位 CALL 2BB）
+  ✔ 过牌时却带非零金额
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_REJECTED: 第 3 条行动记录被规则拒绝：ISSUE.CHECK_FACING_BET。（记录内容：关煞位 CHECK 5BB）
+  ✔ CALL 金额与所需不符（应 2BB 却写 5BB）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_REJECTED: 第 6 条行动记录被规则拒绝：ISSUE.CALL_AMOUNT_ILLEGAL。（记录内容：大盲位 CALL 5BB）
+  ✔ 盲注被写进行动历史（POST_BB 的人先加注）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_NOT_ACTOR: 第 1 条行动记录是「小盲位」，但按行动顺序现在应该轮到「枪口位」。请检查行动记录的顺序与完整性
+  ✔ 同一位置重复行动两次（BTN 加注后又加注）
+      → 阻断(RECONSTRUCT)
+      原因: ACTION_NOT_ACTOR: 第 5 条行动记录是「庄家位」，但按行动顺序现在应该轮到「小盲位」。请检查行动记录的顺序与完整性
+  ✔ Hero 自己已弃牌却又要求建议
+      → 阻断(RECONSTRUCT)
+      原因: HISTORY_OVERSHOOTS_STREET: 行动记录已导致本手牌结束（只剩一人或已摊牌），没有可分析的决策点
+
+==============================================================================
+攻击 3B：小数/极端数值是否被静默取整成另一个牌局？
+==============================================================================
+  有效筹码 100BB         → pot=450 myStack=9900 callCost=200 动作=CALL size=200
+  有效筹码 100.4BB       → pot=450 myStack=9940 callCost=200 动作=CALL size=200
+  有效筹码 100.6BB       → pot=450 myStack=9960 callCost=200 动作=CALL size=200
+  有效筹码 0.4BB         → 阻断(RECONSTRUCT) ACTION_REJECTED
+  有效筹码 0.9BB         → 阻断(RECONSTRUCT) ACTION_REJECTED
+  有效筹码 1e-9BB        → 阻断(RECONSTRUCT) ACTION_REJECTED
+  有效筹码 1e15BB        → pot=450 myStack=99999999999999900 callCost=200 动作=CALL size=200
+
+==============================================================================
+攻击 3C：bigBlindBB 是否真的改变牌局（还是只改显示）？
+==============================================================================
+  bigBlindBB=1    → pot=450 bigBlind(快照)=100 callCost=200 动作=CALL sizeBB=2 ViewModel尺寸=2.00BB（200 筹码）
+  bigBlindBB=2    → pot=450 bigBlind(快照)=100 callCost=200 动作=CALL sizeBB=2 ViewModel尺寸=2.00BB（200 筹码）
+  bigBlindBB=0.5  → pot=450 bigBlind(快照)=100 callCost=200 动作=CALL sizeBB=2 ViewModel尺寸=2.00BB（200 筹码）
+  bigBlindBB=0.1  → pot=450 bigBlind(快照)=100 callCost=200 动作=CALL sizeBB=2 ViewModel尺寸=2.00BB（200 筹码）
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe3.ts
+================================================================================
+知识库规则数=23
+
+==============================================================================
+攻击 11：多人池（1 / 2 / 3 名活跃对手）行为
+==============================================================================
+  活跃对手=1  context.activeOpponentCount=1  范围对手=枪口位  范围组合数=294
+     动作=CALL size=200 分类=CLEAR 可执行=true 置信度=0.3000 权益=0.58845 所需权益=0.3077 底池=450
+     理由=["当前底池赔率需要 30.8% 权益","对当前对手范围估计权益约 58.8%","跟注 在数学上明显占优（EV 差 182.49 筹码，相当于底池的 40.6% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它"]
+  2 名活跃对手: RECONSTRUCT FAIL [{"code":"ACTION_REJECTED","message":"第 2 条行动记录被规则拒绝：ISSUE.CALL_AMOUNT_ILLEGAL。（记录内容：劫持位 CALL 2BB）"}]
+  3 名活跃对手: RECONSTRUCT FAIL [{"code":"ACTION_REJECTED","message":"第 2 条行动记录被规则拒绝：ISSUE.CALL_AMOUNT_ILLEGAL。（记录内容：劫持位 CALL 2BB）"}]
+
+==============================================================================
+攻击 4：零玩家数据 + 零动态数据 + 启发式范围 → 置信度与分类
+==============================================================================
+  完全没有 villain 字段
+     动作=CALL 分类=CLEAR 档位=MEDIUM_LOW 置信度=0.3000 可执行=true
+     范围来源=HEURISTIC 范围可信度=0.3 组合=634 更新轨迹条数=0
+     玩家标签=UNKNOWN 手数=0 中性化=true 玩家可信度=0.5
+     动态 computed=true state=UNKNOWN conf=0
+  villain 全 UNKNOWN
+     动作=CALL 分类=CLEAR 档位=MEDIUM_LOW 置信度=0.3000 可执行=true
+     范围来源=HEURISTIC 范围可信度=0.3 组合=634 更新轨迹条数=0
+     玩家标签=UNKNOWN 手数=0 中性化=true 玩家可信度=0.5
+     动态 computed=true state=UNKNOWN conf=0
+  72o 面对 BTN 开池
+     动作=CALL 分类=MARGINAL 档位=MEDIUM_LOW 置信度=0.3000 可执行=true
+     范围来源=HEURISTIC 范围可信度=0.3 组合=674 更新轨迹条数=0
+     玩家标签=UNKNOWN 手数=0 中性化=true 玩家可信度=0.5
+     动态 computed=true state=UNKNOWN conf=0
+  翻牌空气面对 2 倍底池下注
+     动作=FOLD 分类=CLEAR 档位=MEDIUM_LOW 置信度=0.3000 可执行=true
+     范围来源=HEURISTIC 范围可信度=0.3 组合=540 更新轨迹条数=1
+     玩家标签=UNKNOWN 手数=0 中性化=true 玩家可信度=0.5
+     动态 computed=true state=UNKNOWN conf=0
+
+==============================================================================
+攻击 4B：极端「范围极不可靠」——把对手范围改成极窄/极宽后置信度是否有反馈
+==============================================================================
+  quickProfile=UNKNOWN          → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=VERY_TIGHT       → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=TIGHT            → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=NORMAL           → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=LOOSE            → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=VERY_LOOSE       → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=CALLING_STATION  → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=AGGRESSIVE       → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=BLUFF_HEAVY      → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=UNDERBLUFFER     → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+  quickProfile=MANIAC           → 分类=CLEAR                    置信度=0.3000 档位=MEDIUM_LOW 动作=CALL 范围可信度=0.3
+
+==============================================================================
+攻击 8A：范围先验自检 + 单调性
+==============================================================================
+  selfCheckPreflopPriors(): []
+  selfCheckLikelihoodModel(): ["被动性似然应满足 junk > top（junk=0.6333333333333333 top=0.7599999999999999）"]
+
+==============================================================================
+  RFI 档位宽度（权重和）与「位置越靠后越宽」
+==============================================================================
+  6人桌 UTG  tier=EARLY         权重和=33.20 非零类别=52/169
+  6人桌 HJ   tier=MIDDLE        权重和=47.30 非零类别=75/169
+  6人桌 CO   tier=LATE          权重和=68.95 非零类别=92/169
+  6人桌 BTN  tier=BUTTON        权重和=84.20 非零类别=110/169
+  6人桌 SB   tier=SMALL_BLIND   权重和=48.00 非零类别=82/169
+  6人桌 BB   tier=BUTTON        权重和=84.20 非零类别=110/169
+
+==============================================================================
+攻击 8B：类别的「强弱序」是否与似然/权重一致（抽查明显倒挂）
+==============================================================================
+  AA    进攻似然=0.9500 被动似然=0.7600
+  KK    进攻似然=0.9500 被动似然=0.7600
+  QQ    进攻似然=0.5938 被动似然=0.8867
+  AKs   进攻似然=0.9500 被动似然=0.7600
+  AKo   进攻似然=0.9500 被动似然=0.7600
+  AQs   进攻似然=0.9500 被动似然=0.7600
+  77    进攻似然=0.1069 被动似然=0.7600
+  22    进攻似然=0.0712 被动似然=0.6333
+  T9s   进攻似然=0.1662 被动似然=0.8867
+  76s   进攻似然=0.1069 被动似然=0.7600
+  KQo   进攻似然=0.9500 被动似然=0.7600
+  A2o   进攻似然=0.9500 被动似然=0.7600
+  72o   进攻似然=0.1069 被动似然=0.7600
+  32o   进攻似然=0.0712 被动似然=0.6333
+
+==============================================================================
+攻击 8C：加权抽样是否真的生效（极端范围对照）
+==============================================================================
+  AKo vs {AA,KK} 权益: 0.125
+  AKo vs {72o,32o} 权益: 0.671925
+
+==============================================================================
+攻击 8D：同一范围，权重 99:1 加权 vs 均匀 —— 是否真的改变权益
+==============================================================================
+  均匀抽样权益: 0.448125
+  权重偏向强范围（0.99）权益: 0.134025
+  权重偏向弱范围（0.99）权益: 0.66665
+
+==============================================================================
+攻击 8E：权益是否随对手范围「变强」单调下降（逐个加入强牌）
+==============================================================================
+  1 个顶级对子              组合数= 1 权益=0.0721
+  2 个顶级对子              组合数= 2 权益=0.1875
+  3 个顶级对子              组合数= 3 权益=0.2672
+  纯垃圾                  组合数= 6 权益=0.6719
+  垃圾 + 1 个顶级对子         组合数= 7 权益=0.5768
+  垃圾 + 3 个顶级对子         组合数=12 权益=0.4527
+
+==============================================================================
+攻击 8F：加权抽样在「没有权重」时是否与修复前逐位一致（可复现性）
+==============================================================================
+  两次无权重调用权益是否逐位相等: true
+  无权重 vs 全 1 权重权益: 无权重=0.4538 全1权重=0.4538 相等=true
+
+==============================================================================
+攻击 8G：权重非法时的行为（负数 / NaN / 全 0 / 长度不符）
+==============================================================================
+  负权重          → THROW simulateMonteCarlo: 第 0 位对手出现非法权重（-1）
+  NaN 权重       → THROW simulateMonteCarlo: 第 0 位对手出现非法权重（NaN）
+  全部 0 权重      → THROW simulateMonteCarlo: 第 0 位对手的全部权重为 0 —— 范围已空，不得静默退化为均匀抽样
+  长度短一位        → cannotCompute ISSUE.EQUITY_NOT_COMPUTABLE {"reason":"对手「x」的权重数(11)与组合数(12)不一致"}
+  含 Infinity   → THROW simulateMonteCarlo: 第 0 位对手出现非法权重（Infinity）
+
+==============================================================================
+攻击 2E：对手全下的录入路径（ALL_IN 的 amountBB 语义冲突）
+==============================================================================
+  villain.stackBB=8        ALL_IN 不带金额 → 阻断(PARSE) INVALID_ACTION: 第 1 条行动记录（ALL_IN）缺少合法的金额。该动作需要填「加注到的本街总额」（单位 BB）
+  villain.stackBB=undefined ALL_IN 不带金额 → 阻断(PARSE) INVALID_ACTION: 第 1 条行动记录（ALL_IN）缺少合法的金额。该动作需要填「加注到的本街总额」（单位 BB）
+  用户按「全下 8BB」录入（amountBB=8，未填 stackBB） → 阻断(RECONSTRUCT) 第 1 条行动记录被规则拒绝：ISSUE.ALLIN_AMOUNT_MISMATCH。（记录内容：枪口位 ALL_IN 8BB）
+  全下额恰好 100BB（= 起始筹码） → 建议 FOLD 底池=10150 callCost=10000
+  对手只有 20BB，Hero 100BB，面对 8BB 开池 → 阻断(RECONSTRUCT)
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe4.ts
+================================================================================
+知识库规则数=23
+
+==============================================================================
+攻击 8H：likelihoodModel.selfCheckLikelihoodModel() 是否通过？
+==============================================================================
+  返回值 = ["被动性似然应满足 junk > top（junk=0.6333333333333333 top=0.7599999999999999）"]
+  结果 = **失败 ✘（1 项）**
+
+  类别总数 = 169（DEFAULT_TOTAL_CLASSES=169）
+  顶级（KEYS[0]） = AA  垃圾（KEYS[last]） = 22
+  abnormal(top)=0.95  abnormal(junk)=0.07125
+  normal(top)=0.7599999999999999    normal(junk)=0.6333333333333333
+  → 断言「被动性似然 junk > top」：**不成立**
+
+  被动（NORMAL）似然表（169 类的取值集合）：
+    0.9500  共  34 类  例：QTs QTo Q9s Q9o Q8s Q8o Q7s Q7o Q6s Q6o …
+    0.8867  共  69 类  例：AQo AJs AJo ATs ATo A9s A9o A8s A8o KJs …
+    0.7600  共  46 类  例：AA AKs AKo AQs A7s A7o A6s A6o A5s A5o …
+    0.6333  共  20 类  例：63s 63o 62s 62o 55 54s 54o 53s 53o 52s …
+
+  明显不合理的档位（同档位内混入强弱极端）：
+    72o   index=143 进攻=0.1069 被动=0.7600
+    32o   index=167 进攻=0.0712 被动=0.6333
+    22    index=168 进攻=0.0712 被动=0.6333
+    AKo   index=  2 进攻=0.9500 被动=0.7600
+    AA    index=  0 进攻=0.9500 被动=0.7600
+    QQ    index= 48 进攻=0.5938 被动=0.8867
+    T9s   index= 89 进攻=0.1662 被动=0.8867
+    76s   index=134 进攻=0.1069 被动=0.7600
+
+  进攻似然 vs 牌力序的倒挂检查（前面应 ≥ 后面）：
+    A8o(0.5938) < A7s(0.9500)
+  进攻似然的倒挂数 = 1 / 168 个相邻对
+    被动 A8o(0.8867) > A7s(0.7600)
+    被动 J3s(0.9500) > J3o(0.8867)
+    被动 87s(0.8867) > 87o(0.7600)
+    被动 64o(0.7600) > 63s(0.6333)
+  被动似然的倒挂数 = 4 / 168 个相邻对（被动应当随牌力递减，即后面 ≥ 前面）
+
+==============================================================================
+攻击 11：多人池 —— 是否明确返回信息不足（不得偷偷退化为单挑）
+==============================================================================
+  1 名活跃对手（UTG 开池，其余弃牌）
+     期望活跃对手=1 实际=1  范围只针对=枪口位（组合 294）
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 底池=450 权益=0.58845 所需=0.3077
+     理由=["当前底池赔率需要 30.8% 权益","对当前对手范围估计权益约 58.8%"]
+  2 名活跃对手（UTG 开池 + HJ 跟注）
+     期望活跃对手=2 实际=2  范围只针对=枪口位（组合 294）
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 底池=750 权益=0.58845 所需=0.2105
+     理由=["当前底池赔率需要 21.1% 权益","对当前对手范围估计权益约 58.8%"]
+  3 名活跃对手（UTG 开池 + HJ/CO 跟注）
+     期望活跃对手=3 实际=3  范围只针对=枪口位（组合 294）
+     动作=FOLD 可执行=false 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 底池=1050 权益=0.58845 所需=0.1600
+     理由=["当前有多名对手（3 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  3 名活跃对手（UTG + CO/BTN 跟注）
+     期望活跃对手=3 实际=3  范围只针对=枪口位（组合 294）
+     动作=FOLD 可执行=false 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 底池=1050 权益=0.58845 所需=0.1600
+     理由=["当前有多名对手（3 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+
+==============================================================================
+攻击 2F：面对全下时的建议（AA / KK / AKo 会不会被建议弃牌）
+==============================================================================
+  AA 面对 UTG 10BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=1150 需投入=1000 所需权益=46.51% （手算 46.51%）估计权益=83.96% 跟注EV=805.09
+     范围组合=289 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  AKo 面对 UTG 10BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=1150 需投入=1000 所需权益=46.51% （手算 46.51%）估计权益=58.85% 跟注EV=265.17
+     范围组合=294 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  AA 面对 UTG 100BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=10150 需投入=10000 所需权益=49.63% （手算 49.63%）估计权益=83.96% 跟注EV=6917.44
+     范围组合=289 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  AKo 面对 UTG 100BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=10150 需投入=10000 所需权益=49.63% （手算 49.63%）估计权益=58.85% 跟注EV=1857.27
+     范围组合=294 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  KK 面对 UTG 100BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=10150 需投入=10000 所需权益=49.63% （手算 49.63%）估计权益=75.54% 跟注EV=5221.31
+     范围组合=299 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  QQ 面对 UTG 100BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=10150 需投入=10000 所需权益=49.63% （手算 49.63%）估计权益=70.56% 跟注EV=4217.34
+     范围组合=305 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  77 面对 UTG 100BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=10150 需投入=10000 所需权益=49.63% （手算 49.63%）估计权益=49.65% 跟注EV=4.98
+     范围组合=331 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  22 面对 UTG 30BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=3150 需投入=3000 所需权益=48.78% （手算 48.78%）估计权益=41.04% 跟注EV=-476.19
+     范围组合=341 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  AKo 面对 UTG 30BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=3150 需投入=3000 所需权益=48.78% （手算 48.78%）估计权益=58.85% 跟注EV=618.97
+     范围组合=294 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+  72o 面对 UTG 10BB 全下
+     动作=FOLD 分类=INSUFFICIENT_INFORMATION 置信度=0.0000 可执行=false
+     底池=1150 需投入=1000 所需权益=46.51% （手算 46.51%）估计权益=27.11% 跟注EV=-417.24
+     范围组合=335 范围来源=HEURISTIC 理由=["当前有多名对手（4 人）同时在场超出了第一版的分析能力。第一版只支持 1~2 名活跃对手，**不会**只分析其中一位来假装单挑。请缩小到更少的对手后重新分析。","牌局环境「中低级别」提供了 2 条方向参考（无幅度，仅方向）"]
+
+==============================================================================
+攻击 4C：rfiTierOf 对「非开池场景」的位置是否给出错误档位
+==============================================================================
+  位置 UTG  → 档位 EARLY         权重和 33.20
+  位置 HJ   → 档位 MIDDLE        权重和 47.30
+  位置 CO   → 档位 LATE          权重和 68.95
+  位置 BTN  → 档位 BUTTON        权重和 84.20
+  位置 SB   → 档位 SMALL_BLIND   权重和 48.00
+  位置 BB   → 档位 BUTTON        权重和 84.20
+  （BB 位在 6 人桌没有独立档位，落到默认 BUTTON）
+
+==============================================================================
+攻击 4D：Hero 在 BB 加注（非开池）时，对手范围被当成什么？
+==============================================================================
+  失败(RECONSTRUCT) [{"code":"DECISION_POINT_NOT_AVAILABLE","message":"当前没有轮到「关煞位」行动，因此没有可分析的决策点。按行动记录，本街下注轮已经结束。请补齐到「轮到你行动」为止的行动记录"}]
+  Hero=CO 面对 BB 3bet：动作=CALL
+     范围来源说明=启发式翻牌前范围先验：依据公开讨论的粗略量级（前位约 15%、按钮位约 45%）自行整理为 169 个起手牌类别的相对权重。**不是求解器输出，不是 GTO 范围。**（大盲位的启发式开池范围（对手主动加注））
+     范围组合数=634
+     权益=0.630575
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe5.ts
+================================================================================
+知识库规则数=23 asOf=1757000000000
+
+==============================================================================
+攻击 2G：单挑满筹码全下 —— AA / KK / AKo 会不会被建议弃牌？
+==============================================================================
+  AA 面对 UTG 100BB 全下
+     底池=10150 需投入=9900 所需权益=49.38% 估计权益=83.96% 跟注EV=6933.48
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=289
+  KK 面对 UTG 100BB 全下
+     底池=10150 需投入=9900 所需权益=49.38% 估计权益=75.54% 跟注EV=5245.77
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=299
+  QQ 面对 UTG 100BB 全下
+     底池=10150 需投入=9900 所需权益=49.38% 估计权益=70.56% 跟注EV=4246.78
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=305
+  AKo 面对 UTG 100BB 全下
+     底池=10150 需投入=9900 所需权益=49.38% 估计权益=58.85% 跟注EV=1898.42
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=294
+  AA 面对 UTG 30BB 全下
+     底池=3150 需投入=2900 所需权益=47.93% 估计权益=83.96% 跟注EV=2179.43
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=289
+  AKo 面对 UTG 30BB 全下
+     底池=3150 需投入=2900 所需权益=47.93% 估计权益=58.85% 跟注EV=660.12
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：跟注"
+     范围=HEURISTIC 组合数=294
+  72o 面对 UTG 100BB 全下
+     底池=10150 需投入=9900 所需权益=49.38% 估计权益=27.11% 跟注EV=-4465.45
+     动作=FOLD 可执行=true 分类=CLEAR 置信度=0.3000 档位=MEDIUM_LOW
+     ViewModel 首屏="建议：弃牌"
+     范围=HEURISTIC 组合数=335
+
+==============================================================================
+攻击 4E：信息不足时 decision.action 的取值（是否会被读成「建议弃牌」）
+==============================================================================
+  三人池（3 名活跃对手）
+     decision.action = CALL（中文「跟注」）
+     decision.actionable = true
+     decision.sizeChips = 200
+     decision.confidence = 0.3  分类 = CLEAR
+     ViewModel.actionZh = "建议：跟注"
+     ViewModel.debug.baseDecisionZh = "跟注"
+     (decision 是管线暴露给 Web /api/analyze 的字段之一)
+
+==============================================================================
+攻击 9：端到端性能 P50/P95/MAX（按街道）
+==============================================================================
+  翻牌前: n=30 P50=172.5ms P95=224.5ms MAX=233.6ms MIN=158.3ms
+     阶段耗时（最后一次）= {"parse":1,"validate":0,"context":221,"decide":1,"viewmodel":0,"total":223}
+  翻牌: n=30 P50=159.7ms P95=241.6ms MAX=261.5ms MIN=102.2ms
+     阶段耗时（最后一次）= {"parse":0,"validate":1,"context":179,"decide":1,"viewmodel":0,"total":181}
+  转牌: n=30 P50=61.3ms P95=82.7ms MAX=83.8ms MIN=44.1ms
+     阶段耗时（最后一次）= {"parse":0,"validate":0,"context":65,"decide":0,"viewmodel":0,"total":65}
+  河牌: n=30 P50=9.8ms P95=12.2ms MAX=12.8ms MIN=6.7ms
+     阶段耗时（最后一次）= {"parse":0,"validate":1,"context":7,"decide":0,"viewmodel":0,"total":8}
+
+==============================================================================
+攻击 9B：病态输入（超大筹码 / 超深 SPR / 长行动历史）是否卡死或超线性
+==============================================================================
+  翻牌 effectiveStackBB=100                 0.7ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  翻牌 effectiveStackBB=1000                0.3ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  翻牌 effectiveStackBB=100000              0.2ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  翻牌 effectiveStackBB=1000000             0.2ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  翻牌 effectiveStackBB=1000000000          0.8ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  翻牌 effectiveStackBB=1000000000000       0.3ms → 阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+
+==============================================================================
+攻击 9B-2：翻牌前超大筹码（开池额随之放大）
+==============================================================================
+  翻牌前 effectiveStackBB=100            开池=3BB    134.6ms → 动作=CALL 权益来源=MONTE_CARLO 权益=0.8398 阶段={"parse":0,"validate":1,"context":133,"decide":0,"viewmodel":1,"total":135}
+  翻牌前 effectiveStackBB=1000           开池=3BB    111.9ms → 动作=CALL 权益来源=MONTE_CARLO 权益=0.8398 阶段={"parse":0,"validate":0,"context":111,"decide":1,"viewmodel":0,"total":112}
+  翻牌前 effectiveStackBB=100000         开池=3BB    103.9ms → 动作=CALL 权益来源=MONTE_CARLO 权益=0.8398 阶段={"parse":0,"validate":0,"context":104,"decide":0,"viewmodel":0,"total":104}
+
+==============================================================================
+攻击 9C：9 人桌 —— 2 名活跃对手（可分析）与 3 名（应拒绝）
+==============================================================================
+  9 人桌 2 名活跃对手：阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+  9 人桌 3 名活跃对手：阻断(RECONSTRUCT) DECISION_POINT_NOT_AVAILABLE
+
+==============================================================================
+攻击 10：ViewModel 是否忠实映射引擎输出（含信息不足分支）
+==============================================================================
+     [幂等差异字段] debug
+       debug:
+         重算 = {"adjustedDecisionZh":"跟注","baseDecisionZh":"跟注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"跟注","evZh":"209.87 筹码","feasibleZh":"数学可行","sizeZh":"2.00BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"5.00BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"100.0BB"},{"actionZh":"全下","evZh":"—（
+         管线 = {"adjustedDecisionZh":"跟注","baseDecisionZh":"跟注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"跟注","evZh":"209.87 筹码","feasibleZh":"数学可行","sizeZh":"2.00BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"5.00BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"100.0BB"},{"actionZh":"全下","evZh":"—（
+  翻牌前: 幂等=✘ 动作=一致 尺寸=一致
+     引擎 action=CALL size=200 conf=0.3 band=MEDIUM_LOW cls=CLEAR
+     VM  actionZh="建议：跟注" sizeZh="2.00BB（200 筹码）" confidenceZh="中低" classificationZh="明确决策"
+     [幂等差异字段] debug
+       debug:
+         重算 = {"adjustedDecisionZh":"下注","baseDecisionZh":"下注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"过牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.00BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.63BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项
+         管线 = {"adjustedDecisionZh":"下注","baseDecisionZh":"下注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"过牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.00BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.63BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项
+  翻牌: 幂等=✘ 动作=一致 尺寸=一致
+     引擎 action=BET size=325 conf=0.3 band=MEDIUM_LOW cls=MARGINAL
+     VM  actionZh="建议：下注" sizeZh="3.25BB（325 筹码）" confidenceZh="中低" classificationZh="边缘决策"
+     [幂等差异字段] debug
+       debug:
+         重算 = {"adjustedDecisionZh":"下注","baseDecisionZh":"下注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"过牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.00BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.63BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项
+         管线 = {"adjustedDecisionZh":"下注","baseDecisionZh":"下注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"过牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.00BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"1.63BB"},{"actionZh":"下注","evZh":"—（依赖弃牌率，本项
+  转牌: 幂等=✘ 动作=一致 尺寸=一致
+     引擎 action=BET size=325 conf=0.3 band=MEDIUM_LOW cls=MARGINAL
+     VM  actionZh="建议：下注" sizeZh="3.25BB（325 筹码）" confidenceZh="中低" classificationZh="边缘决策"
+     [幂等差异字段] debug
+       debug:
+         重算 = {"adjustedDecisionZh":"跟注","baseDecisionZh":"跟注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"跟注","evZh":"1390.35 筹码","feasibleZh":"数学可行","sizeZh":"10.0BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"20.0BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"97.0BB"},{"actionZh":"全下","evZh":"—（
+         管线 = {"adjustedDecisionZh":"跟注","baseDecisionZh":"跟注","candidates":[{"actionZh":"弃牌","evZh":"0.00 筹码","feasibleZh":"数学可行","sizeZh":"—"},{"actionZh":"跟注","evZh":"1390.35 筹码","feasibleZh":"数学可行","sizeZh":"10.0BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"20.0BB"},{"actionZh":"加注","evZh":"—（依赖弃牌率，本项目无可信估计）","feasibleZh":"数学可行","sizeZh":"97.0BB"},{"actionZh":"全下","evZh":"—（
+  河牌: 幂等=✘ 动作=一致 尺寸=一致
+     引擎 action=CALL size=1000 conf=0.3 band=MEDIUM_LOW cls=CLEAR
+     VM  actionZh="建议：跟注" sizeZh="10.0BB（1000 筹码）" confidenceZh="中低" classificationZh="明确决策"
+
+==============================================================================
+攻击 10B：ViewModel.debug.math 与引擎 math 的逐项对照
+==============================================================================
+  引擎：pot=650 callCost=0 stack=9700 eff=9700 spr=14.923076923076923 potOdds=0 reqEq=0 eq=0.8956 ev=null
+    底池 = 650 筹码（6.50BB）
+    跟注需要 = 0 筹码（0.00BB）
+    我的剩余筹码 = 9700 筹码（97.0BB）
+    有效筹码 = 9700 筹码（97.0BB）
+    SPR = 14.92
+    底池赔率 = 0.0%
+    所需权益 = 0.0%
+    估计权益 = 89.6%
+    权益来源 = 蒙特卡洛（20,000 次，±0.4%）
+    跟注 EV = —（无法计算）
+    当前牌力 = 顶对 K，A踢脚
+    抽水模型 = 未计入
+
+==============================================================================
+攻击 10C：spr 显示与 pouter 一致性（底池为 0 时）
+==============================================================================
+
+==============================================================================
+攻击 12A：rebuildPendingQueue —— 弃牌者定位是否在其它场景引入错误顺序
+==============================================================================
+  场景1 UTG 弃牌：ok=true 队列=[HJ,CO,BTN,SB,BB] 应轮到=HJ 实际=HJ
+  场景2 UTG/HJ 弃牌：队列=[CO,BTN,SB,BB] 应轮到=CO 实际=CO
+  场景3 BTN 加注到 3BB：队列=[SB,BB] 应轮到=SB 实际=SB
+        SB 弃牌后：队列=[BB] 应轮到=BB 实际=BB
+        BB 需要跟注=200
+  场景4 UTG 开池/BTN 3bet：队列=[SB,BB,UTG] 应轮到=SB
+        SB/BB 弃牌后：队列=[UTG] 应轮到=UTG 实际=UTG
+        UTG 需要跟注=600（当前注额=900）
+        UTG 弃牌后：phase=COMPLETE 队列=[] winners=["seat_BTN"]
+  场景5 BTN 短全下到 1200（加注增量 900）：队列=[SB,BB,UTG] raiseClosedFor=[]
+        SB/BB 弃牌后：队列=[UTG] 应轮到=UTG
+        UTG 尝试再加注到 3000：ok=true 
+  场景6 全员溜入到 BB：队列=[BB] 应轮到=BB 实际=BB
+        BB 过牌：ok=true bettingRoundComplete=true 队列=[]
+  场景7 全员弃牌：phase=COMPLETE winners=["seat_BB"]
+  场景8 推进到翻牌：队列=[SB,BB,UTG,HJ,CO,BTN] 应轮到=SB 实际=SB
+        SB 弃牌后：队列=[BB,UTG,HJ,CO,BTN] 应轮到=BB 实际=BB
+        BB 过牌后：队列=[UTG,HJ,CO,BTN] 应轮到=UTG 实际=UTG
+
+==============================================================================
+攻击 12B：无权重 vs 权重全为 1 —— 是否逐位一致（向后兼容）
+==============================================================================
+  seed=1         无权重=0.6911616162 全1权重=0.6911616162 逐位相等=✔
+  seed=42        无权重=0.6911616162 全1权重=0.6911616162 逐位相等=✔
+  seed=20260913  无权重=0.6911616162 全1权重=0.6911616162 逐位相等=✔
+  seed=999999    无权重=0.6911616162 全1权重=0.6911616162 逐位相等=✔
+
+==============================================================================
+攻击 12C：死牌过滤后权重是否同步（不错位）
+==============================================================================
+  含被过滤组合的加权结果：权益=0.651515 组合数=[3]
+  手动对齐过滤后：权益=0.651515 组合数=[3]
+  两者是否逐位相同：✔（权重同步正确）
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe6.ts
+================================================================================
+知识库规则数=23
+
+==============================================================================
+攻击 10D：分类 × 置信度档位 联合分布（「明确决策」是否出现在低置信度）
+==============================================================================
+  可分析样本数 = 40
+    CLEAR × MEDIUM_LOW（置信度 0.30）                                21 次   例：翻牌前 AsAd vs BTN 开池 3BB / 翻牌前 AsKd vs BTN 开池 3BB / 翻牌前 7h7d vs BTN 开池 3BB
+    MARGINAL × MEDIUM_LOW（置信度 0.30）                             19 次   例：翻牌前 7h2c vs BTN 开池 3BB / 翻牌过牌到 Hero AsKd@Kh7c2d / 翻牌过牌到 Hero AhAc@Kh7c2d
+
+  **「明确决策」+ 低/中低置信度 = 21 / 40**
+    · 翻牌前 AsAd vs BTN 开池 3BB（MEDIUM_LOW 0.30，动作 CALL）
+    · 翻牌前 AsKd vs BTN 开池 3BB（MEDIUM_LOW 0.30，动作 CALL）
+    · 翻牌前 7h7d vs BTN 开池 3BB（MEDIUM_LOW 0.30，动作 CALL）
+    · 翻牌前 JsTd vs BTN 开池 3BB（MEDIUM_LOW 0.30，动作 CALL）
+    · 翻牌前 5c4c vs BTN 开池 3BB（MEDIUM_LOW 0.30，动作 CALL）
+
+==============================================================================
+攻击 10E：ViewModel 幂等性 —— 精确定位差异
+==============================================================================
+  翻牌前 AsAd vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":0,"validate":0,"context":68,"decide":0,"viewmodel":1,"total":69}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3243
+         重算 …text","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"1.0 ms"},{"label":"total","value":"69.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+  翻牌前 AsKd vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":0,"validate":0,"context":68,"decide":0,"viewmodel":0,"total":68}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3245
+         重算 …text","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"0.0 ms"},{"label":"total","value":"68.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"68.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+  翻牌前 7h7d vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"1.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":1,"validate":0,"context":69,"decide":0,"viewmodel":0,"total":70}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3243
+         重算 …text","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"0.0 ms"},{"label":"total","value":"70.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+  翻牌前 JsTd vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"84.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":0,"validate":0,"context":84,"decide":0,"viewmodel":0,"total":84}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3244
+         重算 …text","value":"84.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"0.0 ms"},{"label":"total","value":"84.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"84.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+  翻牌前 5c4c vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"71.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":0,"validate":0,"context":71,"decide":0,"viewmodel":0,"total":71}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3210
+         重算 …text","value":"71.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"0.0 ms"},{"label":"total","value":"71.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"71.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+  翻牌前 7h2c vs BTN 开池 3BB
+     VM.debug.timing = [{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"0.0 ms"},{"label":"context","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"}]
+     pipeline timings = {"parse":0,"validate":0,"context":69,"decide":0,"viewmodel":0,"total":69}
+     用管线 timings 重算 → 与管线返回是否完全一致：✘ 否
+       差异字段 debug：首个不同位置 3207
+         重算 …text","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"},{"label":"viewmodel","value":"0.0 ms"},{"label":"total","value":"69.0 ms"}],"versions":[{"label":"decision","value":"1.
+         管线 …text","value":"69.0 ms"},{"label":"decide","value":"0.0 ms"}],"versions":[{"label":"decision","value":"1.0.0"},{"label":"context","value":"1.0.0"},{"label":"math","value":"1.0.0"},
+
+==============================================================================
+攻击 3D：bigBlindBB / villains / opponentCount 是否真正生效（死字段检查）
+==============================================================================
+  --- bigBlindBB（界面允许用户填大盲）---
+    bigBlindBB=1     → 动作=CALL size=200 math.bigBlind=100 viewModel尺寸=2.00BB（200 筹码）
+    bigBlindBB=2     → 动作=CALL size=200 math.bigBlind=100 viewModel尺寸=2.00BB（200 筹码）
+    bigBlindBB=10    → 动作=CALL size=200 math.bigBlind=100 viewModel尺寸=2.00BB（200 筹码）
+    bigBlindBB=0.01  → 动作=CALL size=200 math.bigBlind=100 viewModel尺寸=2.00BB（200 筹码）
+    → 不同指纹数 = 4（若为 1，说明 bigBlindBB 对输出**完全无效**）
+
+  --- villain.playerId 是否影响范围/决策 ---
+    playerId=undefined  → 动作=CALL 范围对象=seat_BTN 玩家对象=seat_BTN
+    playerId=villain-A  → 动作=CALL 范围对象=seat_BTN 玩家对象=villain-A
+    playerId=villain-B  → 动作=CALL 范围对象=seat_BTN 玩家对象=villain-B
+
+==============================================================================
+攻击 11B：9 人桌 1 / 2 / 3 名活跃对手
+==============================================================================
+  1 名活跃对手：activeOpponentCount=1 范围针对=劫持位 组合=415
+     动作=CALL 可执行=true 分类=CLEAR 置信度=0.3000 底池=450 权益=0.8412 所需=0.3077 AA
+  2 名活跃对手：RECONSTRUCT FAIL [{"code":"ACTION_NOT_ACTOR","message":"第 7 条行动记录是「关煞位」，但按行动顺序现在应该轮到「庄家位」。请检查行动记录的顺序与完整性"}]
+  3 名活跃对手：RECONSTRUCT FAIL [{"code":"ACTION_NOT_ACTOR","message":"第 8 条行动记录是「关煞位」，但按行动顺序现在应该轮到「小盲位」。请检查行动记录的顺序与完整性"}]
+
+==============================================================================
+攻击 7C：hashManualInput 是否覆盖全部影响结果的输入
+==============================================================================
+  基准哈希 = hbc834650
+  bigBlindBB=2                               哈希相同 ✘  决策相同
+  villain.stackBB=20                         哈希不同 ✔  决策不同
+  villain.playerId="x"                       哈希不同 ✔  决策相同
+  actionHistory[0].street=PREFLOP（显式写 street） 哈希相同 ✘  决策相同
+  villains=[两个对手]（第 2 个被忽略）                  哈希相同 ✘  决策相同
+  （哈希相同但决策不同 = 日志无法区分两个不同的建议）
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe7.ts
+================================================================================
+
+==============================================================================
+攻击 7D-1：不传 asOf（真实界面路径）→ 同一输入连跑 10 次是否逐位一致
+==============================================================================
+  10 次运行的不同**全量**指纹数 = 1
+  10 次的权益取值 = ["0.8398"]
+  10 次的动作 = ["CALL@200"]
+  10 次的动态状态 = ["UNKNOWN/0"]
+
+==============================================================================
+攻击 7D-2：固定 asOf → 同一输入连跑 10 次是否逐位一致
+==============================================================================
+  固定 asOf 下 10 次运行的不同指纹数 = 1
+
+==============================================================================
+攻击 3E：bigBlindBB 的严格证明（逐字段对比，不用模糊指纹）
+==============================================================================
+  bigBlindBB=1      CALL@200     VM=2.00BB（200 筹码）       FOLD,CALL,RAISE,ALL_IN
+      pot=450 callCost=200 stack=9900 eff=9700 spr=21.555555555555557 potOdds=0.3076923076923077 reqEq=0.3076923076923077 bigBlind=100
+  bigBlindBB=2      CALL@200     VM=2.00BB（200 筹码）       FOLD,CALL,RAISE,ALL_IN
+      pot=450 callCost=200 stack=9900 eff=9700 spr=21.555555555555557 potOdds=0.3076923076923077 reqEq=0.3076923076923077 bigBlind=100
+  bigBlindBB=10     CALL@200     VM=2.00BB（200 筹码）       FOLD,CALL,RAISE,ALL_IN
+      pot=450 callCost=200 stack=9900 eff=9700 spr=21.555555555555557 potOdds=0.3076923076923077 reqEq=0.3076923076923077 bigBlind=100
+  bigBlindBB=100    CALL@200     VM=2.00BB（200 筹码）       FOLD,CALL,RAISE,ALL_IN
+      pot=450 callCost=200 stack=9900 eff=9700 spr=21.555555555555557 potOdds=0.3076923076923077 reqEq=0.3076923076923077 bigBlind=100
+  bigBlindBB=0.01   CALL@200     VM=2.00BB（200 筹码）       FOLD,CALL,RAISE,ALL_IN
+      pot=450 callCost=200 stack=9900 eff=9700 spr=21.555555555555557 potOdds=0.3076923076923077 reqEq=0.3076923076923077 bigBlind=100
+  不同 math 取值数 = 1（固定 asOf 后应为 1，否则说明 bigBlindBB 真的有效）
+  结论：bigBlindBB 对输出**完全无效**（死字段）
+
+==============================================================================
+攻击 3E-2：bigBlindBB 非法值时是否被阻断（可证明它至少被读了）
+==============================================================================
+  bigBlindBB=0      → 阻断 PARSE: INVALID_NUMBER
+  bigBlindBB=-1     → 阻断 PARSE: INVALID_NUMBER
+  bigBlindBB=NaN    → 阻断 PARSE: INVALID_NUMBER
+  bigBlindBB=Infinity → 阻断 PARSE: INVALID_NUMBER
+
+==============================================================================
+攻击 7D-4：动态事件时间戳基于 asOf —— asOf 变化是否影响决策
+==============================================================================
+  asOf=+           0ms → 动态状态=TILT_SIGNAL conf=0.2500 偏离分=0 动作=CALL 决策置信度=0.2344
+  asOf=+       60000ms → 动态状态=TILT_SIGNAL conf=0.2500 偏离分=0 动作=CALL 决策置信度=0.2344
+  asOf=+     3600000ms → 动态状态=TILT_SIGNAL conf=0.2500 偏离分=0 动作=CALL 决策置信度=0.2344
+  asOf=+    86400000ms → 动态状态=TILT_SIGNAL conf=0.2500 偏离分=0 动作=CALL 决策置信度=0.2344
+  asOf=+  2592000000ms → 动态状态=TILT_SIGNAL conf=0.2500 偏离分=0 动作=CALL 决策置信度=0.2344
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe8.ts
+================================================================================
+
+==============================================================================
+攻击 10F：HTTP /api/analyze 与直接调引擎是否逐字段一致
+==============================================================================
+  服务器地址 = http://127.0.0.1:65275
+
+  用例1（合法翻牌）HTTP 200 ok=true
+     viewModel 与直接调用逐字段一致：✘
+       首个不同位置 3766：
+         HTTP   …"value":"动态层状态 UNKNOWN（置信度 0.00），不构成调整依据"}],"timing":[{"label":"parse","value":"1.0 ms"},{"label":"validate","value":"5.0 ms"},{"label":"context","value":"127.0 ms"},{"label":"decide","value":"1.0 ms"
+         引擎   …"value":"动态层状态 UNKNOWN（置信度 0.00），不构成调整依据"}],"timing":[{"label":"parse","value":"0.0 ms"},{"label":"validate","value":"1.0 ms"},{"label":"context","value":"80.0 ms"},{"label":"decide","value":"0.0 ms"}
+     decision 精简字段：{"action":"BET","sizeChips":325,"sizeBB":3.25,"confidence":0.3,"band":"MEDIUM_LOW","classification":"MARGINAL","actionable":true}
+     引擎 action=BET size=325 conf=0.3 band=MEDIUM_LOW cls=MARGINAL actionable=true
+     decision 是否覆盖引擎全部字段：✔（6 项）
+     meta = {"computedPot":650,"claimedPot":null,"inputHash":"h36f8aa29","timings":{"parse":1,"validate":5,"context":127,"decide":1,"viewmodel":26,"total":161},"warnings":[]}
+
+  用例2（三人池）HTTP 200 ok=true
+     **decision 字段 = {"action":"CALL","sizeChips":200,"sizeBB":2,"confidence":0.3,"band":"MEDIUM_LOW","classification":"CLEAR","actionable":true}**
+     viewModel.actionZh = "建议：跟注"
+     viewModel.warningsZh[0] = "抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水口径）"
+
+  用例3（重复牌）HTTP 200 ok=false stage=VALIDATE
+     issues = [{"code":"ISSUE.USER_CARD_ON_BOARD","message":"数据冲突：Hero 手牌与公共牌出现重复牌 7d。请检查录入内容后重新分析。"}]
+
+  用例4（缺少 input）HTTP 400 ok=false stage=REQUEST issues=[{"code":"MISSING_INPUT","message":"缺少 input 字段（应为 ManualHandInput）"}]
+
+  用例4（input 是 null）HTTP 400 ok=false stage=REQUEST issues=[{"code":"MISSING_INPUT","message":"缺少 input 字段（应为 ManualHandInput）"}]
+
+  用例4（input 是字符串）HTTP 400 ok=false stage=REQUEST issues=[{"code":"MISSING_INPUT","message":"缺少 input 字段（应为 ManualHandInput）"}]
+
+  用例4（完全空的 input 对象）HTTP 200 ok=false stage=PARSE issues=[{"code":"INVALID_TABLE_SIZE","message":"桌型只能是 6 人桌或 9 人桌（收到 undefined）","field":"tableSize"},{"code":"INVALID_POSITION","message":"undefined 人桌上没有「undefined」这个位置。可选：（桌型无效）","field":"heroPosition"},{"
+
+  用例4（多余字段（result / winner））HTTP 200 ok=true stage=undefined issues=undefined
+     动作=BET size=325
+
+  用例5（坏 JSON）HTTP 400 {"ok":false,"stage":"REQUEST","issues":[{"code":"BAD_JSON","message":"请求体不是合法 JSON"}]}
+  用例6 GET /            HTTP 200 content-type=text/html; charset=utf-8
+  用例6 GET /api/health  HTTP 200 content-type=application/json; charset=utf-8
+  用例6 GET /api/nope    HTTP 404 content-type=application/json; charset=utf-8
+
+  服务器已关闭
+
+==============================================================================
+攻击 11C：UI 声明「只支持单挑」vs 引擎实际阈值（2 名活跃对手）
+==============================================================================
+  index.html:197  <li>只支持<b>单挑</b>局面（多人池会明确返回「信息不足」，不会假装单挑）</li>
+  index.html:201  <li>不支持多人池、锦标赛、短牌</li>
+
+  三人池实际：actionable=true 分类=CLEAR 范围针对=1 位对手（枪口位）
+  → 引擎在「2 名活跃对手」时会给出动作建议（与 UI 声称的「只支持单挑」不符）
+
+==============================================================================
+攻击 8I：BB 3bet 的对手范围被当成「开池范围」—— 权益被抬高多少？
+==============================================================================
+  引擎：范围针对「大盲位」
+     来源说明 = 启发式翻牌前范围先验：依据公开讨论的粗略量级（前位约 15%、按钮位约 45%）自行整理为 169 个起手牌类别的相对权重。**不是求解器输出，不是 GTO 范围。**（大盲位的启发式开池范围（对手主动加注））
+     组合数 = 634（占 1326 的 47.8%）
+     权益 = 0.6306  动作 = CALL
+
+  对照：若对手是紧 3bet 范围（QQ+/AK，13 个组合）
+     AKo 权益 = 0.3558
+     → 引擎用开池范围得到的权益 0.6306 比紧 3bet 范围高 27.5 个百分点
+     所需权益 = 34.15%
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe9.ts
+================================================================================
+
+==============================================================================
+攻击 10G：HTTP vs 引擎 —— 排除耗时字段后的严格逐字段比较
+==============================================================================
+  服务器地址 = http://127.0.0.1:65280
+  翻牌：viewModel（去耗时）逐字段一致 = ✔
+     HTTP decision  == 引擎精简 decision：✔
+  河牌：viewModel（去耗时）逐字段一致 = ✔
+     HTTP decision  == 引擎精简 decision：✔
+
+==============================================================================
+攻击 4F：置信度天花板 —— 逐分量拆解（为什么永远停在 0.30）
+==============================================================================
+  最终置信度 = 0.3  档位 = MEDIUM_LOW  分类 = MARGINAL
+  --- confidenceOf 的各分量（取最小值）---
+     输入完整度 completeness：heroCards=2 board=3 张 → 1
+     范围可信度 rangeConfidence = 0.3  ← **天花板**（启发式先验固定 0.3）
+     玩家可信度 playerConfidence = 0.35  中性化=false
+     环境可信度 environmentConfidence = 0.4（advice 1 条）
+     动态可信度 dynamicConfidence = 0
+     数学精度 precision：来源=MONTE_CARLO 样本=20000 半宽=0.004237799300748834
+     降级惩罚 degradationPenalty：degradations=0 条
+  → 范围可信度 0.3 是上界，因此**任何**启发式范围下的置信度都不可能超过 0.3（档位最多「中低」）
+
+==============================================================================
+攻击 4G：即便数学极其清晰（AA 面对 100BB 全下），置信度仍为 0.30
+==============================================================================
+  动作=CALL 权益=0.8396 所需=0.4938 跟注EV=6933.48
+  数学占优=true EV差占底池=0.6831
+  **置信度=0.3（档位「MEDIUM_LOW」）分类=CLEAR**
+  首屏会显示："建议：跟注" / 置信度「中低」/ 类型「明确决策」
+  环境规则数=2（advice 越多环境分量越高，上限 0.4）
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe10.ts
+================================================================================
+知识库规则数=23
+
+==============================================================================
+攻击 2H-1：引擎层 —— 筹码恰好不足最小加注时，全下是否被拒？
+==============================================================================
+  HJ 筹码=  400  全下到=  400  最小加注到=  500  不足最小加注=是
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=400
+  HJ 筹码=  450  全下到=  450  最小加注到=  500  不足最小加注=是
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=450
+  HJ 筹码=  500  全下到=  500  最小加注到=  500  不足最小加注=否
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=500
+  HJ 筹码=  550  全下到=  550  最小加注到=  500  不足最小加注=否
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=550
+  HJ 筹码=  600  全下到=  600  最小加注到=  500  不足最小加注=否
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=600
+  HJ 筹码=  700  全下到=  700  最小加注到=  500  不足最小加注=否
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=700
+  HJ 筹码= 1000  全下到= 1000  最小加注到=  500  不足最小加注=否
+     引擎 ALL_IN：接受 ✔   引擎 RAISE：接受
+     deriveLegalActions.actions = [FOLD,CALL,RAISE,ALL_IN]   canRaise=true minRaiseToAmount=500 allInToAmount=1000
+
+==============================================================================
+攻击 2H-2：deriveLegalActions vs applyAction —— 边界等价性穷举
+==============================================================================
+  检查过的状态数 = 36（每个 7 种动作尝试）
+  不一致数 = 0
+
+==============================================================================
+攻击 2H-3：端到端 —— 用户录入合法的短筹码全下加注时会发生什么
+==============================================================================
+  录入「UTG 开池 3BB → HJ 全下 5BB（< 最小加注 6BB）」
+     → RECONSTRUCT 阻断：当前没有轮到「大盲位」行动，因此没有可分析的决策点。按行动记录，现在应该轮到「关煞位」。请补齐到「轮到你行动」为止的行动记录
+  录入「UTG 开池 3BB → HJ 全下 6BB（= 最小加注）」
+     → RECONSTRUCT 阻断：当前没有轮到「大盲位」行动，因此没有可分析的决策点。按行动记录，现在应该轮到「关煞位」。请补齐到「轮到你行动」为止的行动记录
+
+==============================================================================
+攻击 2H-4：Hero 筹码不足以最小加注时，能否全下？（deriveLegalActions 漏 RAISE）
+==============================================================================
+  Hero 4   BB：callCost=200 剩余=300 allInTo=400 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+  Hero 5   BB：callCost=200 剩余=400 allInTo=500 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+  Hero 5.5 BB：callCost=200 剩余=450 allInTo=550 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+  Hero 6   BB：callCost=200 剩余=500 allInTo=600 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+  Hero 7   BB：callCost=200 剩余=600 allInTo=700 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+  Hero 8   BB：callCost=200 剩余=700 allInTo=800 minRaiseTo=500
+     合法=[FOLD,CALL,RAISE,ALL_IN] 建议=CALL@200
+     applyAction(ALL_IN) = 接受
+
+==============================================================================
+攻击 2H-5：短全下关闭加注权（TDA）路径是否可达
+==============================================================================
+  CO 筹码= 350 全下到=350 minRaiseTo=500 → 引擎=接受 新注额=350 raiseClosedFor=["UTG"]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+  CO 筹码= 400 全下到=400 minRaiseTo=500 → 引擎=接受 新注额=400 raiseClosedFor=["UTG"]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+  CO 筹码= 450 全下到=450 minRaiseTo=500 → 引擎=接受 新注额=450 raiseClosedFor=["UTG"]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+  CO 筹码= 500 全下到=500 minRaiseTo=500 → 引擎=接受 新注额=500 raiseClosedFor=[]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+  CO 筹码= 550 全下到=550 minRaiseTo=500 → 引擎=接受 新注额=550 raiseClosedFor=[]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+  CO 筹码= 600 全下到=600 minRaiseTo=500 → 引擎=接受 新注额=600 raiseClosedFor=[]
+     deriveLegalActions=[FOLD,CALL,RAISE,ALL_IN]
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe11.ts
+================================================================================
+知识库规则数=23
+
+==============================================================================
+攻击 2I：短全下关闭加注权后 —— 引擎拒绝加注，deriveLegalActions 是否仍然列出 RAISE？
+==============================================================================
+
+  CO 全下到 350（最小加注到=550）→ 现在轮到 UTG
+     raiseClosedFor = ["UTG"]
+     engine.canRaise(UTG) = false
+     UTG 需要跟注 = 50  当前注额 = 350
+     **deriveLegalActions.actions = [FOLD,CALL]**
+     canRaise=false canCheck=false callCost=50 minRaiseToAmount=550 allInToAmount=10000
+       FOLD   → 引擎接受 ✔
+       CALL   → 引擎接受 ✔
+
+  CO 全下到 400（最小加注到=600）→ 现在轮到 UTG
+     raiseClosedFor = ["UTG"]
+     engine.canRaise(UTG) = false
+     UTG 需要跟注 = 100  当前注额 = 400
+     **deriveLegalActions.actions = [FOLD,CALL]**
+     canRaise=false canCheck=false callCost=100 minRaiseToAmount=600 allInToAmount=10000
+       FOLD   → 引擎接受 ✔
+       CALL   → 引擎接受 ✔
+
+  CO 全下到 450（最小加注到=650）→ 现在轮到 UTG
+     raiseClosedFor = ["UTG"]
+     engine.canRaise(UTG) = false
+     UTG 需要跟注 = 150  当前注额 = 450
+     **deriveLegalActions.actions = [FOLD,CALL]**
+     canRaise=false canCheck=false callCost=150 minRaiseToAmount=650 allInToAmount=10000
+       FOLD   → 引擎接受 ✔
+       CALL   → 引擎接受 ✔
+
+==============================================================================
+攻击 2I-2：加注权已关闭的决策点 → 决策引擎会不会输出 RAISE？
+==============================================================================
+
+  CO 全下 4BB：raiseClosedFor=["UTG"] canRaise(UTG)=false 当前注额=400
+     合法=[FOLD,CALL]  canRaise字段=false minRaiseToAmount=600 allInToAmount=10000
+     建议=CALL@100 分类=CLEAR 可执行=true 权益=0.6263 所需=0.1053
+     **建议动作交给引擎 → 接受 ✔
+
+  CO 全下 4.5BB：raiseClosedFor=["UTG"] canRaise(UTG)=false 当前注额=450
+     合法=[FOLD,CALL]  canRaise字段=false minRaiseToAmount=650 allInToAmount=10000
+     建议=CALL@150 分类=CLEAR 可执行=true 权益=0.6263 所需=0.1429
+     **建议动作交给引擎 → 接受 ✔
+
+  CO 全下 5BB：raiseClosedFor=[] canRaise(UTG)=true 当前注额=500
+     合法=[FOLD,CALL,RAISE,ALL_IN]  canRaise字段=true minRaiseToAmount=700 allInToAmount=10000
+     建议=CALL@200 分类=CLEAR 可执行=true 权益=0.6263 所需=0.1739
+     **建议动作交给引擎 → 接受 ✔
+
+  CO 全下 5.5BB：raiseClosedFor=[] canRaise(UTG)=true 当前注额=550
+     合法=[FOLD,CALL,RAISE,ALL_IN]  canRaise字段=true minRaiseToAmount=800 allInToAmount=10000
+     建议=CALL@250 分类=CLEAR 可执行=true 权益=0.6263 所需=0.2000
+     **建议动作交给引擎 → 接受 ✔
+
+  CO 全下 6BB：raiseClosedFor=[] canRaise(UTG)=true 当前注额=600
+     合法=[FOLD,CALL,RAISE,ALL_IN]  canRaise字段=true minRaiseToAmount=900 allInToAmount=10000
+     建议=CALL@300 分类=CLEAR 可执行=true 权益=0.6263 所需=0.2222
+     **建议动作交给引擎 → 接受 ✔
+
+  CO 全下 7BB：raiseClosedFor=[] canRaise(UTG)=true 当前注额=700
+     合法=[FOLD,CALL,RAISE,ALL_IN]  canRaise字段=true minRaiseToAmount=1100 allInToAmount=10000
+     建议=CALL@400 分类=CLEAR 可执行=true 权益=0.6263 所需=0.2581
+     **建议动作交给引擎 → 接受 ✔
+
+[exit=0]
+
+================================================================================
+### FILE: scripts/rt-alpha-probe12.ts
+================================================================================
+
+==============================================================================
+复核：动态快照的 computed / state / confidence 与 confidenceOf 的 dynamic 分量
+==============================================================================
+  hint=NORMAL               computed=true  state=NORMAL           conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=LOOSER_RECENTLY      computed=true  state=LOOSER_RECENTLY  conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=TIGHTER_RECENTLY     computed=true  state=TIGHTER_RECENTLY conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=AGGRESSION_UP        computed=true  state=AGGRESSION_UP    conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=SIZE_ANOMALY         computed=true  state=UNKNOWN          conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.5
+  hint=TILT_SIGNAL          computed=true  state=TILT_SIGNAL      conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=CHASE_LOSS_SIGNAL    computed=true  state=CHASE_LOSS_SIGNAL conf=0.2500 → confidenceOf 用的 dynamicConfidence = 0.25
+  hint=UNKNOWN              computed=true  state=UNKNOWN          conf=0.0000 → confidenceOf 用的 dynamicConfidence = 0.5
+
+==============================================================================
+复核：confidenceOf 的八个分量（用引擎内部分量说明）
+==============================================================================
+  {
+  "completeness": 1,
+  "rangeConfidence": 0.3,
+  "playerConfidence": 0.5,
+  "environmentConfidence": 0.4,
+  "dynamicConfidence": 0.5,
+  "separation": "（取决于 EV 差，见下）",
+  "precision": 0.9576220069925117,
+  "degradationPenalty": 1
+}
+
+[exit=0]
+

@@ -1,0 +1,443 @@
+
+==============================================================================
+== §0 被测版本（哈希，用来证明这次审计针对哪一份代码）
+==============================================================================
+   · 0812db7ad78c2e99  src/app/table/table.types.ts
+   · 2cbe1e96fd9fc402  src/app/table/tableState.ts
+   · 4023fc6eefbfe6be  src/app/table/seatLifecycle.ts
+   · 87aa2d143ff32602  src/app/table/tableOps.ts
+   · ac4ef748a39603ec  src/app/table/tableAdapter.ts
+   · 4c0d51745055d866  src/app/table/tablePreview.ts
+   · bf37c85e31a021b5  src/app/table/tableApi.ts
+   · b52c3a79c72ff59a  src/app/webServer.ts
+   · 0299c760578f15ee  src/app/web/table.js
+
+==============================================================================
+== §1 Hero 视觉旋转不得污染逻辑位置（6 人桌 + 9 人桌，全部 Hero 位置）
+==============================================================================
+   · ---- 6 人桌 ----
+   PASS  Hero=UTG  UTG:v0/0° HJ:v1/60° CO:v2/120° BTN:v3/180° SB:v4/240° BB:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   PASS  Hero=HJ   HJ:v0/0° CO:v1/60° BTN:v2/120° SB:v3/180° BB:v4/240° UTG:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   PASS  Hero=CO   CO:v0/0° BTN:v1/60° SB:v2/120° BB:v3/180° UTG:v4/240° HJ:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   PASS  Hero=BTN  BTN:v0/0° SB:v1/60° BB:v2/120° UTG:v3/180° HJ:v4/240° CO:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   PASS  Hero=SB   SB:v0/0° BB:v1/60° UTG:v2/120° HJ:v3/180° CO:v4/240° BTN:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   PASS  Hero=BB   BB:v0/0° UTG:v1/60° HJ:v2/120° CO:v3/180° BTN:v4/240° SB:v5/300°
+   ·         引擎指纹={"tableSize":6,"smallBlind":50,"bigBlind… 行动者=UTG u=5
+   · ---- 9 人桌 ----
+   PASS  Hero=UTG  UTG:v0/0° UTG1:v1/40° UTG2:v2/80° LJ:v3/120° HJ:v4/160° CO:v5/200° BTN:v6/240° SB:v7/280° BB:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=UTG1 UTG1:v0/0° UTG2:v1/40° LJ:v2/80° HJ:v3/120° CO:v4/160° BTN:v5/200° SB:v6/240° BB:v7/280° UTG:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=UTG2 UTG2:v0/0° LJ:v1/40° HJ:v2/80° CO:v3/120° BTN:v4/160° SB:v5/200° BB:v6/240° UTG:v7/280° UTG1:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=LJ   LJ:v0/0° HJ:v1/40° CO:v2/80° BTN:v3/120° SB:v4/160° BB:v5/200° UTG:v6/240° UTG1:v7/280° UTG2:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=HJ   HJ:v0/0° CO:v1/40° BTN:v2/80° SB:v3/120° BB:v4/160° UTG:v5/200° UTG1:v6/240° UTG2:v7/280° LJ:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=CO   CO:v0/0° BTN:v1/40° SB:v2/80° BB:v3/120° UTG:v4/160° UTG1:v5/200° UTG2:v6/240° LJ:v7/280° HJ:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=BTN  BTN:v0/0° SB:v1/40° BB:v2/80° UTG:v3/120° UTG1:v4/160° UTG2:v5/200° LJ:v6/240° HJ:v7/280° CO:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=SB   SB:v0/0° BB:v1/40° UTG:v2/80° UTG1:v3/120° UTG2:v4/160° LJ:v5/200° HJ:v6/240° CO:v7/280° BTN:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+   PASS  Hero=BB   BB:v0/0° UTG:v1/40° UTG1:v2/80° UTG2:v3/120° LJ:v4/160° HJ:v5/200° CO:v6/240° BTN:v7/280° SB:v8/320°
+   ·         引擎指纹={"tableSize":9,"smallBlind":50,"bigBlind… 行动者=UTG u=8
+
+==============================================================================
+== §1b 差分：同一个逻辑牌局，Hero 位置不同 → 引擎状态必须逐位一致（只有 heroPosition 变）
+==============================================================================
+   PASS  Hero=CO 与 Hero=SB 的引擎指纹逐位一致：{"tableSize":6,"smallBlind":50,"bigBlind":100,"d…
+   PASS  heroPosition 如实不同：CO vs SB
+
+==============================================================================
+== §2 Fold ≠ Leave Table
+==============================================================================
+   · 翻牌前第一个行动者 = UTG
+   PASS  弃牌后 status = "FOLDED_THIS_HAND"
+   PASS  弃牌后 playerId 仍在 = "p2"
+   PASS  弃牌后行动历史长度 = 1
+   PASS  弃牌不改变任何人的投入（筹码守恒）
+   PASS  下一手 UTG 仍在原座位 = "p2"
+   PASS  下一手 UTG 状态 = "SEATED_ACTIVE"
+   PASS  下一手行动历史清空 = 0
+   PASS  弃牌者对象仍在 playersById（可追溯）
+
+==============================================================================
+== §2b ClearSeat（离桌）在本手进行中必须要求用户明确选择
+==============================================================================
+   PASS  直接清空被拒绝 = false
+   PASS  拒绝码 = "NEEDS_LEAVE_DECISION"
+   · 离桌选项：LEAVE_AFTER_HAND / CANCEL
+   · stillToAct=false（当前行动者=UTG）
+   · 拒绝响应里的 state.revision=（无 state）
+   PASS  非行动者选 FOLD_AND_LEAVE 被拒绝 = false
+   PASS  行动者选 FOLD_AND_LEAVE 被接受 = true
+   PASS  FOLD_AND_LEAVE 后 status = "LEAVING_AFTER_HAND"
+   PASS  FOLD_AND_LEAVE 后历史长度（必须真实记一条 FOLD） = 1
+   · 历史：[{"position":"UTG","type":"FOLD","street":"PREFLOP"}]
+
+==============================================================================
+== §3 Leave ≠ 删除历史：手后离桌期间底池、投入、台账必须逐位不变
+==============================================================================
+   · 加注后：底池=350 筹码，投入=[["BB",100],["BTN",0],["CO",0],["HJ",0],["SB",50],["UTG",200]]
+   · 历史长度=1，底池(BB)=3.5
+   PASS  手后离桌：引擎指纹不变 = "{\"tableSize\":6,\"smallBlind\":50,\"bigBlind\":100,\"dealer\":\"BTN\",\"street\":\"PREFLOP\",\"phase\":\"BETTING\",\"currentBet\":200,\"minRaiseTo\":300,\"pot\":350,\"bettingRoundComplete\":false,\"board\":[0,0,0],\"actions\":[[0,\"PREFLOP\",\"SB\",\"POST_SB\",50],[1,\"PREFLOP\",\"BB\",\"POST_BB\",100],[2,\"PREFLOP\",\"UTG\",\"RAISE\",200]],\"players\":[{\"position\":\"BB\",\"startingStack\":10000,\"remainingStack\":9900,\"committed\":100,\"folded\":false,\"allIn\":false},{\"position\":\"BTN\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"CO\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"HJ\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"SB\",\"startingStack\":10000,\"remainingStack\":9950,\"committed\":50,\"folded\":false,\"allIn\":false},{\"position\":\"UTG\",\"startingStack\":10000,\"remainingStack\":9800,\"committed\":200,\"folded\":false,\"allIn\":false}]}"
+   PASS  手后离桌：历史长度不变 = 1
+   PASS  手后离桌：底池 BB 不变 = 3.5
+   PASS  手后离桌：座位仍绑定 = true
+   PASS  手后离桌：状态标记 = "LEAVING_AFTER_HAND"
+   · 送进管线的对手列表：villain=seat_UTG；villains=[]
+   PASS  送进管线的对手含 seat_UTG = true
+   PASS  下一手：座位清空 = null
+   PASS  下一手：状态 EMPTY = "EMPTY"
+   · 下一手 notices：["UTG 的玩家已离桌，座位已清空。","座位筹码已按上一手结束时的剩余筹码更新。⚠️ 底池**未分配**（本项目不建模牌局结果），赢家请用座位菜单的「编辑筹码」手动改回。"]
+
+==============================================================================
+== §3b NEXT_HAND 的筹码守恒（底池未分配是否为「显式」行为）
+==============================================================================
+   · 下一手前：剩余合计=59650 筹码，底池=350 筹码，合计=60000
+   · 下一手后：座位筹码合计=59650 筹码
+   · 差额（消失的筹码）= -350（若等于 -底池，说明底池确实没被分配）
+   PASS  NEXT_HAND 必须显式提示「底池未分配」 = true
+   · 上一手剩余筹码表 lastHandRemainingStacksBB = {"UTG":98,"HJ":100,"CO":100,"BTN":100,"SB":99.5,"BB":99}
+
+==============================================================================
+== §4a 换人不得继承旧画像（quickProfile / dynamicHint / handsPlayed）
+==============================================================================
+   · 旧玩家 p3: profile=CALLING_STATION dyn=TILT_SIGNAL hands=0
+   PASS  新 playerId 不同 = true
+   PASS  新玩家 quickProfile = "UNKNOWN"
+   PASS  新玩家 dynamicHint = "UNKNOWN"
+   PASS  新玩家 handsPlayed = 0
+   PASS  旧玩家不再被任何座位引用 = false
+   PASS  新玩家筹码=默认 = 100
+
+==============================================================================
+== §4b ⚠ 关键：送进决策引擎的 villain 画像/动态 到底属于谁
+==============================================================================
+   · 当前行动者 = BB（应为 BB=Hero）
+   · 适配器认定的首要对手 primaryOpponentPosition = HJ
+   · 适配器输出 villain.playerId            = seat_HJ（画像：UNKNOWN）
+   · 适配器是否输出 villains 数组           = false
+   · 解析后 villain.playerId（A：UTG=MANIAC） = seat_HJ
+   · 解析后 villain.playerId（B：HJ=MANIAC）  = seat_HJ
+   PASS  解析后的 villain 就是首要对手 seat_HJ（画像不会挂到已弃牌者身上）
+   PASS  适配器只传 villain，不传 villains 数组
+   · A（UTG=MANIAC）玩家快照：playerId=seat_HJ confidence=0.5
+   ·       note=没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）
+   · B（HJ =MANIAC）玩家快照：playerId=seat_HJ confidence=0.35
+   ·       note=无实测数据，采用用户手选画像「MANIAC」（主观判断，可信度上限 0.35）
+   PASS  画像确实只跟随**真正推动范围的那一位**（设在已弃牌者上不生效，设在首要对手上生效）
+   · A 动作=RAISE 置信度=0.3 / B 动作=RAISE 置信度=0.3
+   · A 动态快照={"computed":true,"deviationScore":0,"state":"UNKNOWN","stateProvenance":"OBSERVED_BEHAVIOR","confidence":0,"tiltProbability":0,"adapted":[],"explanation":["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 2 次分散在多项指标上）"],"applied":false}
+   · B 动态快照={"computed":true,"deviationScore":0,"state":"UNKNOWN","stateProvenance":"OBSERVED_BEHAVIOR","confidence":0,"tiltProbability":0,"adapted":[],"explanation":["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 2 次分散在多项指标上）"],"applied":false}
+
+==============================================================================
+== §4c 动态观察（dynamicHint）是否也挂错人
+==============================================================================
+   · 弃牌的 UTG 上设 TILT：playerId=seat_HJ dynamic.state=UNKNOWN
+   · 真正对手 HJ 上设 TILT：playerId=seat_HJ dynamic.state=TILT_SIGNAL
+   PASS  两条情形下玩家层都绑定到 seat_HJ（首要对手），不再随「谁先入座」漂移
+
+==============================================================================
+== §4d 对照实验：同一条用户提示，作用效果取决于「座位序」而不是「谁是对手」
+==============================================================================
+   · ---- 场景 P：UTG 加注（首要对手 = 座位序第一个对手）----
+   · P 无提示      ：primary=UTG input.villain=seat_UTG 解析后 villain=seat_UTG 动作=RAISE 置信度=0.3 动态=UNKNOWN/applied=false 玩家层=0.5
+   · P 在 UTG 提示 ：primary=UTG input.villain=seat_UTG 解析后 villain=seat_UTG 动作=RAISE 置信度=0.28125 动态=TILT_SIGNAL/applied=false 玩家层=0.5
+   · ---- 场景 Q：UTG 弃牌、HJ 加注（首要对手 HJ，但 villains[0] 是弃牌的 UTG）----
+   · Q 无提示      ：primary=HJ input.villain=seat_HJ 解析后 villain=seat_HJ 动作=RAISE 置信度=0.3 动态=UNKNOWN/applied=false 玩家层=0.5
+   · Q 在 UTG 提示 ：primary=HJ input.villain=seat_HJ 解析后 villain=seat_HJ 动作=RAISE 置信度=0.3 动态=UNKNOWN/applied=false 玩家层=0.5
+   · Q 在 HJ  提示 ：primary=HJ input.villain=seat_HJ 解析后 villain=seat_HJ 动作=RAISE 置信度=0.28125 动态=TILT_SIGNAL/applied=false 玩家层=0.5
+   PASS  设在真正对手 HJ 身上的提示**生效了**（这正是修复要求的行为）
+   PASS  设在**已弃牌**的 UTG 身上的提示不改变决策（不再张冠李戴）
+   PASS  对照组：首要对手=UTG 时，同一条提示确实改变置信度（0.3 → 0.28125）
+
+==============================================================================
+== §2c HTTP 层：离桌决策响应必须能被客户端处理（检查真实 table.js 的行序）
+==============================================================================
+   · CLEAR_SEAT 响应：ok=false revision=7（请求 revision=7）
+   ·   leaveDecision.options=["LEAVE_AFTER_HAND","CANCEL"]
+   · table.js：pendingLeave 赋值在第 155 行，版本判断在第 162 行
+   PASS  leaveDecision 在版本判断之前处理（同版本失败响应不再被整包丢弃）
+   PASS  座位菜单使用 closeUnlessPending（有待处理离桌决策时不关弹层）
+
+==============================================================================
+== §5 SIT_OUT（本手未开始）：不得清历史、不得改当前手
+==============================================================================
+   PASS  暂离后仍绑定同一玩家 = "p6"
+   PASS  暂离后状态 = "SITTING_OUT"
+   PASS  暂离后画像保留 = "MANIAC"
+   PASS  暂离不改行动历史 = 0
+   PASS  暂离不改玩家表 = "{\"p1\":{\"playerId\":\"p1\",\"displayName\":\"我（Hero）\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":true},\"p2\":{\"playerId\":\"p2\",\"displayName\":\"玩家2\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p3\":{\"playerId\":\"p3\",\"displayName\":\"玩家3\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p4\":{\"playerId\":\"p4\",\"displayName\":\"玩家4\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p5\":{\"playerId\":\"p5\",\"displayName\":\"玩家5\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p6\":{\"playerId\":\"p6\",\"displayName\":\"玩家6\",\"quickProfile\":\"MANIAC\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false}}"
+   PASS  暂离必须如实报告「无法分析」 = true
+   PASS  暂离时引擎重建必须失败（不许拿错牌局算） = false
+   PASS  重新入座后状态 = "SEATED_ACTIVE"
+   PASS  重新入座后引擎可重建 = true
+
+==============================================================================
+== §5c 本手进行中点「暂时离座」：只应标记下一手，当前手必须完全不受影响
+==============================================================================
+   · 暂离前：当前行动者=UTG，按钮=弃牌 / 跟注 1BB / 加注（选尺寸） / 加注到 2BB / 加注到 100BB / 全下（100BB）
+   · 暂离标记后：SB.status=SEATED_ACTIVE sitOutNextHand=true
+   ·              当前行动者=UTG 按钮数=6 街=翻牌前
+   ·              阻塞原因=["现在轮到「枪口位」行动。请先录入他的行动，轮到 Hero 时即可分析。","本手有 5 名活跃对手（未弃牌），超过第一版的支持上限（2 名）。点分析会返回「信息不足」—— 请先在牌桌上录完其他人的弃牌，或把这个决策点留到翻牌后再看。"]
+   ·              是否被算作 staffingProblem=false
+   PASS  当前手完全不受影响（行动者与按钮都还在，这才是「暂离只影响下一手」）
+   PASS  引擎口径逐位不变（底池/投入/行动顺序未被暂离影响）
+   PASS  暂离标记后仍能记录行动（历史长度=1）
+   PASS  下一手才真正变成 SITTING_OUT = "SITTING_OUT"
+   PASS  下一手标记位复位 = false
+   · 下一手 notices=["SB 的玩家已暂离（从这一手开始不发牌）。画像保留；「重新入座」可以恢复。","座位筹码已按上一手结束时的剩余筹码更新。⚠️ 底池**未分配**（本项目不建模牌局结果），赢家请用座位菜单的「编辑筹码」手动改回。","暂离中的座位：SB。暂离状态无法分析，请重新入座或清空座位。"]
+   PASS  下一手「重新入座」可用 = true
+
+==============================================================================
+== §5d 攻击：「下一手暂离」标记在界面/状态里可见吗？能不能取消？
+==============================================================================
+   · 标记后 SeatView：status=SEATED_ACTIVE statusZh=在座（下一手暂离）
+   · SeatView 是否暴露 sitOutNextHand = true
+   PASS  暂离意图在座位上可见
+   PASS  再次点「暂时离座」被拒绝 = false
+   · 拒绝文案：该玩家已经标记为「下一手暂离」
+   PASS  撤销可以取消标记 = false
+   · （后端 SIT_IN 也能取消标记，但界面只在 status===SITTING_OUT 时才显示「重新入座」）
+
+==============================================================================
+== §5e 攻击：暂离标记在各种生命周期操作下会不会串到别人身上 / 被静默丢弃
+==============================================================================
+   PASS  标记后 BB.sitOutNextHand = true
+   PASS  标记不会污染别人（UTG） = false
+   PASS  标记不会污染别人（SB） = false
+   · RESET_HAND 后 BB.sitOutNextHand=true（暂离是跨手意图，按设计应保留）
+   · RESET_HAND 后 notices=["本手已重置（座位与玩家画像保留）。"]
+   · 「手后离桌」+「重置本手」后 UTG：playerId=null status=EMPTY sitOutNextHand=false
+   PASS  重置本手后手后离桌必须落定 = true
+   PASS  落定后标记位必须清掉 = false
+   PASS  落定后该座位可以重新加人 = true
+
+==============================================================================
+== §5g 攻击：「下一手暂离」标记会不会被**下一个坐进来的人**继承（Seat ≠ Player）
+==============================================================================
+   PASS  标记已设置 = true
+   · RESET_HAND 后：handActive=false，UTG.sitOutNextHand=true
+   · 清空座位后：playerId=null status=EMPTY sitOutNextHand=false
+   · 新玩家 p7（旧玩家 p2）坐进 UTG：sitOutNextHand=false
+   · 下一手：p7 的座位状态=SEATED_ACTIVE；staffingProblems=[]
+   PASS  新玩家没有继承旧玩家的暂离标记
+   · 「清空其他玩家」后仍挂着暂离标记的空座位：[]
+
+==============================================================================
+== §5f 攻击：LEAVING_AFTER_HAND 玩家在本手里的历史事实（不变量 #3）
+==============================================================================
+   PASS  离桌后引擎指纹不变 = "{\"tableSize\":6,\"smallBlind\":50,\"bigBlind\":100,\"dealer\":\"BTN\",\"street\":\"PREFLOP\",\"phase\":\"BETTING\",\"currentBet\":200,\"minRaiseTo\":300,\"pot\":350,\"bettingRoundComplete\":false,\"board\":[0,0,0],\"actions\":[[0,\"PREFLOP\",\"SB\",\"POST_SB\",50],[1,\"PREFLOP\",\"BB\",\"POST_BB\",100],[2,\"PREFLOP\",\"UTG\",\"RAISE\",200]],\"players\":[{\"position\":\"BB\",\"startingStack\":10000,\"remainingStack\":9900,\"committed\":100,\"folded\":false,\"allIn\":false},{\"position\":\"BTN\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"CO\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"HJ\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"SB\",\"startingStack\":10000,\"remainingStack\":9950,\"committed\":50,\"folded\":false,\"allIn\":false},{\"position\":\"UTG\",\"startingStack\":10000,\"remainingStack\":9800,\"committed\":200,\"folded\":false,\"allIn\":false}]}"
+   PASS  离桌后行动台账不变 = "[{\"position\":\"UTG\",\"type\":\"RAISE\",\"amountBB\":2,\"street\":\"PREFLOP\"}]"
+   · 离桌后送入管线的 villain=seat_UTG（首要对手=UTG）
+   PASS  离桌后仍能构成本手输入（历史事实完整）
+   PASS  本手期间 6 个座位仍然全部绑定 = 6
+
+==============================================================================
+== §5b 本手进行中 SIT_OUT 之后，还能不能继续录入这一手
+==============================================================================
+   · 标记后 UTG.status = SEATED_ACTIVE
+   · 标记后 notices = ["玩家2 已标记为「下一手暂离」—— **当前手不受影响**（他仍要行动、筹码仍在本手里）。下一手开始时他才不参与发牌。画像与历史保留。"]
+   · 标记后当前行动者 = UTG；可点按钮数 = 6
+   · 标记后尝试 ACT → ok=true（）
+   · 弃牌后 UTG.status=FOLDED_THIS_HAND sitOutNextHand=true；下一手状态=SITTING_OUT
+   PASS  「下一手暂离」意图在本手行动后仍然保留，并在下一手生效
+
+==============================================================================
+== §6 本手进行中新增玩家必须被拒绝
+==============================================================================
+   · 本手状态：handActive=true 历史长度=1 手牌=["As","Kd"]
+   PASS  handActive=true 时中途加入被拒绝 = false
+   PASS  拒绝码 = "HAND_ACTIVE"
+   · 伪造 handActive=false（历史长度=1，手牌=["As","Kd"]）经 parseTableState → ok=false
+   PASS  伪造状态被拒绝：handActive=false 但已经有手牌/公共牌/行动记录 —— 状态自相矛盾（手牌 2 张 / 公共牌 0 张 / 行动 1 条）
+   PASS  HTTP 层同样拒绝 = false
+
+==============================================================================
+== §7a Undo 必须逐位恢复（座位绑定 / 画像 / 本手状态）
+==============================================================================
+   · （NEXT_HAND 是空操作：状态未变、revision 未推进，不计入撤销链）
+   · （跳过被拒绝的 op SET_HERO_POSITION：本手正在进行中，不能更改 Hero 位置（会与已录入的行动顺序冲突）。请先点「下一手」。）
+   PASS  被拒绝的 SET_HERO_POSITION 不得改动状态 = "{\"tableId\":\"local\",\"tableSize\":6,\"heroPosition\":\"CO\",\"heroPlayerId\":\"p1\",\"seats\":[{\"seatId\":\"seat_UTG\",\"logicalPosition\":\"UTG\",\"visualIndex\":4,\"playerId\":\"p2\",\"status\":\"FOLDED_THIS_HAND\",\"sitOutNextHand\":false,\"stackBB\":100},{\"seatId\":\"seat_HJ\",\"logicalPosition\":\"HJ\",\"visualIndex\":5,\"playerId\":\"p7\",\"status\":\"SEATED_ACTIVE\",\"sitOutNextHand\":false,\"stackBB\":100},{\"seatId\":\"seat_CO\",\"logicalPosition\":\"CO\",\"visualIndex\":0,\"playerId\":\"p1\",\"status\":\"SEATED_ACTIVE\",\"sitOutNextHand\":false,\"stackBB\":100},{\"seatId\":\"seat_BTN\",\"logicalPosition\":\"BTN\",\"visualIndex\":1,\"playerId\":\"p4\",\"status\":\"SEATED_ACTIVE\",\"sitOutNextHand\":false,\"stackBB\":100},{\"seatId\":\"seat_SB\",\"logicalPosition\":\"SB\",\"visualIndex\":2,\"playerId\":\"p5\",\"status\":\"SEATED_ACTIVE\",\"sitOutNextHand\":false,\"stackBB\":100},{\"seatId\":\"seat_BB\",\"logicalPosition\":\"BB\",\"visualIndex\":3,\"playerId\":\"p6\",\"status\":\"SEATED_ACTIVE\",\"sitOutNextHand\":false,\"stackBB\":100}],\"playersById\":{\"p1\":{\"playerId\":\"p1\",\"displayName\":\"我（Hero）\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":true},\"p2\":{\"playerId\":\"p2\",\"displayName\":\"玩家2\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p3\":{\"playerId\":\"p3\",\"displayName\":\"玩家3\",\"quickProfile\":\"MANIAC\",\"dynamicHint\":\"TILT_SIGNAL\",\"handsPlayed\":0,\"isHero\":false},\"p4\":{\"playerId\":\"p4\",\"displayName\":\"玩家4\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p5\":{\"playerId\":\"p5\",\"displayName\":\"玩家5\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p6\":{\"playerId\":\"p6\",\"displayName\":\"玩家6\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p7\":{\"playerId\":\"p7\",\"displayName\":\"玩家7\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false}},\"heroCards\":[\"As\",\"Kd\"],\"board\":[],\"actionHistory\":[{\"position\":\"UTG\",\"type\":\"FOLD\",\"street\":\"PREFLOP\"}],\"environment\":\"MID_LOW_STAKES\",\"bigBlindBB\":100,\"defaultStackBB\":100,\"handActive\":true,\"nextPlayerNumber\":8,\"lastHandRemainingStacksBB\":null,\"notices\":[],\"lastHandComplete\":false}"
+   · 共推进 10 步，当前 undo 深度=15
+   PASS  撤销链逐位回到每一历史快照的次数 = 10
+
+==============================================================================
+== §7b Undo after NEXT_HAND：底池 / 筹码 / 历史 / 玩家 必须完整回来
+==============================================================================
+   · 下一手后：历史=0 底池=0 指纹=（引擎重建失败）…
+   PASS  撤销回下一手前：行动历史长度 = 1
+   PASS  撤销回下一手前：底池 BB = 3.5
+   PASS  撤销回下一手前：引擎指纹 = "{\"tableSize\":6,\"smallBlind\":50,\"bigBlind\":100,\"dealer\":\"BTN\",\"street\":\"PREFLOP\",\"phase\":\"BETTING\",\"currentBet\":200,\"minRaiseTo\":300,\"pot\":350,\"bettingRoundComplete\":false,\"board\":[0,0,0],\"actions\":[[0,\"PREFLOP\",\"SB\",\"POST_SB\",50],[1,\"PREFLOP\",\"BB\",\"POST_BB\",100],[2,\"PREFLOP\",\"UTG\",\"RAISE\",200]],\"players\":[{\"position\":\"BB\",\"startingStack\":10000,\"remainingStack\":9900,\"committed\":100,\"folded\":false,\"allIn\":false},{\"position\":\"BTN\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"CO\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"HJ\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"SB\",\"startingStack\":10000,\"remainingStack\":9950,\"committed\":50,\"folded\":false,\"allIn\":false},{\"position\":\"UTG\",\"startingStack\":10000,\"remainingStack\":9800,\"committed\":200,\"folded\":false,\"allIn\":false}]}"
+   PASS  撤销回下一手前：座位筹码 = "[[\"UTG\",100],[\"HJ\",100],[\"CO\",100],[\"BTN\",100],[\"SB\",100],[\"BB\",100]]"
+   PASS  撤销回下一手前：handsPlayed = "{\"p1\":{\"playerId\":\"p1\",\"displayName\":\"我（Hero）\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":true},\"p2\":{\"playerId\":\"p2\",\"displayName\":\"玩家2\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p3\":{\"playerId\":\"p3\",\"displayName\":\"玩家3\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p4\":{\"playerId\":\"p4\",\"displayName\":\"玩家4\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p5\":{\"playerId\":\"p5\",\"displayName\":\"玩家5\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p6\":{\"playerId\":\"p6\",\"displayName\":\"玩家6\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false}}"
+
+==============================================================================
+== §7c Undo after NEW_TABLE：清掉的画像/历史必须能回来（且不产生错乱）
+==============================================================================
+   · 新牌桌：playersById=["p1"] 历史=0 底池=0
+   PASS  新牌桌玩家对象只剩 Hero = 1
+   PASS  撤销新牌桌：玩家表恢复 = "{\"p1\":{\"playerId\":\"p1\",\"displayName\":\"我（Hero）\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":true},\"p2\":{\"playerId\":\"p2\",\"displayName\":\"玩家2\",\"quickProfile\":\"MANIAC\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p3\":{\"playerId\":\"p3\",\"displayName\":\"玩家3\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p4\":{\"playerId\":\"p4\",\"displayName\":\"玩家4\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p5\":{\"playerId\":\"p5\",\"displayName\":\"玩家5\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false},\"p6\":{\"playerId\":\"p6\",\"displayName\":\"玩家6\",\"quickProfile\":\"UNKNOWN\",\"dynamicHint\":\"UNKNOWN\",\"handsPlayed\":0,\"isHero\":false}}"
+   PASS  撤销新牌桌：历史恢复 = 1
+   PASS  撤销新牌桌：引擎指纹恢复 = "{\"tableSize\":6,\"smallBlind\":50,\"bigBlind\":100,\"dealer\":\"BTN\",\"street\":\"PREFLOP\",\"phase\":\"BETTING\",\"currentBet\":100,\"minRaiseTo\":200,\"pot\":150,\"bettingRoundComplete\":false,\"board\":[0,0,0],\"actions\":[[0,\"PREFLOP\",\"SB\",\"POST_SB\",50],[1,\"PREFLOP\",\"BB\",\"POST_BB\",100],[2,\"PREFLOP\",\"UTG\",\"FOLD\",0]],\"players\":[{\"position\":\"BB\",\"startingStack\":10000,\"remainingStack\":9900,\"committed\":100,\"folded\":false,\"allIn\":false},{\"position\":\"BTN\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"CO\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"HJ\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"SB\",\"startingStack\":10000,\"remainingStack\":9950,\"committed\":50,\"folded\":false,\"allIn\":false},{\"position\":\"UTG\",\"startingStack\":10000,\"remainingStack\":10000,\"committed\":0,\"folded\":true,\"allIn\":false}]}"
+
+==============================================================================
+== §8/§9 被拒绝的操作必须零副作用（底池 / 筹码 / revision / undo 栈）
+==============================================================================
+   PASS  SET_STACK            被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  ADD_PLAYER           被拒绝（SEAT_OCCUPIED），状态逐字节不变，底池=3.5BB
+   PASS  CLEAR_ALL_VILLAINS   被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  SET_TABLE_SIZE       被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  SET_HERO_POSITION    被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  REPLACE_PLAYER       被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  CLEAR_HERO_CARDS     被拒绝（HAND_ACTIVE），状态逐字节不变，底池=3.5BB
+   PASS  SET_BOARD_CARD       被拒绝（INVALID_CARD），状态逐字节不变，底池=3.5BB
+   PASS  ACT                  被拒绝（ILLEGAL_ACTION），状态逐字节不变，底池=3.5BB
+   ·       引擎拒绝理由：「劫持位」的这个动作被规则拒绝：ISSUE.CALL_AMOUNT_ILLEGAL。界面上只显示合法动作，若出现这一条请把牌桌状态截图反馈（属于界面/引擎不同步）。
+   PASS  被拒绝后 undo 深度不变 = 8
+   PASS  被拒绝后 revision 不变 = 8
+
+==============================================================================
+== §9b 一次成功行动后的撤销必须精确恢复筹码（含 6 位小数往返）
+==============================================================================
+   · 全下后：底池 150 → 3850
+   PASS  撤销后底池精确恢复 = 150
+   PASS  撤销后指纹精确恢复 = "{\"tableSize\":6,\"smallBlind\":50,\"bigBlind\":100,\"dealer\":\"BTN\",\"street\":\"PREFLOP\",\"phase\":\"BETTING\",\"currentBet\":100,\"minRaiseTo\":200,\"pot\":150,\"bettingRoundComplete\":false,\"board\":[0,0,0],\"actions\":[[0,\"PREFLOP\",\"SB\",\"POST_SB\",50],[1,\"PREFLOP\",\"BB\",\"POST_BB\",100]],\"players\":[{\"position\":\"BB\",\"startingStack\":3700,\"remainingStack\":3600,\"committed\":100,\"folded\":false,\"allIn\":false},{\"position\":\"BTN\",\"startingStack\":3700,\"remainingStack\":3700,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"CO\",\"startingStack\":3700,\"remainingStack\":3700,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"HJ\",\"startingStack\":3700,\"remainingStack\":3700,\"committed\":0,\"folded\":false,\"allIn\":false},{\"position\":\"SB\",\"startingStack\":3700,\"remainingStack\":3650,\"committed\":50,\"folded\":false,\"allIn\":false},{\"position\":\"UTG\",\"startingStack\":3700,\"remainingStack\":3700,\"committed\":0,\"folded\":false,\"allIn\":false}]}"
+   PASS  撤销后座位筹码恢复 = "[37,37,37,37,37,37]"
+
+==============================================================================
+== §15 NEW_TABLE 必须清干净（画像 / 动态 / 玩家 / 历史 / 公共牌 / 手牌）
+==============================================================================
+   PASS  playersById 只剩 Hero = 1
+   PASS  只剩 Hero 对象是 isHero = true
+   PASS  非 Hero 座位全部 EMPTY = true
+   PASS  actionHistory 清空 = 0
+   PASS  board 清空 = 0
+   PASS  heroCards 清空 = 0
+   PASS  handActive=false = false
+   PASS  nextPlayerNumber 复位 = 2
+   PASS  nextHand 的剩余筹码表清空 = null
+   PASS  Hero 画像保留 = true
+   · Hero 筹码：新建前=250BB，新建后=100BB（默认 100BB）
+   >>> HIT  NEW_TABLE 把 Hero 手改过的筹码 250BB 静默重置为 100BB（提示语却写着「Hero 设置保持不变」）
+   PASS  新建后加人 playerId 无重复 = 2
+   · 新建后加人得到 ["p1","p2"]
+
+==============================================================================
+== §10a SET_TABLE_SIZE 9→6（Hero 在 UTG1：位置在新桌型不存在）
+==============================================================================
+   · 切换前：Hero 位置=UTG1，Hero 筹码=123BB
+   · 切换前：BTN 上是 p7（画像 MANIAC，筹码 77BB）
+   · 切换后：heroPosition=BTN，座位数=6
+   · 切换后：Hero 所在座位筹码=123BB（切换前 Hero 是 123BB）
+   · 切换后 notices=["桌型已切换为 6 人桌。","UTG1、UTG2、LJ 这些位置在新桌型里不存在，对应座位已移除（玩家对象仍保留在历史里，不再绑定任何座位）。","Hero 原位置 UTG1 在 6 人桌不存在，已自动改到庄家位。","座位筹码保持不变；Hero 的筹码跟着 Hero 走。"]
+   · 切换后仍占座的玩家：["UTG:p2","HJ:p5","CO:p6","BTN:p1","SB:p8","BB:p9"]
+   · 失去座位的 playerId：["p3","p4","p7"]（对象仍在 playersById=["p1","p2","p3","p4","p5","p6","p7","p8","p9"]）
+   PASS  Hero 筹码跟着人走（123BB 未被 BTN 上的 77BB 顶替）
+   >>> HIT  BTN 上的 p7 被静默换掉（Hero 自动移到 BTN），notice 未提及
+   PASS  新 heroPosition 存在座位 = true
+   PASS  每个座位都有 playerId 或 EMPTY = true
+   PASS  视觉序号唯一 = 6
+   PASS  Hero 只占一个座位 = 1
+
+==============================================================================
+== §10b SET_TABLE_SIZE 6→9（不得丢人 / 不得重复）
+==============================================================================
+   · 6→9 前：UTG:p1 HJ:p2 CO:p3 BTN:p4 SB:p5 BB:p6
+   · 6→9 后：UTG:p1 UTG1:空 UTG2:空 LJ:空 HJ:p2 CO:p3 BTN:p4 SB:p5 BB:p6
+   PASS  原有玩家一个不少 = true
+   PASS  无重复绑定 = 6
+   PASS  画像随人保留 = "MANIAC"
+   PASS  9→6 回来后仍 6 座 = 6
+   PASS  9→6 回来后玩家还在 = 6
+
+==============================================================================
+== §11 SET_HERO_POSITION 到已被占用的座位（筹码必须跟着人走，且必须如实告知）
+==============================================================================
+   · 换位前：Hero(CO) 筹码=210BB；BTN=p4（MANIAC，33BB）
+   · 换位后：heroPosition=BTN，Hero 筹码=210BB
+   · 换位后：BTN 绑定=p1；CO 绑定=null 筹码=100BB
+   · 换位后 notices=["Hero 位置已改为 BTN（牌桌视图已旋转，Hero 固定在底部）。","庄家位 座位上原本是「玩家4」—— 该座位已交给 Hero，他不再绑定任何座位（玩家对象仍保留在历史里）。请用「加入玩家」重新安排。"]
+   PASS  Hero 的筹码跟着人走（210BB 未被目标座位上的 33BB 顶替）
+   PASS  notice 如实说明了被顶掉的玩家
+   PASS  被顶掉的玩家对象仍在 playersById = true
+   PASS  被顶掉的玩家不再占座 = false
+   PASS  每个位置都有座位对象 = 6
+   PASS  视觉序号唯一 = 6
+   PASS  Hero 只占一个座位 = 1
+
+==============================================================================
+== §12a 伪造状态：两个座位绑定同一个 playerId（修复后应被拒绝）
+==============================================================================
+   · 座位重复绑定同一 playerId 经 parseTableState → ok=false（playerId「p3」同时绑定在 seat_HJ 与 seat_SB 两个座位上）
+   PASS  重复绑定被拒绝
+
+==============================================================================
+== §12b 伪造状态：visualIndex 与 heroPosition 不一致（修复后 Hero 座位必须被拒）
+==============================================================================
+   · 整体 +3（含 Hero 座位）经 parseTableState → ok=false
+   PASS  Hero 座位视觉序号不为 0 被拒绝
+   · 只交换两个非 Hero 座位的 visualIndex → ok=false
+   PASS  非 Hero 座位的视觉序号也被校验
+
+==============================================================================
+== §12c 服务器自己造出的状态能不能通过自己的校验器（tableSize + heroPosition 组合）
+==============================================================================
+   PASS  POST /api/table {tableSize:6, heroPosition:"UTG1"} 的 ok = true
+   · 创建结果：heroPosition=UTG1 座位数=6 有人的座位=0
+   · visualIndex 集合=[0,1,2,3,4,5]
+   · Hero 是否占座=false
+   · 把这个状态回传给 /api/table → parseTableState ok=false
+   >>> HIT  服务器自己创建的状态无法通过自己的校验器：Hero 的座位必须存在且绑定 heroPlayerId —— 该牌桌此后每个操作都会被拒绝
+   · 后续 ADD_PLAYER → ok=false；原因：Hero 的座位必须存在且绑定 heroPlayerId
+   · 该状态的预览：canAnalyze=false 阻塞=["有 6 个空座位（枪口位、劫持位、关煞位、庄家位、小盲位、大盲位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。","Hero 的座位上没有玩家 —— 请先在 Hero 位置加入玩家。","Hero 手牌还没选满（已选 0 / 2 张）"]
+
+==============================================================================
+== §12d 伪造状态：跨字段自洽性（修复后应逐条被拒）
+==============================================================================
+   · 拒绝「handActive=false 但有行动历史」：handActive=false 但已经有手牌/公共牌/行动记录 —— 状态自相矛盾（手牌 0 张 / 公共牌 0 张 / 行动 1 条）
+   · 拒绝「handActive=false 但已选满手牌」：handActive=false 但已经有手牌/公共牌/行动记录 —— 状态自相矛盾（手牌 2 张 / 公共牌 0 张 / 行动 0 条）
+   · 拒绝「board 有 3 张但 handActive=false」：handActive=false 但已经有手牌/公共牌/行动记录 —— 状态自相矛盾（手牌 0 张 / 公共牌 3 张 / 行动 0 条）
+   · 拒绝「handActive=true 但一切皆空」：handActive=true 但手牌/公共牌/行动记录全空 —— 状态自相矛盾
+   · 拒绝「lastHandComplete 缺失」：lastHandComplete 必须是布尔值
+   · 拒绝「notices 里有非字符串」：notices 必须是字符串数组
+   · 拒绝「lastHandRemainingStacksBB 非法」：lastHandRemainingStacksBB['MARS'] 非法：100
+   · 拒绝「heroCards 里是重复的牌」：heroCards 里有重复的牌
+   · 拒绝「heroCards 里是垃圾字符串」：heroCards 里有非法牌面「ZZ」
+   · 拒绝「board 与 heroCards 重复」：As 同时出现在手牌与公共牌里
+   · 拒绝「Hero 座位 visualIndex=1」：visualIndex 重复：1
+   · 拒绝「sitOutNextHand 不是布尔」：seats[0].sitOutNextHand 必须是布尔值（收到 yes）
+
+==============================================================================
+== §13a revision 单调性与「无操作不推进版本」
+==============================================================================
+   · SET_TABLE_SIZE:Δrev=0（状态等价） | SET_HERO_POSITION:Δrev=0（状态等价） | SET_ENVIRONMENT:Δrev=0（状态等价） | SET_PROFILE:Δrev=1 | CLEAR_SEAT:Δrev=0（状态等价） | SET_STACK:Δrev=1 | UNDO:Δrev=1 | NEXT_HAND:Δrev=0（状态等价） | NEW_TABLE:Δrev=1 | UNDO:Δrev=1
+   PASS  所有成功路径 revision 单调（改动 +1，空操作 0）
+
+==============================================================================
+== §13b 任何操作都不得原地修改传入状态（immutability）
+==============================================================================
+   PASS  原地修改次数 = 0
+
+==============================================================================
+== §14 跨手泄漏：上一手的什么东西会活到下一手
+==============================================================================
+   PASS  下一手残留字段 = ["lastHandRemainingStacksBB"]
+   · 下一手的承诺与实际：lastHandComplete=true
+   · handsPlayed（含已离桌的玩家对象）：[1,1,1,1,1,1]
+   PASS  弃牌状态已清（所有人 SEATED_ACTIVE） = true
+   PASS  画像跨手保留（Seat ≠ Player） = "MANIAC"
+   · 空牌桌直接点「下一手」：handsPlayed=[0] lastHandComplete=false notices=[]
+
+==============================================================================
+== §16 探针汇总
+==============================================================================
+HIT（发现可疑行为）= 3
+FAIL（不变量被破坏）= 0

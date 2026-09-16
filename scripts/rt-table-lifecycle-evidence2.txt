@@ -1,0 +1,186 @@
+   · 真实服务端已启动：http://127.0.0.1:64662
+   ·    [fetch #1] /api/table/meta op=
+   ·    [fetch #2] /api/table op=?
+   ·    [resp  #2] op=? ok=true rev=0 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=EMPTY
+   · [诊断] toast = ""
+   · [诊断] #seats 子节点数 = 6，debugSeats = "{
+  "currentActor": null,
+  "isHeroTurn": false,
+  "handComp"
+   · [诊断] #notices 文本 = "有 5 个空座位（枪口位、劫持位、关煞位、小盲位、大盲位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。 Hero 手牌还没选满（已选 0 / 2"
+
+==============================================================================
+== §C1 客户端启动后的座位渲染（视觉旋转是否把 Hero 放在底部、位置标签是否如实）
+==============================================================================
+   · 渲染出的座位数 = 6
+   ·          + 加入玩家 枪口位（UTG）  @(49.99999999999999%, 8%)
+   ·          + 加入玩家 劫持位（HJ）  @(84.64101615137753%, 27.999999999999982%)
+   ·          + 加入玩家 关煞位（CO）  @(84.64101615137756%, 67.99999999999997%)
+   ·   [HERO] D 我（Hero） 庄家位（BTN） 100BB Hero · 在座  @(50%, 88%)
+   ·          + 加入玩家 小盲位（SB）  @(15.35898384862245%, 68%)
+   ·          + 加入玩家 大盲位（BB）  @(15.358983848622458%, 27.999999999999996%)
+   · 约定（tableState.ts / table.js 注释）：0°=0° 正下方 6 点钟；60°=左下；120°=左上；180°=正上方；240°=右上；300°=右下
+   ·   UTG  v3/180° 渲染于 (49.99999999999999%, 8%)（按约定应为「正上方」）
+   ·   HJ   v4/240° 渲染于 (84.64101615137753%, 27.999999999999982%)（按约定应为「右上」）
+   ·   CO   v5/300° 渲染于 (84.64101615137756%, 67.99999999999997%)（按约定应为「右下」）
+   ·   BTN  v0/  0° 渲染于 (50%, 88%)（按约定应为「正下方」）
+   ·   SB   v1/ 60° 渲染于 (15.35898384862245%, 68%)（按约定应为「左下」）
+   ·   BB   v2/120° 渲染于 (15.358983848622458%, 27.999999999999996%)（按约定应为「左上」）
+   PASS  Hero 固定在正下方 (50%, 88%)
+
+==============================================================================
+== §C2 用界面把 6 个座位坐满（点座位 → 加入玩家）
+==============================================================================
+   ·    [fetch #3] /api/table op=ADD_PLAYER arg=seat_UTG
+   ·    [resp  #3] op=ADD_PLAYER ok=true rev=1 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #4] /api/table op=ADD_PLAYER arg=seat_HJ
+   ·    [resp  #4] op=ADD_PLAYER ok=true rev=2 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #5] /api/table op=ADD_PLAYER arg=seat_CO
+   ·    [resp  #5] op=ADD_PLAYER ok=true rev=3 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #6] /api/table op=ADD_PLAYER arg=seat_SB
+   ·    [resp  #6] op=ADD_PLAYER ok=true rev=4 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:EMPTY
+        SB=SEATED_ACTIVE UTG=SEATED_ACTIVE
+   ·    [fetch #7] /api/table op=ADD_PLAYER arg=seat_BB
+   ·    [resp  #7] op=ADD_PLAYER ok=true rev=5 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=SEATED_ACTIVE
+   · 坐满后：["UTG:p2","HJ:p3","CO:p4","BTN:p1","SB:p5","BB:p6"]
+
+==============================================================================
+== §C3 通过牌面矩阵选 Hero 手牌（本手开始）
+==============================================================================
+   ·    [fetch #8] /api/table op=SET_HERO_CARD arg=As
+   ·    [resp  #8] op=SET_HERO_CARD ok=true rev=6 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=SEATED_ACTIVE
+   ·    [fetch #9] /api/table op=SET_HERO_CARD arg=Kd
+   ·    [resp  #9] op=SET_HERO_CARD ok=true rev=7 preview=yes actor=UTG issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=SEATED_ACTIVE
+   · 手中牌 = A♠ K♦
+   · 当前行动 = 玩家2 当前行动
+   · 行动按钮 = ["弃牌","跟注 1BB","加注（选尺寸）","全下（100BB）"]
+
+==============================================================================
+== §C4 本手进行中，点某个座位的「清空座位」—— 界面能否给出「离桌选择」
+==============================================================================
+   · 座位菜单标题：玩家2 枪口位 状态：在座 筹码：100BB 快速画像（只作为输入证据，不直接改结论） 未知 很紧 偏紧 正常 偏松 很
+   ·    [fetch #10] /api/table op=CLEAR_SEAT arg=seat_UTG
+   ·    [resp  #10] op=CLEAR_SEAT ok=false rev=7 preview=yes actor=UTG issues=["NEEDS_LEAVE_DECISION:本手正在进行中。该玩家已经进入本手牌局（筹码与行动台账里都有他的记录），因此不能直接从牌局中删除。请明确选择处理方式。"]
+        seats: UTG:SEATED_ACTIVE HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=SEATED_ACTIVE
+   · 点击后：overlay.className = "show"
+   · 点击后：toast = "本手正在进行中。该玩家已经进入本手牌局（筹码与行动台账里都有他的记录），因此不能直接从牌局中删除。请明确选择处理方式。"
+   · 点击后：弹窗内容 = "该玩家本手已参与牌局 —— 请选择处理方式 玩家2（UTG） 现在没有轮到他行动；若要让他本手不再行动，请先在牌桌上录到他的回合再弃牌。「仅标记手后离桌」只影响下一手，本手的行动记录保持不变。 仅标记手后离桌 取消 为什么不能直接清空：本手的底池与行动台账里已经有他的筹码，直接删除会让筹码守恒被破坏。因此「离桌」只在本手结束后生效。 关闭"
+   · 弹窗里有「仅标记手后离桌」类选项=true；有「取消」=true
+   PASS  本手进行中点「清空座位」→ 弹出「离桌选择」，用户可以选择「仅标记手后离桌」（RT-L2 已修复）
+   ·    [fetch #11] /api/table op=CLEAR_SEAT arg=seat_UTG
+   ·    [resp  #11] op=CLEAR_SEAT ok=true rev=8 preview=yes actor=UTG issues=[]
+        seats: UTG:LEAVING_AFTER_HAND HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=LEAVING_AFTER_HAND
+   · 选择后：UTG playerId=p2 status=LEAVING_AFTER_HAND
+   PASS  「仅标记手后离桌」已生效，且本手期间绑定与历史都保留
+   · 点击后座位状态：["UTG:p2/LEAVING_AFTER_HAND","HJ:p3/SEATED_ACTIVE","CO:p4/SEATED_ACTIVE","BTN:p1/SEATED_ACTIVE","SB:p5/SEATED_ACTIVE","BB:p6/SEATED_ACTIVE"]
+   PASS  UTG 座位未被清空（playerId=p2，status=LEAVING_AFTER_HAND）—— 后端守住了不变量
+
+==============================================================================
+== §C4b 本手进行中点「暂时离座」：当前手必须不受影响，且意图必须可见/可取消
+==============================================================================
+   ·    [fetch #12] /api/table op=SIT_OUT arg=seat_SB
+   ·    [resp  #12] op=SIT_OUT ok=true rev=9 preview=yes actor=UTG issues=[]
+        seats: UTG:LEAVING_AFTER_HAND HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=LEAVING_AFTER_HAND
+   · 暂离标记后：当前行动 = 玩家2 当前行动
+   · 暂离标记后：行动按钮 = ["弃牌","跟注 1BB","加注（选尺寸）","全下（100BB）"]
+   · 暂离标记后：toast = 本手正在进行中。该玩家已经进入本手牌局（筹码与行动台账里都有他的记录），因此不能直接从牌局中删除。请明确选择处理方式。
+   · 暂离标记后：SB 座位显示 = "玩家5 小盲位（SB） 99.5BB（本街已投 0.5BB） 在座（下一手暂离）"
+   PASS  当前手不受影响（行动按钮仍在）—— RT-L4 已修复
+   PASS  座位上看得出「暂离」状态
+   · 再次打开座位菜单：有「重新入座」=false，有「暂时离座」=true
+   ·    [fetch #13] /api/table op=SIT_OUT arg=seat_SB
+   ·    [resp  #13] op=SIT_OUT ok=false rev=9 preview=yes actor=UTG issues=["ALREADY_SITTING_OUT:该玩家已经标记为「下一手暂离」"]
+        seats: UTG:LEAVING_AFTER_HAND HJ:SEATED_ACTIVE CO:SEATED_ACTIVE BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:SEATED_ACTIVE
+        SB=SEATED_ACTIVE UTG=LEAVING_AFTER_HAND
+   · 再次点「暂时离座」→ toast = 该玩家已经标记为「下一手暂离」
+   >>> HIT  界面没有任何「取消下一手暂离」的入口：座位虽然显示「（下一手暂离）」，但菜单仍只给「暂时离座」，再点一次只会报错（只能靠「撤销」）
+
+==============================================================================
+== §C6 端到端：新玩家是否继承上一位玩家的「下一手暂离」（RT-L5）
+==============================================================================
+   ·    [fetch #14] /api/table op=NEW_TABLE
+   ·    [resp  #14] op=NEW_TABLE ok=true rev=10 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=EMPTY
+   ·    [fetch #15] /api/table op=ADD_PLAYER arg=seat_UTG
+   ·    [resp  #15] op=ADD_PLAYER ok=true rev=11 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #16] /api/table op=SET_HERO_CARD arg=As
+   ·    [resp  #16] op=SET_HERO_CARD ok=true rev=12 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #17] /api/table op=SET_HERO_CARD arg=Kd
+   ·    [resp  #17] op=SET_HERO_CARD ok=true rev=13 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   · 本手已开始：当前行动 = 本街下注轮已结束
+   ·    [fetch #18] /api/table op=SIT_OUT arg=seat_UTG
+   ·    [resp  #18] op=SIT_OUT ok=true rev=14 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   · 暂离后 UTG 座位显示 = "玩家2 枪口位（UTG） 100BB 在座（下一手暂离）"
+   · 暂离后 toast = 该玩家已经标记为「下一手暂离」
+   ·    [fetch #19] /api/table op=RESET_HAND
+   ·    [resp  #19] op=RESET_HAND ok=true rev=15 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #20] /api/table op=CLEAR_SEAT arg=seat_UTG
+   ·    [resp  #20] op=CLEAR_SEAT ok=true rev=16 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=EMPTY
+   · 清空后 UTG 座位显示 = "+ 加入玩家 枪口位（UTG）"
+   ·    [fetch #21] /api/table op=ADD_PLAYER arg=seat_UTG
+   ·    [resp  #21] op=ADD_PLAYER ok=true rev=17 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   ·    [fetch #22] /api/table op=NEXT_HAND
+   ·    [resp  #22] op=NEXT_HAND ok=true rev=17 preview=yes actor=null issues=[]
+        seats: UTG:SEATED_ACTIVE HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=SEATED_ACTIVE
+   · 下一手后 UTG：{"seatId":"seat_UTG","logicalPosition":"UTG","visualIndex":3,"angleDeg":180,"playerId":"p3","displayName":"玩家3","status":"SEATED_ACTIVE","stackBB":100,"remainingStackBB":100,"isCurrentActor":false}
+   · 阻塞提示 = · 有 4 个空座位（劫持位、关煞位、小盲位、大盲位）。本版本要求牌桌上每个座位都有人 —— 请点空座位加入玩家。 · Hero 手牌还没选满（已选 0 / 2 张）
+   PASS  新玩家没有继承暂离标记
+
+==============================================================================
+== §C6b 对照实验：点「新牌桌」回到本手未开始，再清空座位
+==============================================================================
+   ·    [fetch #23] /api/table op=NEW_TABLE
+   ·    [resp  #23] op=NEW_TABLE ok=true rev=18 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=EMPTY
+   · 新牌桌后：手牌 = "＋ ＋"，当前行动 = 本街下注轮已结束
+   ·    [fetch #24] /api/table op=ADD_PLAYER arg=seat_SB
+   ·    [resp  #24] op=ADD_PLAYER ok=true rev=19 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:SEATED_ACTIVE BB:EMPTY
+        SB=SEATED_ACTIVE UTG=EMPTY
+   ·    [fetch #25] /api/table op=CLEAR_SEAT arg=seat_SB
+   ·    [resp  #25] op=CLEAR_SEAT ok=true rev=20 preview=yes actor=null issues=[]
+        seats: UTG:EMPTY HJ:EMPTY CO:EMPTY BTN:SEATED_ACTIVE SB:EMPTY BB:EMPTY
+        SB=EMPTY UTG=EMPTY
+   · 清空后 SB：playerId=null
+   · toast=该玩家已经标记为「下一手暂离」
+   PASS  本手未开始时，点「清空座位」立即生效（说明 §C4 的失败只发生在本手进行中）
+
+==============================================================================
+== §C7 汇总
+==============================================================================
+证据文件由本脚本自行写入（utf8）
