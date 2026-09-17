@@ -340,14 +340,15 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 
 | 项 | 值 |
 |---|---|
-| 源代码 | 111 个文件 / 50,719 行（含新增 GTO 子域、翻后模块与应用层；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
-| 测试代码 | **77 个文件 / 40,337 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,652 项 / 137 套件 / 74 个测试文件** |
+| 源代码 | 111 个文件 / 51,035 行（含新增 GTO 子域、翻后模块与应用层；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
+| 测试代码 | **78 个文件 / 41,106 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
+| 测试 | **1,677 项 / 137 套件 / 75 个测试文件** |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **134 个产物 / 6 类**，已接入 `npm run verify` |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
-| 独立红队轮次 | **13 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1（定向复核）**） |
-| 历史基线回归 | 535 → … → **1,606** → **1,612** → **1,617** → **1,625** → **1,636** → **1,652**，无一次放宽断言 |
+| 独立红队轮次 | **14 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量**） |
+| 历史基线回归 | 535 → … → **1,612** → **1,617** → **1,625** → **1,636** → **1,652** → **1,677**，无一次放宽断言 |
+| 版本控制 | **git** 已建立（`main`，基线 tag `v0.1-baseline`）；`GTOopen/` 与 `node_modules/` 不纳入跟踪 |
 
 ### 10.0.1 GTO 集成的**边界**（本轮新增，必须与上面的数字一起读）
 
@@ -1146,6 +1147,70 @@ Board Delta、Range Compression、Value Gate 与既有策略阈值。
 - 河牌动作分类是**结构性映射**（档位 + 相对强弱），不是下注频率模型；`UNCERTAIN` 是刻意保留的出口
 - `valueBetCandidateCount` 在「坚果级 Hero」上会与 `strongerThanHeroCount` 相等（结构使然，非缺陷）：
   比坚果更强的牌必然是最强档
+
+### 10.0.13 🔴 缓存键黄金向量（CACHE KEY GOLDEN VECTOR · 2026-09 · 定向加固）
+
+**范围**：只审计并加固三把键 —— `scenarioHash` / `treeId` / `cacheKey`。
+**不改任何扑克策略**（preflop / postflop 阈值 / 画像语义 / 决策引擎判据均未触碰）。
+
+**审计结论（真实生产代码，逐字段追踪）**：
+
+| 键 | 定义位置 | 输入字段 | 序列化 | 哈希 |
+|---|---|---|---|---|
+| `scenarioHash` | `gtoScenario.ts:scenarioHashOf` | `v`(版本) / `kind` / `gameType` / `tableSize` / `effectiveStackBB` / `heroPosition` / `actionHistory[{position,kind,sizeBB}]` / `blinds{sbBB,bbBB,anteBB}` / `heroAlreadyActed` | 规范化 JSON | FNV-1a **32 位**（8 hex），前缀 `g` |
+| `treeId` | `gtoScenario.ts:treeIdOf` | `tableSize` / `blinds` / `stack` / `openSizesBB[]` / `raiseMults[]` / `maxRaises` / `limp` / `addAllin` / `engine`（**无版本字段**，设计如此） | 同上 | 同族，前缀 `t` |
+| `cacheKey` | `gtoScenario.ts:cacheKeyOf` | `v`(缓存版本) + `scenarioHash` + `solveFingerprint`（后者含 19 项求解设置：engine / commit / solverVersion / 动作菜单 / rake / realization / iterations / targetGap / 座位 / 下注 …） | 同上 | 同族，前缀 `c` |
+
+**发现的 4 处真实缺口（全部已修）**：
+
+| # | 缺口 | 修复 |
+|---|---|---|
+| 1 | **顺序依赖**：`JSON.stringify({字面量})` ⇒ 键由**源码书写顺序**决定；且**嵌套对象**（`blinds` / `actionHistory[i]`）根本没被规范化 —— 把 `{sbBB,bbBB,anteBB}` 写成别的顺序会得到不同的键（文档当时却声称「顺序无关」） | 新增**显式字段表** `PAYLOAD_SCHEMAS` + `NESTED_SHAPES` + `canonicalPayloadOf`：顶层与嵌套都按表重排，字段集合多一个/少一个**直接抛错** |
+| 2 | **非有限数静默折叠**：`JSON.stringify(NaN)` → `null` ⇒「金额是 NaN」与「没有金额」撞成同一个键 | 必需数值非有限 **抛错**；可空金额显式 `null`（`requiredBB` / `nullableBB`），并有专门测试 |
+| 3 | **持久化读取只比哈希**：条目里明明存了完整 `scenario`，却只用 32 位哈希字符串核对 ⇒ 碰撞（或索引被改写）会静默命中别的场景 | `store.load()` 增加**逐字段场景比对**（`scenariosEquivalent`），不一致即拒绝 + 留可诊断警告 |
+| 4 | **in-flight 复用只比键**：两个场景碰撞时会共享同一个求解 Promise ⇒ 静默拿到别人的结果 | `inFlight` 改为存 `{scenario, task}`，复用前逐字段比对（不相等则各自求解） |
+
+**同时确认已经存在、本轮未改的防线**（审计要点，避免重复劳动）：
+`cacheKey = 场景哈希 + 求解设置指纹`（不是同一个 payload 重复哈希）；内存缓存命中做逐字段比对并删除坏条目；
+存储层三道校验（键 / 哈希 / 结构）；`solve` 与 `solveMeta` 一致性校验；`storeVersion`；
+Catalog 构建时的 `scenarioHashOf(entry.scenario) === entry.scenarioHash` 自检。
+
+**🔴 加固**必须**逐字节兼容**（这是本轮最重要的工程约束）：
+键值一变，`data/gto-cache` 的条目与**按 cacheKey 索引**的 `data/gto-stability.json`
+（离线稳定性证据）就会全部失配 ⇒ 质量评级静默降级。
+因此字段表顺序 = 加固前字面量顺序，并用黄金向量锁定：加固前后三把键**逐位相同**
+（`gc4358aae` / `t18337408` / `c456718aa` …）。
+
+**新增测试**：`test/gtoCacheKeyGolden.test.ts`（24 条：GOLDEN 4 / SENS 7 / INSENS 2 / CANON 5 /
+VERSION 2 / COLLISION 3 / SCHEMA 1）+ `GTO-CACHE-25`（存储层碰撞拒绝）= **25 条**。
+
+**6 项变异测试**（每条都确认对应测试**立刻失败**，恢复后 SHA-256 逐位一致）：
+
+| 变异 | 失败用例 |
+|---|---|
+| 把 `position` 移出键 | CACHE-GOLDEN-1 / -3、CACHE-CANON-1 |
+| 把有效筹码移出键 | GOLDEN-1 / -3、SENS-2、CANON-3、COLLISION-1 |
+| 把动作历史移出键（`board` 的类比替身，见下） | GOLDEN-1 / -3、SENS-4 / -5、CANON-1、COLLISION-1 |
+| 把 schema 版本固定成常量 | GOLDEN-1 / -3、CANON-1、VERSION-1 |
+| 序列化器改为依赖对象插入顺序 | CANON-1、CANON-2b |
+| 短路碰撞防线（存储层 / in-flight） | GTO-CACHE-25、CACHE-COLLISION-3 |
+
+**关于使用者清单里的 `holeCards` / `board`**：这两项**不在任何一把 GTO 键里**，且是**设计要求**——
+GTO 基线是**范围级**答案（「9人桌 BTN 面对 UTG 开池 2.5BB 的范围」），不是「AsKs 该怎么打」；
+底牌由 Alpha 在拿到范围后落到具体手牌。因此 `CACHE-SENS-HOLE` 断言的是**不变**
+（MUST_NOT_AFFECT_KEY），并附类型级证据（`GtoScenario` 没有这两个字段）。
+也因此「删除 board ⇒ 测试失败」这条变异**不适用**（board 从未在键里），
+改用同角色的 `actionHistory` 代替，结论一致。
+
+**关于花色同构（suit isomorphism）**：本项目**没有**、也**不引入**花色归一化。
+三把键不含牌面信息；`hashManualInput`（决策日志用的另一把键，**本轮未改**）按原样序列化底牌与公共牌，
+因此「同构花色被错误合并」这类风险在键层面不存在。相关审计观察另见 §10.0.14。
+
+**剩余风险**：
+- FNV-1a 是 **32 位**非密码学哈希：不声称「不会碰撞」。现在的保证是「碰撞**不会被静默接受**」
+  （三层逐字段比对）。若要更强的抗碰撞，需要换 64/128 位摘要 + 迁移版本号，属独立一轮
+- `treeId` 无版本常量：由「字段表 + 敏感性测试」保证形状变化必然改变 id；若将来需要
+  「形状语义变更但字段不变」的迁移，需要补一个版本字段（会作废全部旧 treeId，需评估）
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。
 它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。

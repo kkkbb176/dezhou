@@ -41,6 +41,7 @@ import {
   scenariosEquivalent,
   scenarioHashOf,
   cacheKeyOf,
+  keySchemaVersionOf,
   scenarioFingerprintLines,
 } from './gtoScenario.ts';
 import {
@@ -137,6 +138,18 @@ export type GtoLookupStats = {
   quality: GtoQuality;
   /** 缓存键（界面与报告用；拿不到数据时可能为空串） */
   cacheKey: string;
+  /**
+   * 🔴 **场景哈希**（CACHE KEY GOLDEN VECTOR 轮 · 使用者 §13）。
+   *
+   * 与 `cacheKey` 的关系见 `gtoScenario.ts` 的三层职责说明：
+   * `scenarioHash` = 「我在问哪个问题」，`cacheKey` = 「这份缓存还能用吗」。
+   * 空串表示这条记录来自没有键口径的路径（例如求解失败早退）。
+   */
+  scenarioHash: string;
+  /** 🔴 **树指纹** = 「这是同一棵动作树吗」（gap 只在同一棵树内可比） */
+  treeId: string;
+  /** 🔴 **键口径版本**（`scenario=…;cache=…`）—— 诊断用，不进任何键 */
+  keySchemaVersion: string;
   /** 这份数据原本的**求解**耗时（毫秒）；缓存命中时为历史值，冷求解时等于 latencyMs */
   solveDurationMs: number | null;
   /** 缓存写入时间（ISO）；冷求解时为本次时间 */
@@ -153,7 +166,18 @@ export class GtoSafeLookup {
   private readonly storeOptions: GtoStrategyStoreOptions | undefined;
   private readonly stabilityEvidence: Readonly<Record<string, GtoStabilityEvidence>>;
   private readonly cache = new Map<string, CacheEntry>();
-  private readonly inFlight = new Map<string, Promise<GtoLookupResult>>();
+  /**
+   * 正在求解的任务。
+   *
+   * 🔴 **必须同时存场景**（CACHE KEY GOLDEN VECTOR 轮 · 使用者 §10）：
+   * 键是 32 位非密码学哈希，理论上会碰撞。修复前这里只比键，
+   * 于是一个碰撞会让**第二个场景拿到第一个场景的求解结果** —— 静默错答案。
+   * 现在复用前先做 `scenariosEquivalent` 逐字段比对：不相等就各自求解。
+   */
+  private readonly inFlight = new Map<
+    string,
+    { scenario: GtoScenario; task: Promise<GtoLookupResult> }
+  >();
   /** 本次进程内「真的调用了求解器」的次数（报告用） */
   private solverCalls = 0;
 
@@ -260,6 +284,7 @@ export class GtoSafeLookup {
             cacheKey: keys.cacheKey,
             solveDurationMs: solveDurationOf(cached.result),
             cachedAt: cachedAtOf(cached.result),
+            keys,
           }),
         };
       }
@@ -272,6 +297,7 @@ export class GtoSafeLookup {
       const loaded = this.store.load(keys.cacheKey, {
         scenarioHash: keys.scenarioHash,
         treeId: keys.treeId,
+        scenario,
       });
       if (loaded.found) {
         const baseline = baselineFromCacheEntry(loaded.entry, this.now);
@@ -320,8 +346,8 @@ export class GtoSafeLookup {
     // 用户连点同一场景时，**只有一个**真的去求解，其余等同一个 Promise。
     // 键用缓存键：不同的求解设置是两次不同的求解，不应合并。
     const existing = this.inFlight.get(keys.cacheKey);
-    if (existing !== undefined) {
-      const shared = await existing;
+    if (existing !== undefined && scenariosEquivalent(existing.scenario, scenario)) {
+      const shared = await existing.task;
       return {
         result: shared,
         stats: this.stats({
@@ -332,6 +358,7 @@ export class GtoSafeLookup {
           cacheKey: keys.cacheKey,
           solveDurationMs: solveDurationOf(shared),
           cachedAt: cachedAtOf(shared),
+          keys,
         }),
       };
     }
@@ -339,7 +366,7 @@ export class GtoSafeLookup {
     // ---- 4) 真的去求解 ----
     this.solverCalls += 1;
     const task = this.runWithHardTimeout(scenario, keys.scenarioHash);
-    this.inFlight.set(keys.cacheKey, task);
+    this.inFlight.set(keys.cacheKey, { scenario, task });
 
     let result: GtoLookupResult;
     try {
@@ -390,6 +417,7 @@ export class GtoSafeLookup {
         cacheKey: keys.cacheKey,
         solveDurationMs: this.now() - startedAt,
         cachedAt: new Date(this.now()).toISOString(),
+        keys,
       }),
     };
   }
@@ -454,6 +482,7 @@ export class GtoSafeLookup {
             cacheKey: keys.cacheKey,
             solveDurationMs: solveDurationOf(cached.result),
             cachedAt: cachedAtOf(cached.result),
+            keys,
           }),
         };
       }
@@ -465,6 +494,7 @@ export class GtoSafeLookup {
     const loaded = this.store.load(keys.cacheKey, {
       scenarioHash: keys.scenarioHash,
       treeId: keys.treeId,
+      scenario,
     });
     if (!loaded.found) return null;
 
@@ -481,6 +511,7 @@ export class GtoSafeLookup {
         cacheKey: keys.cacheKey,
         solveDurationMs: loaded.entry.solveMeta.solveDurationMs,
         cachedAt: loaded.entry.createdAt,
+        keys,
       }),
     };
   }
@@ -673,6 +704,14 @@ export class GtoSafeLookup {
     cacheKey: string;
     solveDurationMs: number | null;
     cachedAt: string | null;
+    /**
+     * 🔴 **缓存身份诊断**（CACHE KEY GOLDEN VECTOR 轮 · 使用者 §13）。
+     *
+     * 三把键 + 版本指纹一起暴露，供**开发/测试/报告**核对
+     * 「这次为什么命中/为什么没命中」。普通实战界面不显示它们
+     *（界面只读 `source` / `quality` / `cacheHit` / `latencyMs`）。
+     */
+    keys?: { scenarioHash: string; treeId: string; cacheKey: string };
   }): GtoLookupStats {
     return {
       cacheHit: input.source === 'memory' || input.source === 'persistent',
@@ -684,6 +723,9 @@ export class GtoSafeLookup {
       cacheKey: input.cacheKey,
       solveDurationMs: input.solveDurationMs,
       cachedAt: input.cachedAt,
+      scenarioHash: input.keys?.scenarioHash ?? '',
+      treeId: input.keys?.treeId ?? '',
+      keySchemaVersion: keySchemaVersionOf(),
     };
   }
 
@@ -787,3 +829,5 @@ const GTOPEN_UNAVAILABLE_FIELDS: readonly string[] = Object.freeze([
   'sourceVersion（求解器版本）—— GTOpen 没有版本端点，能力接口只返回能力布尔值',
   'equity（权益）—— GTOpen 内部有权益表，但没有对外的权益查询接口',
 ]);
+
+

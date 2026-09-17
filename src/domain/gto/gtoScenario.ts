@@ -747,19 +747,335 @@ export function buildGtoScenario(spec: GtoScenarioSpec): GtoScenario | null {
  * ============================================================ */
 
 /**
+ * 🔴 **规范化序列化器**（CACHE KEY GOLDEN VECTOR 轮 · 使用者 §7）。
+ *
+ * ## 为什么要它
+ *
+ * 修复前三个哈希都是直接 `JSON.stringify({ 字段字面量 })`：
+ *
+ * ```text
+ * 输出是否正确，取决于**源码里字段的书写顺序**
+ * ```
+ *
+ * 这在「没人改这段代码」时是确定的，但它把两个**应当显式**的东西变成了隐式：
+ *
+ * | 隐式依赖 | 后果 |
+ * |---|---|
+ * | 字段顺序 = 字面量顺序 | 有人把 `heroPosition` 与 `tableSize` 调个位置 ⇒ 所有键静默变化（旧缓存全部失效，且没人知道为什么） |
+ * | 字段集合 = 字面量里写了什么 | 有人新增一个字段（或漏写一个）⇒ 键的含义静默改变，**没有任何断言拦住** |
+ * | 数字由 `JSON.stringify` 处理 | `NaN` / `Infinity` 会被静默写成 `null`，与「真的没有值」撞成同一个键 |
+ *
+ * ## 现在的规则
+ *
+ * ```text
+ * 每个载荷都有一份**显式字段表**（`PAYLOAD_SCHEMAS`），顺序即序列化顺序。
+ * 构造载荷时逐项核对：字段集合必须与表**完全相等**（多一个/少一个都抛错）。
+ * ```
+ *
+ * 因此：
+ * - 顺序不再依赖「谁写了什么顺序」，而是依赖那张表；
+ * - 新增字段必须**同时**改表 —— 改表就是一次**有意识的键口径变更**；
+ * - 非有限数在**必需**字段上直接抛错，在**可空**字段上显式映射为 `null`（见 `nullableBB`）。
+ *
+ * ## 与旧版的关系：**逐字节兼容**
+ *
+ * 字段表的顺序 = 修复前字面量的顺序，因此：
+ *
+ * ```text
+ * 加固前后同一场景的三把键**逐位相同**（golden vector 已锁定，见 test/gtoCacheKeyGolden.test.ts）
+ * ```
+ *
+ * 这一点很重要：键值一变，`data/gto-cache` 的条目与
+ * `data/gto-stability.json`（**按 cacheKey 索引**的离线稳定性证据）就会全部失配，
+ * 质量评级会静默降级。加固必须**不改变键值**，只改变「键是怎么被决定的」。
+ */
+export const PAYLOAD_SCHEMAS = Object.freeze({
+  scenario: Object.freeze([
+    'v',
+    'kind',
+    'gameType',
+    'tableSize',
+    'effectiveStackBB',
+    'heroPosition',
+    'actionHistory',
+    'blinds',
+    'heroAlreadyActed',
+  ]),
+  tree: Object.freeze([
+    'tableSize',
+    'blinds',
+    'stack',
+    'openSizesBB',
+    'raiseMults',
+    'maxRaises',
+    'limp',
+    'addAllin',
+    'engine',
+  ]),
+  solve: Object.freeze([
+    'v',
+    'engine',
+    'engineCommit',
+    'solverVersion',
+    'openSizesBB',
+    'raiseMults',
+    'maxRaises',
+    'limp',
+    'addAllin',
+    'rakePct',
+    'rakeCap',
+    'realization',
+    'multiwayEquityModel',
+    'iterations',
+    'targetGap',
+    'checkEvery',
+    'enginePositions',
+    'posts',
+    'ante',
+  ]),
+  cache: Object.freeze(['v', 'scenario', 'solve']),
+} as const);
+
+/** 载荷种类 */
+export type PayloadKind = keyof typeof PAYLOAD_SCHEMAS;
+
+/**
+ * 🔴 **嵌套对象的字段表**（`blinds` 与单个动作）。
+ *
+ * 只对**顶层**字段排序是不够的：`blinds` 与 `actionHistory[i]` 也是对象，
+ * 它们的键顺序同样会进入 JSON 字符串。实测（黄金向量轮的第一个版本）：
+ * 把 `{sbBB, bbBB, anteBB}` 写成 `{bbBB, sbBB, anteBB}` 会得到**不同的键** ——
+ * 也就是说「顺序无关」这个承诺当时是**假的**。
+ */
+export const NESTED_SHAPES = Object.freeze({
+  blinds: Object.freeze(['sbBB', 'bbBB', 'anteBB']),
+  action: Object.freeze(['position', 'kind', 'sizeBB']),
+} as const);
+
+/** 每种载荷里，哪些字段是嵌套对象 / 对象数组 */
+const NESTED_FIELDS: Readonly<Record<PayloadKind, Readonly<Record<string, keyof typeof NESTED_SHAPES>>>> =
+  Object.freeze({
+    scenario: Object.freeze({ blinds: 'blinds', actionHistory: 'action' }),
+    tree: Object.freeze({ blinds: 'blinds' }),
+    solve: Object.freeze({}),
+    cache: Object.freeze({}),
+  });
+
+/** 按嵌套字段表规范一个对象（键集合必须完全一致） */
+function canonicalizeNested(
+  shapeName: keyof typeof NESTED_SHAPES,
+  value: unknown,
+  field: string,
+): Record<string, unknown> {
+  const shape = NESTED_SHAPES[shapeName];
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${field} 必须是对象（嵌套字段表 ${shapeName}）`);
+  }
+  const record = value as Record<string, unknown>;
+  const actual = Object.keys(record).sort();
+  const expected = [...shape].sort();
+  if (actual.length !== expected.length || actual.some((k, i) => k !== expected[i])) {
+    throw new Error(
+      `${field} 的字段集合与嵌套表 ${shapeName} 不一致 —— 表=[${expected.join(', ')}]，实际=[${actual.join(', ')}]`,
+    );
+  }
+  const ordered: Record<string, unknown> = {};
+  for (const key of shape) ordered[key] = record[key];
+  return ordered;
+}
+
+/**
+ * 按**显式字段表**构造规范化 JSON 串（顶层 + 嵌套对象都排序，数组保持语义顺序）。
+ *
+ * @throws 字段集合与表不一致时抛错（**不静默**）—— 那是键口径的变更，必须被看见
+ */
+export function canonicalPayloadOf(
+  kind: PayloadKind,
+  fields: Readonly<Record<string, unknown>>,
+): string {
+  const schema = PAYLOAD_SCHEMAS[kind];
+  const actual = Object.keys(fields).sort();
+  const expected = [...schema].sort();
+  if (actual.length !== expected.length || actual.some((k, i) => k !== expected[i])) {
+    throw new Error(
+      `${kind} 载荷的字段集合与显式字段表不一致 —— ` +
+        `表=[${expected.join(', ')}]，实际=[${actual.join(', ')}]。` +
+        '新增/删除字段必须同时修改 PAYLOAD_SCHEMAS（那是一次有意识的键口径变更），' +
+        '不允许因为字面量写法不同而静默改变缓存身份。',
+    );
+  }
+  const nestedOf = NESTED_FIELDS[kind];
+  /*
+   * 按表顺序重新装配对象：`JSON.stringify` 对字符串键保持插入序，
+   * 因此这里的顺序**就是**序列化顺序（不再依赖调用方的字面量顺序）。
+   */
+  const ordered: Record<string, unknown> = {};
+  for (const key of schema) {
+    const value = fields[key];
+    const nested = nestedOf[key];
+    if (nested === undefined) {
+      ordered[key] = value;
+      continue;
+    }
+    ordered[key] = Array.isArray(value)
+      ? value.map((item) => canonicalizeNested(nested, item, `${key}[]`))
+      : canonicalizeNested(nested, value, key);
+  }
+  return JSON.stringify(ordered);
+}
+
+/**
+ * 必需的数值字段：非有限数**抛错**（不静默变成 `null`）。
+ *
+ * `JSON.stringify(NaN)` 得到 `null` —— 那会让「金额是 NaN」与
+ * 「这个动作没有金额」得到同一个键。必需字段上出现 NaN 是**上游缺陷**，
+ * 必须大声报错而不是折叠成一个看起来合法的键。
+ */
+function requiredBB(value: number, field: string): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${field} 不是有限数（${String(value)}）—— 缓存键拒绝把 NaN/Infinity 折叠成 null`);
+  }
+  return roundBB(value);
+}
+
+/** 可空的 BB 金额（无金额的动作）：非有限数**显式**映射为 `null` */
+function nullableBB(value: number | null): number | null {
+  if (value === null) return null;
+  if (!Number.isFinite(value)) return null;
+  return roundBB(value);
+}
+
+/**
  * FNV-1a 32 位哈希（与 `hashManualInput` 同一算法族），输出 8 位十六进制。
  *
  * ⚠️ **不是密码学哈希**。它的用途是「把同样的输入折叠成一个稳定的短串」，
- * 而不是防碰撞攻击。碰撞的后果是缓存命中错条目 —— 这一点由
- * 「缓存键 = 场景哈希 + 求解设置指纹」部分缓解，但**不是**彻底解决。
+ * 而不是防碰撞攻击。碰撞的后果是缓存命中错条目 —— 三层防线在防它：
+ *
+ * 1. `cacheKey` = 场景哈希 + 求解设置指纹（两段独立折叠）
+ * 2. 读**持久化**缓存时逐项核对 `scenarioHash` / `treeId` / **规范化场景逐字段比对**
+ * 3. 读**内存**缓存与 in-flight 复用时做 `scenariosEquivalent` 逐字段比对
+ *
+ * 因此**不声称**「不会碰撞」；本节只保证「碰撞不会被静默接受」。
  */
-function fnv1a(text: string): string {
+export function hashKeyOf(payloadText: string): string {
   let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
+  for (let i = 0; i < payloadText.length; i++) {
+    hash ^= payloadText.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   return hash.toString(16).padStart(8, '0');
+}
+
+/**
+ * **场景身份**的规范化载荷（`scenarioHash` 的输入）。
+ *
+ * @param versionOverride 仅供测试与版本迁移演练 —— **生产路径不得传**
+ */
+export function scenarioPayloadOf(scenario: GtoScenario, versionOverride?: string): string {
+  return canonicalPayloadOf('scenario', {
+    v: versionOverride ?? GTO_SCENARIO_HASH_VERSION,
+    kind: scenario.kind,
+    gameType: scenario.gameType,
+    tableSize: scenario.tableSize,
+    effectiveStackBB: requiredBB(scenario.effectiveStackBB, 'scenario.effectiveStackBB'),
+    heroPosition: scenario.heroPosition,
+    actionHistory: scenario.actionHistory.map((a) => ({
+      position: a.position,
+      kind: a.kind,
+      sizeBB: nullableBB(a.sizeBB),
+    })),
+    blinds: {
+      sbBB: requiredBB(scenario.blinds.sbBB, 'scenario.blinds.sbBB'),
+      bbBB: requiredBB(scenario.blinds.bbBB, 'scenario.blinds.bbBB'),
+      anteBB: requiredBB(scenario.blinds.anteBB, 'scenario.blinds.anteBB'),
+    },
+    heroAlreadyActed: scenario.heroAlreadyActed,
+  });
+}
+
+/** 「树形状」的规范化载荷（`treeId` 的输入） */
+export function treePayloadOf(
+  scenario: GtoScenario,
+  tree: {
+    openSizesBB: readonly number[];
+    raiseMults: readonly number[];
+    maxRaises: number;
+    limp: boolean;
+    addAllin: boolean;
+    engine: string;
+  },
+): string {
+  return canonicalPayloadOf('tree', {
+    tableSize: scenario.tableSize,
+    blinds: {
+      sbBB: requiredBB(scenario.blinds.sbBB, 'tree.blinds.sbBB'),
+      bbBB: requiredBB(scenario.blinds.bbBB, 'tree.blinds.bbBB'),
+      anteBB: requiredBB(scenario.blinds.anteBB, 'tree.blinds.anteBB'),
+    },
+    stack: requiredBB(scenario.effectiveStackBB, 'tree.stack'),
+    openSizesBB: [...tree.openSizesBB].map((v) => requiredBB(v, 'tree.openSizesBB[]')),
+    raiseMults: [...tree.raiseMults].map((v) => requiredBB(v, 'tree.raiseMults[]')),
+    maxRaises: tree.maxRaises,
+    limp: tree.limp,
+    addAllin: tree.addAllin,
+    engine: tree.engine,
+  });
+}
+
+/** 「求解设置」的规范化载荷（`solveFingerprint` 的输入） */
+export function solvePayloadOf(solve: GtoSolveKeyParts, versionOverride?: string): string {
+  return canonicalPayloadOf('solve', {
+    v: versionOverride ?? GTO_CACHE_KEY_VERSION,
+    engine: solve.engine,
+    engineCommit: solve.engineCommit,
+    solverVersion: solve.solverVersion,
+    openSizesBB: [...solve.openSizesBB].map((v) => requiredBB(v, 'solve.openSizesBB[]')),
+    raiseMults: [...solve.raiseMults].map((v) => requiredBB(v, 'solve.raiseMults[]')),
+    maxRaises: solve.maxRaises,
+    limp: solve.limp,
+    addAllin: solve.addAllin,
+    rakePct: requiredBB(solve.rakePct, 'solve.rakePct'),
+    rakeCap: requiredBB(solve.rakeCap, 'solve.rakeCap'),
+    realization: solve.realization,
+    multiwayEquityModel: solve.multiwayEquityModel,
+    iterations: solve.iterations,
+    targetGap: solve.targetGap,
+    checkEvery: solve.checkEvery,
+    enginePositions: [...solve.enginePositions],
+    posts: [...solve.posts].map((v) => requiredBB(v, 'solve.posts[]')),
+    ante: requiredBB(solve.ante, 'solve.ante'),
+  });
+}
+
+/** 缓存身份的规范化载荷（`cacheKey` 的输入） */
+export function cachePayloadOf(
+  scenario: GtoScenario,
+  solve: GtoSolveKeyParts,
+  versionOverride?: string,
+): string {
+  return canonicalPayloadOf('cache', {
+    v: versionOverride ?? GTO_CACHE_KEY_VERSION,
+    scenario: scenarioHashOf(scenario),
+    solve: solveFingerprintOf(solve),
+  });
+}
+
+/**
+ * 🔴 **键口径的版本指纹**（诊断用，不进任何键）。
+ *
+ * 三个版本常量合起来描述「这套键是按哪一版口径折叠的」。
+ * 用途：缓存命中诊断里一眼看出「这条缓存是哪个口径下写的」。
+ *
+ * ⚠️ **不得**把 git commit 当版本用（使用者 §11）：
+ * commit 变了但键口径没变时，那会伪造出「缓存失效」。
+ */
+export function keySchemaVersionOf(): string {
+  /*
+   * ⚠️ 这里**刻意不含** `GTO_STORE_VERSION`：它定义在
+   * `gtoStrategyStore.ts`，而那个模块 import 本模块 —— 反向引用会成环。
+   * 存储格式版本由存储层自己带在 `entry.storeVersion` 上（诊断时一并显示）。
+   */
+  return `scenario=${GTO_SCENARIO_HASH_VERSION};cache=${GTO_CACHE_KEY_VERSION}`;
 }
 
 /**
@@ -783,28 +1099,13 @@ function fnv1a(text: string): string {
  * - **`villainPosition`**：它已经完整地体现在 `actionHistory` 里
  *  （谁是那个加注的人）。重复计入会让「同样的历史、一条填了 villain、
  *   一条没填」得到两个哈希 —— 那是**同一份策略的两份缓存**。
+ * - **底牌与公共牌**：GTO 基线是**范围级**答案（「BTN 面对 UTG 开池的范围长什么样」），
+ *  不是「AsKs 该怎么打」。底牌不进场景身份是**设计要求**，不是遗漏 ——
+ *  相同场景下 AsKs 与 AhKh 共用同一份基线，再由 Alpha 把范围落到具体手牌。
+ *  见 `test/gtoCacheKeyGolden.test.ts` 的 CACHE-SENS-HOLE（MUST_NOT_AFFECT_KEY）。
  */
 export function scenarioHashOf(scenario: GtoScenario): string {
-  const payload = {
-    v: GTO_SCENARIO_HASH_VERSION,
-    kind: scenario.kind,
-    gameType: scenario.gameType,
-    tableSize: scenario.tableSize,
-    effectiveStackBB: roundBB(scenario.effectiveStackBB),
-    heroPosition: scenario.heroPosition,
-    actionHistory: scenario.actionHistory.map((a) => ({
-      position: a.position,
-      kind: a.kind,
-      sizeBB: a.sizeBB === null ? null : roundBB(a.sizeBB),
-    })),
-    blinds: {
-      sbBB: roundBB(scenario.blinds.sbBB),
-      bbBB: roundBB(scenario.blinds.bbBB),
-      anteBB: roundBB(scenario.blinds.anteBB),
-    },
-    heroAlreadyActed: scenario.heroAlreadyActed,
-  };
-  return `g${fnv1a(JSON.stringify(payload))}`;
+  return `g${hashKeyOf(scenarioPayloadOf(scenario))}`;
 }
 
 /**
@@ -836,24 +1137,14 @@ export function treeIdOf(
     engine: string;
   },
 ): string {
-  const payload = {
-    // 树的「形状」由桌人数与盲注决定
-    tableSize: scenario.tableSize,
-    blinds: {
-      sbBB: roundBB(scenario.blinds.sbBB),
-      bbBB: roundBB(scenario.blinds.bbBB),
-      anteBB: roundBB(scenario.blinds.anteBB),
-    },
-    stack: roundBB(scenario.effectiveStackBB),
-    // 树的「分叉」由动作菜单决定
-    openSizesBB: [...tree.openSizesBB].map(roundBB),
-    raiseMults: [...tree.raiseMults].map(roundBB),
-    maxRaises: tree.maxRaises,
-    limp: tree.limp,
-    addAllin: tree.addAllin,
-    engine: tree.engine,
-  };
-  return `t${fnv1a(JSON.stringify(payload))}`;
+  /*
+   * ⚠️ `treeId` **刻意没有版本常量**（与 `scenarioHash` / `cacheKey` 不同）：
+   * 它是「树形状」的纯函数身份 —— 树形状的每一个字段都在载荷里，
+   * 任何形状变化（含新增字段，因为有显式字段表）都会改变这个串。
+   * 因此不存在「口径变了但 id 不变」的情形，也就不需要版本号。
+   * 这一点由黄金向量与敏感性测试锁定（`CACHE-SENS-*` / `CACHE-GOLDEN-2`）。
+   */
+  return `t${hashKeyOf(treePayloadOf(scenario, tree))}`;
 }
 
 /**
@@ -870,28 +1161,7 @@ export function treeIdOf(
  * 这种最难查的缺陷 —— 数字看起来完全正常。
  */
 export function solveFingerprintOf(solve: GtoSolveKeyParts): string {
-  const payload = {
-    v: GTO_CACHE_KEY_VERSION,
-    engine: solve.engine,
-    engineCommit: solve.engineCommit,
-    solverVersion: solve.solverVersion,
-    openSizesBB: [...solve.openSizesBB].map(roundBB),
-    raiseMults: [...solve.raiseMults].map(roundBB),
-    maxRaises: solve.maxRaises,
-    limp: solve.limp,
-    addAllin: solve.addAllin,
-    rakePct: roundBB(solve.rakePct),
-    rakeCap: roundBB(solve.rakeCap),
-    realization: solve.realization,
-    multiwayEquityModel: solve.multiwayEquityModel,
-    iterations: solve.iterations,
-    targetGap: solve.targetGap,
-    checkEvery: solve.checkEvery,
-    enginePositions: [...solve.enginePositions],
-    posts: [...solve.posts].map(roundBB),
-    ante: roundBB(solve.ante),
-  };
-  return `s${fnv1a(JSON.stringify(payload))}`;
+  return `s${hashKeyOf(solvePayloadOf(solve))}`;
 }
 
 /**
@@ -900,12 +1170,7 @@ export function solveFingerprintOf(solve: GtoSolveKeyParts): string {
  * 输出形如 `c1a2b3c4d`（9 字符：前缀 + 8 位十六进制）。
  */
 export function cacheKeyOf(scenario: GtoScenario, solve: GtoSolveKeyParts): string {
-  const payload = {
-    v: GTO_CACHE_KEY_VERSION,
-    scenario: scenarioHashOf(scenario),
-    solve: solveFingerprintOf(solve),
-  };
-  return `c${fnv1a(JSON.stringify(payload))}`;
+  return `c${hashKeyOf(cachePayloadOf(scenario, solve))}`;
 }
 
 /**

@@ -341,15 +341,15 @@
     {
       "path": "src/domain/gto/gtoScenario.ts",
       "category": "DECISION",
-      "sha256": "56b0360ac3e1cb70af805bfdd151f607c340562920991d78f492914dadce8642",
-      "bytes": 49635,
+      "sha256": "45fa32c6c8939c8df68144e113b42ceda2a3d26a99aa5d8703621bbd63abd11a",
+      "bytes": 60415,
       "impact": "场景构造与哈希变化 → **桌人数隔离、缓存键、场景可表达性判定发生变化**；哈希口径变化会让旧缓存全部失效（这是好事，但必须知道）"
     },
     {
       "path": "src/domain/gto/gtoSafeLookup.ts",
       "category": "DECISION",
-      "sha256": "b980bc281af841138a6e5c4949febe0e194fad39878f2a99ab9f50f22dc845e5",
-      "bytes": 29431,
+      "sha256": "d74d26b1f3d574624d5a07da64c48e40b19b850be1ef2e1ef27605ed4f9a8953",
+      "bytes": 31317,
       "impact": "安全查询层（缓存 + 硬超时 + 回退）变化 → **「求解器故障时 Alpha 仍可用」这条保证的强度发生变化**"
     },
     {
@@ -586,8 +586,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "2c558b77673d91b48c7205a39671e68469aab0e3895f8a83a9924082fcc37185",
-      "bytes": 95764,
+      "sha256": "6d2bdd67074b2de5656797e1d9fe89ea483d561df1da161ee666377a6f28743b",
+      "bytes": 101684,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {

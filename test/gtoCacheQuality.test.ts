@@ -1034,3 +1034,69 @@ test('GTO-CACHE-24：读取缓存时按**当前证据**重新评级（不是用�
     cleanup();
   }
 });
+
+test('GTO-CACHE-25：🔴 键相同但**内嵌场景不同**的条目必须被拒绝（哈希碰撞不得静默命中）', async () => {
+  /*
+   * CACHE KEY GOLDEN VECTOR 轮（使用者 §10）：
+   *
+   * `scenarioHash` / `treeId` / `cacheKey` 都是 **32 位非密码学哈希**
+   *（FNV-1a，8 位十六进制）——不能声称「不会碰撞」。因此读缓存时
+   * 不能只比哈希字符串，还要比**条目里内嵌的规范化场景**。
+   *
+   * 本用例**人工伪造**一次碰撞：把某条目的 `scenarioHash` 改成另一个场景的，
+   * 再按那个场景去读 —— 修复前会命中（于是「问 A 得到 B 的策略」这种
+   * 静默错答案就成立了），修复后必须拒绝。
+   */
+  const { store, dir, cleanup } = tempStore();
+  try {
+    const lookup = new GtoSafeLookup(makeProvider(new FakeGtopen()), { store });
+    const scenarioA = firstInScenario(6);
+    const first = await lookup.lookupWithStats(scenarioA);
+    const keyA = first.stats.cacheKey;
+
+    // 另一个**不同**场景（同为 6 人桌的第一个行动位，但筹码不同）
+    const scenarioB = buildGtoScenario({
+      kind: GtoScenarioKind.RFI,
+      tableSize: 6,
+      effectiveStackBB: 40,
+      heroPosition: scenarioA.heroPosition,
+      actionHistory: [],
+    })!;
+    const solve = solveParts();
+    const hashB = scenarioHashOf(scenarioB);
+    const treeB = treeIdOf(scenarioB, {
+      openSizesBB: solve.openSizesBB,
+      raiseMults: solve.raiseMults,
+      maxRaises: solve.maxRaises,
+      limp: solve.limp,
+      addAllin: solve.addAllin,
+      engine: solve.engine,
+    });
+    assert.notEqual(hashB, scenarioHashOf(scenarioA), '两个场景必须真的不同');
+
+    // 伪造：把载荷里的哈希改成 B 的（模拟一次真实碰撞 / 索引被改写）
+    const path = store.payloadPath(keyA);
+    const payload = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+    payload['scenarioHash'] = hashB;
+    payload['treeId'] = treeB;
+    writeFileSync(path, JSON.stringify(payload), 'utf8');
+
+    const store2 = new GtoStrategyStore({ dir, projectRoot: dir });
+    // ① 只比哈希（旧口径）⇒ 会命中 → 这正是要防的
+    const byHashOnly = store2.load(keyA, { scenarioHash: hashB, treeId: treeB });
+    assert.equal(byHashOnly.found, true, '前提：伪造后「只比哈希」确实会命中（否则本用例没有意义）');
+    // ② 加上**逐字段场景比对**（新口径）⇒ 必须拒绝
+    const byScenario = store2.load(keyA, { scenarioHash: hashB, treeId: treeB, scenario: scenarioB });
+    assert.equal(byScenario.found, false, '键相同但内嵌场景不同 ⇒ 必须拒绝命中');
+    assert.ok(
+      byScenario.found === false && byScenario.reason === 'invalid',
+      `拒绝原因必须是 invalid，实际 ${byScenario.found === false ? byScenario.reason : '—'}`,
+    );
+    assert.ok(
+      store2.warnings.some((w) => w.includes('碰撞')),
+      `必须留下可诊断的警告，实际：${store2.warnings.join(' | ')}`,
+    );
+  } finally {
+    cleanup();
+  }
+});

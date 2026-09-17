@@ -51,7 +51,7 @@ import { dirname, join } from 'node:path';
 
 import type { GtoBaseline, GtoRange, GtoScenario } from './gto.types.ts';
 import { GtoQuality } from './gtoQuality.ts';
-import { cacheKeyOf, scenarioHashOf, solveFingerprintOf, treeIdOf, type GtoSolveKeyParts } from './gtoScenario.ts';
+import { cacheKeyOf, scenarioHashOf, scenariosEquivalent, solveFingerprintOf, treeIdOf, type GtoSolveKeyParts } from './gtoScenario.ts';
 
 /* ============================================================
  * 条目结构
@@ -428,7 +428,10 @@ export class GtoStrategyStore {
    * 第 3 道是防「索引与载荷不同步」：如果只有第 1 道，
    * 一个被错误改写的索引会让我们把**别的场景**的策略当成这次的答案。
    */
-  load(cacheKey: string, expected?: { scenarioHash?: string; treeId?: string }): GtoStoreLoadResult {
+  load(
+    cacheKey: string,
+    expected?: { scenarioHash?: string; treeId?: string; scenario?: GtoScenario },
+  ): GtoStoreLoadResult {
     const index = this.loadIndex();
     const entry = index.entries.find((e) => e.cacheKey === cacheKey);
     if (entry === undefined) return { found: false, reason: 'miss' };
@@ -467,6 +470,25 @@ export class GtoStrategyStore {
     }
     if (expected?.treeId !== undefined && checked.treeId !== expected.treeId) {
       return { found: false, reason: 'invalid', detail: '树指纹不一致' };
+    }
+    /*
+     * 🔴 **第三道：逐字段比对规范化场景**（CACHE KEY GOLDEN VECTOR 轮 · 使用者 §10）。
+     *
+     * 前两道比的是**哈希字符串**。哈希是 32 位非密码学折叠 —— 不能声称不会碰撞，
+     * 因此只要调用方给了原场景，就必须做一次**逐字段**比对：
+     *
+     * | 情形 | 行为 |
+     * |---|---|
+     * | 场景逐字段相同 | 命中（这才是「同一个问题」的定义） |
+     * | 哈希相同但字段不同 | **拒绝命中** + 记警告 —— 这就是碰撞，绝不能静默复用 |
+     *
+     * 条目里存着完整的 `scenario` 正是为了这件事（写入时保存的是规范化场景）。
+     */
+    if (expected?.scenario !== undefined && !scenariosEquivalent(checked.scenario, expected.scenario)) {
+      this.warnings.push(
+        `缓存键 ${cacheKey} 命中了一个**场景不同**的条目（哈希碰撞或索引被改写）—— 已拒绝使用`,
+      );
+      return { found: false, reason: 'invalid', detail: '规范化场景逐字段比对不一致' };
     }
 
     const issues = validateCachedRange(checked.range);
