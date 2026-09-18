@@ -35,6 +35,12 @@ import {
   positionsForTableOf,
 } from '../../domain/types.ts';
 import type { GameEnvironmentId } from '../../domain/knowledge/knowledge.types.ts';
+/*
+ * ⚠️ **type-only** 导入：`behaviorProfile.ts` 反向 `import type { QuickProfile }`
+ * 自本文件，两者都是纯类型引用，经类型擦除后**不存在运行时环**。
+ */
+import type { PlayerBehaviorProfile } from '../../domain/player/behaviorProfile.ts';
+import type { PlayerObservedStats } from '../../domain/player/observedStats.ts';
 
 /* ============================================================
  * 牌面文本解析
@@ -201,6 +207,43 @@ export type ManualVillain = {
   dynamicHint?: DynamicHint;
   /** 该对手的起始筹码（BB）；不填则与 `effectiveStackBB` 相同 */
   stackBB?: number;
+  /**
+   * 🔴 **该对手的行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二）。
+   *
+   * ## 与 `quickProfile` 的分工（这是两个不同的东西）
+   *
+   * | 字段 | 是什么 | 可信度 |
+   * |---|---|---|
+   * | `quickProfile` | **标签**（「我觉得他是跟注站」） | 主观，上限 `QUICK_PROFILE_CONFIDENCE` |
+   * | `behaviorProfile` | **逐条行为证据**（带机会数与收缩后比率） | 由 `behaviorProfileOf` 按实测/人工/标签/池先验四级决定 |
+   *
+   * ## 严格可选
+   *
+   * 不填 ⇒ 整条链与历史**逐位一致**（既有测试全部依赖这一点）。
+   * 填了 ⇒ 范围链在**河牌进攻性动作**上改用
+   * `P(下注 | 手牌类别, 节点, 画像)`，替代原先的档位似然，
+   * 并抑制同一条动作上的倾斜通道（避免画像被计两次）。
+   */
+  behaviorProfile?: PlayerBehaviorProfile;
+  /**
+   * 🔴 **PLAYER PROFILE V3**：该对手的**连续统计**（VPIP / PFR / 3Bet /
+   * WTSD / FoldTo*CBet / *CheckRaise）。
+   *
+   * ## 三层概念（V3 §四，必须保持分离）
+   *
+   * ```text
+   * quickProfile    = 标签 Prior      （「我觉得他是跟注站」）
+   * observedStats   = 实测证据        （「310 手里他河牌只弃 19%」）
+   * → resolved      = 两者按样本量加权的结果（**标签不被覆盖**）
+   * ```
+   *
+   * ## 严格可选（V3 §十一）
+   *
+   * 不填 / 全 `null` ⇒ 所有分街系数 = 1 ⇒ 与 V2 archetype-only **逐位一致**。
+   * 每个字段允许 `null`（缺失），**但不得用 0 冒充缺失** —— 0 表示
+   * 「观测到了 0 次」，`null` 表示「没观测过」，语义完全不同（§十四）。
+   */
+  observedStats?: PlayerObservedStats | null;
 };
 
 export type ManualHandInput = {
@@ -268,6 +311,23 @@ export type ManualHandInput = {
    * 缺省等于 `effectiveStackBB`）。因此既有 1119 项测试不受影响。
    */
   seatStacksBB?: Readonly<Partial<Record<Position, number>>>;
+  /**
+   * 🔴 **逐座位的快速画像**（MULTIWAY RESPONSE TREE）。
+   *
+   * ## 为什么必须能逐座位给
+   *
+   * `villain.quickProfile` 只表达**一个**对手的画像。多人池里两个对手的
+   * 类型往往不同（本例：UTG 松弱、CO 跟注站），而多人下注 EV 要求
+   * **每个对手各自**的 fold/call/raise ——「谁的画像」直接决定谁爱不爱弃牌。
+   * 只支持一个画像时，引擎只能把这个画像套给其中一个座位，
+   * 另一个座位被迫当中立先验，**这不是精度问题，是表达能力缺口**。
+   *
+   * 值与 `villain.quickProfile` 同域（`QuickProfile`）；键是**位置**。
+   * 优先级：本表 > `villain.quickProfile`（当该座位就是 `villain.playerId`）> 中立先验。
+   *
+   * ⚠️ 仍然只是**用户主观判断**，可信度上限同样是 `QUICK_PROFILE_CONFIDENCE`。
+   */
+  seatProfiles?: Readonly<Partial<Record<Position, string>>>;
   /**
    * **本手真正参与的物理座位**（Table Topology Correction）。
    *
@@ -346,6 +406,8 @@ export type ParsedManualInput = {
    * `villain.stackBB` 或 `effectiveStackBB`（历史行为）。
    */
   seatStacksBB: Readonly<Partial<Record<Position, number>>>;
+  /** 逐座位画像（**已校验**；缺省的位置没有画像证据） */
+  seatProfiles: Readonly<Partial<Record<Position, string>>>;
   /** 本手参与的物理座位（**已校验**：容量内的唯一位置，且必须包含 Hero 与 Button） */
   occupiedPositions: readonly Position[];
   /** Button 的物理座位（**已校验**：必须是本手参与者） */
@@ -747,6 +809,143 @@ export function parseManualInput(input: ManualHandInput): ParseResult {
     }
   }
 
+  /* ---- 逐座位画像（MULTIWAY RESPONSE TREE） ---- */
+  //
+  // 与 `seatStacksBB` 同一条纪律：写错的键**必须阻断**，不允许静默忽略 ——
+  // 「看起来设了画像、实际用的是中立先验」比没有画像更危险。
+  const rawSeatProfiles = input.seatProfiles;
+  const seatProfiles: Partial<Record<Position, string>> = {};
+  if (rawSeatProfiles !== undefined) {
+    if (typeof rawSeatProfiles !== 'object' || rawSeatProfiles === null || Array.isArray(rawSeatProfiles)) {
+      issues.push({
+        code: 'INVALID_NUMBER',
+        message: '逐座位画像必须是一个「位置 → 画像」的对象',
+        field: 'seatProfiles',
+      });
+    } else {
+      for (const [key, raw] of Object.entries(rawSeatProfiles)) {
+        if (!positions.includes(key as Position)) {
+          issues.push({
+            code: 'INVALID_POSITION',
+            message:
+              `${tableSize} 人桌上没有「${key}」这个位置，因此无法为它设置画像。` +
+              `可选：${positions.join(' / ')}`,
+            field: `seatProfiles.${key}`,
+          });
+          continue;
+        }
+        if (typeof raw !== 'string' || !quickProfileSet.includes(raw)) {
+          issues.push({
+            code: 'INVALID_NUMBER',
+            message:
+              `「${key}」的画像「${String(raw)}」不是已知取值。可选：${quickProfileSet.join(' / ')}`,
+            field: `seatProfiles.${key}`,
+          });
+          continue;
+        }
+        seatProfiles[key as Position] = raw;
+      }
+    }
+  }
+
+  /*
+   * 🔴 **注入式行为画像的形状必须校验**（V2.1 失败模式审计 #3 / #4）。
+   *
+   * ## 修复前实测（两处，都是「静默或半静默」的失败）
+   *
+   * 1. **残缺画像把整手牌打挂**（`traits` 缺一条就崩）：
+   *    `behaviorProfile.ts` 的读取点直接取 `traits.<条目>.effectiveRate`，
+   *    而 `traits` 是 `Record<BehaviorTraitKey, StatEvidence>` —— 类型上非可选，
+   *    运行时却可以缺。实测 `traits: {}` 或只给一条：
+   *    `ok=false / stage=CONTEXT / CONTEXT_BUILD_FAILED: Cannot read properties of
+   *    undefined (reading 'effectiveRate')`。**整手牌无法分析**，而错误信息
+   *    对使用者完全不可操作。
+   * 2. **非法数值穿透到似然**：`successes/opportunities` 为 `NaN` 或 `Infinity`
+   *    时，`statEvidenceOf` 只对 `priorRate` 做了有限性守卫，于是
+   *    `effectiveRate = NaN` ⇒ `likelihood = NaN` ⇒ 范围引擎
+   *    `validateActionModel` 拒绝**整条动作模型** ⇒ 该街的贝叶斯更新被
+   *    **静默丢弃**（失败只写在 `updateTrace.action` 里，不进 `warnings`）。
+   *    实测后果：权益从 57.70% 变成 **67.51%**（+9.8pp）—— 一个坏数字让结论
+   *    变得**更激进**，而界面上看不出任何异常。
+   *
+   * ## 为什么在**这里**校验（而不是在 `statEvidenceOf` 里夹取）
+   *
+   * 项目纪律（第 16 节）：**未知/非法取值一律阻断，绝不静默修正**。
+   * 静默夹取会把「数据坏了」变成「数据看起来正常」—— 那正是上面第 2 条
+   * 已经造成的后果。这里处在**信任边界**（外部传入的对象），
+   * 因此按既有风格（同函数里 `quickProfile` / `dynamicHint` / `seatProfiles`
+   * 都是 Fail-Closed）逐条列出问题并阻断。
+   *
+   * ⚠️ `traits` **允许缺条目**（那是「这一条没有证据」，语义合法）：
+   * 读取端回落到池先验，不在这里报错 —— 见 `behaviorProfile.ts` 的 `traitRateOf`。
+   */
+  for (const [index, villain] of villainList.entries()) {
+    const bp = villain.behaviorProfile as unknown;
+    if (bp === undefined || bp === null) continue;
+    const where = villainList.length > 1 ? `第 ${index + 1} 个对手的` : '对手的';
+    const field = villainList.length > 1 ? `villains[${index}].behaviorProfile` : 'villain.behaviorProfile';
+    if (typeof bp !== 'object') {
+      issues.push({ code: 'INVALID_NUMBER', message: `${where}行为画像必须是一个对象`, field });
+      continue;
+    }
+    const traits = (bp as { traits?: unknown }).traits;
+    if (traits !== undefined && (typeof traits !== 'object' || traits === null || Array.isArray(traits))) {
+      issues.push({ code: 'INVALID_NUMBER', message: `${where}行为画像的 traits 必须是「条目 → 证据」的对象`, field: `${field}.traits` });
+      continue;
+    }
+    for (const [key, rawTrait] of Object.entries((traits ?? {}) as Record<string, unknown>)) {
+      /*
+       * ⚠️ **刻意不校验「条目名是否合法」**：那需要 `BehaviorTraitKey` 的**值**导入，
+       * 而 `behaviorProfile.ts` 反向 `import type { QuickProfile }` 自本文件 ——
+       * 值导入会**引入真实运行时环**（模块初始化顺序未定义）。
+       * 在这里复制一份条目名清单更糟（两份清单必然漂移）。
+       * 因此本层只校验**形状与数值**；未知条目名在似然计算里不匹配任何条件化分支，
+       * 因而是惰性的（不会改变任何数值）。
+       */
+      if (rawTrait === null || typeof rawTrait !== 'object') {
+        issues.push({ code: 'INVALID_NUMBER', message: `${where}行为条目「${key}」的证据必须是一个对象`, field: `${field}.traits.${key}` });
+        continue;
+      }
+      const t = rawTrait as Record<string, unknown>;
+      /*
+       * **计数类字段必须是有限非负整数**：`successes` / `opportunities` /
+       * `unknownOutcomeOpportunities`。小数、负数、NaN、Infinity 一律阻断。
+       */
+      for (const countKey of ['successes', 'opportunities', 'unknownOutcomeOpportunities'] as const) {
+        const v = t[countKey];
+        if (v === undefined) continue;
+        if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+          issues.push({
+            code: 'INVALID_NUMBER',
+            message:
+              `${where}行为条目「${key}」的 ${countKey} 必须是**有限非负整数**，收到 ${String(v)}。` +
+              '（项目纪律：非法数值阻断，不做静默修正 —— 夹取会把「数据坏了」变成「数据看起来正常」）',
+            field: `${field}.traits.${key}.${countKey}`,
+          });
+        }
+      }
+      if (
+        typeof t['successes'] === 'number' && typeof t['opportunities'] === 'number'
+        && Number.isInteger(t['successes']) && Number.isInteger(t['opportunities'])
+        && t['successes'] > t['opportunities']
+      ) {
+        issues.push({
+          code: 'INVALID_NUMBER',
+          message: `${where}行为条目「${key}」的 successes（${String(t['successes'])}）大于 opportunities（${String(t['opportunities'])}）`,
+          field: `${field}.traits.${key}.successes`,
+        });
+      }
+      const eff = t['effectiveRate'];
+      if (eff !== undefined && (typeof eff !== 'number' || !Number.isFinite(eff) || eff < 0 || eff > 1)) {
+        issues.push({
+          code: 'INVALID_NUMBER',
+          message: `${where}行为条目「${key}」的 effectiveRate 必须是 0..1 的有限数，收到 ${String(eff)}`,
+          field: `${field}.traits.${key}.effectiveRate`,
+        });
+      }
+    }
+  }
+
   if (issues.length > 0) return { ok: false, issues };
 
   /* ---- 本手拓扑：容量 / 参与者 / Button（Table Topology Correction） ---- */
@@ -830,6 +1029,7 @@ export function parseManualInput(input: ManualHandInput): ParseResult {
       villain: villainList[0] ?? {},
       opponentCount,
       seatStacksBB: Object.freeze(seatStacksBB),
+      seatProfiles: Object.freeze(seatProfiles),
       occupiedPositions: Object.freeze(occupiedPositions),
       buttonPosition,
       handedness: occupiedPositions.length,

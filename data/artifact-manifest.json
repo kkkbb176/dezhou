@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1.0.0",
-  "generatedAt": "2026-09-16",
+  "generatedAt": "2026-09-18",
   "generator": "npm run manifest（src/infra/artifactManifest.ts）",
   "exclusions": [
     {
@@ -178,6 +178,139 @@
       "impact": "分类与调整因子变化（含维度中立点、标签阈值）→ **画像对范围的影响幅度发生变化**"
     },
     {
+      "path": "src/domain/player/archetypeDimensions.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "58b42cedf760b57a18df40b5d46089965392203053fc2b6521d035764ceb68ed",
+      "bytes": 13512,
+      "impact": "手选画像 → 连续维度的原型表变化 → **画像通过似然通道对范围的影响发生变化**（P0 主链修复的入口）"
+    },
+    {
+      "path": "reports/PROFILE_RANGE_MAINCHAIN_REPORT.md",
+      "category": "REPORT",
+      "sha256": "5ed58e7ba765a27eb843d5cd467b913246d6b70bb8910d722aeda9380add62b6",
+      "bytes": 21034,
+      "impact": "画像 → Range → 权益主链修复的证据与验收表变化 → **本报告必须与新证据同步**"
+    },
+    {
+      "path": "src/domain/player/tendencyProvider.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "ac3717c7c14990caee2b2243e6a0598246a644377b33d7667087fedb01f75600",
+      "bytes": 25894,
+      "impact": "画像 / 近期倾向进入动作似然的方式变化（弱牌锚点、价值倾斜、观测倾斜、工程护栏）→ **范围后验、Hero 权益与 Call EV 全部发生变化**"
+    },
+    {
+      "path": "src/domain/postflop/betResponse.ts",
+      "category": "DECISION",
+      "sha256": "fb8480e9ca6df3c803bde58c97c585039119e6a1b64e6a6a178319f59af21148",
+      "bytes": 84370,
+      "impact": "下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ **所有「无人下注」节点的下注决策与尺寸选择都会变化**"
+    },
+    {
+      "path": "reports/BET_DECISION_ENGINE_PHASE1_REPORT.md",
+      "category": "REPORT",
+      "sha256": "6308dfa7a61c1d958da32c01b7afe45ad987975f0b398eb8144f4a63c9f14034",
+      "bytes": 16031,
+      "impact": "下注决策引擎 Phase 1 的验收表与限制清单变化 → **本报告必须与新证据同步**"
+    },
+    {
+      "path": "reports/RIVER_LEGAL_ACTION_TREE_FIX_REPORT.md",
+      "category": "REPORT",
+      "sha256": "863cf0a9dd378a6cd9bb63b68892c4c7f2f558cab779269e4d3fe291c2ad2937",
+      "bytes": 13669,
+      "impact": "河牌合法动作树的验收表与墨菲核对变化 → **本报告必须与新证据同步**"
+    },
+    {
+      "path": "src/domain/decision/evidencePriority.ts",
+      "category": "DECISION",
+      "sha256": "871ba3f84bb36cfa825dc2b811f516a4732a8d5b151c40467cf39f8255242127",
+      "bytes": 21799,
+      "impact": "动作证据优先级与覆盖权限变化（谁能覆盖谁、UNKNOWN 是否参与比较、MARGINAL 是否允许启发式打断）→ **所有面对下注节点的动作来源与最终动作都可能变化**"
+    },
+    {
+      "path": "reports/PREFLOP_EVIDENCE_PRIORITY_FIX_REPORT.md",
+      "category": "REPORT",
+      "sha256": "764ad404c41cd8514344b41967ef82fa18baa280b42331e047f92254ac44857f",
+      "bytes": 14351,
+      "impact": "证据优先级修复的验收表与覆盖权限规则变化 → **本报告必须与新证据同步**"
+    },
+    {
+      "path": "reports/MULTI_LIMP_ISOLATION_RAISE_PHASE1_REPORT.md",
+      "category": "REPORT",
+      "sha256": "a1d342d6859ad31fddcebf5a0cf818f21d89aa8fda04cf6d4bfecf91633c2c9f",
+      "bytes": 14860,
+      "impact": "多人 limp 隔离加注（Phase 1）的根因、模型、固定节点验收表与变异测试结果 → **本报告必须与 `limpIsolation.ts` 的实际公式同步**"
+    },
+    {
+      "path": "scripts/preflop-iso-probe.ts",
+      "category": "REPORT",
+      "sha256": "c9cbd804dd8971ff2d01ba6beff6c329850bb522a7afb56a5688f086c11f54e2",
+      "bytes": 5609,
+      "impact": "隔离加注事实包探针（逐家 limp 响应 / 权益 / EV 分解）→ 仅诊断用，不参与决策"
+    },
+    {
+      "path": "scripts/iso-mutations.ts",
+      "category": "REPORT",
+      "sha256": "8e015d8169cbf50235172a20c8e8ee7b230a18f1bb1a6865206b6e6b1bf82985",
+      "bytes": 5106,
+      "impact": "隔离加注的变异测试（M1–M8，逐个把修复改回坏版本）→ 仅诊断用，不参与决策"
+    },
+    {
+      "path": "scripts/multiway-mutations.ts",
+      "category": "REPORT",
+      "sha256": "973bafa07261619773745cfea52bdfc0bb5c45b940a58234b0419c7eb85a293d",
+      "bytes": 5267,
+      "impact": "多人联合响应树的变异测试（M1–M8：平均弃牌率 / primary 决定 EV / 共用响应 / 单挑平均 / 丢分支 / 重复扣成本 / 尺寸复用 / 画像失效）→ 仅诊断用"
+    },
+    {
+      "path": "scripts/seat-profile-probe.ts",
+      "category": "REPORT",
+      "sha256": "fc8bbde786817e47401572e3e8c92b9e39becd59be3d294a408746fa0ce314d6",
+      "bytes": 856,
+      "impact": "逐座位画像 → 维度 → 响应倾向探针 → 仅诊断用"
+    },
+    {
+      "path": "scripts/station-size-probe.ts",
+      "category": "REPORT",
+      "sha256": "234a369a4a5dab13bd3152d911dd6c554ad603f853793c563906755b68687b40",
+      "bytes": 2886,
+      "impact": "跟注站 / 紧手尺寸方向探针 → 仅诊断用"
+    },
+    {
+      "path": "src/domain/player/behaviorProfile.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "2229938c4255789b7bc335b5d598543b80015347eafdf9044b2d8fe23ca00780",
+      "bytes": 56323,
+      "impact": "人物画像量化（StatEvidence/收缩/行为条目/节点上下文/动作似然/combo 重加权/物性检测）→ 河牌面对下注的加权范围与权益将随画像变化"
+    },
+    {
+      "path": "reports/PLAYER_PROFILE_QUANTIFICATION_V1_REPORT.md",
+      "category": "REPORT",
+      "sha256": "91e23d3213d3068e4e917d7b53bbf1d08fe5801f3a4eb95ec1eae50905d574a6",
+      "bytes": 16281,
+      "impact": "画像量化的数据模型、收缩公式、03A/03B 单调性验收与墨菲审计 → 本报告必须与 behaviorProfile.ts 同步"
+    },
+    {
+      "path": "reports/TEST_HAND_MULTIWAY_TURN_FIX_REPORT.md",
+      "category": "REPORT",
+      "sha256": "bf4a1fe1ba36f99a79da276b9afe847311811ff04660f8e092270d3d1a1c5abf",
+      "bytes": 9550,
+      "impact": "真实测试牌局定点修复（Board Delta / 复合牌力 / 非 closing action / RAISE 排序语义）→ 本报告必须与实际公式同步"
+    },
+    {
+      "path": "scripts/board-delta-probe.ts",
+      "category": "REPORT",
+      "sha256": "692e9f375e3d300e06958a62f6b124569f0ff0e50feb2a6f18e42a6fe2fdc28a",
+      "bytes": 2169,
+      "impact": "牌面变化分类探针（A–D 用例）→ 仅诊断用"
+    },
+    {
+      "path": "reports/MULTIWAY_POSTFLOP_RESPONSE_TREE_PHASE1_REPORT.md",
+      "category": "REPORT",
+      "sha256": "3586bc7b39ba41894262c217667493dc2bc76a813ce21367176a226570ea0444",
+      "bytes": 15017,
+      "impact": "多人翻后响应树（Phase 1）的根因、联合树结构、固定节点验收表、尺寸饱和审计与变异结果 → **本报告必须与 `betResponse.ts` 的联合公式同步**"
+    },
+    {
       "path": "src/domain/dynamic/dynamic.types.ts",
       "category": "PLAYER_MODEL",
       "sha256": "47813523c8feda2efc2a958f19b9bc89b9716a27728a4499ed88c827dfcb678b",
@@ -222,8 +355,8 @@
     {
       "path": "src/domain/decision/decision.types.ts",
       "category": "DECISION",
-      "sha256": "8db882c164c8e681bbb0b3a5c4411826e8bd21fc391e38919fded05106a686f6",
-      "bytes": 46211,
+      "sha256": "01ee47dc46075bc7d9dc21b6c305c988cdf0a018c0593658f1d8ae2522df6d4d",
+      "bytes": 63308,
       "impact": "决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ **所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）"
     },
     {
@@ -243,8 +376,8 @@
     {
       "path": "src/app/manualInput/manualInput.ts",
       "category": "DECISION",
-      "sha256": "2c4599a06cb3083e32df7cad7b79ae016cd34bf2d1639ede44875d1a2c387dc2",
-      "bytes": 34038,
+      "sha256": "3bc537aba2e652237d1538ddeae46f4269871236c554dedff112e07254cc7179",
+      "bytes": 44648,
       "impact": "手动输入结构变化（字段 / 牌面格式 / 街道与公共牌约束）→ **输入解析与校验行为发生变化**（影响所有录入路径）"
     },
     {
@@ -257,29 +390,36 @@
     {
       "path": "src/app/manualInput/legalActions.ts",
       "category": "DECISION",
-      "sha256": "918673605cd25c53fe7587282668322501bf123f9c21d2aac562966989a73885",
-      "bytes": 16682,
+      "sha256": "4d93d6b9562401f3e88a62b119bea427987360ad61be452c66db67ca2801c4be",
+      "bytes": 17434,
       "impact": "合法动作与尺寸网格变化 → **决策可输出的动作集合与尺寸集合发生变化**（必须与 Poker Core 的校验保持一致）"
+    },
+    {
+      "path": "src/app/manualInput/limpIsolation.ts",
+      "category": "DECISION",
+      "sha256": "e66856dc45c6d8cedd8f63c14a0ddbc25617d47915581d296ed21b9fd935c667",
+      "bytes": 29087,
+      "impact": "多人 limp 隔离加注模型（limp 到达范围 / 响应树 / 联合响应 / 尺寸 / 身后风险 / 代理 EV）→ **跛入池里「加注 vs 跟注」的依据与尺寸发生变化**（翻前，代理 EV，RAKE 未实现）"
     },
     {
       "path": "src/app/manualInput/contextBuilder.ts",
       "category": "DECISION",
-      "sha256": "8a57133a2962c16dcd62154642e739c37e96da028320f6f704fb780c4e0436b7",
-      "bytes": 76325,
+      "sha256": "ef7b22679c85ed4b0aa99e83e6f7441c9b625042783d58662d9d2cfe0acbd474",
+      "bytes": 171024,
       "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
     },
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "1a5cc676ca311e260f989c5ea7192211af11c6cd603469134b63f8ee9ec3369d",
-      "bytes": 98132,
+      "sha256": "3efe778580cf431f47b3a1664454af7b26c457960ac32e47930d3102f12cede4",
+      "bytes": 132308,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
       "path": "src/app/alphaPipeline.ts",
       "category": "DECISION",
-      "sha256": "783793978eb5e31b0897482b7a062ff0424793d5b44cfe964fb08c620b97f9b0",
-      "bytes": 58546,
+      "sha256": "3ff040397e836a4a467f1062d22bd9dc1db45323a6cc572d85e9d704e5192ebc",
+      "bytes": 60326,
       "impact": "端到端管线变化（阶段顺序 / 失败阶段划分 / 最终数学一致性检查 / 日志）→ **整条链的失败行为与输出结构发生变化**"
     },
     {
@@ -306,8 +446,8 @@
     {
       "path": "src/viewmodels/decisionViewModel.ts",
       "category": "DECISION",
-      "sha256": "1216705535930c1dfa0da18a9cb6ff6162f4ff5df3f0def6eb82ddf03404d7d7",
-      "bytes": 33080,
+      "sha256": "2b1afbd00571118efeb8d539c2aa9645fcc0507ff30f533e36b783770ee08f88",
+      "bytes": 57573,
       "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
     },
     {
@@ -586,8 +726,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "6d2bdd67074b2de5656797e1d9fe89ea483d561df1da161ee666377a6f28743b",
-      "bytes": 101684,
+      "sha256": "1a7c1ee210fa22cf6684806424874a0242e040aa53a511d23b506ba607ca505a",
+      "bytes": 120412,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -656,8 +796,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "e0957bd024ebf1f6f1bf97544c3250920c0d92e02ed1801948b2666876db0262",
-      "bytes": 46588,
+      "sha256": "bfca03b3f6d6bc469c0bb6d165ab57b2556db1e84bbde9f67e2c3a1ae45c29a2",
+      "bytes": 51825,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -684,8 +824,8 @@
     {
       "path": "test/alphaRedteamRegression.test.ts",
       "category": "DECISION",
-      "sha256": "92de766a4ccd560987ca34e1304303f8806ad6e2f738fe08dca1384d30218472",
-      "bytes": 53370,
+      "sha256": "5dcce9d55014af2124ec516c1d56af39d62c134031a2656f13295ba6741b13c1",
+      "bytes": 53665,
       "impact": "红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；本文件删掉任何一条断言都等于放弃对应的修复"
     },
     {

@@ -48,6 +48,7 @@ import {
   allBoardCards,
   realizedOpponentIds,
   yetToActIds,
+  type ActionRecord,
   type GameState,
   type PlayerState,
 } from '../../domain/poker/gameState.ts';
@@ -65,7 +66,11 @@ import { RangeState, toRangeAction, type Range } from '../../domain/range/range.
 import { buildRangeFromRankClasses } from '../../domain/range/range.ts';
 import { updateRange } from '../../domain/range/rangeUpdate.ts';
 import { PlayerMetric } from '../../domain/player/player.types.ts';
-import { readPlayer, type PlayerRead } from '../../domain/player/playerClassifier.ts';
+import {
+  readPlayer,
+  type PlayerRead,
+  type ProfileAdjustment,
+} from '../../domain/player/playerClassifier.ts';
 import { createProfile, PROFILE_VERSION } from '../../domain/player/playerProfile.ts';
 import { evaluateDynamicBehavior } from '../../domain/dynamic/dynamicBehavior.ts';
 import { adaptAdjustments } from '../../domain/dynamic/dynamicAdapter.ts';
@@ -82,7 +87,7 @@ import {
   type StrategyKnowledge,
 } from '../../domain/knowledge/knowledge.types.ts';
 
-import { deriveLegalActions, type LegalActions } from '../manualInput/legalActions.ts';
+import { deriveLegalActions, buildSizeGrid, closestSizeTo, type LegalActions } from '../manualInput/legalActions.ts';
 import type { RangeSource } from '../../domain/range/range.types.ts';
 import type { RankClassWeights } from '../../domain/range/range.ts';
 import {
@@ -94,8 +99,24 @@ import {
   threeBetWeightsByHandedness,
 } from '../manualInput/preflopPriors.ts';
 import {
+  LIMPER_ARCHETYPE_ZH,
+  LimperArchetype,
+  effectiveTraits,
+  isoRaiseEVOf,
+  isoRaiseSizeOf,
+  jointResponsesOf,
+  limpArrivalRangeOf,
+  limpResponseOf,
+  limpResponseRangesOf,
+  playersBehindRiskOf,
+  quickProfileToLimperArchetype,
+  type LimperInput,
+  type PreflopIsoFacts,
+} from '../manualInput/limpIsolation.ts';
+import {
   betRatioOf,
   likelihoodWeights,
+  normalizeLikelihood,
   tierOfRankClass,
   tierWeightOf,
 } from '../manualInput/likelihoodModel.ts';
@@ -129,10 +150,62 @@ import {
   type MathSnapshot,
   type PlayerSnapshot,
   type PostflopFacts,
+  type ProfileRangeEvidence,
   type RangeSnapshot,
   type RangeUpdateTraceEntry,
 } from '../../domain/decision/decision.types.ts';
 import { ACTION_ZH, POSITION_ZH } from '../manualInput/manualInput.ts';
+import {
+  buildResponseModel,
+  classifyVillainAfterCheck,
+  composeCheckEVTree,
+  composeMultiwayBetEV,
+  heroDrawPotentialOf,
+  jointStatesOf,
+  legalizeBetSizes,
+  realizationFactorOf,
+  responseTendenciesOf,
+  JOINT_INDEPENDENCE_NOTE,
+  JointModel,
+  type BetDecisionFacts,
+  type MultiwayBetEV,
+  type MultiwayBetFacts,
+  type OpponentResponseShares,
+  type OpponentSizeResponse,
+  type SizeResponseWithEquity,
+  type SizeSaturationAudit,
+} from '../../domain/postflop/betResponse.ts';
+import { boardTextureOf } from '../../domain/postflop/boardDelta.ts';
+import {
+  boardTextureLabelOf,
+  riverComboClassOf,
+} from '../../domain/postflop/riverProfileClassify.ts';
+import { drawProfileOf, outAuditOf } from '../../domain/postflop/draws.ts';
+import { madeHandClassOf } from '../../domain/postflop/relativeHandRole.ts';
+import { boardWetnessOf } from '../../domain/postflop/rangeCompression.ts';
+import { compareHands } from '../../domain/poker/handEval.ts';
+import {
+  TENDENCY_TIER_ZH,
+  archetypeDimensionsOf,
+  resolveTendencyDimensions,
+  TendencyEvidenceTier,
+  type ResolvedTendencyDimensions,
+} from '../../domain/player/archetypeDimensions.ts';
+import {
+  createTendencyProvider,
+  OBSERVATION_TILTS,
+  type TendencyEvidence,
+  type TendencyProvider,
+} from '../../domain/player/tendencyProvider.ts';
+import {
+  estimateUnifiedActionLikelihood,
+  behaviorProfileOf,
+  BetSizeBucketOf,
+  type BehaviorNodeContext,
+  type PlayerBehaviorProfile,
+} from '../../domain/player/behaviorProfile.ts';
+/* 🔴 PLAYER PROFILE V3：标签 Prior + 实测连续统计 ⇒ 分街画像 */
+import { resolvePlayerProfile, type PlayerObservedStats } from '../../domain/player/observedStats.ts';
 
 /* ============================================================
  * 常量
@@ -172,6 +245,13 @@ export type ContextBuildInput = {
   /** 用户手选的对手快速画像（主观判断，可信度受限） */
   quickProfile?: QuickProfile;
   /**
+   * 🔴 **逐座位的快速画像**（MULTIWAY RESPONSE TREE）。
+   *
+   * 多人下注 EV 要求每个对手**各自**的 fold/call/raise，而「他是谁」直接决定
+   * 他爱不爱弃牌；只支持一个画像时，另一个座位只能当中立先验 —— 那是表达能力缺口。
+   */
+  seatProfiles?: Readonly<Partial<Record<Position, QuickProfile>>>;
+  /**
    * 用户手选的动态观察提示。
    *
    * ⚠️ 类型是 `DynamicHint` 而**不是** `string`（红队 F-11）：
@@ -189,6 +269,33 @@ export type ContextBuildInput = {
    * 没有时用「快速画像」兜底，且可信度被 `QUICK_PROFILE_CONFIDENCE` 上限截断。
    */
   villainProfile?: unknown;
+  /**
+   * 🔴 **行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二）。
+   *
+   * ## 为什么它是**独立于** `quickProfile` 的一个字段
+   *
+   * `quickProfile` 是**标签**（「我觉得他是跟注站」），本模块只把它当作
+   * 维度先验的来源。而 `PlayerBehaviorProfile` 是**逐条行为证据**
+   * （每条带机会数与收缩后的生效比率），它才能回答
+   * 「他在这个节点上下注的概率是多少」。
+   *
+   * ## 严格可选 —— 不传就逐位不变
+   *
+   * 不传 ⇒ `applyLikelihoodUpdates` 走既有档位似然路径，
+   * **一个字节都不多算**（既有 1700+ 项测试依赖这个契约）。
+   * 传了 ⇒ 只对**河牌进攻性动作**启用画像感知似然，
+   * 并在同一条动作上抑制 `adjustmentProvider`（避免画像计两次）。
+   */
+  behaviorProfile?: PlayerBehaviorProfile;
+  /**
+   * 🔴 **PLAYER PROFILE V3**：该对手的**连续统计**（VPIP/PFR/FoldTo*CBet/…）。
+   *
+   * 语义三层（§四）：`quickProfile` 是**标签 Prior**，本字段是**实测证据**，
+   * 两者由 `resolvePlayerProfile` 合并成 resolved profile —— 标签**不被覆盖**。
+   *
+   * 不传 / 全 `null` ⇒ 所有分街系数 = 1 ⇒ 与 V2 archetype-only **逐位一致**。
+   */
+  observedStats?: PlayerObservedStats | null;
   /** 蒙特卡洛种子（可复现） */
   equitySeed?: number;
   /**
@@ -519,10 +626,187 @@ function preflopStrengthOf(
  * 对手范围
  * ============================================================ */
 
+/**
+ * 「某条街上**当时**看到的公共牌」= 最终牌面的前缀。
+ *
+ * 翻牌 3 张 / 转牌 4 张 / 河牌 5 张；翻前为空。
+ *
+ * ⚠️ 这是**单一事实来源**：范围似然（`applyLikelihoodUpdates`）与
+ * 画像的「弱牌」判据（`TendencyProviderOptions.boardOfStreet`）都用它，
+ * 两处各写一份 `slice(0,3/4/5)` 迟早漂移。
+ */
+function boardAtStreetOf(state: GameState, street: Street): readonly Card[] {
+  const count = street === Street.FLOP ? 3 : street === Street.TURN ? 4 : street === Street.RIVER ? 5 : 0;
+  return count === 0 ? [] : allBoardCards(state).slice(0, count);
+}
+
+/* ============================================================
+ * 画像节点上下文（PLAYER PROFILE QUANTIFICATION V1 · §八/§十二）
+ * ============================================================ */
+
+/** 盲注 / 前注类投入：它们**不是**「进池决定」，不参与底池类型判定 */
+const BLIND_ACTION_TYPES: readonly ActionType[] = [
+  ActionType.POST_SB,
+  ActionType.POST_BB,
+  ActionType.POST_ANTE,
+  ActionType.STRADDLE,
+];
+
+/** 进攻性动作（下注/加注/再加注/全下） */
+function isAggressiveActionType(type: ActionType): boolean {
+  return (
+    type === ActionType.BET ||
+    type === ActionType.RAISE ||
+    type === ActionType.RERAISE ||
+    type === ActionType.ALL_IN
+  );
+}
+
+/**
+ * 翻前底池类型 —— **由真实翻前行动推出**（不读 `state.street`，不看牌）。
+ *
+ * 【启发式】判据（结构性，不是估出的参数）：
+ *
+ * | 档 | 判据 |
+ * |---|---|
+ * | `THREE_BET` | 翻前进攻动作（RAISE/RERAISE/ALL_IN）≥ 2 次 |
+ * | `LIMPED` | 有**跛入**（首次加注之前的 CALL），且进攻动作 ≤ 1 次 |
+ * | `SRP` | 恰好 1 次进攻动作（单次加注底池） |
+ * | `OTHER` | 其余（无人加注、无人跛入，例如全弃到盲注） |
+ *
+ * ⚠️ 已知上限：`THREE_BET` 不区分 3Bet/4Bet/5Bet；`LIMPED` 不区分单跛入与多跛入。
+ * 升级路径：把 `BehaviorNodeContext.potType` 扩成更细的枚举，这里同步细化。
+ */
+function potTypeOf(state: GameState): BehaviorNodeContext['potType'] {
+  const preflop = state.actions.filter(
+    (a) => a.street === Street.PREFLOP && !BLIND_ACTION_TYPES.includes(a.type),
+  );
+  let raised = 0;
+  let limped = false;
+  for (const action of preflop) {
+    if (isAggressiveActionType(action.type)) {
+      raised += 1;
+      continue;
+    }
+    // 「首次加注之前的跟注」= 跛入
+    if (action.type === ActionType.CALL && raised === 0) limped = true;
+  }
+  if (raised >= 2) return 'THREE_BET';
+  if (limped && raised <= 1) return 'LIMPED';
+  if (raised === 1) return 'SRP';
+  return 'OTHER';
+}
+
+/**
+ * 前序街道线（§三十八 —— 这一项让「我 check-back 后他 probe」与
+ * 「他跟注后他 donk」成为**不同**的节点）。
+ *
+ * **从 `state.actions` 推出，绝不读 `state.street`**：
+ *
+ * | 转牌发生了什么 | 判定 |
+ * |---|---|
+ * | 有下注/加注 **且** 有人跟注 | `TURN_BET_CALL` |
+ * | 有下注/加注 但无人跟注 | `OTHER` |
+ * | **没有任何**下注/加注，且有人过牌 | `TURN_CHECK_BACK` |
+ * | 转牌没有任何记录 | `OTHER` |
+ *
+ * ⚠️ `TURN_CHECK_BACK` 判据是「无下注 + 有人过牌」而不是「我过牌」：
+ * 一条无下注的转牌街上，行动者只能是过牌者，因此这两者在**行动记录完整**时等价；
+ * 不额外要求「IP 身份」，因为位置由 `villainPosition` / `heroPosition` 单独表达。
+ */
+function previousStreetLineOf(state: GameState): BehaviorNodeContext['previousStreetLine'] {
+  const turn = state.actions.filter(
+    (a) => a.street === Street.TURN && !BLIND_ACTION_TYPES.includes(a.type),
+  );
+  const aggressive = turn.some((a) => isAggressiveActionType(a.type));
+  if (aggressive) {
+    return turn.some((a) => a.type === ActionType.CALL) ? 'TURN_BET_CALL' : 'OTHER';
+  }
+  return turn.some((a) => a.type === ActionType.CHECK) ? 'TURN_CHECK_BACK' : 'OTHER';
+}
+
+/**
+ * 为**某一个进攻性河牌动作**构造画像节点上下文。
+ *
+ * ## 🔴 拿不到就返回 `null`，绝不编造
+ *
+ * 两个必需输入都可能拿不到：
+ * - `boardTextureLabelOf(board)` 需要 ≥3 张公共牌；
+ * - `betRatioOf(amount, potBefore)` 需要**正的**下注额与动作前底池。
+ *
+ * 任一缺失 ⇒ 返回 `null` ⇒ 调用方回落到既有档位似然（**逐位不变**）。
+ * 用默认值顶上就是编造一个节点，那会让画像在这一手悄悄换个含义。
+ */
+function behaviorNodeOf(input: {
+  state: GameState;
+  opponent: PlayerState;
+  hero: PlayerState | null;
+  action: ActionRecord;
+}): BehaviorNodeContext | null {
+  if (input.hero === null) return null;
+  const texture = boardTextureLabelOf(boardAtStreetOf(input.state, input.action.street));
+  const ratio = betRatioOf(input.action.amount, input.action.potBefore);
+  if (texture === null || ratio === undefined) return null;
+
+  return Object.freeze({
+    street: 'RIVER',
+    heroPosition: input.hero.position,
+    villainPosition: input.opponent.position,
+    potType: potTypeOf(input.state),
+    playerCount: input.state.players.filter((p) => !p.folded).length,
+    previousStreetLine: previousStreetLineOf(input.state),
+    /*
+     * ⚠️ 按**真实动作类型**取，而不是一律写 'BET' ——
+     * 把加注写成下注就是「编造一个不存在的节点」。
+     * （`betLikelihoodOf` 当前不读这个字段，因此这一点不影响任何数值。）
+     */
+    currentAction:
+      input.action.type === ActionType.RAISE || input.action.type === ActionType.RERAISE
+        ? 'RAISE'
+        : 'BET',
+    sizeBucket: BetSizeBucketOf(ratio),
+    boardTexture: texture,
+  });
+}
+
 type RangeBuild = {
   snapshot: RangeSnapshot | null;
   range: Range | null;
   warnings: string[];
+  /**
+   * 🔴 **画像 / 近期倾向进入范围的证据**（P0 架构修复）。
+   *
+   * 它回答的是使用者点名的那一问：「画像到底有没有进入 action-conditioned
+   * range 与 Hero equity 主链」。`applied === false` 表示范围**逐位不变**，
+   * 而不是「看起来差不多」。
+   */
+  tendency?: RangeTendencyCore | null;
+  /**
+   * 🔴 **画像是否真的改变了这一家的范围**（V2.1 去重闸门修复）。
+   *
+   * 修复前决策层用的是 `tendency.provider.applied`，而上面的
+   * `applied === false 表示范围逐位不变` 这句话**已经不成立**：
+   * 河牌统一似然通道上 provider 被主动抑制（`suppressProvider`），
+   * 跛入原型通道根本不经过 provider。两个反例都有实测
+   * （`reports/V21_REVIEW_3_PIPELINE.md` 的 A/B 两个洞）。
+   * 因此去重闸门必须读**这个**字段。
+   */
+  profileAppliedToRange?: boolean;
+  /** 画像似然真正被施加的动作数（0 = 该通道未生效） */
+  profileAppliedActions?: number;
+};
+
+/** 建范围阶段就能拿到的画像证据（权益部分由调用方补齐） */
+type RangeTendencyCore = {
+  /** provider 侧证据（乘数摘要、是否被夹、中文说明） */
+  provider: TendencyEvidence;
+  /** 维度来源（实测 / 手选原型 / 加权合并 / 无证据） */
+  dimensionTier: string;
+  dimensionTierZh: string;
+  dimensionNoteZh: string;
+  /** 调整前后可达组合数（**必须相等**：只改概率，不产生/删除组合） */
+  combosBefore: number;
+  combosAfter: number;
 };
 
 /**
@@ -601,6 +885,15 @@ function buildBaseRange(
   deadCards: readonly Card[],
   /** 求解器给的范围权重（若这一家有可用的 GTO 数据）；见 `SolverRangeOverride` */
   solverOverride?: SolverRangeOverride,
+  /**
+   * 这一家的**跛入原型**（多人 limp 修复，§4）。
+   *
+   * 🔴 修复前「无人加注的被动进入」一律用 `bigBlindCheckWeights()` ——
+   * 那是**任意两张**（1225 组合），于是「跛入者范围」根本不含任何信息：
+   * 画像、位置、类型全都进不去，Hero 权益也就永远是一个数。
+   * 现在改成按原型收窄的 limp 到达范围（`limpArrivalRangeOf`）。
+   */
+  limpProfile?: { archetype: LimperArchetype; confidence: number } | null,
 ): { ok: true; range: Range } | { ok: false; reason: string } {
   let weights: RankClassWeights;
   let label: string;
@@ -648,14 +941,25 @@ function buildBaseRange(
   } else {
     // 主动跟注（未加注）
     const opener = openerPositionOf(state, opponent.id);
-    weights =
-      opener !== null && opener !== opponent.position
-        ? defendWeightsByHandedness(opener, opponent.position)
-        : bigBlindCheckWeights();
-    label =
-      opener !== null
-        ? `面对${POSITION_ZH[opener]}开池的启发式继续范围（对手选择跟注）`
-        : '无人加注时的宽范围';
+    if (opener !== null && opener !== opponent.position) {
+      weights = defendWeightsByHandedness(opener, opponent.position);
+      label = `面对${POSITION_ZH[opener]}开池的启发式继续范围（对手选择跟注）`;
+    } else if (limpProfile === null || limpProfile === undefined) {
+      weights = bigBlindCheckWeights();
+      label = '无人加注时的宽范围';
+    } else {
+      // 🔴 跛入：按原型收窄（不再是任意两张）
+      const arrival = limpArrivalRangeOf({
+        position: opponent.position,
+        archetype: limpProfile.archetype,
+        confidence: limpProfile.confidence,
+      });
+      weights = arrival.weights;
+      label =
+        `跛入到达范围：${LIMPER_ARCHETYPE_ZH[limpProfile.archetype]}` +
+        `${limpProfile.confidence > 0 ? '（画像）' : '（无画像 ⇒ 人群先验）'}，` +
+        `有效宽度 ${arrival.width.toFixed(2)}（**不是**任意两张）`;
+    }
   }
 
   const built = buildRangeFromRankClasses(weights, {
@@ -761,9 +1065,54 @@ function applyLikelihoodUpdates(
   state: GameState,
   opponent: PlayerState,
   baseAggression: { action: 'RAISE' | 'CALL'; street: Street; raiseOrdinal: number } | null,
-): { range: Range; trace: RangeUpdateTraceEntry[] } {
+  /**
+   * 🔴 **画像 / 近期倾向的调整提供者**（P0 架构修复 · 规范第二十节）。
+   *
+   * 修复前这里是空的：`updateRange` 有完整的 `adjustmentProvider` 通道
+   * （对数域乘法 + 逐条日志，规范第二十节要求的唯一合法入口），
+   * 但**生产路径从未传入** ⇒ 画像永远到不了范围，只能在决策末端当偏好修正。
+   *
+   * 传入后：`posterior ∝ prior × likelihood × profileFactor × observationFactor`，
+   * 因此**权益、底池赔率比较、Call EV、动作排名全部自动跟着变** ——
+   * 不需要在决策层再加任何画像逻辑（那才会变成两处口径）。
+   */
+  provider?: TendencyProvider,
+  /**
+   * 🔴 **行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二/§十三）。
+   *
+   * 严格可选：**没传就与改动前逐位一致**（这是既有测试依赖的契约）。
+   *
+   * 传了之后，**只对河牌的进攻性动作**改变似然来源：
+   * `likelihood = normalizeLikelihood(betLikelihoodOf(comboClass, node, profile))`，
+   * 并在同一条动作上**抑制** `provider`（见下方注释：避免画像被计两次）。
+   * 其余动作（翻前/翻牌/转牌、跟注、过牌）**完全不变**。
+   */
+  behaviorProfile?: PlayerBehaviorProfile,
+): { range: Range; trace: RangeUpdateTraceEntry[]; providerCalls: number; profileLikelihoodActions: number } {
   let current = range;
   const trace: RangeUpdateTraceEntry[] = [];
+  let providerCalls = 0;
+  /**
+   * 🔴 **统一动作似然真的被施加了几次**（V2.1 去重闸门修复）。
+   *
+   * 去重闸门原先只看 `provider.applied`，而 V2 起**河牌进攻动作上的 provider
+   * 是被抑制的**（`suppressProvider`）⇒ 画像明明改了范围，`provider.applied`
+   * 却是 `false` ⇒ 决策层把同一份证据**再计一次**。
+   * 计数在这里最可靠：它就是「画像似然被真正乘进范围」的次数。
+   */
+  let profileLikelihoodActions = 0;
+
+  /*
+   * 河牌画像路径要用 Hero 底牌来判「谁比谁强」。
+   * 拿不到 ⇒ 整条画像路径不启用（`behaviorNodeOf` 会返回 null）。
+   */
+  const heroPlayer =
+    (state.userPlayerId === null
+      ? undefined
+      : state.players.find((p) => p.id === state.userPlayerId)) ??
+    state.players.find((p) => p.holeCards !== null) ??
+    null;
+  const heroHole: readonly Card[] = heroPlayer?.holeCards ?? [];
 
   let actionIndex = 0;
   let skippedBaseAction = false;
@@ -814,10 +1163,7 @@ function applyLikelihoodUpdates(
      * ⚠️ 牌面不足 3 张（翻前）时 `boardRelativeTierOf` 返回 null，
      * 此处回落到 `tierOfRankClass` —— **翻前行为逐位不变**。
      */
-    const boardAtAction = allBoardCards(state).slice(
-      0,
-      record.street === Street.FLOP ? 3 : record.street === Street.TURN ? 4 : 5,
-    );
+    const boardAtAction = boardAtStreetOf(state, record.street);
     const tierOfEntry = (combo: { rankClass: string; cardIndices: readonly [number, number] }): number => {
       if (boardAtAction.length >= 3) {
         const relative = boardRelativeTierOf(
@@ -829,14 +1175,183 @@ function applyLikelihoodUpdates(
       return tierOfRankClass(combo.rankClass);
     };
 
+    /*
+     * 🔴 **河牌画像似然**（PLAYER PROFILE QUANTIFICATION V1 · §十二/§十三）。
+     *
+     * ## 为什么要单独一条路径（而不是继续走倾斜通道）
+     *
+     * 倾斜通道（`TendencyProvider`，见其文件头）对**同一个**进攻性画像
+     * 会同时抬高「价值端」与「空气端」——`valueTilt` 与 `bluffTilt` 都被 raise。
+     * 两端增益互相抵消，实测 MANIAC 的空气/价值比（×1.118 / ×1.086）
+     * 反而**低于** BLUFF_HEAVY（×1.103 / ×1.056）：
+     * 在诈唬倾向上是**非单调**的。这正是
+     * `PLAYER_PROFILE_RANGE_INFLUENCE_TOO_WEAK` 的结构性根因。
+     *
+     * `betLikelihoodOf` 从构造上消除了它：价值类别
+     * （`NUT_VALUE` / `STRONG_VALUE` / `MEDIUM_VALUE`）**不乘任何画像条目**，
+     * 只有薄价值、错过听牌、纯空气与「我 check-back 后他开火」带乘数。
+     * 于是画像只推动**诈唬/薄价值那一端** ⇒ 对诈唬倾向**严格单调**。
+     *
+     * ## 纪律
+     *
+     * - 只对**河牌 + 进攻性动作**生效；其余动作逐位不变。
+     * - 节点上下文或 Hero 底牌拿不到 ⇒ **不启用**（回落档位似然），不猜。
+     * - 只要有一个组合**无法如实分类** ⇒ 整条动作**不启用**：
+     *   混用两种量纲的似然会让 `normalizeLikelihood`（max 归一化）失去意义。
+     *   原因写进 `updateTrace.noteZh`，因此它是**可见的**而不是静默降级。
+     * - 似然经 `normalizeLikelihood` 落到 `(0, 0.95]` ——
+     *   范围引擎要求 `likelihood ∈ [0,1]`，越界会让整个动作模型被
+     *   `validateActionModel` 拒绝并**静默失效**（见 `likelihoodModel` 的警告）。
+     */
+    let likelihoodOverride: readonly number[] | null = null;
+    let profileNoteZh: string | null = null;
+
+    /*
+     * 🔴 **V2 §四十五：单一生产入口 —— 闸门已移除。**
+     *
+     * 这里此前有一道 `behaviorProfile.archetypePriorAvailable` 闸门，
+     * 让中性标签走「既有档位似然」、有先验原型走类别模型 —— 也就是
+     * **两个生产入口**。当时保留它的理由是「防止中性标签静默重标定」，
+     * 而那正是 V1「替换」式的缺陷。
+     *
+     * V2 的中性校准层从构造上解决了这一点：统一似然的第一段**就是**
+     * 既有档位权重，画像只在上面施加**几率比**条件化，而中性画像的
+     * 每个条件化因子**恰为 `1.0`** ⇒ 结果与旧实现**逐位相同**。
+     *
+     * 这一点已实测：`NEUTRAL_PARITY` 在
+     * River 25% / 75% / 125% × 8 类别 × 2 前序线 = **48 个网格单元上
+     * 最大绝对差为 0**（逐位相等，无需任何容差）。
+     *
+     * 既然闸门在数值上是**恒等变换**，就没有理由再保留第二条路径
+     * （§四十五 禁止长期并存两个生产入口）。现在**所有**河牌进攻性动作
+     * 都走 `estimateUnifiedActionLikelihood`：
+     * - 有画像 ⇒ 用该画像；
+     * - 没有画像（`UNKNOWN`）⇒ 用**中性画像**（等价于池先验），
+     *   结果与既有档位似然逐位一致。
+     *
+     * 唯一剩余的回落是 `node === null`（牌面不足 3 张 / 拿不到下注比例）——
+     * 那是**拿不到输入**的 fail-closed，不是第二个模型。
+     */
+    if (record.street === Street.RIVER && isAggressive) {
+      /** 没有画像时用**中性画像**（池先验）—— 等价于既有档位似然，逐位一致 */
+      const effectiveProfile =
+        behaviorProfile ?? behaviorProfileOf({ playerId: 'neutral', archetype: null });
+      const node = behaviorNodeOf({ state, opponent, hero: heroPlayer, action: record });
+      if (node === null || heroHole.length !== 2) {
+        profileNoteZh = '统一似然未启用：节点上下文（牌面纹理/下注量）或 Hero 底牌不足 ⇒ 回落档位似然';
+      } else {
+        const holes = current.entries.map(
+          (entry) =>
+            [ALL_CARDS[entry.combo.cardIndices[0]]!, ALL_CARDS[entry.combo.cardIndices[1]]!] as const,
+        );
+        const classes = holes.map((hole) =>
+          riverComboClassOf({ hole, board: boardAtAction, heroHole }),
+        );
+        const unclassified = classes.reduce((n, c) => (c === null ? n + 1 : n), 0);
+        if (unclassified > 0) {
+          profileNoteZh =
+            `画像似然未启用：${unclassified}/${classes.length} 个组合无法如实分类` +
+            '（牌力比较失败或与 Hero/公共牌重叠）⇒ 整条动作回落档位似然';
+        } else {
+          /*
+           * 🔴 **画像是「调制」，不是「替换」**（本轮修正 · 本阶段的核心量纲缺陷）。
+           *
+           * 修复前这里用 `normalizeLikelihood(betLikelihoodOf(...))` **替换**了
+           * 档位似然。后果是：一个原型一旦进入类别模型，它的范围就与仍走档位似然的
+           * 中性原型**不同尺**。隔离实测：
+           *
+           * ```text
+           * VERY_TIGHT 31.962%（类别模型） vs NORMAL 17.495%（档位模型）
+           * ⇒ 「越紧的对手给 Hero 越高权益」—— 量纲伪影，不是语义
+           * ```
+           *
+           * 于是任何「A 类 < 中性 < C 类」的排序断言都变成**跨模型比较**（两把尺子），
+           * 在数学上不可能成立 —— T1 / T2 / T13 / TEST 6 四项红灯全部源于此。
+           *
+           * 规范 §十二 要求的是「画像**只修改**动作似然」。因此取**相对中性画像的
+           * 似然比**，乘到既有档位似然上：
+           *
+           * ```text
+           * likelihood(combo) = 档位似然(tier) × [ P_画像(class) / P_中性(class) ]
+           * ```
+           *
+           * 性质：
+           * - **中性画像 ⇒ 比值恒为 1.000** ⇒ 与既有模型逐位一致（闸门因此可保留，
+           *   `UNKNOWN == NORMAL` 继续成立）；
+           * - 有先验原型 ⇒ 只把诈唬 / 薄价值那一端按条目比率缩放，**与基准同尺** ⇒
+           *   跨原型的比较重新变成**单模型比较**，排序断言恢复意义；
+           * - **不再需要 `normalizeLikelihood`**：比值无上界，但乘回档位似然后钳到
+           *   `[0,1]` 即满足范围引擎契约（越界会让整个动作模型被
+           *   `validateActionModel` **静默**拒绝 —— 见 `likelihoodModel` 的警告）。
+           */
+          /*
+           * 🔴 **V2：走统一动作似然（`estimateUnifiedActionLikelihood`）。**
+           *
+           * 这里此前是「档位似然 × 相对中性画像的似然比」—— V1 的**调制**式。
+           * 它保住了同尺（好），但动态范围只有 ≈1.75×，实测
+           * `PROFILE_RANGE_INFLUENCE = TRIVIAL`（权益仅动 0.79pp）。
+           *
+           * 现在**类别与档位由 `riverComboClassOf` 一次给出**（同一来源，
+           * 调用方不再二次推导档位 —— 那会形成第二把尺子），交给统一似然：
+           *
+           * ```text
+           * likelihood = 中性校准层(既有档位权重) × 几何平均(已施加的几率比)
+           * ```
+           *
+           * - **中性画像**：每个几率比恰为 `1.0` ⇒ 几何平均 `1.0` ⇒
+           *   `likelihood` **逐位等于**既有档位权重 ⇒ NEUTRAL_PARITY 由构造保证；
+           * - **有先验原型**：几率比把 `0.10 → 0.55` 这类差异放大到 ≈11× 动态范围，
+           *   而**多条目按几何平均合并**，避免把「爱开火」这同一条倾向**数三次**
+           *   （乘积实测会放大 417× 并撞上钳位 ⇒ 类别区分被压平）。
+           */
+          /*
+           * 🔴 热路径：档位权重**每个动作只算一次**并注入 —— 否则统一似然会在
+           * Θ(449) 个组合上各自 `normalizeLikelihood` 一遍（449 次 6 元数组分配），
+           * 实测会把「热路径预算」性能测试压红。
+           */
+          const riverBaseWeights = likelihoodWeights('AGGRESSIVE', betRatio);
+          const unified = classes.map((cls) =>
+            estimateUnifiedActionLikelihood({
+              semanticClass: cls!.category,
+              strengthBucket: cls!.strengthBucket,
+              ...(betRatio === undefined ? {} : { betRatio }),
+              baseWeights: riverBaseWeights,
+              node,
+              profile: effectiveProfile,
+              action: rangeAction === 'RAISE' || rangeAction === 'ALL_IN' ? 'RAISE' : 'BET',
+            }),
+          );
+          likelihoodOverride = Object.freeze(unified.map((u) => u.likelihood));
+          /*
+           * 钳位必须**可见**（父代理要求）：若任何组合被钳到 1，说明
+           * `MISSED_DRAW` 与 `NUT_VALUE` 被压平成同一个值，类别区分已经失效。
+           * 把它写进 `updateTrace`，不允许静默吸收。
+           */
+          const clampedCount = unified.reduce((n, u) => n + (u.clamped ? 1 : 0), 0);
+          const counts = unified.map((u) => u.appliedTraitCount);
+          profileNoteZh =
+            `统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：` +
+            `${node.street}/${node.villainPosition}/${node.potType}/${node.previousStreetLine}/` +
+            `${node.sizeBucket}/${node.boardTexture}；条目数 ${Math.min(...counts)}–${Math.max(...counts)}；` +
+            `钳位 ${clampedCount}/${unified.length}` +
+            (clampedCount > 0 ? '（**饱和：类别区分被压平！**）' : '（无饱和）');
+        }
+      }
+    }
+    const suppressProvider = likelihoodOverride !== null;
+    if (likelihoodOverride !== null) profileLikelihoodActions += 1;
+
     const result = updateRange(
       current,
       {
         likelihoods: Object.freeze(
-          current.entries.map((entry) => ({
+          current.entries.map((entry, entryIndex) => ({
             comboId: entry.combo.canonicalId,
             action: rangeAction,
-            likelihood: tierWeightOf(weights, tierOfEntry(entry.combo)),
+            likelihood:
+              likelihoodOverride === null
+                ? tierWeightOf(weights, tierOfEntry(entry.combo))
+                : likelihoodOverride[entryIndex]!,
             source: range.provenance.sourceType,
             confidence: range.provenance.confidence,
           })),
@@ -859,8 +1374,19 @@ function applyLikelihoodUpdates(
         potSize: computePot(state),
         ...(record.amount > 0 ? { betSize: record.amount } : {}),
       },
-      { withDiff: false },
+      {
+        withDiff: false,
+        /*
+         * 🔴 画像 / 近期倾向进入动作似然（规范第二十节唯一合法入口）。
+         *
+         * ⚠️ **画像似然生效时必须抑制它**：那条似然本身已经含画像，
+         * 再乘一次倾斜因子等于把画像计两次（且会破坏单调性 —— 见
+         * `likelihoodOverride` 的构造注释）。
+         */
+        ...(provider !== undefined && !suppressProvider ? { adjustmentProvider: provider } : {}),
+      },
     );
+    if (provider !== undefined && !suppressProvider) providerCalls += 1;
 
     if (!result.ok) {
       trace.push({
@@ -885,10 +1411,12 @@ function applyLikelihoodUpdates(
       supportAfter: current.metrics.supportSize,
       entropyBefore: before.entropyBits,
       entropyAfter: current.metrics.entropyBits,
+      // 画像路径的启用/回落理由必须留在审计轨迹里（§四十三：可调试）
+      ...(profileNoteZh === null ? {} : { noteZh: profileNoteZh }),
     });
   }
 
-  return { range: current, trace };
+  return { range: current, trace, providerCalls, profileLikelihoodActions };
 }
 
 function buildRangeSnapshot(
@@ -897,13 +1425,28 @@ function buildRangeSnapshot(
   deadCards: readonly Card[],
   /** 求解器给这一家的范围权重（有则用，无则回落启发式先验） */
   solverOverride?: SolverRangeOverride,
+  /**
+   * 🔴 画像 / 近期倾向的 provider（**只对画像描述的那个对手传入**）。
+   *
+   * 对陌生人（没有画像、没有手选类型）不传：替他套一个原型就是编造数据。
+   */
+  tendency?: { provider: TendencyProvider; dimension: ResolvedTendencyDimensions } | null,
+  /** 跛入原型（多人 limp 修复，§4）：画像描述的那家带画像，其余 = 人群先验 */
+  limpProfile?: { archetype: LimperArchetype; confidence: number } | null,
+  /**
+   * 🔴 **行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二）。
+   *
+   * 与 `tendency` 同样**只对画像描述的那个对手传入**；
+   * 且严格可选 —— 不传时 `applyLikelihoodUpdates` 走原路径，逐位不变。
+   */
+  behaviorProfile?: PlayerBehaviorProfile | null,
 ): RangeBuild {
   const warnings: string[] = [];
   const aggression = firstPreflopActionOf(state, opponent.id);
 
-  const base = buildBaseRange(state, opponent, aggression, deadCards, solverOverride);
+  const base = buildBaseRange(state, opponent, aggression, deadCards, solverOverride, limpProfile);
   if (!base.ok) {
-    return { snapshot: null, range: null, warnings: [base.reason] };
+    return { snapshot: null, range: null, warnings: [base.reason], tendency: null };
   }
 
   /*
@@ -920,12 +1463,44 @@ function buildRangeSnapshot(
    *
    * 跳过之后 `updateTrace` 为空，界面会显示「（无更新，直接使用先验）」；
    * 对求解器范围那是**正确**的描述。
+   *
+   * ⚠️ 画像同样不施加于求解器范围：求解器范围是**策略频率**，
+   * 它本身已经隐含了对手类型（那是求解器的输入）；再乘一次画像因子
+   * 会与求解器口径冲突，且无法验证。
    */
   const updated =
     solverOverride !== undefined
-      ? { range: base.range, trace: [] as RangeUpdateTraceEntry[] }
-      : applyLikelihoodUpdates(base.range, state, opponent, aggression);
+      ? { range: base.range, trace: [] as RangeUpdateTraceEntry[], providerCalls: 0, profileLikelihoodActions: 0 }
+      : applyLikelihoodUpdates(
+          base.range,
+          state,
+          opponent,
+          aggression,
+          tendency?.provider,
+          behaviorProfile ?? undefined,
+        );
   const range = updated.range;
+
+  /*
+   * 画像证据（P0）：**先验侧与组合侧都要如实记录**。
+   *
+   * `combosBefore` 取「进入本街似然更新之前的支持集」——
+   * 用第一条 trace 的 `supportBefore`（若没有更新，则就是基础范围本身）。
+   */
+  const tendencyCore: RangeTendencyCore | null =
+    tendency === undefined || tendency === null
+      ? null
+      : {
+          provider: tendency.provider.evidence(),
+          dimensionTier: tendency.dimension.tier,
+          dimensionTierZh: TENDENCY_TIER_ZH[tendency.dimension.tier],
+          dimensionNoteZh: tendency.dimension.noteZh,
+          combosBefore:
+            updated.trace.length > 0
+              ? updated.trace[0]!.supportBefore
+              : base.range.metrics.supportSize,
+          combosAfter: range.metrics.supportSize,
+        };
 
   // ---- 范围塌缩：必须如实报告，禁止自动补均匀范围 ----
   const collapsed = range.state === RangeState.COLLAPSED || range.metrics.supportSize === 0;
@@ -950,11 +1525,710 @@ function buildRangeSnapshot(
     updateTrace: Object.freeze(updated.trace),
   });
 
-  return { snapshot, range, warnings };
+  return {
+    snapshot,
+    range,
+    warnings,
+    tendency: tendencyCore,
+    /**
+     * 画像是否**通过任一通道真的改变了这个对手的范围**（V2.1 去重闸门修复）。
+     *
+     * 三个通道，缺一不可：
+     * ① `provider.applied` —— 倾向乘法通道（中性可信度不足时为 false）；
+     * ② `profileLikelihoodActions > 0` —— 河牌统一似然通道（**该通道上 provider 被抑制**，
+     *    因此只看 ① 会把「画像已经生效」误判为「没生效」）；
+     * ③ 跛入原型通道 —— 由调用方按 `profileChangesLimpRange` 补上。
+     */
+    profileAppliedToRange:
+      tendencyCore !== null && (tendencyCore.provider.applied || updated.profileLikelihoodActions > 0),
+    profileAppliedActions: updated.profileLikelihoodActions,
+  };
 }
 
 /* ============================================================
- * 权益
+ * 下注决策事实包（BET DECISION ENGINE PHASE 1）
+ * ============================================================ */
+
+/** 条件范围权益的抽样次数（响应模型一次要算 3 尺寸 × 2 桶 = 6 次） */
+const RESPONSE_EQUITY_ITERATIONS = 6000;
+
+/**
+ * 对**某一份组合权重**算 Hero 权益（与 `computeHeroEquity` 同一引擎、同一口径）。
+ *
+ * ⚠️ 只有迭代数与种子不同：响应模型需要 6 次权益（3 尺寸 × 跟注/加注桶），
+ * 每次 20,000 会把节点耗时推到秒级。这里降到 6,000 并在 debug 里如实标出
+ * 迭代数与方法 —— **不是**为了好看而降精度，而是预算分配（决策层可在
+ * `betDecision.sizes[].equityIterations` 里看到真实精度）。
+ */
+function rangeEquityOf(
+  heroHole: readonly Card[],
+  board: readonly Card[],
+  entries: readonly { cardIndices: readonly [number, number]; probability: number }[],
+  seed: number,
+): { value: number | null; method: 'EXACT' | 'MONTE_CARLO' | 'NOT_AVAILABLE'; iterations: number } {
+  return rangeEquityOfMany(heroHole, board, [entries], seed);
+}
+
+/**
+ * 对**多份**条件范围同时算 Hero 权益（真正的多人权益，§6）。
+ *
+ * 🔴 用途：多人联合分支里「两家都跟」的权益必须是
+ * `Hero vs UTG-call-range vs CO-call-range` 的**一次**计算，
+ * 不是两个单挑权益的平均/最小值。这里直接调用同一个权益引擎
+ * （`computeEquity` 的 `opponents` 本来就是列表），不自己写采样。
+ */
+function rangeEquityOfMany(
+  heroHole: readonly Card[],
+  board: readonly Card[],
+  entrySets: readonly (readonly { cardIndices: readonly [number, number]; probability: number }[])[],
+  seed: number,
+): { value: number | null; method: 'EXACT' | 'MONTE_CARLO' | 'NOT_AVAILABLE'; iterations: number } {
+  const usable = entrySets.filter((e) => e.length > 0);
+  if (usable.length === 0) return { value: null, method: 'NOT_AVAILABLE', iterations: 0 };
+  const outcome = computeEquity(
+    [heroHole[0]!, heroHole[1]!],
+    board,
+    usable.map((entries, index) => ({
+      label: `条件范围 ${index + 1}（响应模型）`,
+      combos: entries.map(
+        (e) => [ALL_CARDS[e.cardIndices[0]]!, ALL_CARDS[e.cardIndices[1]]!] as const,
+      ),
+    })),
+    {
+      mode: EquityComputeMode.FAST,
+      seed,
+      iterations: RESPONSE_EQUITY_ITERATIONS,
+      opponentWeights: usable.map((entries) => entries.map((e) => e.probability)),
+    },
+  );
+  if (!outcome.ok) return { value: null, method: 'NOT_AVAILABLE', iterations: 0 };
+  return {
+    value: outcome.result.equity,
+    method: outcome.result.method === 'EXACT' ? 'EXACT' : 'MONTE_CARLO',
+    iterations: outcome.result.iterations,
+  };
+}
+
+/**
+ * 构建下注决策事实包：响应模型（逐尺寸概率 + 条件范围）+ 条件范围权益 +
+ * Hero 听牌潜力 + 权益实现因子。
+ *
+ * @returns 翻前 / 无牌面 / 无对手组合时返回 `null`（不编造概率）
+ */
+function buildBetDecisionFacts(input: {
+  range: Range | null;
+  /**
+   * 🔴 **全部已实现对手**（每家一份自己的范围 + 位置 + 他自己的画像倾向）。
+   *
+   * 多人下注 EV **必须**消费这个完整列表（§13）：`range` / `dimensions` 两个
+   * 旧字段只保留给**单挑口径与展示**，不再有权单独决定 BetEV。
+   * ⚠️ 每个对手的响应对象必须**独立构建**（禁止复用同一份 —— §2/§21.10）。
+   */
+  opponents?: readonly {
+    opponentId: string;
+    range: Range | null;
+    positionZh: string;
+    /** 这一家自己的响应倾向（由**他本人**的画像解析；无画像 ⇒ 中立先验） */
+    dimensions: Parameters<typeof responseTendenciesOf>[0];
+    /**
+     * 🔴 **他自己**画像的可信度（不是全局那一个）。
+     *
+     * 修复前这里传的是 `playerBuilt.confidence`（首要对手的可信度）：
+     * 有逐座位画像、但首要对手没画像时它是 0，于是
+     * `responseTendenciesOf` 直接返回中立先验 —— **逐座位画像被静默丢弃**，
+     * 表现为「跟注站与普通玩家的响应逐位相同」。
+     */
+    confidence: number;
+    tendencyNoteZh: string;
+  }[];
+  board: readonly Card[];
+  heroHole: readonly Card[];
+  pot: number;
+  street: Street;
+  spr: number | null;
+  opponentCount: number;
+  heroPosition: Position;
+  villainPosition: Position | null;
+  equityVsArrivalRange: number | null;
+  dimensions: Parameters<typeof responseTendenciesOf>[0];
+  profileConfidence: number;
+  seed: number;
+  /** Hero 当前**剩余**筹码（不是带入筹码） */
+  heroRemaining: number;
+  /**
+   * 对手里**最短**的剩余筹码（多人池的有效筹码上限）。
+   *
+   * 🔴 修复前这里是 **primary opponent** 的筹码：三人池里 primary 恰好是深筹码时，
+   * 尺寸网格会放出「只有一个人跟得起」的下注额。
+   */
+  villainRemaining: number;
+  /** 最小下注额（通常 1 个大盲） */
+  minBet: number;
+  /**
+   * 🔴 **PLAYER PROFILE V3**：当前街 + 该街的分街系数。
+   *
+   * `undefined` ⇒ 响应层不做任何分街修正（与 V2 逐位一致）。
+   */
+  v3Street?:
+    | {
+        street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER';
+        factors: { foldScale: number; callScale: number; checkRaiseScale: number };
+      }
+    | undefined;
+  /**
+   * 🔴 **PLAYER PROFILE V3**：由实测统计解析出的四维度（覆盖标签维度）。
+   *
+   * 为什么需要它：标签维度（`archetypeDimensionsOf`）**只反映标签**，
+   * 而 V3 要让「VPIP/PFR/WTSD/FoldTo*CBet」也推动 tightness / aggression /
+   * passivity。若不 override，resolved 维度就只会出现在 trace 里、
+   * **不进模型** —— 那是「算了但没用」的假接线。
+   *
+   * `undefined` ⇒ 用原始 `dimensions`（与 V2 逐位一致）。
+   */
+  v3Dimensions?: {
+    tightness: number;
+    aggression: number;
+    bluffTendency: number;
+    passivity: number;
+  } | undefined;
+}): BetDecisionFacts | null {
+  if (input.range === null || input.board.length < 3 || input.heroHole.length !== 2) return null;
+
+  const texture = boardTextureOf(input.board);
+  const wetness = texture === null ? 0 : boardWetnessOf(texture);
+  /*
+   * 🔴 **V3：实测统计解析出的维度覆盖标签维度**（没有实测时 `v3Dimensions` 缺失 ⇒ 逐位不变）。
+   *
+   * 覆盖而不是叠加：`resolvePlayerProfile` 已经把「标签 Prior + 实测」
+   * 收缩成**一份**维度（§六），再叠一次就是重复计票。
+   */
+  const effectiveDimensions =
+    input.v3Dimensions === undefined
+      ? input.dimensions
+      : {
+          ...(input.dimensions as unknown as Record<string, unknown>),
+          tightness: input.v3Dimensions.tightness,
+          aggression: input.v3Dimensions.aggression,
+          bluffTendency: input.v3Dimensions.bluffTendency,
+          passivity: input.v3Dimensions.passivity,
+        } as Parameters<typeof responseTendenciesOf>[0];
+  const tendencies = responseTendenciesOf(effectiveDimensions, input.profileConfidence, input.v3Street ?? null);
+
+  /*
+   * 🔴 **先合法化，再算响应与 EV**（本轮 P0）。
+   *
+   * 修复前：理论 118 / 177 先各算一套响应与 EV，最后才映射到合法 112
+   * ⇒ 同一个合法动作两套 EV。现在金额先按「单挑有效筹码」封顶并去重，
+   * 所有下游计算只使用 `legalAmount`。
+   */
+  const { sizes: legalSizes, dropped } = legalizeBetSizes({
+    pot: input.pot,
+    heroRemaining: input.heroRemaining,
+    villainRemaining: input.villainRemaining,
+    minBet: input.minBet,
+  });
+
+  const responseModel = legalSizes.length === 0
+    ? null
+    : buildResponseModel({
+        entries: input.range.entries.map((e) => ({
+          cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
+          probability: e.probability,
+        })),
+        heroHole: input.heroHole,
+        board: input.board,
+        pot: input.pot,
+        street: input.street,
+        spr: input.spr,
+        opponentCount: input.opponentCount,
+        wetness,
+        tendencies,
+        sizes: legalSizes,
+        heroRemaining: input.heroRemaining,
+      });
+  if (responseModel === null) return null;
+
+  const draw = heroDrawPotentialOf(input.heroHole, input.board);
+  const inPosition = positionOrder(input.heroPosition) > positionOrder(input.villainPosition);
+  const realization = realizationFactorOf({
+    street: input.street,
+    // 无人下注时我处于主动方（可以下注/过牌），因此按主动权处理；
+    // 位置比较用座位顺序（越靠后越有位置优势）。
+    hasInitiative: true,
+    inPosition,
+    spr: input.spr,
+    draw,
+  });
+  /*
+   * 过牌分支的实现因子：同一条代理模型，但**没有主动权、也不享受听牌实现加成**
+   *（过牌把主动权交出去了；成牌只能靠对手再下注）。见 `checkRealizationFactor`。
+   */
+  const checkRealization = realizationFactorOf({
+    street: input.street,
+    hasInitiative: false,
+    inPosition,
+    spr: input.spr,
+    draw: { ...draw, drawQuality: 0, nutPotential: 0 },
+  });
+
+  /** 基础尺寸事实（含**首要对手**的条件范围权益）—— 多人字段在下面统一补上 */
+  const sizes: Omit<SizeResponseWithEquity, 'multiway' | 'evKind'>[] =
+    responseModel.sizes.map((size, index) => {
+    const call = size.buckets.find((b) => b.bucket === 'CALL');
+    const raise = size.buckets.find((b) => b.bucket === 'RAISE');
+    // 每个尺寸/桶用**不同种子**，避免三个尺寸的抽样误差完全相关
+    const callEquity = rangeEquityOf(input.heroHole, input.board, call?.entries ?? [], input.seed + 101 * (index + 1));
+    const raiseEquity = rangeEquityOf(input.heroHole, input.board, raise?.entries ?? [], input.seed + 211 * (index + 1));
+    return Object.freeze({
+      ...size,
+      heroEquityVsCallRange: callEquity.value,
+      heroEquityVsRaiseRange: raiseEquity.value,
+      equityMethod: callEquity.method === 'NOT_AVAILABLE' && raiseEquity.method === 'NOT_AVAILABLE'
+        ? ('NOT_AVAILABLE' as const)
+        : callEquity.method === 'EXACT' && raiseEquity.method === 'EXACT'
+          ? ('EXACT' as const)
+          : ('MONTE_CARLO' as const),
+      equityIterations: Math.max(callEquity.iterations, raiseEquity.iterations),
+    });
+  });
+
+  /*
+   * ============================================================
+   * 多人联合响应树（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1）
+   * ============================================================
+   *
+   * 🔴 根因：修复前三人池只有**一组** Fold/Call/Raise —— 那是**首要对手**
+   * 一个人的响应，却被当成「整个多人池的响应」，而弃牌分支
+   * （`P(弃) × 底池`）被解释成「Hero 直接拿下底池」。
+   * 两者在 2 家以上时是**不同的事件**：拿下底池要求**所有对手同时弃牌**。
+   *
+   * 现在：每家一份**独立**响应模型 → 联合状态分布 → 每个分支**各自**算权益
+   * （含真正的多人权益）→ 逐分支加权求 EV。
+   */
+  const multiwayResult = (() => {
+    const opponents = input.opponents ?? [];
+    // 单挑：`betEV` 就是单挑口径，两条路径**不同时存在**（避免「哪个是真的」）
+    if (opponents.length < 2 || opponents.some((o) => o.range === null)) return null;
+
+    /** 每家一份独立响应模型（**禁止**共用对象：画像/范围/位置都不同） */
+    const perOpponent = opponents.map((o, index) => {
+      const model = buildResponseModel({
+        entries: o.range!.entries.map((e) => ({
+          cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
+          probability: e.probability,
+        })),
+        heroHole: input.heroHole,
+        board: input.board,
+        pot: input.pot,
+        street: input.street,
+        spr: input.spr,
+        opponentCount: opponents.length,
+        wetness,
+        tendencies: responseTendenciesOf(o.dimensions, o.confidence),
+        sizes: legalSizes,
+        heroRemaining: input.heroRemaining,
+      });
+      return { opponent: o, model, seed: input.seed + 31 * (index + 1) };
+    });
+    if (perOpponent.some((p) => p.model === null)) return null;
+
+    const sizeFacts = legalSizes.map((spec, sizeIndex) => {
+      const shares: OpponentResponseShares[] = perOpponent.map((p) => {
+        const size = p.model!.sizes[sizeIndex]!;
+        return Object.freeze({
+          opponentId: p.opponent.opponentId,
+          positionZh: p.opponent.positionZh,
+          tendencyNoteZh: p.opponent.tendencyNoteZh,
+          foldProbability: size.foldLikelihood,
+          callProbability: size.callLikelihood,
+          raiseProbability: size.raiseLikelihood,
+        });
+      });
+      const states = jointStatesOf(shares);
+      if (states === null) return null;
+
+      // ---- 每个跟注分支**各自**的权益（含真多人权益）----
+      const equityByCallerId: Record<string, number | null> = {};
+      const callEntrySets: (readonly { cardIndices: readonly [number, number]; probability: number }[])[] = [];
+      const raiseEntriesWeighted: { cardIndices: readonly [number, number]; probability: number }[] = [];
+      let raiseMass = 0;
+      for (const [index, p] of perOpponent.entries()) {
+        const size = p.model!.sizes[sizeIndex]!;
+        const call = size.buckets.find((b) => b.bucket === 'CALL');
+        equityByCallerId[p.opponent.opponentId] = rangeEquityOf(
+          input.heroHole,
+          input.board,
+          call?.entries ?? [],
+          p.seed + 7,
+        ).value;
+        callEntrySets.push(call?.entries ?? []);
+        const raise = size.buckets.find((b) => b.bucket === 'RAISE');
+        const weight = shares[index]!.raiseProbability;
+        if (raise !== undefined && weight > 0) {
+          for (const e of raise.entries) {
+            raiseEntriesWeighted.push({ ...e, probability: e.probability * weight });
+            raiseMass += e.probability * weight;
+          }
+        }
+      }
+      const allCallEquity = rangeEquityOfMany(input.heroHole, input.board, callEntrySets, input.seed + 613).value;
+      const anyRaiseEquity =
+        raiseMass <= 0
+          ? null
+          : rangeEquityOf(
+              input.heroHole,
+              input.board,
+              raiseEntriesWeighted.map((e) => ({ ...e, probability: e.probability / raiseMass })),
+              input.seed + 619,
+            ).value;
+
+      const ev = composeMultiwayBetEV({
+        pot: input.pot,
+        betAmount: spec.legalAmount,
+        ratioToPot: spec.legalAmount / (input.pot > 0 ? input.pot : 1),
+        realizationFactor: realization.factor,
+        states,
+        equityByCallerId,
+        allCallEquity,
+        anyRaiseEquity,
+        opponentCount: opponents.length,
+      });
+
+      const perOpponentResponse: OpponentSizeResponse[] = perOpponent.map((p, index) => {
+        const size = p.model!.sizes[sizeIndex]!;
+        const previous = sizeIndex === 0 ? null : p.model!.sizes[sizeIndex - 1]!;
+        return Object.freeze({
+          opponentId: p.opponent.opponentId,
+          positionZh: p.opponent.positionZh,
+          tendencyNoteZh: p.opponent.tendencyNoteZh,
+          kind: size.kind,
+          betAmount: size.betAmount,
+          foldProbability: size.foldLikelihood,
+          callProbability: size.callLikelihood,
+          raiseProbability: size.raiseLikelihood,
+          rawFoldProbability: size.rawFoldLikelihood,
+          rawCallProbability: size.rawCallLikelihood,
+          rawRaiseProbability: size.rawRaiseLikelihood,
+          foldElasticityVsPrevious: previous === null ? null : size.foldLikelihood - previous.foldLikelihood,
+          heroEquityVsCallRange: equityByCallerId[p.opponent.opponentId] ?? null,
+          heroEquityVsRaiseRange:
+            size.buckets.find((b) => b.bucket === 'RAISE')?.entries.length === 0
+              ? null
+              : rangeEquityOf(
+                  input.heroHole,
+                  input.board,
+                  size.buckets.find((b) => b.bucket === 'RAISE')?.entries ?? [],
+                  p.seed + 11,
+                ).value,
+          noteZh:
+            `${p.opponent.positionZh}｜${p.opponent.tendencyNoteZh}：` +
+            `弃 ${(size.foldLikelihood * 100).toFixed(1)}% / 跟 ${(size.callLikelihood * 100).toFixed(1)}% / ` +
+            `加 ${(size.raiseLikelihood * 100).toFixed(1)}%（封顶前 ${(size.rawRaiseLikelihood * 100).toFixed(1)}% 加注）`,
+        });
+      });
+
+      return { spec, shares, states, equityByCallerId, allCallEquity, anyRaiseEquity, ev, perOpponentResponse };
+    });
+
+    if (sizeFacts.some((s) => s === null)) return null;
+    const facts = sizeFacts as NonNullable<(typeof sizeFacts)[number]>[];
+
+    /* ---- 尺寸饱和审计（§14）：只报告，**不制造**差异 ---- */
+    const identicalPairs: { a: string; b: string; opponents: readonly string[] }[] = [];
+    for (let i = 0; i < facts.length; i += 1) {
+      for (let j = i + 1; j < facts.length; j += 1) {
+        const sameAmount = Math.abs(facts[i]!.spec.legalAmount - facts[j]!.spec.legalAmount) < 1e-9;
+        const sameOpponents = perOpponent
+          .filter((p) => {
+            const a = p.model!.sizes[i]!;
+            const b = p.model!.sizes[j]!;
+            const key = (s: typeof a): string =>
+              `${s.rawFoldLikelihood.toFixed(6)}/${s.rawCallLikelihood.toFixed(6)}/${s.rawRaiseLikelihood.toFixed(6)}`;
+            return key(a) === key(b);
+          })
+          .map((p) => p.opponent.positionZh);
+        if (!sameAmount && sameOpponents.length > 0) {
+          identicalPairs.push({
+            a: facts[i]!.spec.kind,
+            b: facts[j]!.spec.kind,
+            opponents: Object.freeze(sameOpponents),
+          });
+        }
+      }
+    }
+    const anySameAmount = facts.some((s, i) =>
+      facts.some((t, j) => i !== j && Math.abs(s.spec.legalAmount - t.spec.legalAmount) < 1e-9),
+    );
+    const sizeSaturation: SizeSaturationAudit = Object.freeze({
+      status:
+        identicalPairs.length > 0
+          ? ('IDENTICAL_RESPONSE_QUANTIZED' as const)
+          : anySameAmount
+            ? ('IDENTICAL_RESPONSE_SAME_AMOUNT' as const)
+            : ('DISTINCT_RESPONSES' as const),
+      identicalPairs: Object.freeze(identicalPairs),
+      reasonZh:
+        identicalPairs.length === 0
+          ? '各尺寸的响应向量互不相同（差异来自价格门槛与尺寸压力项，不是人工制造）'
+          : `⚠️ ${identicalPairs.map((p) => `${p.a} 与 ${p.b}`).join('、')} 在 ${identicalPairs
+              .flatMap((p) => p.opponents)
+              .join('/')} 上给出**逐位相同**的响应向量。` +
+            '分类改为**连续混频**后，逐位相同只可能来自**相同价格**（同一合法金额，已被去重）；' +
+            '若两个不同注额却给出相同响应，说明分类用的价格与申报注额不符（复用了同一个响应桶），' +
+            '那属于缺陷而不是量化 —— 测试会直接判红。',
+    });
+
+    return Object.freeze({
+      facts: Object.freeze({
+        opponents: Object.freeze(
+          opponents.map((o, index) => ({
+            opponentId: o.opponentId,
+            positionZh: o.positionZh,
+            tendencyNoteZh: o.tendencyNoteZh,
+            comboCount: perOpponent[index]!.model!.comboCount,
+          })),
+        ),
+        jointModel: JointModel.CONDITIONAL_INDEPENDENCE,
+        independenceAssumption: JOINT_INDEPENDENCE_NOTE,
+        jointStates: Object.freeze(
+          facts.map((f) => Object.freeze({ kind: f.spec.kind, betAmount: f.spec.legalAmount, states: f.states })),
+        ),
+        conditionalEquities: Object.freeze(
+          facts.map((f) =>
+            Object.freeze({
+              kind: f.spec.kind,
+              betAmount: f.spec.legalAmount,
+              byCallerId: Object.freeze({ ...f.equityByCallerId }),
+              allCall: f.allCallEquity,
+              anyRaise: f.anyRaiseEquity,
+              noteZh:
+                '仅一家跟：' +
+                Object.entries(f.equityByCallerId)
+                  .map(([id, eq]) => `${id} ${eq === null ? '—' : (eq * 100).toFixed(1) + '%'}`)
+                  .join('｜') +
+                `｜全部跟（真多人）：${f.allCallEquity === null ? '—' : (f.allCallEquity * 100).toFixed(1) + '%'}` +
+                `｜加注分支：${f.anyRaiseEquity === null ? '—' : (f.anyRaiseEquity * 100).toFixed(1) + '%'}`,
+            }),
+          ),
+        ),
+        branchEVs: Object.freeze(
+          facts.map((f) => Object.freeze({ kind: f.spec.kind, betAmount: f.spec.legalAmount, branches: f.ev.branches })),
+        ),
+        totalBetEV: Object.freeze(
+          facts.map((f) =>
+            Object.freeze({
+              kind: f.spec.kind,
+              betAmount: f.spec.legalAmount,
+              totalEV: f.ev.totalEV,
+              evKind: f.ev.evKind,
+            }),
+          ),
+        ),
+        sizeElasticity: Object.freeze(
+          perOpponent.map((p) =>
+            Object.freeze({
+              opponentId: p.opponent.opponentId,
+              foldDeltaPerSize: Object.freeze(
+                p.model!.sizes.map((s, index) =>
+                  index === 0 ? 0 : s.foldLikelihood - p.model!.sizes[index - 1]!.foldLikelihood,
+                ),
+              ),
+            }),
+          ),
+        ),
+        sizeSaturation,
+        primaryOpponentUsedForEV: false as const,
+        modelConfidence: Math.max(0.2, Math.min(0.5, 0.45 - 0.05 * (opponents.length - 2))),
+        noteZh:
+          `${opponents.length} 家联合树（每家一份独立响应模型）；` +
+          'EV 逐分支加权，**不使用** primary opponent 的单一响应；' +
+          `${JOINT_INDEPENDENCE_NOTE}；加注分支为下界（RAISE_RESPONSE = HEURISTIC）`,
+        perOpponentResponse: Object.freeze(facts.flatMap((f) => f.perOpponentResponse)),
+      }),
+      /** 逐尺寸的完整多人 EV 对象（供 `sizes[].multiway` 与决策层覆盖 betEV） */
+      evBySize: Object.freeze(facts.map((f) => f.ev)),
+    } satisfies { facts: MultiwayBetFacts; evBySize: readonly MultiwayBetEV[] });
+  })();
+
+  /*
+   * ---- 河牌 CHECK 树（§5/§6）----
+   *
+   * Hero 在**前位**过牌之后对手仍可下注，因此不能把过牌当成摊牌。
+   * 这里构建最小树：`CHECK_BACK` | `BET`（代表尺寸 = 2/3 池，按他的有效筹码封顶），
+   * 并分别算「对他过牌范围」与「对他下注范围」的权益。
+   * 后位（他刚过牌）时 `composeCheckEVTree` 会走摊牌终止分支，不做多余计算。
+   */
+  const checkTree = (() => {
+    const heroIsOopOnRiver = input.street === 'RIVER' && !inPosition;
+    if (!heroIsOopOnRiver) {
+      return composeCheckEVTree({
+        pot: input.pot,
+        street: input.street,
+        isInPosition: inPosition,
+        heroEquityVsArrivalRange: input.equityVsArrivalRange,
+        realizationFactor: checkRealization.factor,
+        afterCheck: null,
+      });
+    }
+
+    // 他的代表下注尺寸：2/3 池，按**他的**剩余筹码封顶（不能超过他能拿出的）
+    const representative = Math.max(
+      input.minBet,
+      Math.min(input.pot * (2 / 3), Math.max(0, input.villainRemaining)),
+    );
+    const price = input.pot + 2 * representative > 0
+      ? representative / (input.pot + 2 * representative)
+      : 0;
+
+    // 逐组合分流：CHECK_BACK | BET（混频权重，画像只改概率）
+    const checkBackEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+    const betEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+    let checkBackMass = 0;
+    let betMass = 0;
+    let heroEval;
+    try {
+      heroEval = evaluateCards([...input.heroHole, ...input.board]);
+    } catch {
+      heroEval = null;
+    }
+    for (const entry of input.range.entries) {
+      if (!(entry.probability > 0)) continue;
+      const hole: [Card, Card] = [
+        ALL_CARDS[entry.combo.cardIndices[0]]!,
+        ALL_CARDS[entry.combo.cardIndices[1]]!,
+      ];
+      if (heroEval === null) continue;
+      let versusHero: 'STRONGER' | 'WEAKER' | 'EQUAL';
+      try {
+        const cmp = compareHands(evaluateCards([...hole, ...input.board]), heroEval);
+        versusHero = cmp > 0 ? 'STRONGER' : cmp < 0 ? 'WEAKER' : 'EQUAL';
+      } catch {
+        continue;
+      }
+      const classification = classifyVillainAfterCheck({
+        tier: boardRelativeTierOf(hole, input.board) ?? 5,
+        versusHero,
+        tendencies,
+        pot: input.pot,
+        betSize: representative,
+        street: input.street,
+      });
+      const w = classification.weights;
+      if (w.checkBack > 0) {
+        checkBackEntries.push({
+          cardIndices: entry.combo.cardIndices as unknown as readonly [number, number],
+          probability: entry.probability * w.checkBack,
+        });
+        checkBackMass += entry.probability * w.checkBack;
+      }
+      if (w.bet > 0) {
+        betEntries.push({
+          cardIndices: entry.combo.cardIndices as unknown as readonly [number, number],
+          probability: entry.probability * w.bet,
+        });
+        betMass += entry.probability * w.bet;
+      }
+    }
+    const totalMass = checkBackMass + betMass;
+    if (!(totalMass > 0)) {
+      return composeCheckEVTree({
+        pot: input.pot,
+        street: input.street,
+        isInPosition: inPosition,
+        heroEquityVsArrivalRange: input.equityVsArrivalRange,
+        realizationFactor: checkRealization.factor,
+        afterCheck: null,
+      });
+    }
+    const normalize = (
+      entries: typeof checkBackEntries,
+      mass: number,
+    ): { cardIndices: readonly [number, number]; probability: number }[] =>
+      mass <= 0 ? [] : entries.map((e) => ({ ...e, probability: e.probability / mass }));
+
+    const checkBackEquity = rangeEquityOf(
+      input.heroHole,
+      input.board,
+      normalize(checkBackEntries, checkBackMass),
+      input.seed + 977,
+    );
+    const betEquity = rangeEquityOf(
+      input.heroHole,
+      input.board,
+      normalize(betEntries, betMass),
+      input.seed + 983,
+    );
+    void price;
+
+    return composeCheckEVTree({
+      pot: input.pot,
+      street: input.street,
+      isInPosition: inPosition,
+      heroEquityVsArrivalRange: input.equityVsArrivalRange,
+      realizationFactor: checkRealization.factor,
+      afterCheck: {
+        checkBackLikelihood: checkBackMass / totalMass,
+        betLikelihood: betMass / totalMass,
+        heroEquityVsCheckBackRange: checkBackEquity.value,
+        heroEquityVsBetRange: betEquity.value,
+        villainBetAmount: representative,
+      },
+    });
+  })();
+
+  return Object.freeze({
+    pot: input.pot,
+    heroEquityVsArrivalRange: input.equityVsArrivalRange,
+    draw,
+    realization,
+    checkRealizationFactor: checkRealization.factor,
+    /*
+     * 🔴 每个尺寸的 `betEV` **来源只有一个**：
+     * - ≥2 家 ⇒ 多人联合树（`multiway.totalEV`，且 `evKind` 如实标注加注分支是下界）；
+     * - 1 家  ⇒ 单挑旧口径（`SINGLE_OPPONENT_MODEL_EV`，与历史逐位一致）。
+     * `multiway` 字段本身只在该尺寸**真的用了**联合树时非 null。
+     */
+    sizes: Object.freeze(
+      sizes.map((size, index) => {
+        const ev = multiwayResult === null ? null : multiwayResult.evBySize[index] ?? null;
+        return Object.freeze({
+          ...size,
+          multiway: ev,
+          evKind:
+            ev === null
+              ? ('SINGLE_OPPONENT_MODEL_EV' as const)
+              : ev.totalEV === null
+                ? ('NOT_AVAILABLE' as const)
+                : ev.evKind,
+        });
+      }),
+    ),
+    droppedSizes: dropped,
+    checkTree,
+    comboCount: responseModel.comboCount,
+    tendencies,
+    multiway: multiwayResult === null ? null : multiwayResult.facts,
+    modelNoteZh:
+      `${responseModel.noteZh}；条件范围权益：每桶 ${RESPONSE_EQUITY_ITERATIONS} 次抽样（` +
+      '⚠️ 与主权益口径同引擎但迭代数较低，debug 里如实标出）；' +
+      `权益实现因子 ${realization.factor.toFixed(3)} 是**代理模型**（HEURISTIC），不是求解器结果` +
+      (multiwayResult === null
+        ? input.opponentCount >= 2
+          ? '；⚠️ 多人（≥2 家）但拿不到全部对手的可达范围 ⇒ **联合树未构建**，本尺寸 EV 仍是单挑口径（MULTIWAY_EQUITY_NOT_IMPLEMENTED）'
+          : '；单挑节点：BetEV 为单挑口径（与历史逐位一致）'
+        : `；**多人联合树**：${multiwayResult.facts.noteZh}`),
+  });
+}
+
+/** 座位顺序（越靠后 = 越有位置优势） */
+function positionOrder(position: Position | null): number {
+  if (position === null) return -1;
+  const order: readonly Position[] = ['SB', 'BB', 'UTG', 'UTG1', 'UTG2', 'LJ', 'HJ', 'CO', 'BTN'];
+  return order.indexOf(position);
+}
+
+/* ============================================================
+ * 权益（多人口径）
  * ============================================================ */
 
 /**
@@ -1288,7 +2562,27 @@ function buildPlayerSnapshot(
   villainId: string,
   profile: unknown,
   quickProfile: string | undefined,
-): { snapshot: PlayerSnapshot; hasUsableProfile: boolean; confidence: number } {
+  /** 近期倾向（P0 修复：它现在进入**动作似然**，不再只是一个展示字段） */
+  dynamicHint?: DynamicHint,
+  /** 「某条街上当时的公共牌」（画像的弱牌判据要锚定到牌面） */
+  boardOfStreet?: (street: Street) => readonly Card[],
+): {
+  snapshot: PlayerSnapshot;
+  hasUsableProfile: boolean;
+  confidence: number;
+  /**
+   * 🔴 **实测可信度（未被手选画像覆盖之前的值）**。
+   *
+   * `snapshot.confidence` 在「无实测数据但有手选画像」时会被抬到
+   * `QUICK_PROFILE_CONFIDENCE`（那是**断言**的可信度）。
+   * 若把那个数当成「实测可信度」去解析维度，就会得出
+   * 「实测可信度 0.35 ≥ 手选上限 0.35 ⇒ 只用实测维度」——
+   * 而那份「实测维度」其实来自零手画像（全中立）⇒ 画像**静默失效**。
+   * 这正是本轮修复必须区分的两个量，因此单独返回。
+   */
+  measuredConfidence: number;
+  tendency: { provider: TendencyProvider; dimension: ResolvedTendencyDimensions } | null;
+} {
   // 没有真实画像时，用零手画像（它会走到 UNKNOWN / 中性调整）
   const effectiveProfile =
     profile !== null && profile !== undefined && typeof profile === 'object'
@@ -1297,6 +2591,7 @@ function buildPlayerSnapshot(
 
   const read: PlayerRead = readPlayer(effectiveProfile);
   const handsObserved = read.sampleNote.totalHands;
+  const measuredConfidence = read.adjustment.confidence;
 
   let confidence = read.adjustment.confidence;
   let note = `标签：${read.label}；样本 ${handsObserved} 手`;
@@ -1323,6 +2618,54 @@ function buildPlayerSnapshot(
     }
   }
 
+  /*
+   * 🔴 **画像 → 维度 → Range**（P0 架构修复 · 规范第二十节）。
+   *
+   * 修复前这里就结束了：`snapshot.adjustment` 只在决策末端被
+   * `exploitAdjustmentOf` 当作偏好分修正，**从未进入范围**。
+   * 现在把「维度来源解析 + provider 构造」放在这儿（**同一处**，
+   * 不产生第二份口径），由调用方在建范围时使用。
+   */
+  const dimension = resolveTendencyDimensions({
+    measured: read.adjustment.dimensions,
+    measuredConfidence,
+    quickProfile:
+      quickProfile !== undefined && quickProfile !== ''
+        ? (quickProfile as QuickProfile)
+        : null,
+  });
+  const adjustment: ProfileAdjustment = {
+    ...read.adjustment,
+    confidence,
+    dimensions: dimension.dimensions,
+  };
+  /*
+   * ⚠️ **没有证据时连 provider 都不建**（信息缺失 ≠ 中性调整）。
+   *
+   * - 维度来源是 `PRIOR`（既无实测、也无手选画像）**且**没有近期倾向
+   *   ⇒ 不构造 provider：范围链路**完全不参与**，也就不会产生任何
+   *   「画像证据」对象（那会让「没有画像」与「画像没起作用」看起来一样）。
+   * - 只要**有一层**有证据（手选画像 / 实测维度 / 近期倾向），
+   *   就构造 provider，并如实记录它是否真的改变了形状（`applied`）。
+   */
+  const observationActive = dynamicHint !== undefined && OBSERVATION_TILTS[dynamicHint] !== null;
+  const hasEvidence =
+    dimension.tier !== TendencyEvidenceTier.PRIOR || observationActive;
+  const tendency = hasEvidence
+    ? {
+        provider: createTendencyProvider({
+          adjustment,
+          observation: dynamicHint === undefined ? null : dynamicHint,
+          /*
+           * 「他在这个牌面上是不是空气」必须用**当时那张牌面**判断 ——
+           * 见 `TendencyProviderOptions.boardOfStreet` 记录的实测非单调性。
+           */
+          boardOfStreet: boardOfStreet ?? (() => []),
+        }),
+        dimension,
+      }
+    : null;
+
   const snapshot: PlayerSnapshot = Object.freeze({
     playerId: villainId,
     label: read.label,
@@ -1332,12 +2675,12 @@ function buildPlayerSnapshot(
       quickProfile !== undefined && quickProfile !== '' ? (quickProfile as QuickProfile) : null,
     confidence,
     handsObserved,
-    adjustment: Object.freeze({ ...read.adjustment, confidence }),
+    adjustment: Object.freeze(adjustment),
     note,
     neutralized,
   });
 
-  return { snapshot, hasUsableProfile: handsObserved > 0, confidence };
+  return { snapshot, hasUsableProfile: handsObserved > 0, confidence, measuredConfidence, tendency };
 }
 
 /* ============================================================
@@ -1601,8 +2944,211 @@ function assertBoardVisibility(state: GameState): void {
 }
 
 /* ============================================================
- * 主入口
+ * 翻前多人 limp：隔离加注事实包（MULTI_LIMP ISOLATION RAISE PHASE 1）
  * ============================================================ */
+
+/**
+ * 只回答一件事：**跛入池里，隔离加注自己的 EV 是多少**（§2–§8）。
+ *
+ * 为什么只能在这里做：`Range` 对象与权益引擎只在这一层可用；
+ * 决策层拿不到逐组合概率，自己编一个 EV 就是伪造证据。
+ *
+ * ⚠️ 与既有 `math.callEV` 的**零点相同**（弃牌 ≡ 0，单位筹码），
+ * 因此两者可以在同一张表里比较；但**口径不同**：
+ * `callEV` 用的是「对全部对手到达范围的多人权益」，
+ * 这里用的是「对 limp-call **条件范围**」的权益（§8 禁止混用）。
+ */
+function buildPreflopIsoFacts(args: {
+  hero: PlayerState;
+  street: Street;
+  limpers: readonly PlayerState[];
+  /** 每个 limp 的原型：画像描述的那家用画像，其余用人群先验 */
+  limperInputOf: (player: PlayerState) => LimperInput;
+  playersBehind: readonly PlayerState[];
+  pot: number;
+  bigBlind: number;
+  /** 合法动作（尺寸网格与最小加注额都从这里取，不自己重算） */
+  legal: LegalActions;
+  heroRemaining: number;
+  /** 对全部对手**到达范围**的权益（= `math.heroEquity`，只作对照，禁止用来证明加注） */
+  equityVsArrival: number | null;
+  /** 既有跟注代理 EV（零点 = 弃牌 0）；它**只**与弃牌比较过 */
+  callProxyEV: number | null;
+  board: readonly Card[];
+  seed: number;
+}): PreflopIsoFacts | null {
+  if (args.street !== 'PREFLOP' || args.limpers.length === 0) return null;
+  const bb = args.bigBlind;
+
+  const inputs = args.limpers.map((p) => ({ player: p, input: args.limperInputOf(p) }));
+  const traits = inputs.map((e) => effectiveTraits(e.input));
+
+  /*
+   * 尺寸：先按公开公式算（人数 / 位置 / 黏度 / 筹码），再截断到合法范围。
+   * `ponytail:` 黏度 = 跟注倾向的线性映射（0.65..1.35 → 0..1），只有一次使用，
+   * 需要真实黏度数据时再换成实测统计。
+   */
+  const stickiness = Math.max(
+    0,
+    Math.min(1, traits.reduce((acc, t) => acc + (t.call - 0.65) / 0.7, 0) / traits.length),
+  );
+  const size = isoRaiseSizeOf({
+    limperCount: inputs.length,
+    heroPosition: args.hero.position,
+    stickiness,
+    effectiveStackBB: Math.min(args.heroRemaining, ...inputs.map((e) => e.player.remainingStack)) / bb,
+    minRaiseToBB: args.legal.minRaiseToAmount / bb,
+  });
+  /*
+   * 🔴 目标尺寸必须**落到合法网格上**才算数：模型算出的 7.1BB 不在网格里时，
+   * 真正能按下去的按钮是最近的合法尺寸（这里 = 6BB）。
+   * 拿「7.1BB 的 EV」去证明「6BB 的加注」是把两个动作混为一谈。
+   */
+  const isoGrid = buildSizeGrid(args.legal, args.pot, 'RAISE');
+  const isoOption = closestSizeTo(isoGrid, size.requestedIsoSize * bb, (o) => o.toAmount);
+  const isoChips = isoOption === null ? args.legal.minRaiseToAmount : isoOption.toAmount;
+
+  // 每个 limp 对「加注到 isoChips」的响应（价格用加注后的底池）
+  const heroCommitted = args.hero.committedByStreet[args.street] ?? 0;
+  const potAfterRaise = args.pot + (isoChips - heroCommitted);
+  const responses = inputs.map((e) =>
+    limpResponseOf({
+      limper: e.input,
+      potAfterRaise,
+      chipsToCall: isoChips - (e.player.committedByStreet[args.street] ?? 0),
+    }),
+  );
+  const joint = jointResponsesOf(responses);
+
+  /*
+   * 🔴 **条件范围**（§4/§5/§8）：加注只能拿「跟注范围」算权益。
+   * 用 `limpResponseRangesOf` 切出每个 limp 的跟注/再加注范围，
+   * 再交给权益引擎 —— 不自己写采样、不自己乘系数。
+   */
+  const chipsToCallOf = (player: PlayerState): number =>
+    isoChips - (player.committedByStreet[args.street] ?? 0);
+  const splits = inputs.map((e) =>
+    limpResponseRangesOf({ limper: e.input, potAfterRaise, chipsToCall: chipsToCallOf(e.player) }),
+  );
+  const callRanges = inputs.map((e, i) => ({
+    opponentId: e.player.id,
+    range: (() => {
+      const built = buildRangeFromRankClasses(splits[i]!.callWeights, {
+        provenance: {
+          ...PREFLOP_PRIOR_PROVENANCE,
+          sourceId: 'heuristic.limp-call-conditional-range.v1',
+          description:
+            `${POSITION_ZH[e.player.position]} 跛入后面对隔离加注的**跟注条件范围**` +
+            `（原型 ${LIMPER_ARCHETYPE_ZH[e.input.archetype]}；` +
+            `${PREFLOP_PRIOR_PROVENANCE.description}）`,
+        },
+        deadCards: args.board,
+        rangeIdPrefix: 'limp',
+      });
+      if (!built.ok) throw new Error(`limp-call 条件范围构建失败：${built.code}`);
+      return built.value;
+    })(),
+  }));
+  const equityVsCallers = (count: number): number | null =>
+    computeHeroEquity(
+      args.hero,
+      args.board,
+      callRanges.slice(0, count).map((r) => ({ opponentId: r.opponentId, range: r.range })),
+      args.seed,
+    ).value;
+
+  const equityVsOneCaller = equityVsCallers(1);
+  /*
+   * 多人权益：只有 1 家 limp 时不存在「3 家跟注」分支，此时把 3 家权益取成
+   * 1 家的值 —— 那一项的权重（`joint.threeCallers`）恒为 0，不会污染 EV。
+   * 2 家 limp 时用**实测的 2 家权益**（模型对 2 家那档用的就是它）。
+   */
+  const equityVsMultiCallers =
+    inputs.length >= 2 ? equityVsCallers(Math.min(3, inputs.length)) : equityVsOneCaller;
+
+  const playersBehind = playersBehindRiskOf({
+    behind: args.playersBehind.map((p) => ({
+      position: p.position,
+      archetype: args.limperInputOf(p).archetype,
+      confidence: 0,
+      effectiveStackBB: p.remainingStack / bb,
+    })),
+  });
+
+  const isoEV = isoRaiseEVOf({
+    potChips: args.pot,
+    isoRaiseChips: isoChips,
+    // 跟注者还要再投入的筹码（他们本街的 limp 已经在底池里）
+    callerAddsChips:
+      inputs.reduce((acc, e) => acc + (isoChips - (e.player.committedByStreet[args.street] ?? 0)), 0) /
+      inputs.length,
+    joint,
+    equityVsOneCaller,
+    equityVsThreeCallers: equityVsMultiCallers,
+    equityVsReraise: null,
+    playersBehind,
+  });
+  const isoAssumptions = Object.freeze([
+    ...isoEV.assumptionsZh,
+    ...(inputs.length === 2
+      ? ['本节点只有 2 家 limp ⇒ 「3 家跟注」项由**实测的 2 家权益**代入（该档权重见 joint）']
+      : []),
+  ]);
+
+  const perLimper = Object.freeze(
+    inputs.map((e, i) => {
+      const t = traits[i]!;
+      const r = responses[i]!;
+      const split = splits[i]!;
+      return Object.freeze({
+        positionZh: POSITION_ZH[e.player.position],
+        archetypeZh: LIMPER_ARCHETYPE_ZH[e.input.archetype],
+        arrivalWidth: limpArrivalRangeOf(e.input).width,
+        foldProbability: r.foldProbability,
+        callProbability: r.callProbability,
+        reraiseProbability: r.reraiseProbability,
+        priceRequiredEquity: r.priceRequiredEquity,
+        confidence: e.input.confidence,
+        noteZh:
+          `${LIMPER_ARCHETYPE_ZH[e.input.archetype]}：宽度 ${t.width.toFixed(2)}｜` +
+          `跟注/弃牌倾向 ${t.call.toFixed(2)}/${t.fold.toFixed(2)}｜再加注倾向 ${t.reraise.toFixed(2)}｜` +
+          `条件范围占比 跟注 ${(split.callShare * 100).toFixed(1)}% / 再加注 ${(split.reraiseShare * 100).toFixed(1)}%`,
+      });
+    }),
+  );
+
+  return Object.freeze({
+    limperCount: inputs.length,
+    perLimper,
+    joint,
+    isoSize: Object.freeze({ ...size, legalIsoSize: isoChips / bb }),
+    heroEquity: Object.freeze({
+      vsArrival: args.equityVsArrival,
+      vsOneCaller: equityVsOneCaller,
+      vsThreeCallers: equityVsMultiCallers,
+      vsReraise: null, // 被再加注按「不再继续」处理 ⇒ 不需要权益
+    }),
+    isoEV,
+    callProxyEV: args.callProxyEV,
+    callScope: 'VS_FOLD_ONLY' as const,
+    playersBehind,
+    rakeStatus: 'NOT_IMPLEMENTED' as const,
+    modelConfidence: Math.max(
+      0.2,
+      Math.min(0.6, inputs.reduce((acc, e) => acc + e.input.confidence, 0) / inputs.length),
+    ),
+    assumptionsZh: Object.freeze([
+      ...isoAssumptions,
+      '各 limp 的响应**独立**假设（`HEURISTIC_INDEPENDENCE_ASSUMPTION`）—— 真实牌局里响应正相关，本模型未建模',
+      'limp 到达范围 = 既有「无人加注宽范围」基线按「有效宽度^档位」衰减（不是实测频率）',
+      '对 limp-call 条件范围的权益是**独立**算的：禁止拿「对到达范围的权益」证明隔离加注（§8）',
+    ]),
+    noteZh:
+      `${inputs.length} 家 limp ⇒ 隔离加注 ${(isoChips / bb).toFixed(1)}BB（` +
+      `${size.noteZh} ⇒ 落到合法网格 ${(isoChips / bb).toFixed(1)}BB）；` +
+      `${joint.noteZh}｜${isoEV.noteZh}`,
+  });
+}
 
 /**
  * 构建决策上下文。
@@ -1674,6 +3220,76 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
    */
   const deadCards: Card[] = [...(hero.holeCards ?? []), ...allBoardCards(state)];
 
+  /*
+   * ---- 3a. 玩家画像（**必须在建范围之前**）----
+   *
+   * 🔴 P0 架构修复：修复前画像在第 6 步才算，**结构上不可能**进入范围 ——
+   * 那正是「画像只在决策末端当偏好修正」的一半根因。
+   * 现在它前移到这里，并由 `createTendencyProvider` 注入动作似然通道，
+   * 于是 posterior ∝ prior × likelihood × profile × observation，
+   * 权益 / 底池赔率 / Call EV / 动作排名**全部自动跟着变**。
+   *
+   * ⚠️ 只对**画像描述的那个对手**（`villainId`）注入：给其他对手套一个
+   * 画像就是编造数据。
+   */
+  const villainId =
+    input.villainPlayerId ?? realizedOpponents[0]?.id ?? opponents[0]?.id ?? 'villain';
+
+  /*
+   * 🔴 **行为画像必须在生产路径上真的被构造出来**
+   * （PLAYER PROFILE QUANTIFICATION V1 · §二十五/§二十六）。
+   *
+   * ## 为什么不能只认显式传入的 `input.behaviorProfile`
+   *
+   * `behaviorProfileOf` 在修复前**没有任何生产调用者** —— 画像量化模型
+   * （`behaviorProfile.ts`）虽然完整且单测全绿，却是一座孤岛，
+   * 这正是 `PROFILE_RANGE_INFLUENCE_TOO_WEAK` 的根因。
+   * 只认显式字段等于把这个孤儿状态**原样搬到上一层**：
+   * 界面与 `/api/analyze` 只设置 `quickProfile`，于是新似然永不触发。
+   *
+   * 因此：**没有显式画像时，用 `quickProfile` 标签推一个**。
+   * `behaviorProfileOf` 的四级来源（实测 > 人工 > 标签先验 > 池先验）
+   * 保证这一步是「有依据的先验」，不是编造。
+   *
+   * ## ⚠️ UNKNOWN 必须排除
+   *
+   * `quickProfile === 'UNKNOWN'` 在本文件里**本来就等于「没有可用的读」**
+   * （见 `buildPlayerSnapshot`：它走 `NO_DATA_NEUTRAL` 并标 `neutralized`）。
+   * 为它推一个纯池先验画像会凭空改变范围 —— 那是「替陌生人套一个原型」，
+   * 正是本项目明令禁止的编造数据。因此 UNKNOWN 与**根本没有画像**一样，
+   * 保持既有档位似然路径（逐位不变）。
+   */
+  const behaviorProfile: PlayerBehaviorProfile | undefined =
+    input.behaviorProfile ??
+    (input.quickProfile !== undefined && input.quickProfile !== 'UNKNOWN'
+      ? behaviorProfileOf({
+          playerId: villainId,
+          archetype: input.quickProfile as QuickProfile,
+        })
+      : undefined);
+
+  /*
+   * 跛入原型：只有画像描述的那一家带画像可信度，其余 = 人群先验（可信度 0 ⇒
+   * `effectiveTraits` 自动回落到 POPULATION，不编造画像）。
+   */
+  const profileArchetype = quickProfileToLimperArchetype(input.quickProfile);
+  const limpProfileFor = (
+    playerId: string,
+  ): { archetype: LimperArchetype; confidence: number } => ({
+    archetype: playerId === villainId ? profileArchetype : LimperArchetype.POPULATION,
+    confidence: playerId === villainId ? playerBuilt.confidence : 0,
+  });
+  const playerBuilt = mark('player', () =>
+    buildPlayerSnapshot(
+      villainId,
+      input.villainProfile,
+      input.quickProfile,
+      input.dynamicHint,
+      (street) => boardAtStreetOf(state, street),
+    ),
+  );
+
+
   const allRangeBuilds = mark('range', () =>
     realizedOpponents.map((opponent) => ({
       opponentId: opponent.id,
@@ -1682,6 +3298,10 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         opponent,
         deadCards,
         input.solverRanges?.[opponent.id],
+        opponent.id === villainId ? playerBuilt.tendency : null,
+        limpProfileFor(opponent.id),
+        // 画像只对**它描述的那一家**注入（给别的座位套画像就是编造数据）
+        opponent.id === villainId ? (behaviorProfile ?? null) : null,
       ),
     })),
   );
@@ -1694,8 +3314,16 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   const primaryBuild =
     allRangeBuilds.find((entry) => entry.opponentId === primaryOpponent?.id)?.build ??
     (primaryOpponent !== null
-      ? buildRangeSnapshot(state, primaryOpponent, deadCards)
-      : { snapshot: null, range: null, warnings: [] as string[] });
+      ? buildRangeSnapshot(
+          state,
+          primaryOpponent,
+          deadCards,
+          undefined,
+          primaryOpponent.id === villainId ? playerBuilt.tendency : null,
+          limpProfileFor(primaryOpponent.id),
+          primaryOpponent.id === villainId ? (behaviorProfile ?? null) : null,
+        )
+      : { snapshot: null, range: null, warnings: [] as string[], tendency: null });
   const rangeBuild = primaryBuild;
 
   /* ---- 4. 权益（**多人口径**）---- */
@@ -1708,6 +3336,53 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     ),
   );
   if (equity.warning !== null) warnings.push(equity.warning);
+
+  /* ---- 4a. PLAYER PROFILE V3：标签 Prior + 实测连续统计 ⇒ 分街画像 ---- */
+  /*
+   * 🔴 **算一次、用多处**：同一个解析结果既进响应层（分街系数），
+   * 又进 `context.profileV3`（诊断 / Profile Trace）。
+   * 两处各算一次必然有一天分歧（本项目反复踩过的「两处口径」）。
+   *
+   * ⚠️ 没有连续统计时仍然会构造 `resolvedV3`，但所有维度 = 0.5、
+   * 所有分街系数 = 1 ⇒ 下游**逐位**与 V2 一致（`resolvePlayerProfile` 的恒等性）。
+   */
+  const observedForPrimary = input.observedStats ?? null;
+  const opportunitiesForPrimary = (() => {
+    const profile = input.villainProfile;
+    if (profile === null || profile === undefined) return null;
+    const metrics = (profile as unknown as { metrics?: Record<string, { opportunities?: number }> })
+      .metrics;
+    if (metrics === undefined) return null;
+    /*
+     * `PlayerProfile` 的指标名与 V3 的统计键**刻意对齐**（VPIP / PFR / THREE_BET…），
+     * 这样不需要再维护一张映射表。只有「确实存在」的项才作为机会数传入，
+     * 其余保持 null（走「手数 × 频率」近似）。
+     */
+    const map: Record<string, number | null> = {};
+    for (const [v3Key, metricKey] of [
+      ['vpip', 'VPIP'], ['pfr', 'PFR'], ['threeBet', 'THREE_BET'],
+      ['wtsd', 'RIVER_SHOWDOWN'], ['foldToFlopCBet', 'FOLD_TO_CBET'],
+      ['foldToTurnCBet', 'TURN_FOLD'], ['foldToRiverBet', 'RIVER_FOLD'],
+      ['flopCheckRaise', 'CHECK_RAISE_FLOP'], ['turnCheckRaise', 'TURN_CHECK_RAISE'],
+      ['riverCheckRaise', 'RIVER_RAISE'],
+    ] as const) {
+      const m = metrics[metricKey];
+      map[v3Key] = m?.opportunities === undefined ? null : Number(m.opportunities);
+    }
+    return map;
+  })();
+  const resolvedV3 = resolvePlayerProfile({
+    baseArchetype: (input.quickProfile ?? null) as never,
+    observedStats: observedForPrimary,
+    opportunities: opportunitiesForPrimary as never,
+  });
+  const boardNow = allBoardCards(state).length;
+  const streetOfNow: 'FLOP' | 'TURN' | 'RIVER' =
+    boardNow >= 5 ? 'RIVER' : boardNow === 4 ? 'TURN' : 'FLOP';
+  const v3StreetInput = {
+    street: streetOfNow,
+    factors: resolvedV3.resolved.street[streetOfNow],
+  };
 
   /* ---- 4b. 分层权益（**只有「门槛不适用」才跑**）---- */
   /*
@@ -1754,11 +3429,127 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     ),
   );
 
-  /* ---- 6. 玩家 ---- */
-  const villainId = input.villainPlayerId ?? primaryOpponent?.id ?? 'villain';
-  const playerBuilt = mark('player', () =>
-    buildPlayerSnapshot(villainId, input.villainProfile, input.quickProfile),
-  );
+  /* ---- 6. 玩家画像的**范围级证据**（P0 修复的验收数据）----
+   *
+   * 🔴 这一节回答使用者点名的问题：「画像到底有没有进入
+   * action-conditioned range 与 Hero equity 主链」。
+   *
+   * 做法：当 provider **确实**改变了范围形状时，用同一份输入、
+   * **不传 provider** 再建一次该对手的范围，并再算一次权益。
+   * 那两个权益就是「调整前 / 调整后」——
+   * 若它们相等，说明画像没有进入主链。
+   *
+   * ⚠️ 两次权益用**同一个种子**、同一批对手范围，只有首要对手的范围不同，
+   * 因此差异只可能来自画像调整本身（不是抽样噪声）。
+   * ⚠️ 只在 `applied === true` 时才算 —— 没有画像的牌局**一个字节都不多算**。
+   */
+  let profileEvidenceApplied = false;
+  const profileRangeEvidence: ProfileRangeEvidence | null = (() => {
+    /*
+     * 🔴 **证据必须取自「画像描述的那一家」，不是 `realizedOpponents[0]`**
+     *（V2.1 独立核查 A 洞，P0）。
+     *
+     * 修复前这里是 `rangeBuild = primaryBuild`，而 `primaryBuild` 恒等于
+     * `realizedOpponents[0]`。于是当画像挂在**别的座位**上
+     * （`villainPlayerId` 指向 CO，而首要对手是 UTG）时：
+     * 范围**已经被画像改了**，但证据对象为 `null`、字段被整个省掉
+     * ⇒ 决策层的去重闸门读到 `undefined` ⇒ 同一份「范围强度」证据
+     * 在权益与 scorer 层**各计一次**（实测 `bluffCatchDelta` 由 0
+     * 变成 +0.035，`deDuplicated` 由 true 变成 false）。
+     *
+     * 现在按 `villainId` 定位「被画像描述的对手」；定位不到就退回首要对手
+     *（此时两者本来就是同一家）。
+     */
+    const profiledOpponent =
+      (villainId !== null && villainId !== undefined
+        ? (realizedOpponents.find((o) => o.id === villainId)
+          ?? opponents.find((o) => o.id === villainId)
+          ?? null)
+        : null) ?? primaryOpponent;
+    const evidenceBuild =
+      allRangeBuilds.find((entry) => entry.opponentId === profiledOpponent?.id)?.build ?? primaryBuild;
+    const core = evidenceBuild.tendency ?? null;
+    if (core === null) return null;
+
+    /**
+     * 画像是否通过**跛入原型**改变了这个对手的范围（见下面两条路径的说明）。
+     *
+     * 判据：被画像描述的那家确实跛入（CALL 且无人加注）**且**画像给出的原型不是人群先验。
+     */
+    const profileChangesLimpRange =
+      profiledOpponent !== null &&
+      profileArchetype !== LimperArchetype.POPULATION &&
+      firstPreflopActionOf(state, profiledOpponent.id)?.action === 'CALL' &&
+      openerPositionOf(state, profiledOpponent.id) === null;
+
+    /*
+     * 🔴 画像有**三条**进范围的路径，任何一条生效都要做前后对比：
+     * ① 倾向 provider（乘数通道，翻前结构上常常不生效）；
+     * ② **河牌统一似然通道**（该通道上 provider 被主动抑制，见 suppressProvider）——
+     *    只看 ① 会漏掉它，这正是去重闸门失效的根因；
+     * ③ **跛入原型通道**（多人 limp 修复新增）—— 它改变跛入者的到达范围，
+     *    因此会改变 Hero 权益，即使 provider 自称 `applied = false`。
+     * 只看 ① 会让界面写「画像没有改变范围」，而实际上权益已经变了。
+     */
+    const profileApplied =
+      core.provider.applied
+      || (evidenceBuild.profileAppliedActions ?? 0) > 0
+      || profileChangesLimpRange;
+    profileEvidenceApplied = profileApplied;
+
+    if (
+      !profileApplied ||
+      profiledOpponent === null ||
+      evidenceBuild.range === null
+    ) {
+      return Object.freeze({
+        ...core,
+        equityBefore: equity.value,
+        equityAfter: equity.value,
+        equityDeltaPct: 0,
+      });
+    }
+
+    const baseline = buildRangeSnapshot(
+      state,
+      profiledOpponent,
+      deadCards,
+      input.solverRanges?.[profiledOpponent.id],
+      null,
+      // 基线 = **没有画像**：跛入原型也回到人群先验，否则测不出画像的真实影响
+      { archetype: LimperArchetype.POPULATION, confidence: 0 },
+    );
+    if (baseline.range === null) {
+      return Object.freeze({
+        ...core,
+        equityBefore: null,
+        equityAfter: equity.value,
+        equityDeltaPct: null,
+      });
+    }
+
+    const baselineEquity = computeHeroEquity(
+      hero,
+      allBoardCards(state),
+      usableRangeBuilds.map((entry) => ({
+        opponentId: entry.opponentId,
+        range:
+          entry.opponentId === profiledOpponent.id ? baseline.range! : entry.build.range!,
+      })),
+      input.equitySeed ?? 20260913,
+    );
+    const delta =
+      baselineEquity.value === null || equity.value === null
+        ? null
+        : (equity.value - baselineEquity.value) * 100;
+
+    return Object.freeze({
+      ...core,
+      equityBefore: baselineEquity.value,
+      equityAfter: equity.value,
+      equityDeltaPct: delta,
+    });
+  })();
 
   /* ---- 7. 环境 ---- */
   const priority = resolveIndividualOverEnvironment({
@@ -1811,12 +3602,183 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
            * 是**相对于我这手牌**的量。缺了它，成对/成花牌面上会得出
            * 「坚果同花也不该下注」的反向结论（见 `rangeFacts.ts` 顶部记录）。
            */
+          /*
+           * 🔴 复合牌力结构（问题 2）：成手 + 听牌 + 四桶补牌。
+           * 在这里算是因为只有这一层同时拿得到 Hero 底牌与公共牌。
+           */
+          handStructure: (() => {
+            const holeCards = hero.holeCards ?? [];
+            if (holeCards.length !== 2) return undefined;
+            const draw = drawProfileOf(holeCards, boardCards);
+            const audit = outAuditOf(holeCards, boardCards);
+            let madeClass = 'HIGH_CARD';
+            try {
+              madeClass = madeHandClassOf(evaluateCards([...holeCards, ...boardCards]).category);
+            } catch {
+              madeClass = 'HIGH_CARD';
+            }
+            const parts: string[] = [madeClass];
+            if (draw.openEnded) parts.push('OESD');
+            else if (draw.gutshot) parts.push('GUTSHOT');
+            if (draw.flushDraw) parts.push('FLUSH_DRAW');
+            return Object.freeze({
+              madeHandClass: madeClass,
+              openEnded: draw.openEnded,
+              gutshot: draw.gutshot,
+              flushDraw: draw.flushDraw,
+              structureLabel: parts.join('_PLUS_'),
+              rawOuts: audit.rawOuts,
+              cleanOuts: audit.cleanOuts,
+              discountedOuts: audit.discountedOuts,
+              dirtyOuts: audit.dirtyOuts,
+              doubleCounted: audit.doubleCounted,
+              nonNutFlushDraw: audit.nonNutFlushDraw,
+              notesZh: Object.freeze([
+                `成手 ${madeClass}｜听牌 ${parts.slice(1).join(' + ') || '（无）'}`,
+                ...audit.notesZh,
+              ]),
+            });
+          })(),
           opponentRangeFacts: opponentRangeFactsOf(
             primaryBuild.range,
             boardCards,
             hero.holeCards ?? [],
           ),
+          /*
+           * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
+           *
+           * 只有这里能算：决策层拿不到 `Range` 对象，而「面对每个尺寸的
+           * fold / call / raise 条件范围 + 对它们的权益」必须基于**真实范围**。
+           * 与 `opponentRangeFacts` 同一条架构纪律（见本文件 §8b 的说明）。
+           */
+          betDecision: buildBetDecisionFacts({
+            range: primaryBuild.range,
+            /*
+             * 🔴 **完整对手列表**（§13）：每家一份自己的范围 + **他自己的**画像倾向。
+             * 优先级：`seatProfiles[位置]` > `quickProfile`（当该座位就是画像描述的那家）> 中立先验。
+             */
+            opponents: usableRangeBuilds.map((entry) => {
+              const opponent =
+                realizedOpponents.find((p) => p.id === entry.opponentId) ?? primaryOpponent;
+              const seatProfile =
+                opponent === null || opponent === undefined
+                  ? undefined
+                  : input.seatProfiles?.[opponent.position];
+              const isVillain = entry.opponentId === villainId;
+              const ownDimensions =
+                seatProfile !== undefined && seatProfile !== 'UNKNOWN'
+                  ? archetypeDimensionsOf(seatProfile as QuickProfile, QUICK_PROFILE_CONFIDENCE)
+                  : isVillain && playerBuilt.tendency !== null
+                    ? playerBuilt.tendency.dimension.dimensions
+                    : null;
+              return {
+                opponentId: entry.opponentId,
+                range: entry.build.range,
+                positionZh: opponent === null || opponent === undefined ? '对手' : POSITION_ZH[opponent.position],
+                dimensions: ownDimensions,
+                confidence:
+                  seatProfile !== undefined && seatProfile !== 'UNKNOWN'
+                    ? QUICK_PROFILE_CONFIDENCE
+                    : isVillain && playerBuilt.tendency !== null
+                      ? playerBuilt.confidence
+                      : 0,
+                tendencyNoteZh:
+                  seatProfile !== undefined && seatProfile !== 'UNKNOWN'
+                    ? `逐座位画像「${seatProfile}」（用户主观判断，可信度上限 ${QUICK_PROFILE_CONFIDENCE}）`
+                    : ownDimensions !== null
+                      ? '画像（首要对手，含实测与手选合并）'
+                      : '无画像 ⇒ 中立先验（不编造类型）',
+              };
+            }),
+            board: boardCards,
+            heroHole: hero.holeCards ?? [],
+            pot: math.pot,
+            street: math.street,
+            spr: math.spr,
+            opponentCount: realizedOpponents.length,
+            heroPosition: hero.position,
+            villainPosition: primaryOpponent?.position ?? null,
+            equityVsArrivalRange: math.heroEquity,
+            dimensions:
+              playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions,
+            profileConfidence: playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
+            /* 🔴 PLAYER PROFILE V3：把分街系数与实测维度交给响应层（无统计时逐位不变） */
+            v3Street: v3StreetInput,
+            ...(resolvedV3.observedStatCount > 0
+              ? { v3Dimensions: resolvedV3.resolved.dimensions }
+              : {}),
+            seed: input.equitySeed ?? 20260913,
+            // 「当前剩余」而不是带入筹码；上限取场上**最短**筹码（多人池的有效筹码）
+            heroRemaining: math.myRemainingStack,
+            villainRemaining:
+              usableRangeBuilds.length === 0
+                ? (primaryOpponent === null ? 0 : primaryOpponent.remainingStack)
+                : Math.min(
+                    ...usableRangeBuilds.map(
+                      (entry) =>
+                        realizedOpponents.find((p) => p.id === entry.opponentId)?.remainingStack ?? 0,
+                    ),
+                  ),
+            minBet: state.config.bigBlind,
+          }),
         };
+
+  /*
+   * ---- 8c. 翻前多人 limp：隔离加注事实包（MULTI_LIMP ISOLATION RAISE PHASE 1）----
+   *
+   * 只在「Hero 面对跛入、且尚无人加注」的翻前节点构建。
+   * 其余节点（含「面对真实开池」——那里不是隔离加注）保持原样，
+   * 决策层也就拿不到任何可用的隔离加注 EV（宁可不给，也不编）。
+   */
+  const preflopIsoFacts: PreflopIsoFacts | null = (() => {
+    if (state.street !== 'PREFLOP' || legal.callCost <= 0) return null;
+    const anyRaiser =
+      opponents.some((o) => firstPreflopActionOf(state, o.id)?.action === 'RAISE');
+    if (anyRaiser) return null;
+    const limpers = realizedOpponents.filter(
+      (o) => firstPreflopActionOf(state, o.id)?.action === 'CALL',
+    );
+    if (limpers.length === 0) return null;
+
+    /*
+     * 原型：只有**画像描述的那一家**用画像（其余用人群先验）。
+     * 手动录入目前只支持一个 `quickProfile`，因此多人桌上只有一个座位
+     * 能带上原型 —— 这是输入限制，不是模型限制（见报告 §F）。
+     */
+    const profileArchetype = quickProfileToLimperArchetype(input.quickProfile);
+    const inputOf = (player: PlayerState): LimperInput => ({
+      position: player.position,
+      archetype: player.id === villainId ? profileArchetype : LimperArchetype.POPULATION,
+      confidence: player.id === villainId ? playerBuilt.confidence : 0,
+    });
+
+    return buildPreflopIsoFacts({
+      hero,
+      street: state.street,
+      limpers,
+      limperInputOf: inputOf,
+      playersBehind: playersYetToAct,
+      pot: math.pot,
+      bigBlind: state.config.bigBlind,
+      legal,
+      heroRemaining: math.myRemainingStack,
+      equityVsArrival: math.heroEquity,
+      callProxyEV: math.callEV,
+      board: allBoardCards(state),
+      seed: input.equitySeed ?? 20260913,
+    });
+  })();
+
+  /** 我之后还需要行动的对手数（取自 pendingQueue，已含「下注重开行动」） */
+  const playersRemainingToActCount = (() => {
+    const queue = state.pendingQueue;
+    const heroIndex = queue.indexOf(hero.id);
+    const after = heroIndex >= 0 ? queue.slice(heroIndex + 1) : [];
+    return after.filter((id) => {
+      const player = state.players.find((p) => p.id === id);
+      return player !== undefined && !player.folded && !player.allIn;
+    }).length;
+  })();
 
   const context: DecisionContext = Object.freeze({
     heroCards: Object.freeze([...(hero.holeCards ?? [])]),
@@ -1824,8 +3786,29 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     activeOpponentCount: opponents.length,
     realizedOpponentCount: realizedOpponents.length,
     playersYetToAct: playersYetToAct.length,
+    /*
+     * 🔴 **「我之后还有谁要行动」必须来自引擎的行动队列**（TEST HAND MULTIWAY TURN FIX）。
+     * pendingQueue 已经把「下注重开行动」算进去了：已经过牌的玩家在有人下注后
+     * 仍需再表态。修复前用的是 playersYetToAct（= 本街还没说过话的人），
+     * 于是 UTG+1 check → LJ bet → Hero 被写成「本街已无人待行动」。
+     */
+    playersRemainingToAct: playersRemainingToActCount,
+    isClosingAction: playersRemainingToActCount === 0,
     math,
+    ...(profileRangeEvidence !== null ? { profileRangeEvidence } : {}),
+    /**
+     * 🔴 **去重闸门的权威标志**（V2.1 修复）。
+     *
+     * 与 `profileRangeEvidence` 分开传是**刻意**的：证据对象只在
+     * 「建范围阶段拿得到 provider 证据」时才存在，而「画像是否真的改了范围」
+     * 是一个**独立的事实**（证据对象缺失不代表画像没生效 —— 那正是
+     * A 洞的形态）。决策层必须读这个字段，不得读 `evidence?.provider.applied`。
+     */
+    profileAppliedToRange: profileEvidenceApplied
+      || (rangeBuild.profileAppliedToRange ?? false)
+      || allRangeBuilds.some((entry) => entry.build.profileAppliedToRange === true),
     ...(postflopFacts !== undefined ? { postflopFacts } : {}),
+    ...(preflopIsoFacts !== null ? { preflopIso: preflopIsoFacts } : {}),
     range: rangeBuild.snapshot,
     opponentRanges: Object.freeze(
       usableRangeBuilds
@@ -1833,6 +3816,26 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         .filter((s): s is RangeSnapshot => s !== null),
     ),
     player: playerBuilt.snapshot,
+    /* 🔴 PLAYER PROFILE V3 的 Profile Trace（诊断 / 审计模式可见） */
+    profileV3: Object.freeze({
+      baseArchetype: (input.quickProfile ?? null) as string | null,
+      observedStatCount: resolvedV3.observedStatCount,
+      confidenceTierZh: resolvedV3.confidenceTierZh,
+      dimensions: Object.freeze({ ...resolvedV3.resolved.dimensions }),
+      street: Object.freeze({
+        PREFLOP: Object.freeze({ ...resolvedV3.resolved.street.PREFLOP }),
+        FLOP: Object.freeze({ ...resolvedV3.resolved.street.FLOP }),
+        TURN: Object.freeze({ ...resolvedV3.resolved.street.TURN }),
+        RIVER: Object.freeze({ ...resolvedV3.resolved.street.RIVER }),
+      }),
+      trace: Object.freeze(
+        resolvedV3.trace.map((x) => Object.freeze({ ...x })),
+      ) as readonly Readonly<Record<string, unknown>>[],
+      issues: Object.freeze(
+        resolvedV3.issues.map((x) => Object.freeze({ ...x })),
+      ) as readonly Readonly<Record<string, unknown>>[],
+      noteZh: resolvedV3.noteZh,
+    }),
     environment,
     dynamic,
     deadlineBudget: Object.freeze({ ...budget, elapsedMs: elapsed }),

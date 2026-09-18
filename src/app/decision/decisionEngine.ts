@@ -41,6 +41,9 @@ import {
   DYNAMIC_FLIP_MIN_CONFIDENCE,
   DecisionAction,
   DecisionClassification,
+  DecisionMargin,
+  DECISION_MARGIN_ZH,
+  DecisionMarginScope,
   MARGINAL_EV_GAP_RATIO,
   MATH_EV_EPSILON,
   MODEL_UNCERTAINTY_RATIO,
@@ -49,13 +52,29 @@ import {
   type DecisionCandidate,
   type DecisionContext,
   type DecisionDiagnostics,
+  type DecisionMarginFacts,
   type DecisionReason,
   type DegradationEntry,
   type DynamicShadowComparison,
   type MathDominanceVerdict,
   type PostflopDecisionSnapshot,
 } from '../../domain/decision/decision.types.ts';
-import { buildSizeGrid, type LegalActions, type SizeOption } from '../manualInput/legalActions.ts';
+import {
+  buildSizeGrid,
+  closestSizeTo,
+  type LegalActions,
+  type SizeOption,
+} from '../manualInput/legalActions.ts';
+import {
+  DECISION_SOURCE_ZH,
+  DecisionSourceKind,
+  EstimateType,
+  chooseByEvidencePriority,
+  isQuantifiedEvidence,
+  marginOf,
+  type ActionEvidence,
+  type EvidenceDecision,
+} from '../../domain/decision/evidencePriority.ts';
 import { DECISION_ACTION_ZH } from '../../domain/decision/decision.types.ts';
 import { RELATIVE_ROLE_ZH } from '../../domain/postflop/types.ts';
 import { madeHandClassOf, MADE_HAND_CLASS_ZH } from '../../domain/postflop/relativeHandRole.ts';
@@ -572,6 +591,13 @@ function checkSufficiency(context: DecisionContext): DecisionReason[] {
 export function mathDominanceOf(
   candidates: readonly DecisionCandidate[],
   pot: number,
+  /**
+   * 本次比较里是否**包含**了「自带模型的加注 EV」（隔离加注）。
+   *
+   * 真 ⇒ 结论句不再声明「加注不在此比较之内」—— 那句话在跛入池里是错的，
+   * 而错的声明会让首屏出现「建议加注 / 跟注明显占优」并存的自相矛盾。
+   */
+  includedRaiseModel = false,
 ): MathDominanceVerdict {
   const comparable = candidates.filter((c) => c.ev !== null);
   if (comparable.length < 2 || pot <= 0) {
@@ -606,7 +632,9 @@ export function mathDominanceOf(
         // ⚠️ 必须显式声明「可比较」的范围，否则这句话会与本函数**不参与比较**的
         // 下注/加注类动作产生表面矛盾：实测出现过建议「加注」而首屏理由写着
         // 「跟注在数学上明显占优」—— 两句话都对，但放在一起读就是自相矛盾。
-        '（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）'
+        (includedRaiseModel
+          ? '（本节点的加注**有**自带的代理 EV 并参与了比较 —— 隔离加注模型，RAKE 未实现）'
+          : '（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）')
       : `没有明显占优动作（最大 EV 差 ${evGap.toFixed(2)} 筹码，底池的 ${(ratio * 100).toFixed(1)}%）`,
   });
 }
@@ -676,11 +704,8 @@ function pickClosestRaise(
 ): DecisionCandidate | null {
   const list = candidates.filter((c) => c.action === DecisionAction.RAISE);
   if (list.length === 0) return null;
-  return list.reduce((best, c) =>
-    Math.abs((c.sizeChips ?? 0) - desiredToAmount) < Math.abs((best.sizeChips ?? 0) - desiredToAmount)
-      ? c
-      : best,
-  );
+  // 规则与隔离加注模型**共用**（`closestSizeTo`），避免两处各挑一个尺寸
+  return closestSizeTo(list, desiredToAmount, (c) => c.sizeChips ?? 0);
 }
 
 /**
@@ -809,6 +834,8 @@ function postflopSnapshotOf(
     callEV: number | null;
     uncertaintyBandChips: number;
     allowUncertaintyOverride: boolean;
+    /** 对**到达范围**的权益（下注决策的过牌分支要用；缺省 null） */
+    heroEquityVsArrivalRange?: number | null;
   },
   /** 可达范围的逐组合分类计数（P1-1） */
   rangeCounts: Readonly<Record<string, number | string>> | null,
@@ -865,14 +892,155 @@ function postflopSnapshotOf(
       strongerShare: advice.gate.strongerShare,
       estimatedBetEVScore: advice.gate.estimatedBetEVScore,
       estimatedCheckEVScore: advice.gate.estimatedCheckEVScore,
+      /*
+       * 🔴 **P0-1 / P0-2 / P0-5 / §8** 的新字段：
+       * - `raisePressureIndex`：同一口径的**新名字**（旧名 `raiseRisk` 保留为别名）
+       *   —— 它是归一化指数，不是「被加注的概率」；真实概率见 `betDecision`。
+       * - `betterHandPressure`：「对手更强」压力的**单一事实来源**（只收一次费）。
+       * - `callTendencyScale`：画像的「爱跟」倾向（响应层）。
+       * - `semiBluffQuality`：Hero 自身听牌质量（**不进权益**）。
+       */
+      raisePressureIndex: advice.gate.raisePressureIndex,
+      betterHandPressure: advice.gate.betterHandPressure,
+      callTendencyScale: advice.gate.callTendencyScale,
+      semiBluffQuality: advice.gate.semiBluffQuality,
     }),
+    /*
+     * 🔴 **下注决策（每个尺寸独立）**（BET DECISION ENGINE PHASE 1）。
+     * 序列化后的纯数据；EV 标 `HEURISTIC`（代理模型）。
+     */
+    betDecision:
+      advice.betDecision === null
+        ? null
+        : Object.freeze({
+            pot: advice.betDecision.pot,
+            checkEV: advice.betDecision.checkEV,
+            checkRealizationFactor: advice.betDecision.checkRealizationFactor,
+            bestSize: advice.betDecision.bestSize,
+            preferredAction: advice.betDecision.preferredAction,
+            sizes: Object.freeze(
+              advice.betDecision.sizes.map((s) =>
+                Object.freeze({
+                  size: s.kind,
+                  ratioToPot: s.ratioToPot,
+                  betAmount: s.betAmount,
+                  requestedAmount: s.requestedAmount,
+                  wasCapped: s.wasCapped,
+                  requestedKind: s.requestedKind,
+                  heroIsAllIn: s.heroIsAllIn,
+                  legal: true,
+                  foldLikelihood: s.foldLikelihood,
+                  callLikelihood: s.callLikelihood,
+                  raiseLikelihood: s.raiseLikelihood,
+                  foldRangeMass: s.buckets.find((b) => b.bucket === 'FOLD')?.mass ?? 0,
+                  callRangeMass: s.buckets.find((b) => b.bucket === 'CALL')?.mass ?? 0,
+                  raiseRangeMass: s.buckets.find((b) => b.bucket === 'RAISE')?.mass ?? 0,
+                  foldComboCount: s.buckets.find((b) => b.bucket === 'FOLD')?.comboCount ?? 0,
+                  callComboCount: s.buckets.find((b) => b.bucket === 'CALL')?.comboCount ?? 0,
+                  raiseComboCount: s.buckets.find((b) => b.bucket === 'RAISE')?.comboCount ?? 0,
+                  heroEquityVsCallRange: s.heroEquityVsCallRange,
+                  heroEquityVsRaiseRange: s.heroEquityVsRaiseRange,
+                  realizedEquityVsCall: s.realizedEquityVsCall,
+                  evFoldBranch: s.evFoldBranch,
+                  evCallBranch: s.evCallBranch,
+                  evRaiseBranch: s.evRaiseBranch,
+                  evRaiseFoldLowerBound: s.evRaiseFoldLowerBound,
+                  betEV: s.betEV,
+                  deltaVsCheck: s.deltaVsCheck,
+                  score: s.score,
+                  equityMethod: s.equityMethod,
+                  equityIterations: s.equityIterations,
+                }),
+              ),
+            ),
+            heroEquityVsArrivalRange: evFacts.heroEquityVsArrivalRange,
+            draw: Object.freeze({
+              outs: advice.betDecision.draw.outs,
+              cardsToCome: advice.betDecision.draw.cardsToCome,
+              drawQuality: advice.betDecision.draw.drawQuality,
+              nutPotential: advice.betDecision.draw.nutPotential,
+              improvementProbability: advice.betDecision.draw.improvementProbability,
+              flushDraw: advice.betDecision.draw.flushDraw,
+              openEnded: advice.betDecision.draw.openEnded,
+              gutshot: advice.betDecision.draw.gutshot,
+              noteZh: advice.betDecision.draw.noteZh,
+            }),
+            realization: Object.freeze({
+              factor: advice.betDecision.realization.factor,
+              kind: advice.betDecision.realization.kind,
+              components: advice.betDecision.realization.components,
+              noteZh: advice.betDecision.realization.noteZh,
+            }),
+            profileEvidence: Object.freeze({ ...advice.betDecision.profileEvidence }),
+            /** 🔴 河牌 CHECK 树（前位过牌 ≠ 摊牌；§5/§6） */
+            checkTree: Object.freeze({
+              kind: advice.betDecision.checkTree.kind,
+              isInPosition: advice.betDecision.checkTree.isInPosition,
+              checkBackLikelihood: advice.betDecision.checkTree.checkBackLikelihood,
+              betLikelihood: advice.betDecision.checkTree.betLikelihood,
+              villainBetAmount: advice.betDecision.checkTree.villainBetAmount,
+              heroEquityVsCheckBackRange: advice.betDecision.checkTree.heroEquityVsCheckBackRange,
+              heroEquityVsBetRange: advice.betDecision.checkTree.heroEquityVsBetRange,
+              evShowdown: advice.betDecision.checkTree.evShowdown,
+              heroCallEV: advice.betDecision.checkTree.heroCallEV,
+              heroFoldEV: advice.betDecision.checkTree.heroFoldEV,
+              heroBestResponseEV: advice.betDecision.checkTree.heroBestResponseEV,
+              checkEV: advice.betDecision.checkTree.checkEV,
+              raiseResponse: advice.betDecision.checkTree.raiseResponse,
+              noteZh: advice.betDecision.checkTree.noteZh,
+            }),
+            /** 被封顶/去重丢弃的候选（理论金额只在这里出现） */
+            droppedSizes: Object.freeze(
+              advice.betDecision.droppedSizes.map((d) => Object.freeze({ ...d })),
+            ),
+            /** 合法动作去重后的候选（EV 比较只用这一组） */
+            legalSizes: Object.freeze(
+              advice.betDecision.legalSizes.map((s) =>
+                Object.freeze({ size: s.kind, betAmount: s.betAmount, betEV: s.betEV, score: s.score }),
+              ),
+            ),
+            tendenciesZh: advice.betDecision.tendencies.noteZh,
+            modelNoteZh: advice.betDecision.modelNoteZh,
+            evidence: Object.freeze({
+              probabilities: 'HEURISTIC',
+              equityVsConditionalRanges: 'EXACT_OR_MONTE_CARLO',
+              realization: 'HEURISTIC',
+              raiseBranch: 'HEURISTIC_ONE_MORE_BET',
+              blockerAdjustment: 'NOT_IMPLEMENTED',
+            }),
+          }),
     showdownValue: advice.gate.showdownValue,
     futureCardProtectionScore: advice.gate.futureCardProtectionScore,
     protectionValue: advice.gate.futureCardProtectionScore,
     bluffPotential: advice.gate.estimatedBetEVScore * (advice.role === 'PURE_BLUFF' || advice.role === 'SEMI_BLUFF' ? 1 : 0.3),
     exploitAdjustmentZh: advice.exploit.applied ? (advice.exploit.reasonsZh[0] ?? null) : null,
     evRanking: Object.freeze(
-      advice.scores.map((s) => Object.freeze({ action: s.action, score: s.normalizedEVScore })),
+      advice.scores.map((s) => {
+        /*
+         * 🔴 语义分离（问题 4）：有 EV 的动作与「只有启发式的战略候选」**不能**
+         * 放进同一个可比排序。加注在翻后没有 EV 模型 ⇒ 它的分数只是偏好分。
+         */
+        /*
+         * 「有 EV」的判据 = 这个动作**真的有 EV 模型**：
+         * · FOLD ≡ 0、CALL / CHECK 由权益推出；
+         * · BET_* / ALL_IN（下注族）有 etEV（响应模型 × 条件范围权益）；
+         * · **RAISE（面对下注的加注）没有 EV 模型** ⇒ 只有启发式偏好分。
+         */
+        const supported =
+          s.action === 'FOLD' ||
+          s.action === 'CALL' ||
+          s.action === 'CHECK' ||
+          s.action === 'ALL_IN' ||
+          s.action.startsWith('BET');
+        return Object.freeze({
+          action: s.action,
+          score: s.normalizedEVScore,
+          kind: supported ? 'EV_SUPPORTED' : 'STRATEGIC_CANDIDATE_ONLY',
+          noteZh: supported
+            ? '有可计算的 EV（弃牌 ≡ 0；跟注/过牌由权益与可争夺量推出）⇒ 可与同组动作排序'
+            : '**EV = NOT_AVAILABLE**（翻后加注无 EV 模型）⇒ 这是启发式偏好分，不可与 EV 支持的动作比较，也不是概率',
+        });
+      }),
     ),
     metricKind: advice.gate.metricKind,
     /*
@@ -965,6 +1133,17 @@ function pickCandidate(
    * 且输出必须标成 `MODEL_UNCERTAINTY_OVERRIDE`（工程启发式，不是数学结论）。
    */
   allowUncertaintyOverride: boolean,
+  /**
+   * 🔴 **证据裁决的输出箱**（PREFLOP EVIDENCE PRIORITY FIX）。
+   *
+   * `pickCandidate` 是独立函数，无法直接写回 `decideAlpha` 的局部变量；
+   * 用这个显式出口把「谁有资格覆盖谁」的结果带出去（诊断/UI/依据都要用），
+   * 而不是让调用方再猜一遍 —— 那会造成「两处口径」。
+   */
+  evidenceOut?: {
+    decision?: EvidenceDecision;
+    list?: readonly ActionEvidence[];
+  },
 ): DecisionCandidate | null {
   const math = context.math;
   const equity = math.heroEquity;
@@ -1014,10 +1193,29 @@ function pickCandidate(
         if (d.fourToFlush) parts.push('牌面已有四张同花');
         if (d.overcardImpact > 0.3) parts.push('新牌高于原牌面');
         if (d.pairedBoard) parts.push('牌面已成对');
+        /*
+         * 🔴 TEST HAND MULTIWAY TURN FIX：文案必须与**同一次**的 `kind` / 连续结构量一致。
+         * 修复前只看四个布尔 ⇒ `T♠7♦2♠→8♦` 写「牌面接近空白」而后半句却是「白板度 0.27」。
+         * ⚠️ 只在**动态牌以上**才列「新完成牌类」：新两对/新三条对任何一张牌都非零
+         * （新牌自己就与牌面组成两对），列出来会把真正的空白牌也说成「有变化」。
+         */
+        if (d.kind !== 'BLANK') {
+          if (d.classCompletion.newStraightClasses > 0) {
+            parts.push(`新完成 ${d.classCompletion.newStraightClasses} 个顺子牌类`);
+          }
+          if (d.classCompletion.newSetClasses > 0) {
+            parts.push(`新完成 ${d.classCompletion.newSetClasses} 个三条牌类`);
+          }
+          if (d.classCompletion.newTwoPairClasses > 0) {
+            parts.push(`新完成 ${d.classCompletion.newTwoPairClasses} 个两对牌类`);
+          }
+          if (d.straightDrawDelta > 0) parts.push('连张结构变化');
+          if (d.flushDrawDelta > 0) parts.push('同花听结构变化');
+        }
         reasons.push({
           code: 'BOARD_DELTA',
           textZh:
-            (parts.length > 0 ? `牌面变化：${parts.join('；')}；` : '牌面接近空白 —— **不因此恢复牌力**；') +
+            (parts.length > 0 ? `牌面变化（${d.kind}）：${parts.join('；')}；` : '牌面接近空白 —— **不因此恢复牌力**；') +
             `白板度 ${d.blankScore.toFixed(2)}` +
             (d.villainRangeImprovement === null
               ? '（对手范围适配度：无范围事实，未计算）'
@@ -1223,8 +1421,28 @@ function pickCandidate(
       // 但必须过 `shouldRaise` 的**量级保护** —— 对手下注越大，
       // 这个目标值越高，而「对手大注」本身就是他很强的信号（见常量说明）。
       const desiredTo = math.pot + math.callCost * 2;
+      /*
+       * 🔴 **跛入池：加注尺寸由隔离模型给**（§6）。
+       *
+       * 事实包里的 `legalIsoSize` 是「基准开池 + 每个 limp + 位置 + 黏度 + 筹码」
+       * 算出来的（见 `limpIsolation.isoRaiseSizeOf`），并且已经截断到合法范围；
+       * 因此这里只是**取用它**，不在决策层重算任何尺寸公式。
+       * 非跛入池（或没有事实包）时逐位保持既有行为。
+       */
+      const iso = context.preflopIso ?? null;
+      const isoToChips =
+        iso !== null && iso.isoSize.legalIsoSize !== null ? iso.isoSize.legalIsoSize * math.bigBlind : null;
       const raiseCandidate =
-        pickClosestRaise(candidates, desiredTo) ?? largestRaise(candidates);
+        pickClosestRaise(candidates, isoToChips ?? desiredTo) ?? largestRaise(candidates);
+      /*
+       * 隔离加注的 EV **只有在下面两件事同时成立时**才可使用（否则宁可不给）：
+       * ① 事实上算得出来（`proxyEV !== null`）；
+       * ② 实际选中的加注尺寸**就是**模型算 EV 用的那个尺寸
+       *   （尺寸对不上却拿这个 EV 说事，就是拿另一个动作的数字冒充本动作）。
+       */
+      const isoEv = iso !== null ? iso.isoEV.proxyEV : null;
+      const isoUsable =
+        iso !== null && isoEv !== null && raiseCandidate !== null && raiseCandidate.sizeChips === isoToChips;
       /*
        * 🔴 低 SPR 的承诺例外：**两个条件之一**即可。
        *
@@ -1256,7 +1474,29 @@ function pickCandidate(
           (advice.commitment.futureStreetCommitmentBonus > 0 &&
             advice.commitment.band === 'COMMITTED' &&
             equity - math.requiredEquity >= 0));
-      if (
+      /*
+       * ---- 动作证据优先级裁决（PREFLOP EVIDENCE PRIORITY FIX）----
+       *
+       * 🔴 修复前：上面已经把 CALL 的证据算清楚了
+       *（`evOfCall = +2.73`、边际 `CLEAR_CALL`），但接下来只要
+       * `shouldRaise(...)` 这个**战略启发式**通过，就 `return raiseCandidate`，
+       * 把清晰的可比 EV 证据丢掉，并且最终把来源写成 `SAFETY_RULE`。
+       *
+       * 现在：把三个动作各自的**证据类型**摆出来，交给
+       * `chooseByEvidencePriority` 裁决 —— 它只回答「谁有资格覆盖谁」：
+       *
+       * ```text
+       * FOLD  : EXACT   EV ≡ 0（节点增量口径的定义）
+       * CALL  : EXACT（分层精确）或 PROXY_EV（由权益/赔率推导）
+       * RAISE : HEURISTIC，EV = null（缺 fold-to-3bet / call-3bet / 4bet）
+       * ```
+       *
+       * ⇒ CALL 有量化证据且边际清晰 ⇒ **战略启发式不得覆盖它**；
+       * 若 CALL 只到 MARGINAL，则允许启发式打断并标成 `HEURISTIC_TIEBREAK`。
+       * ⚠️ 未来 3bet 若建立完整 EV，会自动以 `MODEL_EV` 参与同一张表并可能获胜
+       *（本模块不硬编码「CLEAR_CALL ⇒ 永远跟注」）。
+       */
+      const raiseQualifies =
         raiseCandidate !== null &&
         shouldRaise(
           equity,
@@ -1266,24 +1506,199 @@ function pickCandidate(
           math.pot,
           math.handCategory,
           commitmentException,
-        )
+        );
+
+      const evidence: ActionEvidence[] = [
+        {
+          action: 'FOLD',
+          estimateType: EstimateType.EXACT,
+          ev: 0,
+          decisionMargin: marginOf(0, uncertaintyBandChips),
+          heuristicScore: 0,
+          confidence: 1,
+          assumptionsZh: Object.freeze(['弃牌 EV ≡ 0 是节点增量口径的**定义**（已投入筹码是沉没成本）']),
+          upgradeNoteZh: null,
+        },
+        {
+          action: 'CALL',
+          estimateType: exactLayeredEV !== null ? EstimateType.EXACT : EstimateType.PROXY_EV,
+          ev: evOfCall,
+          decisionMargin: marginOf(evOfCall, uncertaintyBandChips),
+          heuristicScore: 0,
+          confidence: 1 - MODEL_UNCERTAINTY_RATIO,
+          assumptionsZh: Object.freeze([
+            exactLayeredEV !== null
+              ? '逐层精确胜率（每层调用权益引擎）'
+              : '由「估计权益 × 可争夺量 − 跟注额」推导的**代理 EV**（未建模对手弃牌率）',
+            '未计抽水（本项目无 Rake Engine）',
+          ]),
+          upgradeNoteZh: null,
+        },
+      ];
+      if (raiseCandidate !== null) {
+        /*
+         * 🔴 **隔离加注的证据**（§2/§5–§8）。
+         *
+         * 跛入池里 RAISE **不是**启发式：`context.preflopIso` 里带着
+         * 「limp 响应树 + 对 limp-call 条件范围的权益 + 尺寸 + 身后风险」
+         * 算出来的独立代理 EV。把它当 `INDEPENDENT_STRATEGIC_EVIDENCE`
+         * 放进同一张证据表，它才有资格与其他动作**正面比 EV**。
+         *
+         * ⚠️ 拿不到事实包（含「面对真实开池」的节点）⇒ 原样退回启发式，
+         * 旧契约（AJs 面对开池等）逐位不变。
+         */
+        const isoEv = iso !== null ? iso.isoEV.proxyEV : null;
+        evidence.push({
+          action: 'RAISE',
+          estimateType: isoUsable
+            ? EstimateType.INDEPENDENT_STRATEGIC_EVIDENCE
+            : // 🔴 非跛入池的 3bet 目前**没有** EV 模型：缺 fold-to-3bet / call-3bet / 4bet 三类响应数据
+              EstimateType.HEURISTIC,
+          ev: isoUsable ? isoEv : null,
+          decisionMargin: isoUsable ? marginOf(isoEv, uncertaintyBandChips) : null,
+          heuristicScore: raiseQualifies
+            ? Math.max(0, Math.min(1, 0.5 + (equity - math.requiredEquity) * 1.5))
+            : 0,
+          confidence: isoUsable ? iso!.modelConfidence : 0.5,
+          assumptionsZh: isoUsable
+            ? iso!.assumptionsZh
+            : Object.freeze([
+                '牌力 + 权益优势的量级保护（`shouldRaise`）：既有启发式，**不是** EV',
+                '缺 fold-to-3bet / call-3bet / 4bet 响应数据 ⇒ EV 不可得',
+              ]),
+          upgradeNoteZh: isoUsable
+            ? '该 EV 仍是**代理**：需要真实 limp 响应频率（本项目无此数据）才能升级为 MODEL_EV；RAKE 未实现'
+            : '若建立完整的 3bet EV 模型（三类响应概率），本项可升级为 MODEL_EV 并自然参与比较',
+          /*
+           * 🔴 **覆盖清晰 CALL 证据所需的独立论证**（没有它就必须让位给 CALL）。
+           *
+           * ⚠️ 只对**没有自己的 EV** 的启发式加注有意义：一旦隔离模型给了 EV，
+           * 它就是靠 EV 参与比较，**不需要**「例外授权」（授权会让它变成
+           * 规则性加注，而不是算出来的）。
+           */
+          overrideJustification:
+            !isoUsable &&
+            raiseQualifies &&
+            (tier === 'MONSTER' ||
+              (math.handCategory >= MIN_CATEGORY_FOR_LARGE_RAISE && equity - math.requiredEquity >= RAISE_EDGE_ANY))
+              ? {
+                  kind: 'MONSTER_STRENGTH_DOMINANCE',
+                  noteZh:
+                    `牌力（${math.handRankZh}，档 ${tier}，类别 ${math.handCategory}）且权益优势 ` +
+                    `${((equity - math.requiredEquity) * 100).toFixed(1)} 个百分点 ≥ ${(RAISE_EDGE_ANY * 100).toFixed(0)}%` +
+                    '⇒ 加注的额外筹码是在领先时投入的',
+                }
+              : !isoUsable && raiseQualifies && commitmentException
+                ? {
+                    kind: 'LOW_SPR_COMMITMENT',
+                    noteZh: `低 SPR 承诺放行（${advice?.commitment.noteZh ?? '筹码已基本入池'}）⇒ 加注与跟注只差把剩余部分投入`,
+                  }
+                : null,
+        });
+      }
+
+      const evidenceDecision = chooseByEvidencePriority({
+        candidates: evidence,
+        // 硬约束**只**用于合法性/输入安全：这里 CALL 候选缺失时才是硬约束
+        hardConstraint:
+          callCandidate === null
+            ? { action: raiseCandidate !== null ? 'RAISE' : 'FOLD', reasonZh: 'CALL 候选不存在（不合法）—— 必须换动作' }
+            : null,
+        allowHeuristicTiebreak: true,
+        // 跨动作比较用同一把容差带尺子（§1/§17）
+        bandChips: uncertaintyBandChips,
+      });
+      if (evidenceOut !== undefined) {
+        evidenceOut.decision = evidenceDecision;
+        evidenceOut.list = Object.freeze(evidence);
+      }
+
+      /*
+       * 🔴 RAISE 胜出的**两条**合法路径（§2）：
+       * ① 隔离模型给了 EV 且在跨动作比较中胜出（来源 = INDEPENDENT_STRATEGIC_EVIDENCE）；
+       * ② 没有 EV 时的战略启发式路径（来源 = STRATEGIC_HEURISTIC / HEURISTIC_TIEBREAK）。
+       *
+       * ⚠️ 修复前只有 ②，且 ② 必须先过 `shouldRaise`；于是「有独立 EV 的隔离加注」
+       * 也被 `shouldRaise` 与 CALL 的清晰边际拦住了。
+       */
+      const raiseByModel = evidenceDecision.action === 'RAISE' && isoUsable && raiseCandidate !== null;
+      if (
+        evidenceDecision.action === 'RAISE' &&
+        raiseCandidate !== null &&
+        (raiseByModel || raiseQualifies)
       ) {
         reasons.push({
-          code: 'STRATEGIC_RAISE_FOR_VALUE',
-          textZh:
-            `牌力（${math.handRankZh}）与权益优势（高出所需 ${((equity - math.requiredEquity) * 100).toFixed(1)} 个百分点）` +
-            '支持主动加注做大底池；' +
-            (commitmentException && tier !== 'MONSTER' && tier !== 'STRONG'
-              ? `本次加注由**低 SPR 承诺**放行（${advice!.commitment.noteZh}）；`
-              : '') +
-            '⚠️ 加注的 EV 无法计算（缺可信的对手弃牌率估计），因此这里是**定性判断**而非 EV 比较',
+          code: raiseByModel ? 'ISO_RAISE_MODEL_EV' : 'STRATEGIC_RAISE_FOR_VALUE',
+          textZh: raiseByModel
+            ? `隔离加注（加注到 ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：${iso!.noteZh}` +
+              `｜对 limp-call 条件范围权益 ${iso!.heroEquity.vsOneCaller === null ? '—' : (iso!.heroEquity.vsOneCaller * 100).toFixed(1) + '%'}` +
+              `（对到达范围权益 ${iso!.heroEquity.vsArrival === null ? '—' : (iso!.heroEquity.vsArrival * 100).toFixed(1) + '%'}，` +
+              '**不用于**证明加注）；' +
+              `代理 EV = ${isoEv === null ? '—' : isoEv.toFixed(2)} 筹码 vs 跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码` +
+              `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
+              '；⚠️ 这是**代理 EV**，不是 Solver EV，RAKE 未实现'
+            : `牌力（${math.handRankZh}）与权益优势（高出所需 ${((equity - math.requiredEquity) * 100).toFixed(1)} 个百分点）` +
+              '支持主动加注做大底池；' +
+              (commitmentException && tier !== 'MONSTER' && tier !== 'STRONG'
+                ? `本次加注由**低 SPR 承诺**放行（${advice!.commitment.noteZh}）；`
+                : '') +
+              `⚠️ 加注的 EV 无法计算（缺可信的对手弃牌率估计）⇒ 依据来源 = **${evidenceDecision.source}**` +
+              (evidenceDecision.source === DecisionSourceKind.HEURISTIC_TIEBREAK
+                ? '（量化证据只到 MARGINAL，允许战略启发式打断）'
+                : '（无任何量化 EV 证据）'),
           data: {
             edge: Number(((equity - math.requiredEquity) * 100).toFixed(1)),
             tier,
+            source: evidenceDecision.source,
+            ...(raiseByModel ? { isoEV: isoEv === null ? 'NOT_AVAILABLE' : Number(isoEv.toFixed(2)) } : {}),
           },
         });
         return raiseCandidate;
       }
+
+      /*
+       * ---- CALL 胜出：把「为什么没有被加注覆盖」写清楚（使用者 §15 的理由链）----
+       */
+      reasons.push({
+        code: 'CALL_PROXY_EV_POSITIVE',
+        textZh:
+          `CALL：${exactLayeredEV !== null ? 'EXACT' : 'PROXY_EV'} ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码，` +
+          `决策边际 ${String(marginOf(evOfCall, uncertaintyBandChips))}（容差带 ±${uncertaintyBandChips.toFixed(2)}）` +
+          (exactLayeredEV !== null ? '' : '；⚠️ 这是**代理 EV**（未建模对手弃牌率），不是完整博弈树 EV'),
+        data: {
+          ...(evOfCall === null ? {} : { callEV: Number(evOfCall.toFixed(2)) }),
+          estimateType: exactLayeredEV !== null ? 'EXACT' : 'PROXY_EV',
+        },
+      });
+      if (raiseCandidate !== null) {
+        reasons.push({
+          code: isoUsable ? 'ISO_RAISE_LOSES_ON_EV' : 'RAISE_STRATEGIC_CANDIDATE',
+          textZh: isoUsable
+            ? `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**有**隔离加注模型的代理 EV ` +
+              `${isoEv === null ? '—' : isoEv.toFixed(2)} 筹码 ⇒ 本次比较是**算出来的**：` +
+              `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
+              '（⚠️ 两个 EV 都是代理口径，RAKE 未实现）'
+            : `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：合法候选，来源 = STRATEGIC_CANDIDATE，` +
+              'EV = NOT_AVAILABLE（缺 fold-to-3bet / call-3bet / 4bet 响应数据）',
+          data: {
+            sizeBB: Number((raiseCandidate.sizeBB ?? 0).toFixed(2)),
+            ev: isoUsable && isoEv !== null ? Number(isoEv.toFixed(2)) : 'NOT_AVAILABLE',
+          },
+        });
+      }
+      reasons.push({
+        code: 'SUPPORTED_EVIDENCE_PRIORITY',
+        textZh:
+          `比较：${evidenceDecision.reasonZh.join('；')}` +
+          (evidenceDecision.overrideBlockedReason === null
+            ? ''
+            : `｜overrideAttempt = ${String(evidenceDecision.overrideAttempt)}｜overrideBlockedReason = ${evidenceDecision.overrideBlockedReason}`),
+        data: {
+          source: evidenceDecision.source,
+          evidenceScope: evidenceDecision.evidenceScope,
+          canOverrideEvidence: evidenceDecision.canOverrideEvidence ? 1 : 0,
+        },
+      });
       return callCandidate;
     }
 
@@ -1400,19 +1815,26 @@ function pickCandidate(
     const aggressive = largestAggressive(candidates);
 
     /*
-     * 🔴 **下注资格：从「绝对权益阈值」升级为「价值守门器」**（2026-09 · P2）。
+     * 🔴 **下注资格：从「价值守门器」升级为「下注决策器」**（BET DECISION ENGINE PHASE 1）。
      *
-     * 修复前只有 `equity > 0.55 && tier !== WEAK` 一条 —— 它无法区分
-     * 「更差的牌会跟（真价值）」与「更好的牌会跟（送礼）」，也无法回答
-     * 「过牌到摊牌能赢多少」。实测反例：河牌三张梅花的牌面上，一对 J
-     * 仍会按 `equity > 0.55` 的规则下注 45% 底池。
+     * 修复前：`gateWantsBet` 只认 `verdict ∈ {CLEAR_VALUE, THIN_VALUE}` 或
+     * `MARGINAL 且 bet > check`。后果（审计实证）：`NOT_VALUE` 的**半诈唬**
+     * 无论 EV 如何都拿不到下注资格，而半诈唬在权益 < 50% 时 `valuePart = 0`，
+     * 于是结构上永远不能下注。
      *
-     * 现在由 `valueBetGate` 综合回答使用者点名的五个问题，并输出
-     * **归一化比较分**（不是 solver EV）。翻前或算不出建议时回落到原规则
-     * ⇒ 翻前行为逐位不变。
+     * 现在：当响应模型可用（`advice.betDecision !== null`）时，动作由
+     * **CHECK / BET_SMALL / BET_MEDIUM / BET_LARGE 四个分支的 EV 比较**自然产生
+     *（同一筹码口径）—— `NOT_VALUE` 不再禁止下注，它只是**价值侧**的判断。
+     * 拿不到响应模型时回落到旧的守门器逻辑（翻前 / 无范围 ⇒ 旧行为逐位不变）。
      */
     const legacyHasInitiativeValue =
       equity !== null && context.range !== null && equity > 0.5 + MARGINAL_EV_GAP_RATIO;
+
+    const betModel = advice?.betDecision ?? null;
+    const modelWantsBet =
+      betModel === null
+        ? null
+        : betModel.bestSize !== null && betModel.bestScore > betModel.checkScore;
 
     const gateWantsBet =
       advice === null
@@ -1424,23 +1846,37 @@ function pickCandidate(
 
     const wantsBet =
       aggressive !== null &&
-      (gateWantsBet === null
-        ? legacyHasInitiativeValue && tier !== 'WEAK'
-        : gateWantsBet && (equity !== null || advice !== null));
+      (modelWantsBet !== null
+        ? modelWantsBet
+        : gateWantsBet === null
+          ? legacyHasInitiativeValue && tier !== 'WEAK'
+          : gateWantsBet && (equity !== null || advice !== null));
 
     if (wantsBet) {
       reasons.push({
         code: 'STRATEGIC_VALUE_BET',
         textZh:
-          advice === null
-            ? `对对手范围估计权益 ${(equity! * 100).toFixed(1)}% 且明显领先，` +
-              `当前牌力（${math.handRankZh}）适合主动下注取值`
-            : `相对牌力角色「${advice.roleZh}」，价值守门器判定 ${advice.gate.verdict}` +
-              `（下注分 ${advice.gate.estimatedBetEVScore.toFixed(2)} vs 过牌分 ${advice.gate.estimatedCheckEVScore.toFixed(2)}，` +
-              `属内部启发式比较分，非求解器 EV）`,
+          betModel !== null && betModel.bestSize !== null
+            ? `下注决策模型：${betModel.sizes
+                .map(
+                  (s) =>
+                    `${s.kind} EV ${s.betEV === null ? '—' : s.betEV.toFixed(1)}`,
+                )
+                .join('｜')}｜CHECK EV ${betModel.checkEV === null ? '—' : betModel.checkEV.toFixed(1)}` +
+              ` ⇒ 最佳尺寸 ${betModel.bestSize}（偏好分 ${betModel.bestScore.toFixed(3)} vs 过牌 0.500）` +
+              '（⚠️ 启发式代理 EV，非 Solver EV）'
+            : advice === null
+              ? `对对手范围估计权益 ${(equity! * 100).toFixed(1)}% 且明显领先，` +
+                `当前牌力（${math.handRankZh}）适合主动下注取值`
+              : `相对牌力角色「${advice.roleZh}」，价值守门器判定 ${advice.gate.verdict}` +
+                `（下注分 ${advice.gate.estimatedBetEVScore.toFixed(2)} vs 过牌分 ${advice.gate.estimatedCheckEVScore.toFixed(2)}，` +
+                `属内部启发式比较分，非求解器 EV）`,
         data: {
           ...(equity === null ? {} : { heroEquity: Number((equity * 100).toFixed(1)) }),
           ...(advice === null ? {} : { gateVerdict: advice.gate.verdict }),
+          ...(betModel === null || betModel.bestSize === null
+            ? {}
+            : { betSize: betModel.bestSize }),
         },
       });
       if (advice !== null) {
@@ -1452,33 +1888,46 @@ function pickCandidate(
       /*
        * 尺寸：**独立的一步**（使用者第十五节）。
        *
-       * 修复前是 `tier === 'MONSTER' ? 0.75 : STRONG ? 0.6 : 0.45`——
-       * 动作与尺寸绑定，且尺寸只看绝对牌力。现在由 `sizing.ts` 按
-       * 坚果优势 / 价值厚度 / 牌面湿度 / 多人 / 对手弹性 / SPR / 画像给出，
-       * 并且**永远给出解释**。翻前或没有建议时回落到原比例。
+       * ⚠️ 当响应模型给出最佳尺寸时，用它的**合法金额**去挑候选：
+       * - 最佳尺寸是 ALL_IN ⇒ **必须**落到 ALL_IN 候选（否则「模型选全下、引擎下注」
+       *   会被一致性守卫判为 `ACTION_CONTRADICTS_PREFERENCE` —— 实测踩到过）；
+       * - 其余 ⇒ 取离该金额最近的激进候选。
        */
+      const bestSpec =
+        betModel === null || betModel.bestSize === null
+          ? null
+          : betModel.legalSizes.find((s) => s.kind === betModel.bestSize) ?? null;
       const targetRatio =
-        advice !== null
-          ? advice.sizing.gridRatio
-          : tier === 'MONSTER'
-            ? 0.75
-            : tier === 'STRONG'
-              ? 0.6
-              : 0.45;
-      const desired = math.pot * targetRatio;
-      const picked = pickClosestAggressive(candidates, desired) ?? aggressive;
+        bestSpec !== null
+          ? bestSpec.ratioToPot
+          : advice !== null
+            ? advice.sizing.gridRatio
+            : tier === 'MONSTER'
+              ? 0.75
+              : tier === 'STRONG'
+                ? 0.6
+                : 0.45;
+      const desired = bestSpec !== null ? bestSpec.betAmount : math.pot * targetRatio;
+      const picked =
+        bestSpec !== null && bestSpec.kind === 'ALL_IN'
+          ? candidates.find((c) => c.action === DecisionAction.ALL_IN) ?? aggressive
+          : pickClosestAggressive(candidates, desired) ?? aggressive;
       return picked;
     }
 
     reasons.push({
       code: 'STRATEGIC_CHECK',
       textZh:
-        advice !== null
-          ? `价值守门器判定 ${advice.gate.verdict}（下注分 ${advice.gate.estimatedBetEVScore.toFixed(2)} vs ` +
-            `过牌分 ${advice.gate.estimatedCheckEVScore.toFixed(2)}）—— 不足以支撑主动下注，建议过牌`
-          : equity === null
-            ? '无法计算权益，建议过牌以控制底池'
-            : `估计权益 ${(equity * 100).toFixed(1)}% 不足以支撑主动下注取值，建议过牌`,
+        betModel !== null
+          ? `下注决策模型：CHECK 策略评分 ${betModel.checkScore.toFixed(2)}（0–1 启发式偏好分，**不是筹码 EV**）` +
+            `｜最佳下注 ${betModel.bestSize ?? '—'} 策略评分 ${betModel.bestScore.toFixed(2)}` +
+            ` ⇒ CHECK 更受偏好（⚠️ 启发式代理模型，非 Solver EV；评分高低只表示模型偏好，**不代表任何筹码盈亏**）`
+          : advice !== null
+            ? `价值守门器判定 ${advice.gate.verdict}（下注分 ${advice.gate.estimatedBetEVScore.toFixed(2)} vs ` +
+              `过牌分 ${advice.gate.estimatedCheckEVScore.toFixed(2)}）—— 不足以支撑主动下注，建议过牌`
+            : equity === null
+              ? '无法计算权益，建议过牌以控制底池'
+              : `估计权益 ${(equity * 100).toFixed(1)}% 不足以支撑主动下注取值，建议过牌`,
     });
     return checkCandidate;
   }
@@ -1833,9 +2282,10 @@ export function decideAlpha(
         `权益已按**这 ${context.realizedOpponentCount} 家一起**计算` +
         (positions.length > 0 ? `（${positions.join(' / ')}），` : '，') +
         '与底池赔率口径一致。' +
-        (context.playersYetToAct > 0
-          ? `后面还有 ${context.playersYetToAct} 名对手尚未行动 —— 他们不在这个权益里。`
-          : '本街已无人待行动。') +
+        (context.playersRemainingToAct > 0
+          ? `**我行动之后还有 ${context.playersRemainingToAct} 名对手必须行动**（下注重新打开了行动）——` +
+            '本次跟注不是 closing action。'
+          : '本街已无人待行动（closing action）。') +
         `多人池要求更高的范围可信度（${MIN_RANGE_CONFIDENCE_MULTIWAY}），` +
         '而本项目用的是**启发式**范围（非求解器输出），越多人池误差越大 —— ' +
         '请把它当作参考而非精确结论。',
@@ -1857,6 +2307,25 @@ export function decideAlpha(
    *
    * ⚠️ 同样**不做数值修正**（第一版没有多人权益引擎），只声明方向。
    */
+  /*
+   * 🔴 **跟注不是 closing action**（TEST HAND MULTIWAY TURN FIX · 问题 3）。
+   *
+   * 判据取自行列 `playersRemainingToAct`（下注重开行动 ⇒ 已经过牌的人还要再表态），
+   * 而不是「本街还没说过话的人」。此时：
+   * · 底池赔率 / 所需权益**照常给出**（它们是基础数学参考，§十四）；
+   * · 但跟注 EV 必须如实标成**代理值**，并明确它不含后位玩家继续跟注/加注的影响。
+   */
+  if (actionable && legal.callCost > 0 && !context.isClosingAction) {
+    degradations.push({
+      code: 'ACTION_NOT_CLOSED',
+      textZh:
+        `⚠️ 跟注后仍有 ${context.playersRemainingToAct} 名对手未行动，` +
+        '当前跟注 EV 为**简化代理值**，未包含后位玩家继续跟注或加注的影响' +
+        '（底池赔率与所需权益仍然有效，可直接参考）。',
+      impact: 'MATH',
+    });
+  }
+
   if (context.playersYetToAct >= YET_TO_ACT_NOTICE_THRESHOLD) {
     degradations.push({
       code: 'PLAYERS_YET_TO_ACT',
@@ -1872,7 +2341,26 @@ export function decideAlpha(
   //
   // ⚠️ 计算必须在这里（`confidenceOf` 与 `dynamicShadowOf` 都要用），
   // 但**理由的插入顺序**刻意放在第 4 步之后 —— 见下面的说明。
-  const mathDominance = mathDominanceOf(candidates, context.math.pot);
+  const mathDominance = (() => {
+    const isoFacts = context.preflopIso ?? null;
+    const isoChips =
+      isoFacts !== null && isoFacts.isoSize.legalIsoSize !== null
+        ? isoFacts.isoSize.legalIsoSize * context.math.bigBlind
+        : null;
+    const isoEV = isoFacts !== null ? isoFacts.isoEV.proxyEV : null;
+    if (isoEV === null || isoChips === null) return mathDominanceOf(candidates, context.math.pot);
+    /*
+     * 🔴 隔离加注**带自己的 EV**时，必须让它进入「可比较动作」的比较集：
+     * 否则会同时输出「建议加注」与「跟注明显占优」——自相矛盾。
+     */
+    let included = false;
+    const augmented = candidates.map((c) => {
+      if (c.action !== DecisionAction.RAISE || (c.sizeChips ?? 0) !== isoChips) return c;
+      included = true;
+      return { ...c, ev: isoEV };
+    });
+    return mathDominanceOf(augmented, context.math.pot, included);
+  })();
 
   /* ---- 4. 选择动作 ---- */
   //
@@ -1891,9 +2379,20 @@ export function decideAlpha(
       })
     : null;
 
-  const baseDecision = actionable
-    ? pickCandidate(context, legal, candidates, decisionReasons, postflopAdvice, allowUncertaintyOverride)
+  const evidenceOut: { decision?: EvidenceDecision; list?: readonly ActionEvidence[] } = {};
+  const baseDecision = actionable    ? pickCandidate(
+        context,
+        legal,
+        candidates,
+        decisionReasons,
+        postflopAdvice,
+        allowUncertaintyOverride,
+        evidenceOut,
+      )
     : null;
+  /** 证据优先级裁决结果（由 `pickCandidate` 的出口箱带回；供依据/诊断/UI 使用） */
+  const evidenceDecisionForBasis: EvidenceDecision | null = evidenceOut.decision ?? null;
+  const evidenceForBasis: readonly ActionEvidence[] = evidenceOut.list ?? Object.freeze([]);
 
   /* ---- 4.2 理由合成：动作理由 → 通用事实 ---- */
   let reasons: DecisionReason[] = [...decisionReasons, ...factReasons];
@@ -2072,6 +2571,31 @@ export function decideAlpha(
     uncertaintyBand: uncertaintyBandChips,
     allowUncertaintyOverride,
     overrodeByUncertainty,
+    /*
+     * 🔴 **解释层必须读真实决策来源**（§9）：无人下注时若动作由下注决策模型
+     * 的 EV 比较选出，依据就写 `ACTION_EV_COMPARISON` 并附合法动作表，
+     * 不再谎称「价值守门器的偏好分选出」。
+     */
+    byBetDecisionModel: !isFacingBet(context) && postflopAdvice?.betDecision !== null && postflopAdvice?.betDecision !== undefined && action !== 'CHECK',
+    ...(postflopAdvice?.betDecision === null || postflopAdvice?.betDecision === undefined
+      ? {}
+      : {
+          betDecisionTableZh: [
+            `CHECK EV ${postflopAdvice.betDecision.checkEV === null ? '—' : postflopAdvice.betDecision.checkEV.toFixed(1)}`,
+            ...postflopAdvice.betDecision.legalSizes.map(
+              (s) =>
+                `${s.kind === 'ALL_IN' ? 'ALL-IN' : s.kind} ${s.betAmount.toFixed(0)} EV ${s.betEV === null ? '—' : s.betEV.toFixed(1)}`,
+            ),
+            `最佳 = ${postflopAdvice.betDecision.bestSize ?? 'CHECK'}`,
+          ].join('｜'),
+        }),
+    /*
+     * 🔴 证据裁决来源（PREFLOP EVIDENCE PRIORITY FIX）：
+     * 加注/全下动作的真实来源从此由 `chooseByEvidencePriority` 决定，
+     * 不再一律写 `SAFETY_RULE`（§17）。
+     */
+    evidenceSource: evidenceDecisionForBasis?.source ?? null,
+    evidenceNoteZh: evidenceDecisionForBasis === null ? null : evidenceDecisionForBasis.reasonZh.join('；'),
   });
   if (actionable) {
     reasons.push({
@@ -2092,6 +2616,70 @@ export function decideAlpha(
     });
   }
 
+  /*
+   * 🔴 **决策边际**（P0 修复）：与「模型置信度」是两件事。
+   *
+   * | 量 | 回答的问题 | 判据 |
+   * |---|---|---|
+   * | `decisionMargin` | 离「翻面」有多远 | 真实 EV 与 0 的距离 vs 工程容差带 |
+   * | `postflop.confidence` | 首选比次选好多少 | 偏好分差（`confidenceOf`） |
+   *
+   * 修复前只有后者，于是「调用 EV = −317 筹码（比容差带大 3 倍）」与
+   * 「模型置信度 LOW」被混成一句话。
+   *
+   * ⚠️ 用的 EV 与决策**同源**：分层精确值优先（`pickCandidate` 的口径），
+   * 否则用 `math.callEV`。绝不在这里另算一遍。
+   */
+  const decisionMargin: DecisionMarginFacts = (() => {
+    const layered = context.math.layeredEV;
+    const evChips = layered?.exact === true ? layered.value : context.math.callEV;
+    const bandChips = uncertaintyBandChips;
+    if (evChips === null || legal.callCost <= 0) {
+      return Object.freeze({
+        kind: null,
+        kindZh: '不适用（本节点不是「跟注 vs 弃牌」决策）',
+        scope: DecisionMarginScope.NONE,
+        evChips,
+        bandChips,
+        noteZh:
+          '本节点没有跟注代价（无人下注 / 已全下），因此「跟注 EV vs 0」这条轴不存在 —— ' +
+          '决策边际为 null，而不是 0（不编造）。',
+      });
+    }
+    /*
+     * ⚠️ 分类**复用** `evidencePriority.marginOf`（单一实现）：下注分支的动作证据
+     * 也用同一把尺子判 CLEAR/MARGINAL，两处各写一份迟早分歧。
+     */
+    const kind = marginOf(evChips, bandChips)!;
+    /*
+     * 🔴 **作用域**（§1/§17）：`CLEAR_CALL_OVER_FOLD` 只是「CALL > FOLD」。
+     *
+     * 只有当**另一个动作自己也带着量化 EV** 参与了同一零点的比较，
+     * 这个清晰边际才有资格叫「跨动作」；否则它只对弃牌有效，
+     * 界面上必须这么写，决策层也不得拿它拦别的动作。
+     */
+    const crossActionCount = (evidenceOut.list ?? []).filter(
+      (e) => e.action !== 'CALL' && e.action !== 'FOLD' && isQuantifiedEvidence(e.estimateType) && e.ev !== null,
+    ).length;
+    const scope =
+      crossActionCount > 0 ? DecisionMarginScope.CROSS_ACTION : DecisionMarginScope.VS_FOLD_ONLY;
+    return Object.freeze({
+      kind,
+      kindZh: DECISION_MARGIN_ZH[kind],
+      scope,
+      evChips,
+      bandChips,
+      noteZh:
+        `真实跟注 EV = ${evChips.toFixed(2)} 筹码 vs 工程容差带 ±${bandChips.toFixed(2)} ` +
+        `（= ${MODEL_UNCERTAINTY_RATIO} × 可争夺量 ${context.math.winnable.toFixed(2)}）` +
+        `⇒ ${kind}。` +
+        (scope === DecisionMarginScope.VS_FOLD_ONLY
+          ? '⚠️ 作用域 VS_FOLD_ONLY：本次比较**只有跟注 vs 弃牌**，对加注/全下**没有**发言权。'
+          : `作用域 CROSS_ACTION：另有 ${crossActionCount} 个动作带着自己的量化 EV 参与了同一零点比较。`) +
+        '⚠️ 容差带是**工程容差**，不是统计误差，也不自动翻转动作。',
+    });
+  })();
+
   const diagnostics: DecisionDiagnostics = Object.freeze({
     math: context.math,
     legalActions: legal.actions,
@@ -2111,6 +2699,7 @@ export function decideAlpha(
               callEV: context.math.callEV,
               uncertaintyBandChips,
               allowUncertaintyOverride,
+              heroEquityVsArrivalRange: context.math.heroEquity,
             },
             (() => {
               const counts = context.postflopFacts?.opponentRangeFacts?.counts ?? null;
@@ -2174,6 +2763,66 @@ export function decideAlpha(
       ok: consistencyViolations.length === 0,
     }),
     decisionBasis,
+    /* 画像进入范围链路的证据（P0 修复）—— 没有画像时为 null */
+    profileRange: context.profileRangeEvidence ?? null,
+    decisionMargin,
+    /* 下注决策（每尺寸独立）—— 面对下注 / 翻前 / 无范围时为 null */
+    betDecision: postflopAdvice?.betDecision ?? null,
+    /* 多人 limp 隔离加注事实包 —— 只有「面对跛入且无人加注」的翻前节点才有 */
+    preflopIso: context.preflopIso ?? null,
+    /* 多人联合响应树（≥2 家；单挑时为 null —— 那时 betEV 是单挑口径） */
+    multiwayBetDecision: postflopAdvice?.betDecision?.multiway ?? null,
+    /*
+     * 🔴 **动作证据与来源**（PREFLOP EVIDENCE PRIORITY FIX）。
+     *
+     * `decisionSource` 是**动作选择的单一可追踪来源**：
+     * 谁有资格覆盖谁、有没有被阻断的覆盖尝试、证据范围是什么。
+     */
+    decisionSource:
+      evidenceDecisionForBasis === null
+        ? null
+        : Object.freeze({
+            kind: evidenceDecisionForBasis.source,
+            kindZh: DECISION_SOURCE_ZH[evidenceDecisionForBasis.source],
+            priority: evidenceDecisionForBasis.priority,
+            estimateType: evidenceDecisionForBasis.estimateType,
+            canOverrideEvidence: evidenceDecisionForBasis.canOverrideEvidence,
+            evidenceScope: evidenceDecisionForBasis.evidenceScope,
+            overrideAttempt: evidenceDecisionForBasis.overrideAttempt,
+            overrideBlockedReason: evidenceDecisionForBasis.overrideBlockedReason,
+            noteZh: evidenceDecisionForBasis.reasonZh.join('；'),
+          }),
+    actionEvidence: Object.freeze(
+      evidenceForBasis.map((e) =>
+        Object.freeze({
+          action: e.action,
+          estimateType: e.estimateType,
+          ev: e.ev,
+          decisionMargin: e.decisionMargin === null ? null : String(e.decisionMargin),
+          heuristicScore: e.heuristicScore,
+          confidence: e.confidence,
+          assumptionsZh: e.assumptionsZh,
+          upgradeNoteZh: e.upgradeNoteZh,
+        }),
+      ),
+    ),
+    /** 主推荐动作与备选（备选**不是**最终动作，仅供混合策略参考） */
+    primaryAction: action,
+    alternativeActions: Object.freeze(
+      evidenceForBasis
+        .filter((e) => e.action !== action && (e.ev !== null || e.heuristicScore > 0))
+        .map((e) =>
+          Object.freeze({
+            action: e.action,
+            estimateType: e.estimateType,
+            ev: e.ev,
+            statusZh:
+              e.estimateType === 'HEURISTIC' || e.estimateType === 'UNKNOWN'
+                ? `STRATEGIC_CANDIDATE（${e.ev === null ? 'EV_NOT_AVAILABLE' : '有 EV'}）`
+                : 'SUPPORTED_CANDIDATE',
+          }),
+        ),
+    ),
   });
 
   return Object.freeze({
