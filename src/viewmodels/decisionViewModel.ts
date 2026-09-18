@@ -100,6 +100,33 @@ export type DecisionDebugViewModel = {
   mathDominance: readonly { label: string; value: string }[];
   range: readonly { label: string; value: string }[];
   player: readonly { label: string; value: string }[];
+  /**
+   * 🔴 **画像 → Range → 权益主链**的证据（P0 架构修复）。
+   *
+   * 判据是**权益的前后对比**（`equityBefore` / `equityAfter`）：
+   * 两者相等即说明画像没有进入主链。没有画像时为一行「—」。
+   */
+  profileRange: readonly { label: string; value: string }[];
+  /** 🔴 决策边际（离翻面多远）—— 与模型置信度**分开**显示的一个量 */
+  decisionMargin: readonly { label: string; value: string }[];
+  /** 🔴 下注决策（每个尺寸独立的响应概率与 BetEV；证据等级逐项标注） */
+  betDecision: readonly { label: string; value: string }[];
+  /**
+   * 🔴 **多人 limp 隔离加注**事实包（MULTI_LIMP ISOLATION RAISE PHASE 1）。
+   *
+   * 逐家 limp 的到达宽度 / 响应概率、联合响应、对**跟注条件范围**的权益、
+   * 尺寸分解、身后风险、代理 EV —— 每项都标证据等级（代理 EV ≠ Solver EV）。
+   */
+  preflopIso: readonly { label: string; value: string }[];
+  /**
+   * 🔴 **多人联合响应树**（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1）。
+   *
+   * 逐对手响应 → 联合状态 → 条件权益 → 逐分支 EV → 总 EV，
+   * 并硬性声明 `primaryOpponentUsedForEV = false`（§13/§23）。
+   */
+  multiwayBetDecision: readonly { label: string; value: string }[];
+  /** 🔴 动作证据与来源（谁选的、凭什么覆盖别人、有没有被阻断的覆盖） */
+  decisionSource: readonly { label: string; value: string }[];
   environment: readonly { label: string; value: string }[];
   dynamic: readonly { label: string; value: string }[];
   timing: readonly { label: string; value: string }[];
@@ -510,9 +537,16 @@ export function toDecisionViewModel(
              * 当动作由 chip EV 或「无差别带规则」选出时，偏好顺序只是参考，
              * 把它显示成「首选」会让使用者以为动作与它矛盾。
              */
+            /*
+             * 🔴 **语义分离**（TEST HAND MULTIWAY TURN FIX · 问题 4）：
+             * 「有 EV 的动作」与「只有启发式偏好分的战略候选」**不能**混在一个排序里 ——
+             * 修复前显示 `CALL 0.62 > FOLD 0.38 > RAISE 0.37`，而 RAISE 的 EV 是
+             * NOT_AVAILABLE，读者会自然把三个数当成同一把尺子。
+             */
             row(
-              '动作偏好顺序（启发式比较分）',
+              'EV 支持的动作（可互相比较）',
               [...d.postflop.evRanking]
+                .filter((x) => x.kind === 'EV_SUPPORTED')
                 .sort((a, b) => b.score - a.score)
                 .map((x) => `${x.action} ${x.score.toFixed(2)}`)
                 .join(' > ') +
@@ -520,6 +554,14 @@ export function toDecisionViewModel(
                   ? '　← 本次动作即由它选出'
                   : `　← **本次动作不是由它选出的**（依据：${String(d.postflop.decisionBasisKind ?? '—')}），仅作参考`),
             ),
+            row(
+              '战略候选（**无 EV**，上面的分数不可比）',
+              [...d.postflop.evRanking]
+                .filter((x) => x.kind !== 'EV_SUPPORTED')
+                .map((x) => `${x.action} heuristicScore ${x.score.toFixed(2)}（EV: NOT_AVAILABLE）`)
+                .join('｜') || '—（本次没有无 EV 的候选）',
+            ),
+            row('排序语义说明', [...d.postflop.evRanking].map((x) => `${x.action} ${x.kind}`).join('｜')),
             row('置信度（首选比次选好多少）', `${d.postflop.confidence}（差 ${d.postflop.confidenceGap.toFixed(3)}）`),
             row('⚠️ EV 口径', d.postflop.evScoreDisclaimerZh),
           ]),
@@ -569,6 +611,421 @@ export function toDecisionViewModel(
             row('是否中性化（样本不足）', boolZh(d.player.neutralized)),
             row('说明', d.player.note),
           ]),
+
+    /*
+     * 🔴 **画像 → Range → 权益主链**（P0 架构修复 · 使用者 §7 调试证据）。
+     *
+     * 这一组回答使用者点名的问题：「画像到底有没有进入范围」。
+     * 判据是**权益的前后对比**，不是文案 —— 两者相等就说明没进主链。
+     */
+    profileRange:
+      d.profileRange === undefined || d.profileRange === null
+        ? Object.freeze([row('画像 → 范围', '—（本局没有画像 / 近期倾向）')])
+        : Object.freeze([
+            row('是否真的改变范围', boolZh(d.profileRange.provider.applied)),
+            row('维度来源', `${d.profileRange.dimensionTierZh}（${d.profileRange.dimensionTier}）`),
+            row('维度说明', d.profileRange.dimensionNoteZh),
+            row(
+              '权益（调整前 → 后）',
+              d.profileRange.equityBefore === null || d.profileRange.equityAfter === null
+                ? '—（拿不到权益，不编造）'
+                : `${percentZh(d.profileRange.equityBefore, 2)} → ${percentZh(d.profileRange.equityAfter, 2)}` +
+                  (d.profileRange.equityDeltaPct === null
+                    ? ''
+                    : `（${d.profileRange.equityDeltaPct >= 0 ? '+' : ''}${d.profileRange.equityDeltaPct.toFixed(3)} 个百分点）`),
+            ),
+            row(
+              '可达组合数（前 → 后）',
+              `${d.profileRange.combosBefore} → ${d.profileRange.combosAfter}` +
+                (d.profileRange.combosBefore === d.profileRange.combosAfter
+                  ? '（只改概率，不增删组合）'
+                  : ' ⚠️ 组合数发生变化 —— 违反「只改概率」约束'),
+            ),
+            row(
+              'PROFILE_MULTIPLIER',
+              `${d.profileRange.provider.profileMultiplier.min.toFixed(3)}–${d.profileRange.provider.profileMultiplier.max.toFixed(3)}` +
+                `（均值 ${d.profileRange.provider.profileMultiplier.mean.toFixed(3)}，生效 ${d.profileRange.provider.profileMultiplier.effective}/${d.profileRange.provider.profileMultiplier.calls}）`,
+            ),
+            row(
+              'OBSERVATION_MULTIPLIER',
+              d.profileRange.provider.observationMultiplier.calls === 0
+                ? '—（没有近期倾向，或本次没有进攻动作）'
+                : `${d.profileRange.provider.observationMultiplier.min.toFixed(3)}–${d.profileRange.provider.observationMultiplier.max.toFixed(3)}` +
+                  `（生效 ${d.profileRange.provider.observationMultiplier.effective}/${d.profileRange.provider.observationMultiplier.calls}）`,
+            ),
+            row(
+              'FINAL_MULTIPLIER',
+              `${d.profileRange.provider.finalMultiplier.min.toFixed(3)}–${d.profileRange.provider.finalMultiplier.max.toFixed(3)}` +
+                `（生效 ${d.profileRange.provider.finalMultiplier.effective}/${d.profileRange.provider.finalMultiplier.calls}）`,
+            ),
+            row(
+              'CLAMP_APPLIED',
+              d.profileRange.provider.clampApplied
+                ? `是（${d.profileRange.provider.clampCount} 次被工程护栏截断）`
+                : '否（未被护栏截断）',
+            ),
+            row('参与调整的动作', d.profileRange.provider.actions.join(' / ') || '—'),
+            ...d.profileRange.provider.noteZh.map((t) => row('画像链路说明', t)),
+          ]),
+
+    /*
+     * 🔴 **决策边际 vs 模型置信度**（必须分开显示）。
+     *
+     * 「数学上差得很远」与「模型自己不确定」是两件事：
+     * 修复前只有后者，于是「跟注 EV = −317 筹码」被配上「置信度低」，
+     * 使用者无法区分。现在两行并列。
+     */
+    decisionMargin:
+      d.decisionMargin === undefined
+        ? Object.freeze([row('决策边际', '—（旧快照，无此字段）')])
+        : Object.freeze([
+            row('决策边际', d.decisionMargin.kindZh),
+            /*
+             * 🔴 **作用域**（MULTI_LIMP §1/§17）：没有作用域的「明显」是越权结论。
+             * `VS_FOLD_ONLY` = 这个边际只证明了「跟注 > 弃牌」，对加注**没有**发言权。
+             */
+            row(
+              '边际作用域',
+              d.decisionMargin.scope === 'VS_FOLD_ONLY'
+                ? 'VS_FOLD_ONLY（只比较过「跟注 vs 弃牌」—— 不能推出「跟注优于加注」）'
+                : d.decisionMargin.scope === 'CROSS_ACTION'
+                  ? 'CROSS_ACTION（已有其他动作带着自己的量化 EV 参与同一零点比较）'
+                  : 'NONE（本节点不是「跟注 vs 弃牌」决策）',
+            ),
+            row(
+              '边际判据',
+              d.decisionMargin.evChips === null
+                ? '—（本节点不是「跟注 vs 弃牌」决策）'
+                : `真实跟注 EV ${d.decisionMargin.evChips.toFixed(2)} ${t('common.chips')} vs 工程容差带 ±${d.decisionMargin.bandChips.toFixed(2)}`,
+            ),
+            row(
+              '模型置信度（另一个量）',
+              d.postflop === undefined
+                ? '—（翻前不适用）'
+                : `${d.postflop.confidence}（偏好分差 ${d.postflop.confidenceGap.toFixed(3)}）—— 回答「首选比次选好多少」，与上面的边际**不是**同一件事`,
+            ),
+            row('边际说明', d.decisionMargin.noteZh),
+          ]),
+
+    /*
+     * 🔴 **下注决策（每个尺寸独立）**（BET DECISION ENGINE PHASE 1 · 使用者 §15）。
+     *
+     * 这一组回答「这个下注建议是怎么算出来的」：每个尺寸的
+     * P(弃)/P(跟)/P(加)、对**条件范围**的权益、三分支 EV、BetEV、
+     * Hero 听牌、权益实现因子，以及**证据等级**（EXACT / HEURISTIC / NOT_IMPLEMENTED）。
+     */
+    betDecision: (() => {
+      const bd = d.betDecision ?? null;
+      if (bd === null) {
+        return Object.freeze([row('下注决策模型', '—（面对下注 / 翻前 / 拿不到对手范围）')]);
+      }
+      const sizes = (bd['sizes'] ?? []) as readonly Readonly<Record<string, unknown>>[];
+      const num = (v: unknown, digits = 3): string =>
+        typeof v === 'number' ? v.toFixed(digits) : '—';
+      const pct = (v: unknown, digits = 1): string =>
+        typeof v === 'number' ? `${(v * 100).toFixed(digits)}%` : '—';
+      const draw = (bd['draw'] ?? {}) as Readonly<Record<string, unknown>>;
+      const realization = (bd['realization'] ?? {}) as Readonly<Record<string, unknown>>;
+      const profile = (bd['profileEvidence'] ?? {}) as Readonly<Record<string, unknown>>;
+      const evidence = (bd['evidence'] ?? {}) as Readonly<Record<string, unknown>>;
+      return Object.freeze([
+        row(
+          '下注决策模型',
+          /*
+           * 🔴 `checkScore` / `bestScore` 是**启发式偏好分（0–1）**，不是筹码 EV。
+           * 修复前这里显示成「CHECK EV 0.4」，会让使用者以为过牌「赢 0.4 筹码」。
+           * 两者语义完全不同：偏好分只回答「模型更偏好哪个动作」。
+           * ⚠️ 与之相对，下方「CHECK 树」里的 `checkEV`（`checkTree.checkEV`）
+           * 由 `composeCheckTreeEV` 按概率加权算出，**是真正的筹码 EV**，
+           * 那里的「EV」标签是正确的，不要一起改。
+           */
+          `底池 ${num(bd['pot'], 1)}｜CHECK 策略评分 ${num(bd['checkScore'], 2)}（0–1 启发式偏好分，非筹码 EV）` +
+            `｜最佳尺寸 ${String(bd['bestSize'] ?? '—')}` +
+            `（策略评分 ${num(bd['bestScore'], 2)}）⇒ ${String(bd['preferredAction'] ?? '—')}`,
+        ),
+        row(
+          '证据等级',
+          `概率 ${String(evidence['probabilities'] ?? '—')}｜条件范围权益 ${String(evidence['equityVsConditionalRanges'] ?? '—')}｜` +
+            `权益实现 ${String(evidence['realization'] ?? '—')}｜被加注分支 ${String(evidence['raiseBranch'] ?? '—')}｜` +
+            `阻断牌 ${String(evidence['blockerAdjustment'] ?? '—')}`,
+        ),
+        row('Hero 听牌（不进权益）', String(draw['noteZh'] ?? '—')),
+        /*
+         * 🔴 **河牌 CHECK 树**（§5/§6）：前位过牌**不是**摊牌 ——
+         * 必须显示「他过牌 / 他下注」的分流与 Hero 的最佳应手。
+         */
+        ...(() => {
+          const tree = (bd['checkTree'] ?? null) as Readonly<Record<string, unknown>> | null;
+          if (tree === null) return [];
+          return [
+            row(
+              'CHECK 树',
+              `${String(tree['kind'])}｜我在${tree['isInPosition'] === true ? '后位（过他牌 ⇒ 摊牌终止）' : '前位（他仍可下注）'}`,
+            ),
+            row(
+              'P(他过牌) / P(他下注)',
+              `${num(tree['checkBackLikelihood'])} / ${num(tree['betLikelihood'])}｜代表下注额 ${num(tree['villainBetAmount'], 1)} 筹码`,
+            ),
+            row(
+              'CHECK 分支权益',
+              `对过牌范围 ${pct(tree['heroEquityVsCheckBackRange'], 2)}（摊牌 EV ${num(tree['evShowdown'], 1)}）｜` +
+                `对他下注范围 ${pct(tree['heroEquityVsBetRange'], 2)}（Hero 跟注 EV ${num(tree['heroCallEV'], 1)}、` +
+                `弃牌 EV ${num(tree['heroFoldEV'], 1)} ⇒ 最佳应手 ${num(tree['heroBestResponseEV'], 1)}）`,
+            ),
+            row(
+              'CHECK EV',
+              `${num(tree['checkEV'], 1)} 筹码（加注应手 ${String(tree['raiseResponse'])}）｜${String(tree['noteZh'] ?? '')}`,
+            ),
+          ];
+        })(),
+        row(
+          '权益实现因子',
+          `${num(realization['factor'], 3)}（${String(realization['kind'] ?? '—')}）｜过牌分支 ` +
+            `${num(bd['checkRealizationFactor'], 3)}｜${String(realization['noteZh'] ?? '—')}`,
+        ),
+        ...sizes.map((s) =>
+          row(
+            `尺寸 ${String(s['size'])}`,
+            `${pct(s['ratioToPot'], 0)} 池 = **合法 ${num(s['betAmount'], 1)} 筹码**` +
+              `${s['wasCapped'] === true ? `（理论 ${num(s['requestedAmount'], 1)} → 已按有效筹码封顶；来自 ${String(s['requestedKind'])}）` : ''}` +
+              `${s['heroIsAllIn'] === true ? '｜**ALL-IN ⇒ 他不能加注**' : ''}｜` +
+              `P(弃) ${num(s['foldLikelihood'])} / P(跟) ${num(s['callLikelihood'])} / P(加) ${num(s['raiseLikelihood'])}｜` +
+              `桶组合数 ${String(s['foldComboCount'])}/${String(s['callComboCount'])}/${String(s['raiseComboCount'])}`,
+          ),
+        ),
+        ...(() => {
+          const dropped = (bd['droppedSizes'] ?? []) as readonly Readonly<Record<string, unknown>>[];
+          if (dropped.length === 0) return [];
+          return [
+            row(
+              '被丢弃的候选（不参与 EV）',
+              dropped
+                .map(
+                  (d) =>
+                    `${String(d['requestedKind'])} 理论 ${num(d['requestedAmount'], 1)} → 合法 ${num(d['legalAmount'], 1)}` +
+                    `（${String(d['reasonZh'])}）`,
+                )
+                .join('；'),
+            ),
+          ];
+        })(),
+        ...sizes.map((s) =>
+          row(
+            `EV ${String(s['size'])}`,
+            `EqVsArrival ${pct(bd['heroEquityVsArrivalRange'])}｜EqVsCall ${pct(s['heroEquityVsCallRange'], 2)}｜` +
+              `EqVsRaise ${pct(s['heroEquityVsRaiseRange'], 2)}｜EV_fold ${num(s['evFoldBranch'], 2)}｜` +
+              `EV_call ${num(s['evCallBranch'], 2)}｜EV_raise ${num(s['evRaiseBranch'], 2)}（不继续下界 ${num(s['evRaiseFoldLowerBound'], 2)}）｜` +
+              `**BetEV ${num(s['betEV'], 2)}**（Δ vs CHECK ${num(s['deltaVsCheck'], 2)}）｜策略评分 ${num(s['score'])}（0–1 启发式偏好分，非筹码 EV）｜` +
+              `权益方法 ${String(s['equityMethod'])}×${String(s['equityIterations'])}`,
+          ),
+        ),
+        row(
+          '画像证据归属',
+          `range 层 ${boolZh(profile['rangeLayerApplied'] === true)}｜scorer 层 ${boolZh(profile['scorerLayerApplied'] === true)}｜` +
+            `已阻断重复计数 ${boolZh(profile['doubleCountBlocked'] === true)}｜${String(profile['noteZh'] ?? '—')}`,
+        ),
+        row('响应倾向（画像）', String(bd['tendenciesZh'] ?? '—')),
+        row('模型说明', String(bd['modelNoteZh'] ?? '—')),
+      ]);
+    })(),
+
+    /*
+     * 🔴 **多人 limp 隔离加注**（MULTI_LIMP ISOLATION RAISE PHASE 1）。
+     *
+     * 回答「加注这个动作是算出来的还是猜的」：逐家 limp 的响应、联合分布、
+     * 对**跟注条件范围**的权益、尺寸怎么来的、身后有什么风险、EV 怎么合成。
+     */
+    preflopIso: (() => {
+      const iso = d.preflopIso ?? null;
+      if (iso === null) {
+        return Object.freeze([row('隔离加注模型', '—（本节点不是「面对跛入且无人加注」的翻前节点）')]);
+      }
+      const num = (v: number | null, digits = 2): string => (v === null ? '—' : v.toFixed(digits));
+      const pct = (v: number | null, digits = 1): string =>
+        v === null ? '—' : `${(v * 100).toFixed(digits)}%`;
+      return Object.freeze([
+        row(
+          '隔离加注模型',
+          `${iso.limperCount} 家 limp ⇒ 加注到 ${num(iso.isoSize.legalIsoSize, 1)}BB` +
+            `（模型请求 ${num(iso.isoSize.requestedIsoSize, 2)}BB）｜${iso.noteZh}`,
+        ),
+        row(
+          '尺寸分解',
+          Object.entries(iso.isoSize.components)
+            .map(([k, v]) => `${k} ${(v as number) >= 0 ? '+' : ''}${(v as number).toFixed(2)}BB`)
+            .join('｜'),
+        ),
+        ...iso.perLimper.map((l, i) =>
+          row(
+            `limp ${i + 1}｜${l.positionZh}`,
+            `${l.archetypeZh}（可信度 ${l.confidence.toFixed(2)}）｜到达宽度 ${l.arrivalWidth.toFixed(2)}｜` +
+              `弃 ${pct(l.foldProbability)} / 跟 ${pct(l.callProbability)} / 再加 ${pct(l.reraiseProbability)}｜` +
+              `跟注需 ${pct(l.priceRequiredEquity)} 权益｜${l.noteZh}`,
+          ),
+        ),
+        row(
+          '联合响应（独立近似）',
+          `全弃 ${pct(iso.joint.allFold)}｜1 家 ${pct(iso.joint.oneCaller)}｜2 家 ${pct(iso.joint.twoCallers)}｜` +
+            `3 家 ${pct(iso.joint.threeCallers)}｜任一再加注 ${pct(iso.joint.anyReraise)}｜` +
+            `期望跟注 ${num(iso.joint.expectedCallers)}｜假设 ${iso.joint.assumption}`,
+        ),
+        row(
+          '权益（三种口径，不许混用）',
+          `对到达范围 ${pct(iso.heroEquity.vsArrival)}（**不用于**证明加注）｜对 1 家跟注范围 ` +
+            `${pct(iso.heroEquity.vsOneCaller)}｜对多家跟注范围 ${pct(iso.heroEquity.vsThreeCallers)}`,
+        ),
+        row(
+          'EV（同一零点 = 弃牌 0）',
+          `隔离加注代理 EV ${num(iso.isoEV.proxyEV)} 筹码｜跟注代理 EV ${num(iso.callProxyEV)} 筹码` +
+            `（作用域 ${iso.callScope}）｜被再加注分支 ${num(iso.isoEV.reraiseContribution)}｜` +
+            `身后修正 ${num(iso.isoEV.playersBehindAdjustment)}`,
+        ),
+        row('身后玩家风险（SB/BB）', iso.playersBehind.noteZh),
+        row('模型假设', iso.assumptionsZh.join('；')),
+        row('抽水', `${iso.rakeStatus}（本项目无 Rake Engine —— 所有 EV 都未计抽水）`),
+      ]);
+    })(),
+
+    /*
+     * 🔴 **多人联合响应树**（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1 · §23）。
+     *
+     * 回答「三人池的 BetEV 到底怎么来的」：逐对手响应 → 联合状态概率 →
+     * 每个分支各自的权益与 EV → 总 EV，以及 primary opponent 有没有偷偷决定 EV。
+     */
+    multiwayBetDecision: (() => {
+      const mw = d.multiwayBetDecision ?? null;
+      if (mw === null) {
+        return Object.freeze([
+          row('多人联合树', '—（单挑节点，或拿不到全部对手的可达范围）'),
+        ]);
+      }
+      const num = (v: number | null, digits = 2): string => (v === null ? '—' : v.toFixed(digits));
+      const pct = (v: number | null, digits = 1): string =>
+        v === null ? '—' : `${(v * 100).toFixed(digits)}%`;
+      return Object.freeze([
+        row('多人联合树', mw.noteZh),
+        row('jointModel', `${mw.jointModel}｜${mw.independenceAssumption}`),
+        row(
+          '参与对手（完整列表）',
+          mw.opponents
+            .map((o) => `${o.positionZh}（${o.comboCount} 组合）—— ${o.tendencyNoteZh}`)
+            .join('｜'),
+        ),
+        ...mw.perOpponentResponse.map((r) =>
+          row(
+            `响应｜${r.positionZh} × ${String(r.kind)}`,
+            `弃 ${pct(r.foldProbability)} / 跟 ${pct(r.callProbability)} / 加 ${pct(r.raiseProbability)}` +
+              `（封顶前加 ${pct(r.rawRaiseProbability)}）｜EqVsCall ${pct(r.heroEquityVsCallRange)}` +
+              `｜${r.betAmount.toFixed(1)} 筹码`,
+          ),
+        ),
+        ...mw.jointStates.map((s) =>
+          row(
+            `联合状态｜${String(s.kind)}`,
+            s.states.states
+              .map(
+                (st) =>
+                  `${st.kind}${st.callerId === null ? '' : `[${st.callerId}]`} ${pct(st.probability)}`,
+              )
+              .join('｜') + `（Σ ${s.states.total.toFixed(4)}；${s.states.independenceNoteZh}）`,
+          ),
+        ),
+        ...mw.conditionalEquities.map((e) =>
+          row(`条件权益｜${String(e.kind)}`, e.noteZh),
+        ),
+        ...mw.branchEVs.map((b) =>
+          row(
+            `分支 EV｜${String(b.kind)}`,
+            b.branches
+              .map(
+                (br) =>
+                  `${br.kind}${br.callerId === null ? '' : `[${br.callerId}]`} p ${pct(br.probability)}` +
+                  ` ⇒ 底池 ${br.resultingPot.toFixed(1)}、我投入 ${br.heroCostChips.toFixed(1)}、EV ${num(br.ev)}`,
+              )
+              .join('；'),
+          ),
+        ),
+        ...mw.totalBetEV.map((t) =>
+          row(
+            `总 EV｜${String(t.kind)}`,
+            `${num(t.totalEV)} 筹码（证据等级 ${String(t.evKind)}；${t.betAmount.toFixed(1)} 筹码）`,
+          ),
+        ),
+        row(
+          '尺寸弹性（P(弃) 逐档变化）',
+          mw.sizeElasticity
+            .map(
+              (e) =>
+                `${e.opponentId}：[${e.foldDeltaPerSize.map((v) => v.toFixed(3)).join(', ')}]`,
+            )
+            .join('｜'),
+        ),
+        row(
+          `尺寸饱和（sizeClampStatus = ${mw.sizeSaturation.status}）`,
+          mw.sizeSaturation.reasonZh +
+            (mw.sizeSaturation.identicalPairs.length === 0
+              ? ''
+              : `（逐位相同：${mw.sizeSaturation.identicalPairs
+                  .map((p) => `${p.a}×${p.b}@${p.opponents.join('/')}`)
+                  .join('、')}）`),
+        ),
+        row(
+          'primary opponent 是否参与 EV',
+          `${String(mw.primaryOpponentUsedForEV)}（false = 多人 EV 只消费完整对手列表；primary 仅用于展示）`,
+        ),
+        row('模型可信度', mw.modelConfidence.toFixed(2)),
+      ]);
+    })(),
+
+    /*
+     * 🔴 **动作证据与来源**（PREFLOP EVIDENCE PRIORITY FIX · 使用者 §16）。
+     *
+     * 回答「这个动作是谁选的、它凭什么覆盖别人」——
+     * 可审计三件套：来源 / 优先级 / 被阻断的覆盖尝试。
+     */
+    decisionSource: (() => {
+      const ds = d.decisionSource ?? null;
+      if (ds === null) return Object.freeze([row('动作来源', '—（未经过证据裁决）')]);
+      const evidence = (d.actionEvidence ?? []) as readonly Readonly<Record<string, unknown>>[];
+      const alternatives = (d.alternativeActions ?? []) as readonly Readonly<Record<string, unknown>>[];
+      const num = (v: unknown, digits = 2): string => (typeof v === 'number' ? v.toFixed(digits) : '—');
+      return Object.freeze([
+        row('动作来源（decisionSource）', `${String(ds['kind'])} —— ${String(ds['kindZh'] ?? '')}`),
+        row(
+          '优先级 / 是否可覆盖',
+          `优先级 ${String(ds['priority'])}｜证据类型 ${String(ds['estimateType'])}｜` +
+            `可覆盖其他证据 ${boolZh(ds['canOverrideEvidence'] === true)}｜证据范围 ${String(ds['evidenceScope'])}`,
+        ),
+        ...(ds['overrideAttempt'] === null || ds['overrideAttempt'] === undefined
+          ? []
+          : [
+              row(
+                '被阻断的覆盖尝试',
+                `overrideAttempt = ${String(ds['overrideAttempt'])}｜overrideBlockedReason = ${String(ds['overrideBlockedReason'])}`,
+              ),
+            ]),
+        row('主推荐动作', `${String(d['primaryAction'] ?? '—')}（最终动作 ${String(d['primaryAction'] ?? '—')}）`),
+        ...(alternatives.length === 0
+          ? []
+          : [
+              row(
+                '备选动作（不是最终动作）',
+                alternatives
+                  .map((a) => `${String(a['action'])}｜${String(a['estimateType'])}｜EV ${num(a['ev'])}｜${String(a['statusZh'])}`)
+                  .join('；'),
+              ),
+            ]),
+        ...evidence.map((e) =>
+          row(
+            `证据 ${String(e['action'])}`,
+            `${String(e['estimateType'])}｜EV ${num(e['ev'])}｜边际 ${String(e['decisionMargin'] ?? '—')}｜` +
+              `启发式分 ${num(e['heuristicScore'])}｜置信度 ${num(e['confidence'])}` +
+              (e['upgradeNoteZh'] === null || e['upgradeNoteZh'] === undefined ? '' : `｜升级条件：${String(e['upgradeNoteZh'])}`),
+          ),
+        ),
+        row('来源说明', String(ds['noteZh'] ?? '—')),
+      ]);
+    })(),
 
     environment: Object.freeze([
       row('环境', d.environment.labelZh),

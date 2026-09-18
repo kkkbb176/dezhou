@@ -68,6 +68,8 @@ import {
   type ContextBuildInput,
   type SolverRangeOverride,
 } from './manualInput/contextBuilder.ts';
+import type { QuickProfile } from './manualInput/manualInput.ts';
+import type { Position } from '../domain/types.ts';
 import { preflopShapeOf, scenarioForOpponent } from './manualInput/solverScenarioForOpponent.ts';
 import {
   lookupPreflopRangePrior,
@@ -1038,7 +1040,26 @@ export function analyzeManualHand(
       ...(parsed.value.villain.playerId !== undefined
         ? { villainPlayerId: parsed.value.villain.playerId }
         : {}),
+      /*
+       * 🔴 **行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二）。
+       *
+       * 严格可选：不传时 `contextBuilder` 走既有路径，**逐位不变**。
+       * 传了之后只影响**河牌进攻性动作**的似然来源 ——
+       * 因此权益 / 底池赔率比较 / Call EV / 动作排名会跟着变，
+       * 不需要在决策层再加任何画像逻辑（那会变成两处口径）。
+       */
+      ...(parsed.value.villain.behaviorProfile !== undefined
+        ? { behaviorProfile: parsed.value.villain.behaviorProfile }
+        : {}),
+      ...(Object.keys(parsed.value.seatProfiles).length > 0
+        ? { seatProfiles: parsed.value.seatProfiles as Readonly<Partial<Record<Position, QuickProfile>>> }
+        : {}),
       ...(options.equitySeed !== undefined ? { equitySeed: options.equitySeed } : {}),
+      /* 🔴 PLAYER PROFILE V3：把首要对手的连续统计带进上下文（可选，缺省 ⇒ 与 V2 逐位一致） */
+      ...(parsed.value.villain?.observedStats !== undefined &&
+      parsed.value.villain?.observedStats !== null
+        ? { observedStats: parsed.value.villain.observedStats }
+        : {}),
       ...(options.budget !== undefined ? { budget: options.budget } : {}),
       /*
        * 🔴 把「整条链已经花掉多少时间」交给上下文组装层，让它能给
@@ -1346,6 +1367,17 @@ export function hashManualInput(input: ManualHandInput): string {
       input.seatStacksBB === undefined
         ? null
         : Object.entries(input.seatStacksBB)
+            .filter(([, value]) => value !== undefined)
+            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    /**
+     * 逐座位画像（MULTIWAY RESPONSE TREE）：**必须进哈希** ——
+     * 同一手牌、同一个行动记录，只把 CO 从 NORMAL 改成 CALLING_STATION，
+     * 多人下注 EV 会变；不写进哈希就追不到「为什么昨天不下注、今天下注」。
+     */
+    seatProfiles:
+      input.seatProfiles === undefined
+        ? null
+        : Object.entries(input.seatProfiles)
             .filter(([, value]) => value !== undefined)
             .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
     actionHistory: input.actionHistory.map((a) => [

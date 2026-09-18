@@ -25,6 +25,53 @@
 
 ---
 
+## 1.0 最近一轮：V2.1 画像敏感度与决策影响审计（**不是新 Phase**）
+
+> 判定：`V2.1 PROFILE SENSITIVITY & DECISION IMPACT — PASS_WITH_WARNINGS`
+> 报告：`reports/PROFILE_V21_SENSITIVITY_AUDIT.md`（20 节）
+> 风险登记：`reports/V21_RISK_REGISTER.md`（D1–D18）
+> 独立审查：5 个视角，各自报告 `reports/V21_REVIEW_1..5_*.md`；生产链路独立核查
+> `reports/V21_PRODUCTION_CHAIN_VERIFICATION.md`；18 项失败模式 `reports/V21_FAILURE_MODE_AUDIT.md`
+
+**实测结论（1260 组合矩阵 + 8 场景语料 + 12 项决策影响指标）**：
+
+```text
+画像影响分类（本轮实测）  = TRIVIAL
+max |equityDelta|         = 1.9761pp   （**同一行**的 max |bluffMassDelta| = 4.5242pp）
+阈值（未改动）            = equityMaterial 0.02 / massMaterial 0.05
+action flip               = 0 / 1260（0.00%）
+sizing change             = 0（本夹具无下注决策点）
+合理输入微扰下动作翻转    = 0 / 11 画像
+Profile Dominance 违规    = 0 / 11
+```
+
+⚠️ **不要把这组数字读成「画像有用」或「画像没用」**：
+1260 行其实只有 **305 次不同调用 / 267 个不同结果**（E2 整块被 E1 包含、
+E3 的 N0 档与 E0 逐位相同），且**全部落在同一个固定牌局**上。
+它是「描述性最大值」，不是推断统计。
+
+**本轮修了 4 个真缺陷**（前后证据见 `reports/evidence/v21-defect-evidence-{before,after}.txt`）：
+
+| # | 缺陷 | 修前实测 | 修后 |
+|---|---|---|---|
+| D6 | 画像去重闸门读**代理指标**（`provider.applied`），三处会误判为 false（河牌统一似然通道 / 跛入原型通道 / 画像挂在非首要对手） ⇒ 同一份范围证据被计两次 | `bluffCatchDelta` 0 → +0.035、`deDuplicated` true → false、`profileCompressionMultiplier` 1.0000 → 0.9020 | 新增事实字段 `profileAppliedToRange`，闸门改读它；证据对象改按 `villainId` 定位 |
+| D7 | `successes`/`opportunities` 的 **NaN / Infinity 穿透**到似然 ⇒ 整条贝叶斯更新被**静默丢弃**，权益反而 **+11.25pp** | `successes: NaN` ⇒ 权益 67.5071%、callEV 17.728、**无 warning** | `PARSE` 阶段 `INVALID_NUMBER` 阻断，字段路径精确 |
+| D8 | 残缺画像（`traits` 缺条目）**把整手牌打挂** | `CONTEXT_BUILD_FAILED`（不可分析） | 缺失条目**回落池先验**，可分析 |
+| D-数值 | `profileMaterialityOf` 对 NaN/Infinity 无守卫 ⇒ 展示成正常档位 | `equityB=Infinity` ⇒ **STRONG**（"权益差 Infinitypp"）；`NaN` ⇒ TRIVIAL | 非有限输入 ⇒ `NO_EFFECT` + 「**无法判定**」（与「影响很小」分开） |
+
+**未修但已登记**（本轮审计边界之外，全部带 `file:line` 与实测数字）：
+`callTooWide` 是**死条目**（D14）、`THIN_VALUE` 的槽位数 K=2 但只有 1 个可填槽（D11）、
+跛入池上「中性」不中性（`NORMAL` vs `UNKNOWN` Δ=2.695615e-4，D12）、
+生产链**拿不到实测手牌历史**（D4）、人工读与标签先验之间**没有收缩**（D9）、
+尺寸档 4 档里**只有 0.6 一个活边界**（D17）、
+`riverConsistencyV21.test.ts` 全程只用中性标签 ⇒ **它不是画像回归锁**（D15）。
+
+**未升 `ALPHA_DECISION_MODEL_VERSION`**（仍为 `1.0.5`）：本轮改动**不改变任何判定阈值**，
+且在**合法输入上逐位不变**（已用前后证据证明）。
+
+---
+
+
 ## 1.1 最近一轮：Table Topology Correction（**不是新 Phase**）
 
 > 判定：`# TABLE TOPOLOGY CORRECTION — PASS`
@@ -340,14 +387,15 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 
 | 项 | 值 |
 |---|---|
-| 源代码 | 111 个文件 / 51,035 行（含新增 GTO 子域、翻后模块与应用层；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
-| 测试代码 | **78 个文件 / 41,106 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,677 项 / 137 套件 / 75 个测试文件** |
+| 源代码 | 117 个文件 / 58554 行（含新增 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
+| 测试代码 | **84 个文件 / 44116 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
+| 测试 | **1,820 项 / 137 套件 / 88 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**） |
 | 类型检查 | 零错误 |
-| 产物 hash 绑定 | **134 个产物 / 6 类**，已接入 `npm run verify` |
+| 产物 hash 绑定 | **152 个产物 / 6 类** |，已接入 `npm run verify` |
+| Git 状态（V2.1 审计后） | ⚠️ **不是干净基线**：`HEAD = c3391ef`，**26 个已修改**（其中 5 个是本轮修的缺陷）+ 大量未跟踪文件（既有工作一律保留）。可复现清单与逐个 sha256 见 `reports/evidence/v21-repro-state.txt` |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
-| 独立红队轮次 | **14 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量**） |
-| 历史基线回归 | 535 → … → **1,612** → **1,617** → **1,625** → **1,636** → **1,652** → **1,677**，无一次放宽断言 |
+| 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
+| 历史基线回归 | 535 → … → **1,677** → **1,690** → **1,691** → **1,704** → **1,712**，无一次放宽断言（三次契约变更均已在报告里逐条说明：TEST 6 升级为「权益按画像方向移动 + 去重可见」；下注决策模型 13 项验收；**T9 的「三桶组合数之和」在混频下改为「并集 = 可达集合 + 质量守恒」**—— 旧断言在混频下是错的） |
 | 版本控制 | **git** 已建立（`main`，基线 tag `v0.1-baseline`）；`GTOopen/` 与 `node_modules/` 不纳入跟踪 |
 
 ### 10.0.1 GTO 集成的**边界**（本轮新增，必须与上面的数字一起读）
@@ -1204,7 +1252,8 @@ GTO 基线是**范围级**答案（「9人桌 BTN 面对 UTG 开池 2.5BB 的范
 
 **关于花色同构（suit isomorphism）**：本项目**没有**、也**不引入**花色归一化。
 三把键不含牌面信息；`hashManualInput`（决策日志用的另一把键，**本轮未改**）按原样序列化底牌与公共牌，
-因此「同构花色被错误合并」这类风险在键层面不存在。相关审计观察另见 §10.0.14。
+因此「同构花色被错误合并」这类风险在键层面不存在。相关审计观察另见
+`reports/V21_PRODUCTION_CHAIN_VERIFICATION.md`（Part B：`rangeDistance` 的真实含义）。
 
 **剩余风险**：
 - FNV-1a 是 **32 位**非密码学哈希：不声称「不会碰撞」。现在的保证是「碰撞**不会被静默接受**」
@@ -1212,8 +1261,218 @@ GTO 基线是**范围级**答案（「9人桌 BTN 面对 UTG 开池 2.5BB 的范
 - `treeId` 无版本常量：由「字段表 + 敏感性测试」保证形状变化必然改变 id；若将来需要
   「形状语义变更但字段不变」的迁移，需要补一个版本字段（会作废全部旧 treeId，需评估）
 
-### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。
-它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
+### 10.0.14 🔴 画像决策小规模验证（PROFILE V2.1 第一轮 · 2026-09 · 只做验证，不改权重）
+
+**范围**：12 个代表场景（跟注站 3 / 疯狂型 3 / 紧弱型 3 / 防护 3），
+每个场景只改 `villain.quickProfile`，其余逐位相同。**未做** 1260 全量矩阵、
+未做五 Agent 审查、未改 `MATERIALITY_THRESHOLDS` 或任何权重。
+
+**报告**：`reports/PROFILE_V21_SMALL_SCALE_AUDIT.md`
+**复现**：`scripts/v21-small-scale-scenarios.ts`、`scripts/v21-small-scale-supplement.ts`
+
+**本轮实测（不是 V2 的旧值）**：
+
+```text
+action flip = 0        sizing change = 0
+最大 |Δ权益|     = +1.35pp（B1 黄金夹具 MANIAC）
+最大 |Δ诈唬质量| = 0.0316
+materiality      = TRIVIAL（0.0135 < 0.02 且 0.0316 < 0.05）
+中性兼容性       = 不给画像 == UNKNOWN == NORMAL == 零手实测画像（逐位相同）PASS
+```
+
+⚠️ **`equityDelta = 0.0180` / `bluffMassDelta = 0.0422` 是 V2 黄金夹具的旧值，
+本轮未复现该数字**（本轮同一手实测 0.0135 / 0.0316）。两个数字**不得混用**。
+
+**生产链路（已核实，逐点行号见报告 §2）**：
+
+```text
+analyzeManualHand → buildDecisionContext
+  ① behaviorProfileOf(quickProfile)                 contextBuilder.ts:3168-3175
+  ② 画像 → 范围（两条通道都真实生效）
+     a) tendency provider（**所有街**）              contextBuilder.ts:1440-1447 → :1039
+     b) 河牌进攻动作的似然覆盖（**仅河牌**）         contextBuilder.ts:1202 / :1280-1290
+  ③ opponentRangeFactsOf（**只读观测**）             rangeFacts.ts:84
+  ④ computeHeroEquity                               contextBuilder.ts:2169
+  ⑤ buildBetDecisionFacts → Fold/Call/Raise         contextBuilder.ts:1567
+  ⑥ postflopAdvisor betDecision → 动作与尺度         postflopAdvisor.ts:549-619
+```
+
+🔴 **`profileClassMasses` / `actionMasses` / `profileRangeDistance` 都不是决策输入**
+（`src/` 内零消费者，只有 `test/` 与 `scripts/` 读）。画像影响决策的真实中介量是
+②-a 的 `profileFactor`、②-b 的 `likelihoodOverride`、⑤ 的响应倾向。
+
+**`rangeDistance` 口径标注（本轮落地，只加注释不做全仓重命名）**：
+`src/domain/player/profileRangeMetrics.ts` 的 `profileRangeDistance` 已标注为
+**`CATEGORY_LEVEL_RANGE_DISTANCE`（= `RANGE_DISTANCE_PROXY`）** ——
+它度量的是 `profileClassMasses` 聚合出的 **5 个互不重叠类别**的分布差异，
+**不是 1326 个具体组合的逐组合差异**，**同一类别内部的组合变化它看不见**。
+
+**本轮未修复、留给下一轮的三个问题**：
+
+| # | 问题 | 证据 |
+|---|---|---|
+| W-2 | **面对下注的节点上候选动作 EV 全部不可得**（9 个 RAISE 档 + ALL_IN 均 `ev: null`），`mathDominance` 只在 FOLD vs CALL 间比较 | 报告 §6.3 |
+| R4 | 画像影响幅度只有**单点估计**，无可信区间；与 V2 的 0.0180 差异未完全归因 | 报告 §7 |
+| W-3 | `BetSizeBucketOf` 使尺寸证据呈**阶梯状**（0.4 / 0.6 / 1.25），连续尺寸扰动**不可能**改变结论 | 2–30BB 扫描：NORMAL 恒定 56.26%，MANIAC 仅 2 个取值 |
+
+**既有问题（非本轮引入，如实登记）**：`npm run verify` 实测
+**1778 tests / 137 suites / pass 1774 / fail 4**（交接称 fail 0，**不属实**）。
+4 个失败全是墙钟预算断言（`dynamicBehavior` P95、`layeredPot` POT-14、
+`postflopOutput` P3-1、`postflopRegressionCases` TEST 5），
+**单独运行 82/82 全绿** ⇒ 全套件并发 CPU 争用下的抖动。
+**未放宽任何断言。**
+
+⚠️ **并发写入披露**：本轮进行期间有**另一个会话**在同一工作区新增约 35 个
+`scripts/v21-*.ts` 与多份 `reports/V21_*`。本节的数字全部来自本轮亲自运行的脚本；
+那些并发产物**本轮未复核、未引用为证据**。因此本轮的一切哈希与「基线」**只对读取时刻成立**。
+
+### 10.0.15 🔴 画像 A/B + 策略评分命名 + EXACT 权益语义（定向审计 · 2026-09）
+
+**范围**：验证 `CALLING_STATION` 是否真的进入河牌决策链、修正「启发式评分被显示为 EV」、
+查清 `EXACT × 990` 的真实语义。**未重写画像系统、未新建 HUD、未引入外部求解器、
+未改动 GTO baseline、未调参让测试变绿。**
+
+**冻结牌局**：6-max · SB1/BB2 · 100BB · Hero BTN `A♣5♣` vs BB ·
+`K♣8♦4♣2♠Q♦` 河牌错过同花听牌 · 底池 53 · SPR 3.28。
+
+**A/B 实测（唯一变量 = 画像）**：
+
+```text
+                        CALLING_STATION   NORMAL
+Final Action            CHECK             CHECK
+Recommended Size        BET_SMALL (8.83BB) 同
+Fold%  S/M/L            0.94 / 6.81 / 10.61 %   3.15 / 9.63 / 13.48 %
+Call%  S/M/L            92.03 / 87.42 / 84.72 % 89.77 / 84.55 / 81.77 %
+BET 策略评分 S/M/L      0.324 / 0.201 / 0.079   0.339 / 0.224 / 0.108
+CHECK 策略评分           0.500（两侧相同，见下）  0.500
+Confidence / Class      0.300 / MARGINAL        0.300 / MARGINAL
+Hero Equity             0.7250 %                0.6851 %
+Equity                  EXACT × 990             EXACT × 990
+```
+
+**画像进入决策链的真实参数**（`archetypeDimensions.ts:120-124`）：
+
+```text
+CALLING_STATION 维度 = tightness 0.30 / aggression 0.30 / bluffTendency 0.35 / passivity 0.80
+NORMAL          维度 = 全 0.5（刻意中性）
+经 responseTendenciesOf（betResponse.ts:259-292，confidence 0.35）缩放后：
+  callScale      1.0882   （NORMAL 1.0000）
+  foldScale      0.9027   （NORMAL 1.0000）
+  raiseScale     0.9580   （NORMAL 1.0000）
+  bluffRaiseScale 0.9633  （NORMAL 1.0000）
+  riverBetScale  0.8688   （NORMAL 1.0000）
+```
+
+⚠️ **`CHECK 策略评分` 两侧都是 0.500** —— 因为 `checkScore` 在
+`postflopAdvisor.ts:640` **硬编码为常量 `0.5`**（它是评分基准，不是算出来的量）。
+因此「CHECK 相对吸引力上升」**不体现为 checkScore 变大**，而体现为
+**下注评分下降**（0.324 vs 0.339）。这是本期实测的口径事实，不是缺陷。
+
+**`EXACT × 990` 的真实语义 = `RANGE_CONDITIONED_EQUITY`**（三条证据）：
+
+1. 控制实验：把对手范围设为「A♦A♠ 权重 99 ｜ 7♠2♦ 权重 1」，
+   引擎返回 **1.0000%**，与**按权重手算**逐位一致 ⇒ 权重生效；
+2. 生产范围 `range.entries.length = 990`，其中**权重为 0 的有 515**、
+   权重 > 0 的（`metrics.supportSize`）为 **475** ⇒ 分布**非均匀**；
+   与 Hero/牌面死牌冲突的组合数为 **0** ⇒ 死牌过滤正确；
+3. 若真是「任意两张未知牌」，A♣5♣ 对随机牌的权益约 **33.18%**（手算 990 局）；
+   实测 **0.7250%** ⇒ 相差 45 倍，语义完全不同。
+
+⚠️ **但 `EXACT × 990` 这个展示数字本身有误导性**：`enumerateExact` 的 `matchups`
+按 **entries 数**计（`equityExact.ts:141`），因此 990 里含 515 个零权重槽位；
+**有效支撑只有 475**。两个数字数值上偶然都容易与 `C(45,2)=990` 混淆。
+⇒ 登记为**展示口径问题**，本轮未改数值（未擅自删除），新增测试把语义钉住。
+
+**EV 命名修正（仅显示/文案，未改数值与决策）**：
+
+| 位置 | 修改前 | 修改后 |
+|---|---|---|
+| `decisionViewModel.ts:734` | `CHECK EV 0.4` | `CHECK 策略评分 0.50（0–1 启发式偏好分，非筹码 EV）` |
+| `decisionViewModel.ts:809` | `｜分 0.324` | `｜策略评分 0.324（0–1 启发式偏好分，非筹码 EV）` |
+| `decisionEngine.ts:1922` | `CHECK 优于所有尺寸（CHECK EV 42.6…）` | `CHECK 策略评分 0.50…（不代表任何筹码盈亏）` |
+
+**保留未动**：`checkTree.checkEV`（`composeCheckTreeEV` 概率加权，**是**真实筹码 EV）、
+`betEV` / `deltaVsCheck` / `evFoldBranch` 等 —— 那是真筹码 EV，不得误伤。
+
+**新增测试** `test/profileAbAndEvNaming.test.ts`（13 项，全部通过）：
+Test A1–A5（画像方向与「真的改变模型」）、Test B1–B4（EV 命名 + 不误伤真 EV）、
+Test C1–C4（990 语义 + 权重归一 + `supportSize ≠ iterations`）。
+
+**遗留（本轮只登记）**：① VPIP/PFR/WTSD/Fold-to-CBet 等**连续统计**目前
+**没有输入通道**，画像只能走 11 个手选标签；② `checkScore` 是常量 0.5，
+不含画像影响；③ 项目**仍无真实 chip EV**（下注类动作的 EV 依赖弃牌率，
+`evaluateCandidates` 刻意给 `null`）。
+
+### 10.0.16 🔴 PLAYER PROFILE V3 —— 连续统计 + 样本置信度 + 标签先验（2026-09）
+
+**目标**：让软件从「猜他是什么类型」逐渐变成「知道他实际上怎么打」，
+**不推翻** 11 个手选标签，只在既有链路上加入第二个证据来源。
+
+```text
+标签 Prior（quickProfile）  ← 用户主观断言，**不被覆盖**
+实测统计（observedStats）  ← 真实观察到的行为，带机会数
+样本量 ⇒ 可信度 n/(n+K)     ← 决定该相信实测到什么程度
+        ↓  resolvePlayerProfile
+resolved dimensions + 分街 factor
+        ↓
+现有决策链（**公式未改**）
+```
+
+**新增文件**：`src/domain/player/observedStats.ts`、`test/playerProfileV3.test.ts`
+**数据通道**：`villain.observedStats` → `alphaPipeline` → `ContextBuildInput.observedStats`
+→ `resolvePlayerProfile` → ① `v3Dimensions`（覆盖标签维度）
+② `v3Street`（分街系数）→ `responseTendenciesOf` → `classifyResponse`
+
+**支持的 10 项统计**（全部 `0..1`，缺失用 `null`，**禁止用 0 冒充缺失**）：
+`vpip` / `pfr` / `threeBet` / `wtsd` / `foldToFlopCBet` / `foldToTurnCBet` /
+`foldToRiverBet` / `flopCheckRaise` / `turnCheckRaise` / `riverCheckRaise`。
+
+**可信度模型**：`confidence = n_opp / (n_opp + K)`，
+`effectiveRate = prior + (observed − prior) × confidence`。
+K 按**统计频次**分三档（这是本轮的核心设计，不能统一）：
+
+| 档 | 统计 | K | 机会频率 | 需要多少手 |
+|---|---|---|---|---|
+| 高频 | VPIP / PFR | **75** | 1.0 /手 | ≈75 手 |
+| 中频 | 3Bet / WTSD / FoldTo{Flop,Turn}CBet | **150** | 0.25 / 0.30 / 0.35 / 0.18 | ≈300–830 手 |
+| 低频 | FoldToRiverBet / \*CheckRaise | **200** | 0.10 / 0.15 | ≈1300–2000 手 |
+
+**分街隔离**（§七 / §八 的硬约束）：`FoldTo*CBet` 与 `*CheckRaise`
+**只进它自己那一街**（`riverBetScale` 类因子），并有测试锁定
+「river 统计不得污染 flop」。
+
+**🔴 本轮实测抓到的四个缺陷（都已修，留作记录）**：
+
+1. **方向被弄反**：分街条目的先验恒设 0.5 ⇒ 「跟注站 FoldRiver 19%」被
+   `0.5` 往上拉，引擎得出「他比普通人**更爱**弃」。⇒ 先验改为锚在
+   **人群中心 0.45** 再按标签维度偏移（跟注站 0.380、极紧 0.498）。
+2. **量纲错误**：拿 `statEvidenceOf`（**按离散次数**的 Beta-Binomial）去收缩
+   一个**已经是聚合比率**的 HUD 值，`round(opportunities × rate)` 在小样本下
+   把比率四舍五入没了 —— 实测 8 手 `FoldRiver = 0.10` 被算成 **0.000**
+   （=「他从不弃河牌」，正是 §十二 明令禁止的结论）。⇒ 改为
+   `prior + Δ × confidence` 的线性混合。
+3. **维度饱和**：逐步长求和让 `passivity` / `aggression` 精确撞到 1.0 / 0.0；
+   且「160 手」与「1500 手」给出**完全相同**的 tightness（都撞顶）。
+   ⇒ 改为**加权平均 + 先验质量项** `Σ(p·c) / (priorMass + Σ|p|·c)`，
+   现在样本量与纠正强度**严格单调**（P8b 锁定）。
+4. **重复计票**：`FoldTo*CBet` 同时经「维度」与「分街因子」两条通道
+   ⇒ 同一条统计被用两次。⇒ 每条统计**恰好**影响一个通道
+   （VPIP/PFR/3Bet/WTSD 走维度；分街统统计走分街因子）。
+
+**V2 兼容（§十一）**：`observedStats = null` 或全字段缺失时，
+三个分街系数**恒为精确的 1**、四个维度**精确为 0.5** ⇒ 与 V2 archetype-only
+**逐位一致**（P1 / P1b 用 `assert.equal` 锁定，非容差比较）。
+
+**版本**：`ALPHA_DECISION_MODEL_VERSION` `1.0.5` → **`1.0.6`**
+（`DecisionContext` 新增可选 `profileV3` 诊断字段；纪律要求该文件改动必须升版本）。
+**全部判定阈值与数学层冻结**，`MATERIALITY_THRESHOLDS` 未动。
+
+**遗留**：① 机会数在未传 `villainProfile` 时是「手数 × 频率」**近似**，
+真实逐手机会数需从 `PlayerProfile.metrics[m].opportunities` 取；
+② §十六 的「自动重分类建议」本轮**未实现**（标签原样保留）；
+③ UI 展示本轮未做（trace 已在 `context.profileV3` 里可用）。
+
+### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 
 本项目的七轮红队共发现 **50+ 项** CRITICAL/MAJOR 缺陷，全部发生在测试全绿的情况下 ——
 **测试能防回归，但不能证明产品可用。**

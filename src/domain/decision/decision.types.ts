@@ -27,9 +27,13 @@ import type { GameEnvironmentId } from '../../domain/knowledge/knowledge.types.t
 import type { ProfileAdjustment } from '../../domain/player/playerClassifier.ts';
 import type { PlayerLabel } from '../../domain/player/playerClassifier.ts';
 import type { RangeMetrics, RangeSource } from '../../domain/range/range.types.ts';
+import type { TendencyEvidence } from '../../domain/player/tendencyProvider.ts';
+import type { BetDecisionFacts } from '../../domain/postflop/betResponse.ts';
 import type { EnvironmentAdvice, PriorityVerdict } from '../../domain/environment/environmentAccess.ts';
 import type { OpponentRangeFacts } from '../postflop/types.ts';
 import type { QuickProfile } from '../../app/manualInput/manualInput.ts';
+import type { PreflopIsoFacts } from '../../app/manualInput/limpIsolation.ts';
+import type { MultiwayBetFacts } from '../../domain/postflop/betResponse.ts';
 
 /* ============================================================
  * 动作
@@ -181,8 +185,38 @@ export function confidenceBandOf(confidence: number): ConfidenceBand {
 export type PostflopFacts = {
   /** 上一街的公共牌（翻牌时为空数组；用于跨街比较） */
   previousBoard: readonly Card[];
+  /**
+   * 🔴 **复合牌力结构**（TEST HAND MULTIWAY TURN FIX · 问题 2）：
+   * 成手类别 + 听牌种类 + 四桶补牌审计（RAW / CLEAN / DISCOUNTED / DIRTY）。
+   * 修复前只有单一角色标签（例如「听牌 强度 0.30」），连「已经成对」都看不出来。
+   */
+  handStructure?: {
+    madeHandClass: string;
+    openEnded: boolean;
+    gutshot: boolean;
+    flushDraw: boolean;
+    structureLabel: string;
+    rawOuts: number;
+    cleanOuts: number;
+    discountedOuts: number;
+    dirtyOuts: number;
+    doubleCounted: readonly string[];
+    nonNutFlushDraw: boolean;
+    notesZh: readonly string[];
+  };
   /** 对手范围在当前牌面上的统计（`null` = 算不出来） */
   opponentRangeFacts: OpponentRangeFacts | null;
+  /**
+   * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
+   *
+   * 含：每个下注尺寸的 fold / call / raise 概率 + 三个条件范围
+   * （组合集不变、权重重新归一化）+ 对跟注/加注范围的权益 +
+   * Hero 自身听牌潜力 + 权益实现因子。
+   *
+   * ⚠️ 必须由 `contextBuilder` 计算：决策层拿不到 `Range` 对象
+   *（与 `opponentRangeFacts` 同一条架构纪律）。`null` = 算不出来（翻前 / 无范围）。
+   */
+  betDecision: BetDecisionFacts | null;
 };
 
 /**
@@ -245,7 +279,17 @@ export type PostflopDecisionSnapshot = {
   /** 画像偏移说明（未发生偏移时为 null） */
   exploitAdjustmentZh: string | null;
   /** 动作偏好顺序（启发式比较分，**不是** solver EV） */
-  evRanking: readonly { action: string; score: number }[];
+  /**
+   * 动作偏好顺序（启发式比较分，**不是** EV）。
+   *
+   * 🔴 TEST HAND MULTIWAY TURN FIX · 问题 4：每项都带 `kind`：
+   * - `EV_SUPPORTED`：这个动作有可计算的 EV（弃牌 ≡ 0、跟注/过牌由权益推出），
+   *   分数之间**可以**互相比较；
+   * - `STRATEGIC_CANDIDATE_ONLY`：这个动作**没有** EV（NOT_AVAILABLE），
+   *   分数只是启发式偏好分，**不得**被读成概率或 EV，也不得与上面那组排序。
+   * 修复前两者混在一个数组里，界面直接显示 0.623 / 0.377 / 0.365 ⇒ 语义冲突。
+   */
+  evRanking: readonly { action: string; score: number; kind: string; noteZh: string }[];
   /** 本次判定用的是哪一套指标（使用者 §8） */
   metricKind: string;
   /**
@@ -281,6 +325,17 @@ export type PostflopDecisionSnapshot = {
    * **概率质量占比**（同一分母）。两者回答不同的问题，界面上必须分列。
    */
   rangeCounts: Readonly<Record<string, number | string>> | null;
+  /**
+   * 🔴 **下注决策（每个尺寸独立）**（BET DECISION ENGINE PHASE 1）。
+   *
+   * 含每个尺寸的 `P(弃)/P(跟)/P(加)`、对**条件范围**的权益、三分支 EV、
+   * BetEV、归一化偏好分，以及 Hero 听牌、权益实现因子与画像证据归属。
+   *
+   * ⚠️ 里面的 EV 是**启发式代理 EV**（未来街用权益实现因子近似），
+   * 不是 Solver EV；证据等级在 `evidence` 里逐项标出。
+   * 拿不到响应模型（翻前 / 无范围 / 面对下注）时为 `null`。
+   */
+  betDecision: Readonly<Record<string, unknown>> | null;
   /**
    * 可达范围的**组合数**（占比的分母）。没有范围数据时为 null。
    * 使用者 §14：是概率就必须给分母。
@@ -506,6 +561,15 @@ export type RangeUpdateTraceEntry = {
   supportAfter: number;
   entropyBefore: number;
   entropyAfter: number;
+  /**
+   * 本条目的一条中文说明（可选）。
+   *
+   * 目前由**河牌画像似然**写入：说明这条动作是否启用了画像感知似然、
+   * 以及**为什么回落**（节点上下文不足 / 组合无法如实分类 /
+   * 或已抑制倾斜通道以免画像计两次）。规范第 43 节要求
+   * 「画像到没到范围」必须可调试 —— 静默降级不算可调试。
+   */
+  noteZh?: string;
 };
 
 /* ============================================================
@@ -586,6 +650,103 @@ export type DynamicSnapshot = {
 };
 
 /* ============================================================
+ * 画像进入范围链路的证据（P0 架构修复）
+ * ============================================================ */
+
+/**
+ * 🔴 **画像 / 近期倾向进入 action-conditioned range 的证据**。
+ *
+ * ## 为什么必须存在这个结构
+ *
+ * 使用者点名的缺陷是「画像没有进入范围与权益主链，只在末端当偏好修正」。
+ * 一个**结构上的证据**是唯一能证明它被修好的东西：`equityBefore` 与
+ * `equityAfter` 是同一手牌、同一牌面、同一随机种子下，
+ * 范围在画像调整**前 / 后**对 Hero 的权益。
+ *
+ * - 两者**相等** ⇒ 画像没有进入主链（无论文案怎么写）
+ * - 两者**不等** ⇒ 画像确实改变了权益，进而改变底池赔率比较与 Call EV
+ */
+export type ProfileRangeEvidence = {
+  /** provider 侧证据（乘数摘要、是否被夹、中文说明） */
+  provider: TendencyEvidence;
+  /** 维度来源（实测 / 手选原型 / 加权合并 / 无证据） */
+  dimensionTier: string;
+  dimensionTierZh: string;
+  dimensionNoteZh: string;
+  /** 调整前后可达组合数（**必须相等**：只改概率，不产生/删除组合） */
+  combosBefore: number;
+  combosAfter: number;
+  equityBefore: number | null;
+  equityAfter: number | null;
+  /** 权益变化（百分点） */
+  equityDeltaPct: number | null;
+};
+
+/**
+ * **决策边际**（与「模型置信度」是两件事）。
+ *
+ * | 量 | 回答的问题 | 判据 |
+ * |---|---|---|
+ * | `DecisionMargin` | 这个决策离「翻面」有多远？ | 真实 EV 与 0 的距离 vs 工程容差带 |
+ * | `ModelConfidence` | 首选比次选好多少？ | 偏好分差（`confidenceOf`） |
+ *
+ * 修复前只有后者，于是「CALL EV = −317.61 筹码、差 392 才算边缘」与
+ * 「模型置信度 LOW」被混成一句话 —— 使用者无法区分
+ * 「数学上差得很远」与「模型自己不确定」。
+ */
+export const DecisionMargin = {
+  /** 明显该弃牌：EV 低于容差带下界 */
+  CLEAR_FOLD: 'CLEAR_FOLD',
+  /** 边缘：EV 落在工程容差带内（**不是**统计误差，是本项目的工程容差） */
+  MARGINAL: 'MARGINAL',
+  /**
+   * 明显优于**弃牌**：EV 高于容差带上界。
+   *
+   * 🔴 名字里必须有 `OVER_FOLD`：这个结论的**证据只有「跟注 vs 弃牌」这一对**
+   * （见 `DecisionMarginScope.VS_FOLD_ONLY`）。它**不能**推出
+   * 「跟注优于其他所有动作」—— 加注从未被算过 EV。
+   * 历史缺陷：把 `CLEAR_CALL` 当作全局最优证明，于是隔离加注被静默拦掉。
+   */
+  CLEAR_CALL_OVER_FOLD: 'CLEAR_CALL_OVER_FOLD',
+} as const;
+export type DecisionMargin = (typeof DecisionMargin)[keyof typeof DecisionMargin];
+
+export const DECISION_MARGIN_ZH: Readonly<Record<DecisionMargin, string>> = Object.freeze({
+  CLEAR_FOLD: '明显弃牌（真实 EV 明显低于 0）',
+  MARGINAL: '边缘（真实 EV 落在工程容差带内）',
+  CLEAR_CALL_OVER_FOLD: '明显优于弃牌（**仅**已证明 CALL > FOLD，未比较加注）',
+});
+
+/**
+ * 容差结论的**作用域**（§1/§17）。
+ *
+ * ⚠️ 没有作用域的「明显」是**无权**越界拦截其他动作的。
+ */
+export const DecisionMarginScope = {
+  /** 只与 FOLD 比较过；对加注/全下**没有**发言权 */
+  VS_FOLD_ONLY: 'VS_FOLD_ONLY',
+  /** 已在同一零点上与同层其他动作（含加注）比较过 */
+  CROSS_ACTION: 'CROSS_ACTION',
+  /** 本节点不是「跟注 vs 弃牌」决策（例如无人下注） */
+  NONE: 'NONE',
+} as const;
+export type DecisionMarginScope = (typeof DecisionMarginScope)[keyof typeof DecisionMarginScope];
+
+export type DecisionMarginFacts = {
+  /** `null` = 本节点不是「跟注 vs 弃牌」决策（例如无人下注） */
+  kind: DecisionMargin | null;
+  kindZh: string;
+  /** 这个结论**能覆盖到哪些动作**（缺省即 `NONE`，不可推断） */
+  scope: DecisionMarginScope;
+  /** 判据用的真实 EV（筹码）；拿不到时为 null */
+  evChips: number | null;
+  /** 工程容差带（筹码） */
+  bandChips: number;
+  noteZh: string;
+};
+
+
+/* ============================================================
  * 决策上下文
  * ============================================================ */
 
@@ -641,7 +802,51 @@ export type DecisionContext = {
    * 只用于如实提示「后面还有 N 个人可能跟进来，实际权益可能更低」。
    */
   playersYetToAct: number;
+  /**
+   * 🔴 **我行动之后还有几个对手必须行动**（TEST HAND MULTIWAY TURN FIX · 问题 3）。
+   *
+   * 取自引擎**自己的行动队列** `state.pendingQueue`（当前行动者之后的部分），
+   * 因此「下注重新打开行动」自动被包含：一个已经过牌的玩家在有人下注后
+   * **仍然要再表态**。
+   *
+   * ⚠️ 与 `playersYetToAct` 的区别：后者是「本街还没说过话的人」（信息不足提示用），
+   * 前者是「我之后还要行动的人」（EV 口径与 closing action 用）。修复前两者被混为一谈，
+   * 于是「UTG+1 过牌 → LJ 下注 → Hero」被写成「本街已无人待行动」。
+   */
+  playersRemainingToAct: number;
+  /** 我这次跟注就是本街最后一次行动（= `playersRemainingToAct === 0`） */
+  isClosingAction: boolean;
   math: MathSnapshot;
+  /**
+   * 🔴 **画像进入范围链路的证据**（P0 架构修复）。
+   *
+   * 只在「画像或近期倾向确实参与了范围调整」时存在 —— 没有画像的牌局
+   * 不会凭空多出这个字段（信息缺失 ≠ 中性调整）。
+   */
+  profileRangeEvidence?: ProfileRangeEvidence;
+  /**
+   * 🔴 **画像是否真的改变了对手范围**（V2.1 去重闸门修复）。
+   *
+   * ## 为什么必须与 `profileRangeEvidence` 分开
+   *
+   * 去重闸门原先读 `profileRangeEvidence?.provider.applied === true`，
+   * 而那**不等于**「画像改了范围」：
+   *
+   * | 通道 | `provider.applied` | 范围是否真的变了 |
+   * |---|---|---|
+   * | 倾向乘法通道 | true | 是 |
+   * | **河牌统一似然通道**（provider 被主动抑制） | **false** | **是** |
+   * | **跛入原型通道**（不经过 provider） | **false** | **是** |
+   * | 画像挂在非首要对手身上 | 证据对象**缺失** | **是** |
+   *
+   * 三个反例都有实测（`reports/V21_REVIEW_3_PIPELINE.md` 的 A/B 洞与
+   * `reports/V21_FAILURE_MODE_AUDIT.md` #12）：同一份「范围强度」证据
+   * 会在权益层与 scorer 层**各计一次**。
+   *
+   * ⚠️ 因此本字段是**唯一**允许被去重闸门读取的依据；
+   * 它缺失（`undefined`）时按 `false` 处理（与历史行为一致）。
+   */
+  profileAppliedToRange?: boolean;
   /**
    * 🔴 **翻后事实包**（2026-09 翻后升级 · P2）——翻前为 `undefined`。
    *
@@ -657,6 +862,21 @@ export type DecisionContext = {
    * 按当前牌面重新加权的统计（见 `rangeFacts.ts`）。
    */
   postflopFacts?: PostflopFacts;
+  /**
+   * **多人 limp 隔离加注**事实包（翻前专属，§2/§4–§8）。
+   *
+   * 只有「Hero 面对 ≥1 个跛入者、且尚无人加注」的翻前节点才有；
+   * 其他节点为 `null` 或 `undefined`。
+   *
+   * 它带来三件决策层自己算不出来的东西：
+   *
+   * 1. 每个 limp 的**到达范围 / 跟注范围 / 再加注范围**（切分后的条件范围）；
+   * 2. 对**跟注范围**（而不是到达范围）的权益 —— 加注只能拿这个当依据；
+   * 3. 隔离加注的**独立代理 EV**（与 CALL 的代理 EV 同一零点 = 弃牌 0）。
+   *
+   * ⚠️ 没有这个包时，决策层**不允许**给隔离加注编造 EV。
+   */
+  preflopIso?: PreflopIsoFacts | null;
   /**
    * **首要对手**的范围快照（= 第一个已实现的对手）。
    *
@@ -693,6 +913,24 @@ export type DecisionContext = {
    */
   opponentRanges: readonly RangeSnapshot[];
   player: PlayerSnapshot | null;
+  /**
+   * 🔴 **PLAYER PROFILE V3**：在这一手实际生效的「标签 Prior + 实测统计」解析结果。
+   *
+   * 它在 `contextBuilder` 里算**一次**，同时供：
+   * ① 响应层（分街系数）；② 诊断/界面（Profile Trace）。
+   *
+   * ⚠️ 严格可选：没有连续统计时它为 `undefined`，全部下游行为与 V2 **逐位一致**。
+   */
+  profileV3?: {
+    baseArchetype: string | null;
+    observedStatCount: number;
+    confidenceTierZh: string;
+    dimensions: Readonly<Record<string, number>>;
+    street: Readonly<Record<string, Readonly<Record<string, number>>>>;
+    trace: readonly Readonly<Record<string, unknown>>[];
+    issues: readonly Readonly<Record<string, unknown>>[];
+    noteZh: string;
+  };
   environment: EnvironmentSnapshot;
   dynamic: DynamicSnapshot;
   /** 时间预算 */
@@ -777,6 +1015,36 @@ export type DecisionDiagnostics = {
   };
   /** 本次动作的决策依据（`CHIP_EV` / `PREFERENCE_SCORE` / `INDIFFERENCE_BAND` / `SAFETY_RULE`） */
   decisionBasis?: { kind: string; noteZh: string };
+  /** 画像进入范围链路的证据（P0 修复；没有画像时为 null） */
+  profileRange?: ProfileRangeEvidence | null;
+  /** 决策边际（**与模型置信度分开**，见 `DecisionMarginFacts`） */
+  decisionMargin?: DecisionMarginFacts;
+  /** 下注决策（每个尺寸独立的响应概率与 BetEV；没有模型时为 null） */
+  betDecision?: Readonly<Record<string, unknown>> | null;
+  /** 🔴 多人 limp 隔离加注事实包（只有「面对跛入且无人加注」的翻前节点才有） */
+  preflopIso?: PreflopIsoFacts | null;
+  /**
+   * 🔴 **多人联合响应树**（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1）。
+   *
+   * ≥2 家时才非 null：逐对手响应 / 联合状态 / 条件权益 / 逐分支 EV / 总 EV，
+   * 以及 `primaryOpponentUsedForEV = false` 这条硬性声明。
+   */
+  multiwayBetDecision?: MultiwayBetFacts | null;
+  /**
+   * 🔴 **动作证据与来源**（PREFLOP EVIDENCE PRIORITY FIX）。
+   *
+   * 回答「这个动作是谁选的、它凭什么覆盖别人」：
+   * `kind`（HARD_CONSTRAINT / SUPPORTED_ACTION_PRIORITY / HEURISTIC_TIEBREAK /
+   * STRATEGIC_HEURISTIC / FALLBACK）、`priority`、`canOverrideEvidence`、
+   * `evidenceScope`、被阻断的覆盖尝试与原因。
+   */
+  decisionSource?: Readonly<Record<string, unknown>> | null;
+  /** 各动作的证据类型 / EV / 边际 / 假设 / 升级条件 */
+  actionEvidence?: readonly Readonly<Record<string, unknown>>[];
+  /** 主推荐动作 */
+  primaryAction?: string | null;
+  /** 备选动作（**不是**最终动作；保留混合策略信息） */
+  alternativeActions?: readonly Readonly<Record<string, unknown>>[];
   /** 触发的降级 */
   degradations: readonly DegradationEntry[];
   /** 使用的版本（追溯「昨天 CALL 今天 FOLD」） */
@@ -1043,8 +1311,55 @@ export const DYNAMIC_FLIP_MIN_CONFIDENCE = 0.5;
  *     **暂时性层**把单层局面改判（红队 `F-06` 局面由 RAISE 变成 CALL）。
  *   - 为什么必须升版本：动作/分类/置信度与理由文案都会变 ——
  *     实测 `POT-14` 由 FOLD 变 CALL，`F-06` 由 CALL 变回 RAISE。
+ * - `1.0.4` — **人物画像量化 V1 真正进入动作似然**（PLAYER PROFILE
+ *   QUANTIFICATION V1 + NODE DETERMINISM AUDIT）：
+ *   - 新增 `ProfileRangeEvidence` 与 `PostflopSnapshot.profileRange`（可选，只读诊断）。
+ *   - 🔴 画像此前是一座**孤儿**：量化模块 `player/behaviorProfile.ts` 完整且单测全绿，
+ *     但 `behaviorProfileOf` **没有任何生产调用者**，界面只设置 `quickProfile`
+ *     而 `contextBuilder` 只认显式传入的 `behaviorProfile` ⇒ 画像从未进入决策链。
+ *     现在由 `quickProfile` 在 `buildDecisionContext` 内派生（`UNKNOWN` 排除）。
+ *   - 画像经**动作似然**进入对手范围：`likelihood = 档位似然 × 似然比(画像/中性)`，
+ *     仅作用于**河牌进攻性动作**，并在同一条动作上抑制旧的倾斜通道（避免同一份
+ *     证据计两次）。中性画像的比值恒为 1.000 ⇒ 与既有模型逐位一致。
+ *   - 为什么必须升版本：**对手范围 → 权益 → EV → 建议**都会随画像变化。
+ *     实测（§十七 黄金手，只改 `quickProfile`）：`bluffMass` 0.0470→0.1136、
+ *     `missedDrawBluffMass` 0.0345→0.0865、`heroEquity` 0.6579→0.6799、
+ *     `callEV` 16.92→17.95（四条单调性全通过）。
+ *   - ⚠️ 明确**未**改动的部分：`handEval` / 底池赔率 / 所需权益 / SPR /
+ *     combo 数学 / 权益算法 / EV 公式 —— 全部冻结（规范 §三十九）。
+ * - `1.0.5` — **统一动作似然（PLAYER PROFILE QUANTIFICATION V2）**：
+ *   - 新增 `estimateUnifiedActionLikelihood`（`domain/player/behaviorProfile.ts`），
+ *     成为河牌进攻性动作**唯一**的似然来源：
+ *     `likelihood = 中性校准层(既有档位权重) × (Π 已施加几率比)^(1/K)`。
+ *   - 🔴 **取消两个生产入口并存的局面**：V1 的 `archetypePriorAvailable` 闸门已移除。
+ *     它存在的前提是「中性标签必须走旧路径」；而 V2 的中性校准层让中性画像
+ *     **逐位等于**旧结果（实测 48/48 网格单元最大绝对差 **0**），
+ *     于是闸门是恒等变换，保留它只会长期并存两个模型（§四十五）。
+ *   - 条件化由**有界线性**改为**几率比**（`odds(r)/odds(π)`），动态范围 ≈1.75× → ≈19×；
+ *     多条**相关**条目按**结构槽位数**取几何平均（不是乘积：乘积实测放大 417×
+ *     并撞上钳位，会把「错过听牌」与「坚果」压平成同一个值）。
+ *   - `MEDIUM_VALUE` 从 `RiverComboClass` **删除**（生产永不可达的死成员）。
+ *   - 为什么必须升版本：**对手范围 → 权益 → EV → 建议**都随画像变化。
+ *     实测（§十七 黄金手，只改 `quickProfile`）：`bluffMass` 0.78%→5.00%、
+ *     `missedDrawBluffMass` 0.49%→3.40%、`heroEquity` 55.81%→57.61%（+1.80pp）、
+ *     `callEV` 12.230→13.076；四条单调性全部成立。
+ *   - ⚠️ 仍**未**改动的部分：上一条列出的全部数学层，同样冻结。
+ *
+ * - `1.0.5` → **`1.0.6`**（PLAYER PROFILE V3 · 连续统计 + 样本置信度）：
+ *   - `DecisionContext` 新增**可选**字段 `profileV3`（「标签 Prior + 实测连续统计」
+ *     的解析结果与逐统计 trace）。它是**诊断 / 审计**字段，**不参与任何判定**。
+ *   - ⚠️ **为什么必须升版本**：`artifactDefinitions.ts:314` 对本文件的纪律是
+ *     「该文件改动**必须**升 `ALPHA_DECISION_MODEL_VERSION`」，措辞**无条件**。
+ *     且 `DecisionContext` 的形状变化会影响指纹 / 确定性比对的 digest ——
+ *     不升版本就无法回答「这手的 digest 为什么变了」。
+ *   - 🔴 **明确未改动的部分（全部冻结）**：`handEval` / 底池赔率 / 所需权益 /
+ *     SPR / combo 数学 / 权益算法 / EV 公式 / `MATERIALITY_THRESHOLDS` /
+ *     全部判定阈值 / `MathSnapshot` 既有字段语义。
+ *   - V3 只通过**既有**通道生效：`ResponseTendencies` 新增三个**可选**分街系数
+ *     （`streetFoldScale` / `streetCallScale` / `streetCheckRaiseScale`），
+ *     缺省**恒为精确的 1** ⇒ 无连续统计时下游**逐位不变**（有 P1/P1b 锁定）。
  */
-export const ALPHA_DECISION_MODEL_VERSION = '1.0.3';
+export const ALPHA_DECISION_MODEL_VERSION = '1.0.6';
 /**
  * 决策**上下文**（`DecisionContext` / `MathSnapshot`）的形状与语义版本。
  *
