@@ -158,6 +158,85 @@ export type OpponentRangeFacts = {
     /** 分类的证据质量（可达组合数太少时结论不可靠） */
     evidenceQuality: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
   } | null;
+  /**
+   * 🔴 **概率质量口径**的河牌动作分类（P0 修复 · 使用者 §7）。
+   *
+   * 与 `counts` 的区别只有一处：`counts` 数**组合个数**，这里累加**概率质量**。
+   * 画像调整**只改概率、不改组合数**，因此只有质量口径能看见它 ——
+   * 计数版在画像前后逐位相同（这正是修复前「证据里看不到画像」的原因）。
+   */
+  actionMasses: {
+    totalMass: number;
+    reachableRangeCount: number;
+    clearValueMass: number;
+    thinValueMass: number;
+    showdownMass: number;
+    uncertainMass: number;
+    bluffCandidateMass: number;
+    valueMassShare: number;
+    bluffMassShare: number;
+    showdownMassShare: number;
+    uncertainMassShare: number;
+    evidenceQuality: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+  } | null;
+  /**
+   * 🔴 **画像手牌类别口径的概率质量**（PLAYER PROFILE QUANTIFICATION V1 · §二十/§四十三）。
+   *
+   * ## 为什么它与 `actionMasses` 不同、且必须单独存在
+   *
+   * `actionMasses` 用的是 `classifyRiverAction` 的**动作类别**
+   * （明确取值 / 薄价值 / 摊牌 / 诈唬候选）—— 它回答
+   * 「他会拿哪些牌下注」。而画像模型 `betLikelihoodOf` 需要的是
+   * **9 类 `RiverComboClass`**，其中「诈唬候选」还要再分成
+   * 「错过同花听 / 错过顺子听 / 两者都错过 / 纯空气」。
+   *
+   * 因此本字段用 `riverComboClassOf`（**同一套判据的单一事实来源**）
+   * 重新按画像类别累加质量。§二十 要求
+   * `03B.bluffMass > 03A.bluffMass` 与
+   * `03B.missedDrawBluffMass > 03A.missedDrawBluffMass` 是**两条独立断言**，
+   * 只有在有这一层分解时才可能被测到。
+   *
+   * ⚠️ 质量占比的分母是 `totalMass`（可达且已扣除死牌的质量）；
+   * 分类失败（牌力比较异常 / 与 Hero·公共牌重叠）的质量单列
+   * `unclassifiedMass`，**不计入**任何一侧 —— 不猜。
+   */
+  profileClassMasses: {
+    totalMass: number;
+    reachableRangeCount: number;
+    nutValueMass: number;
+    strongValueMass: number;
+    thinValueMass: number;
+    showdownMass: number;
+    missedFlushMass: number;
+    missedStraightMass: number;
+    missedComboMass: number;
+    pureAirMass: number;
+    /** 价值质量 = 坚果 + 强 + 中等 + 薄 */
+    valueMass: number;
+    /** 错过听牌质量 = 同花 + 顺子 + 两者 */
+    missedDrawMass: number;
+    /** 诈唬质量 = 错过听牌 + 纯空气 */
+    bluffMass: number;
+    /** 分类失败的归一化占比（> 0 表示这一层证据不完整） */
+    unclassifiedMassShare: number;
+    /**
+     * V2 §二十七：**原始支持集**组合数（未与 Hero/公共牌重叠、prior > 0）。
+     *
+     * ⚠️ 它**不是**「等权手牌数」—— 见 `effectiveCombos`。
+     */
+    rawSupportCombos: number;
+    /**
+     * V2 §二十七：后验分布的**等效组合数** = `(Σp)² / Σp²`（逆辛普森 / 参与率）。
+     *
+     * 等权时等于 `rawSupportCombos`；一个组合独占时 → 1。
+     * 它才是「有多少手牌在真正起作用」的度量。
+     */
+    effectiveCombos: number | null;
+    /** V2 §二十八：按后验权重降序累计达到 90% 质量所需的最少组合数 */
+    posteriorMassCombos90: number | null;
+    /** V2 §二十八：同上，95% 质量 */
+    posteriorMassCombos95: number | null;
+  } | null;
 };
 
 /** 听牌剖面（Hero 自己） */

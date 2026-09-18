@@ -67,6 +67,11 @@
 import { RelativeHandRole } from './types.ts';
 import { multiwayAdjustment } from './multiway.ts';
 import type { RangeCompressionState } from './rangeCompression.ts';
+import {
+  neutralResponseTendencies,
+  type HeroDrawPotential,
+  type ResponseTendencies,
+} from './betResponse.ts';
 
 export type ValueBetVerdict =
   | 'CLEAR_VALUE'
@@ -80,7 +85,40 @@ export type ValueBetAssessment = {
   worseCallDensity: number;
   betterHandsContinue: boolean;
   betterContinueDensity: number;
+  /**
+   * 🔴 **同一口径的新名字**（BET DECISION ENGINE PHASE 1 · P0-1 / §8）。
+   *
+   * 审计确认：这个量是 `strongerShare × 0.7 + 可信度 × 0.15 − 湿润度 × 0.1`
+   * 的**归一化危险指数**，不是「被加注的概率」。旧名 `raiseRisk` 会让 UI
+   * 写出「加注风险 54.2%」这种把指数读成概率的文案。
+   *
+   * 现在：
+   * - 真实概率由 `betDecision.sizes[].raiseLikelihood` 提供（响应模型，方案 B）；
+   * - 本指数**不再参与评分**（它此前与 `betterContinueDensity` 重复收取
+   *   `strongerShare` 这份同一证据）；
+   * - `raiseRisk` 保留为**兼容别名**（逐位相同），只供旧调用方与诊断读取。
+   */
+  raisePressureIndex: number;
+  /** 兼容别名：与 `raisePressureIndex` 恒等（旧字段名） */
   raiseRisk: number;
+  /**
+   * 🔴 **单一事实来源的「对手更强」压力**（P0-1）。
+   *
+   * = `strongerShare × (0.6 + 0.4 × 进攻可信度)`。评分里**只收一次费**
+   *（`× 0.35`），不再额外叠加 `raiseRisk`，从而消除重复计票。
+   */
+  betterHandPressure: number;
+  /** 画像的「爱跟」倾向缩放（响应层；CALLING_STATION > 1） */
+  callTendencyScale: number;
+  /** 半诈唬质量 0..1（由 Hero 自身听牌质量与坚果潜力决定；**不进权益**） */
+  semiBluffQuality: number;
+  /** 画像证据归属（P0-3 debug） */
+  profileEvidence: {
+    rangeLayerApplied: boolean;
+    scorerLayerApplied: boolean;
+    doubleCountBlocked: boolean;
+    noteZh: string;
+  };
   showdownValue: number;
   /**
    * 🔴 **未来补牌保护分**（原名 `protectionBenefit`，语义不变，名字收窄）。
@@ -170,6 +208,36 @@ export type ValueGateInput = {
    * 处理（仅供无法确定街道的直接调用方；生产路径必须传）。
    */
   hasCardsToCome?: boolean;
+  /**
+   * 🔴 **响应层倾向**（BET DECISION ENGINE PHASE 1）。
+   *
+   * 「他拿着这些牌会怎么做」与 range 层的「他有什么牌」是**两个不同的量**，
+   * 因此允许使用同一份画像维度 —— 但**同一份证据不得在同一个量上收两次费**：
+   * 压缩因子已由 range 层承担，scorer 层不再乘 `profileCompressionMultiplier`。
+   *
+   * 缺省 = 中立（全部为 1）。
+   */
+  tendencies?: ResponseTendencies;
+  /**
+   * 🔴 **Hero 自身听牌潜力**（P0-5）。
+   *
+   * ⚠️ 它**不进权益**（权益引擎已把未来发牌跑完），只用于两件事：
+   * 调制**半诈唬质量**（`semiBluffQuality`）与（在响应模型里）权益实现因子。
+   * 缺省 = 没有听牌（`null` 按「未知」处理，不给任何加成）。
+   */
+  draw?: HeroDrawPotential | null;
+  /**
+   * 🔴 **画像证据归属**（P0-3 的 debug 出口）。
+   *
+   * range 层已用画像改过 `P(手牌 | 动作)` 时，scorer 层必须**阻断**同一份
+   * 画像的第二次加权，并把这个事实暴露出来（绝不静默）。
+   */
+  profileEvidence?: {
+    rangeLayerApplied: boolean;
+    scorerLayerApplied: boolean;
+    doubleCountBlocked: boolean;
+    noteZh: string;
+  };
 };
 
 /** 角色 → 0..1 的强度刻度（仅用于**比较**，不是胜率） */
@@ -245,12 +313,21 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
    * 判据 = 「他手里有多少更差的牌」×「他有多愿意用非坚果牌继续」。
    * 前者是**相对于我的牌**的质量（`weakerShare`）；后者来自范围压缩状态
    *（摊牌价值密度 / 中等牌密度：他越黏，越可能用更差的牌跟）。
+   *
+   * 🔴 **P0-2 修复**：还要乘上**响应层**的「爱跟」倾向
+   *（`tendencies.callScale`，跟注站 > 1、紧手 < 1）。
+   * 修复前这个方向是**反的**：跟注站画像降低压缩因子 ⇒ airDensity 上升、
+   * 中等牌密度下降 ⇒ `stickiness` 下降 ⇒ `worseCallDensity` **下降** ——
+   * 语义上「跟注站 ⇒ 更差的牌更不会跟」，与画像含义相反
+   *（实测：0.1929(NORMAL) → 0.1912(CALLING_STATION)）。
    */
+  const tendencies = input.tendencies ?? neutralResponseTendencies();
   const stickiness = clamp01(
     input.compression.showdownDensity * 0.6 + input.compression.mediumStrengthDensity * 0.4 + 0.25,
   );
   const worseCallDensity = clamp01(
-    weakerShare * (0.55 + 0.45 * stickiness) - multi.multiwayValueThresholdAdjustment * 0.5,
+    weakerShare * (0.55 + 0.45 * stickiness) * tendencies.callScale -
+      multi.multiwayValueThresholdAdjustment * 0.5,
   );
   const worseHandsCanCall = worseCallDensity > 0.25;
 
@@ -267,13 +344,27 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
   const betterHandsContinue = betterContinueDensity > 0.45;
 
   /*
-   * 问题 3：更好的牌会不会加注？
+   * 🔴 **P0-1：「对手更强」这份证据只收一次费。**
    *
-   * 加注风险 = 「有多少牌比我好」× 进攻可信度 + 少量**诈唬加注**成分
-   *（后者与我的牌无关，所以单独一项，且权重低）；
-   * 且**听牌未成的湿面会降低**这个风险（他的加注里可能有半诈唬）。
+   * 修复前同一个 `strongerShare` 同时进 `betterContinueDensity × 0.35`
+   * **与** `raiseRisk × 0.2`（而 `raiseRisk` 本身又以 `strongerShare × 0.7` 为主项）
+   * ⇒ 实测（转牌半诈唬节点）：两项合计 −0.2967，而半诈唬的全部正项只有 +0.1982，
+   * 结构上把下注分压成负数。
+   *
+   * 现在：`betterHandPressure` 是**唯一**的「他更强」压力项，只收 0.35 一次；
+   * `raisePressureIndex` 降级为**只读指数**（新名字见 §8），真实加注概率
+   * 由响应模型的 `raiseLikelihood` 表达（独立信息：加注倾向 + 牌面 + 尺寸 + 价格）。
    */
-  const raiseRisk = clamp01(
+  const betterHandPressure = betterContinueDensity;
+
+  /*
+   * 问题 3：更好的牌会不会加注？（**已降级为只读指数**，不参与评分）
+   *
+   * 加注压力指数 = 「有多少牌比我好」× 进攻可信度 + 少量**诈唬加注**成分
+   *（后者与我的牌无关，所以单独一项，且权重低）；
+   * 且**听牌未成的湿面会降低**这个指数（他的加注里可能有半诈唬）。
+   */
+  const raisePressureIndex = clamp01(
     strongerShare * 0.7 +
       input.compression.aggressionCredibility * 0.15 -
       clamp01(input.wetness) * 0.1,
@@ -327,17 +418,43 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
    */
   const fairShare = 1 / (opponentCount + 1);
   const valuePart = clamp01((equity - fairShare) / Math.max(1e-6, 1 - fairShare));
-  const bluffComponent =
+
+  /*
+   * 🔴 **P0-5：Hero 自身听牌进入半诈唬质量**（但**绝不**进入权益）。
+   *
+   * `computeEquity` 已经把未来发牌跑完 ⇒ 补牌不能再加一次权益。
+   * 因此听牌只调制**半诈唬质量**：
+   *
+   * ```text
+   * semiBluffQuality = 0.35 + 0.40 × 听牌质量 + 0.25 × 坚果潜力      （河牌 / 无听牌 ⇒ 0.35）
+   * bluffComponent   = 原角色项 × (0.6 + 0.4 × semiBluffQuality)
+   * ```
+   *
+   * 效果（可复算）：纯空气 ⇒ 质量 ≈ 0.39（缩放 0.755）；
+   * 坚果同花听（补牌 12 / 坚果潜力 1.0）⇒ 质量 ≈ 0.92（缩放 0.968）。
+   * 两者**不再相同**（TEST 5），且差值有界（≤ 0.4 × 0.6 = 24%）。
+   *
+   * ⚠️ 河牌没有补牌 ⇒ 听牌项恒为 0（`cardsToCome === 0`），
+   * 与「河牌不存在未来权益」这条不变量一致。
+   */
+  const draw = input.draw ?? null;
+  const semiBluffQuality =
+    draw === null || draw.cardsToCome === 0
+      ? 0.35
+      : clamp01(0.35 + 0.4 * draw.drawQuality + 0.25 * draw.nutPotential);
+  const semiBluffScale = 0.6 + 0.4 * semiBluffQuality;
+
+  const bluffComponentBase =
     input.role === RelativeHandRole.PURE_BLUFF || input.role === RelativeHandRole.SEMI_BLUFF
       ? clamp01(clamp01(input.wetness) * 0.4 + (1 - input.compression.airDensity) * 0.2 + 0.2)
       : 0;
+  const bluffComponent = bluffComponentBase * semiBluffScale;
 
   const betScoreRaw =
     valuePart * (0.5 + 0.5 * worseCallDensity) + // 更差牌会跟 ⇒ 价值真正兑现
     bluffComponent * (0.5 - multi.multiwayBluffPenalty) +
     protectionBenefit * 0.15 -
-    betterContinueDensity * 0.35 -
-    raiseRisk * 0.2;
+    betterHandPressure * 0.35;
 
   /*
    * 🔴 **核心 +EV 规则**：摊牌价值高 + 更差的牌跟得少 + 更好的牌继续多
@@ -377,7 +494,12 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
       `对手范围里有 ${(strongerShare * 100).toFixed(1)}% 的牌比我这手更好且会继续 ⇒ 价值下注容易被反制`,
     );
   }
-  if (raiseRisk > 0.55) reasons.push('被加注的风险偏高（比他好的牌占比 × 进攻可信度）');
+  if (raisePressureIndex > 0.55) {
+    reasons.push(
+      '被加注**压力指数**偏高（比他好的牌占比 × 进攻可信度）—— ⚠️ 这是**归一化指数，不是概率**；' +
+        '真实加注概率见 `betDecision.sizes[].raiseLikelihood`',
+    );
+  }
   if (!worseHandsCanCall) {
     reasons.push(
       `更差的牌跟注意愿不足（更差占比 ${(weakerShare * 100).toFixed(1)}%、黏度 ${stickiness.toFixed(2)}）：这不是一个「取值」场合`,
@@ -414,7 +536,19 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
     worseCallDensity,
     betterHandsContinue,
     betterContinueDensity,
-    raiseRisk,
+    raisePressureIndex,
+    raiseRisk: raisePressureIndex,
+    betterHandPressure,
+    callTendencyScale: tendencies.callScale,
+    semiBluffQuality,
+    profileEvidence:
+      input.profileEvidence ??
+      Object.freeze({
+        rangeLayerApplied: false,
+        scorerLayerApplied: false,
+        doubleCountBlocked: false,
+        noteZh: '未提供画像证据归属（调用方未传）—— 按「未使用画像」处理',
+      }),
     showdownValue,
     futureCardProtectionScore: protectionBenefit,
     protectionBenefit,
@@ -423,7 +557,8 @@ export function assessValueBet(input: ValueGateInput): ValueBetAssessment {
     /*
      * ⚠️ 本模块**永远**只产出偏好分：它没有对手动作概率，也没有 payoff，
      * 因此不满足「EV = Σ P(outcome) × payoff(outcome)」的定义。
-     * 真正的 chip EV 在 `math.callEV`（节点增量口径，带单位与参考点）。
+     * 真正的 chip EV 在 `math.callEV`（节点增量口径，带单位与参考点）；
+     * 下注三分支的**启发式代理 EV** 在 `betDecision`（明确标注 HEURISTIC）。
      */
     metricKind: 'PREFERENCE_SCORE',
     estimatedBetEVScore: betScore,

@@ -948,6 +948,12 @@ test('F-10：`ManualHandInput` 的**每一个**字段都必须影响哈希', () 
       ...reference,
       seatStacksBB: { ...reference.seatStacksBB, [Position.BB]: 60 },
     }),
+    // MULTIWAY RESPONSE TREE：逐座位画像必须影响哈希
+    //（只改 CO 的类型，就会改变他自己在多人联合树里的 fold/call/raise）
+    seatProfiles: () => ({
+      ...reference,
+      seatProfiles: { [Position.CO]: 'CALLING_STATION' },
+    }),
     // Table Topology Correction：本手拓扑也必须影响哈希
     occupiedPositions: () => ({
       ...reference,
@@ -972,6 +978,7 @@ test('F-10：`ManualHandInput` 的**每一个**字段都必须影响哈希', () 
     'villain',
     'villains',
     'seatStacksBB',
+    'seatProfiles',
     'occupiedPositions',
     'buttonPosition',
   ];

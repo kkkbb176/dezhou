@@ -153,6 +153,113 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '分类与调整因子变化（含维度中立点、标签阈值）→ ' +
       '**画像对范围的影响幅度发生变化**',
   },
+  {
+    path: 'src/domain/player/archetypeDimensions.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '手选画像 → 连续维度的原型表变化 → ' +
+      '**画像通过似然通道对范围的影响发生变化**（P0 主链修复的入口）',
+  },
+  {
+    path: 'reports/PROFILE_RANGE_MAINCHAIN_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '画像 → Range → 权益主链修复的证据与验收表变化 → **本报告必须与新证据同步**',
+  },
+  {
+    path: 'src/domain/player/tendencyProvider.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '画像 / 近期倾向进入动作似然的方式变化（弱牌锚点、价值倾斜、观测倾斜、工程护栏）→ ' +
+      '**范围后验、Hero 权益与 Call EV 全部发生变化**',
+  },
+  {
+    path: 'src/domain/postflop/betResponse.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ ' +
+      '**所有「无人下注」节点的下注决策与尺寸选择都会变化**',
+  },
+  {
+    path: 'reports/BET_DECISION_ENGINE_PHASE1_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '下注决策引擎 Phase 1 的验收表与限制清单变化 → **本报告必须与新证据同步**',
+  },
+  {
+    path: 'reports/RIVER_LEGAL_ACTION_TREE_FIX_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '河牌合法动作树的验收表与墨菲核对变化 → **本报告必须与新证据同步**',
+  },
+  {
+    path: 'src/domain/decision/evidencePriority.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '动作证据优先级与覆盖权限变化（谁能覆盖谁、UNKNOWN 是否参与比较、MARGINAL 是否允许启发式打断）→ ' +
+      '**所有面对下注节点的动作来源与最终动作都可能变化**',
+  },
+  {
+    path: 'reports/PREFLOP_EVIDENCE_PRIORITY_FIX_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '证据优先级修复的验收表与覆盖权限规则变化 → **本报告必须与新证据同步**',
+  },
+  {
+    path: 'reports/MULTI_LIMP_ISOLATION_RAISE_PHASE1_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '多人 limp 隔离加注（Phase 1）的根因、模型、固定节点验收表与变异测试结果 → ' +
+      '**本报告必须与 `limpIsolation.ts` 的实际公式同步**',
+  },
+  {
+    path: 'scripts/preflop-iso-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact: '隔离加注事实包探针（逐家 limp 响应 / 权益 / EV 分解）→ 仅诊断用，不参与决策',
+  },
+  {
+    path: 'scripts/iso-mutations.ts',
+    category: ManifestCategory.REPORT,
+    impact: '隔离加注的变异测试（M1–M8，逐个把修复改回坏版本）→ 仅诊断用，不参与决策',
+  },
+  {
+    path: 'scripts/multiway-mutations.ts',
+    category: ManifestCategory.REPORT,
+    impact: '多人联合响应树的变异测试（M1–M8：平均弃牌率 / primary 决定 EV / 共用响应 / 单挑平均 / 丢分支 / 重复扣成本 / 尺寸复用 / 画像失效）→ 仅诊断用',
+  },
+  {
+    path: 'scripts/seat-profile-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact: '逐座位画像 → 维度 → 响应倾向探针 → 仅诊断用',
+  },
+  {
+    path: 'scripts/station-size-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact: '跟注站 / 紧手尺寸方向探针 → 仅诊断用',
+  },
+  {
+    path: 'src/domain/player/behaviorProfile.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact: '人物画像量化（StatEvidence/收缩/行为条目/节点上下文/动作似然/combo 重加权/物性检测）→ 河牌面对下注的加权范围与权益将随画像变化',
+  },
+  {
+    path: 'reports/PLAYER_PROFILE_QUANTIFICATION_V1_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '画像量化的数据模型、收缩公式、03A/03B 单调性验收与墨菲审计 → 本报告必须与 behaviorProfile.ts 同步',
+  },
+  {
+    path: 'reports/TEST_HAND_MULTIWAY_TURN_FIX_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact: '真实测试牌局定点修复（Board Delta / 复合牌力 / 非 closing action / RAISE 排序语义）→ 本报告必须与实际公式同步',
+  },
+  {
+    path: 'scripts/board-delta-probe.ts',
+    category: ManifestCategory.REPORT,
+    impact: '牌面变化分类探针（A–D 用例）→ 仅诊断用',
+  },
+  {
+    path: 'reports/MULTIWAY_POSTFLOP_RESPONSE_TREE_PHASE1_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '多人翻后响应树（Phase 1）的根因、联合树结构、固定节点验收表、尺寸饱和审计与变异结果 → ' +
+      '**本报告必须与 `betResponse.ts` 的联合公式同步**',
+  },
 
   /* ---- 动态行为引擎（Step 7） ---- */
   {
@@ -240,6 +347,13 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact:
       '合法动作与尺寸网格变化 → **决策可输出的动作集合与尺寸集合发生变化**' +
       '（必须与 Poker Core 的校验保持一致）',
+  },
+  {
+    path: 'src/app/manualInput/limpIsolation.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '多人 limp 隔离加注模型（limp 到达范围 / 响应树 / 联合响应 / 尺寸 / 身后风险 / 代理 EV）→ ' +
+      '**跛入池里「加注 vs 跟注」的依据与尺寸发生变化**（翻前，代理 EV，RAKE 未实现）',
   },
   {
     path: 'src/app/manualInput/contextBuilder.ts',

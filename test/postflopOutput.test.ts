@@ -140,13 +140,30 @@ test('P3-4：界面必须能看到「角色 / 牌面变化 / 价值判断 / 承�
    * 🔴 「动作偏好顺序」必须**真的按分数降序**：快照里的顺序是候选动作的构造顺序，
    * 直接拼接会显示成 `CHECK 0.25 > BET_SMALL 0.69`（读起来像首选过牌）。
    */
-  const orderRow = rows.find((x) => x.label.includes('偏好顺序'));
-  assert.ok(orderRow !== undefined, '诊断区必须含偏好顺序');
+  /*
+   * 🔴 TEST HAND MULTIWAY TURN FIX · 问题 4：**语义分离**。
+   * 现在有两行：EV 支持的动作（可互相比较） 与
+   * 战略候选（**无 EV**，上面的分数不可比）。
+   * 旧的单行 动作偏好顺序 会把 CALL / FOLD / RAISE 的三个分数摆成同一把尺子，
+   * 而 RAISE 的 EV 是 NOT_AVAILABLE —— 这正是使用者点出的误导。
+   */
+  const orderRow = rows.find((x) => x.label.includes('EV 支持的动作'));
+  assert.ok(orderRow !== undefined, `诊断区必须含「EV 支持的动作」行，实际：${labels}`);
+  const candidateRow = rows.find((x) => x.label.includes('战略候选'));
+  assert.ok(candidateRow !== undefined, '诊断区必须把「无 EV 的战略候选」单独成行');
   const parsed = [...orderRow!.value.matchAll(/([A-Z_]+)\s+([0-9.]+)/g)].map((m) => ({
     action: m[1]!,
     score: Number(m[2]!),
   }));
   assert.ok(parsed.length >= 2, `偏好顺序必须至少含两个动作，实际：${orderRow!.value}`);
+  assert.ok(
+    !/RAISE\s+[0-9.]+/.test(orderRow!.value),
+    '加注（EV = NOT_AVAILABLE）不得出现在「EV 支持的动作」这一行里：' + orderRow!.value,
+  );
+  assert.ok(
+    /RAISE/.test(candidateRow!.value) || candidateRow!.value.includes('没有无 EV 的候选'),
+    '战略候选行必须如实列出无 EV 的动作（或声明本次没有）',
+  );
   for (let i = 1; i < parsed.length; i += 1) {
     assert.ok(
       parsed[i - 1]!.score >= parsed[i]!.score,

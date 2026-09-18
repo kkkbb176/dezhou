@@ -277,7 +277,19 @@ test('C3-3：范围更新路径必须**真的**用牌面档位（接线锁）', 
 
   assert.match(body, /boardRelativeTierOf/, '范围更新必须调用牌面相对档位');
   assert.match(body, /boardAtAction/, '必须用「该行动当时」的公共牌，而不是最终牌面');
-  assert.match(body, /Street\.FLOP \? 3/, '公共牌前缀必须按街道截取（翻牌 3 / 转牌 4 / 河牌 5）');
+  /*
+   * 公共牌前缀的截取逻辑（翻牌 3 / 转牌 4 / 河牌 5）在 2026-09 的 P0 修复里
+   * 被**抽成单一事实来源** `boardAtStreetOf`（画像的弱牌判据也要用它，
+   * 两处各写一份 `slice` 迟早漂移）。因此锁点从「函数体内出现三元表达式」
+   * 改为「函数体调用该 helper」+「helper 本身按街道截取」——
+   * 锁的是**更强**的性质：全项目只有一处截取逻辑。
+   */
+  assert.match(body, /boardAtStreetOf\(state, record\.street\)/, '必须经统一的牌面前缀函数取「当时」的公共牌');
+  assert.match(
+    source,
+    /function boardAtStreetOf[\s\S]{0,400}?Street\.FLOP \? 3[\s\S]{0,200}?Street\.TURN \? 4[\s\S]{0,200}?Street\.RIVER \? 5/,
+    '公共牌前缀必须按街道截取（翻牌 3 / 转牌 4 / 河牌 5），且只有一处实现',
+  );
 });
 
 test('C3-2：牌面相对强度的映射必须覆盖全部形态，且牌面不足 3 张时返回 null', () => {

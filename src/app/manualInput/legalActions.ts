@@ -189,6 +189,27 @@ export type SizeOption = {
 };
 
 /**
+ * 网格里最接近 `toAmount` 的尺寸（**升序扫描、并列取更小的那个**）。
+ *
+ * 🔴 共享实现：决策层选「用哪个合法加注尺寸」、以及隔离加注模型算 EV 之前
+ * 先把目标尺寸落到合法网格上，**必须是同一条规则** —— 两处规则一旦不同，
+ * 模型算的 EV 就属于另一个尺寸，那等于拿别的动作的数字冒充本动作。
+ */
+export function closestSizeTo<T>(
+  grid: readonly T[],
+  toAmount: number,
+  amountOf: (item: T) => number,
+): T | null {
+  let best: T | null = null;
+  for (const item of grid) {
+    if (best === null || Math.abs(amountOf(item) - toAmount) < Math.abs(amountOf(best) - toAmount)) {
+      best = item;
+    }
+  }
+  return best;
+}
+
+/**
  * 生成合法尺寸网格。
  *
  * ## 🔴 BET 与 RAISE 的基准**不一样**（本轮修复的核心）

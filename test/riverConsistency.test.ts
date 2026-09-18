@@ -307,12 +307,27 @@ test('R4：动作 / 指标 / 解释必须属于同一体系（守卫零违规，
     );
 
     // 决策依据必须写出来，且与「动作 / EV / 容差带」三者自洽
+    /*
+     * 🔴 PREFLOP EVIDENCE PRIORITY FIX：依据来源现在由**证据裁决**决定
+     * （加注/全下不再一律写 `SAFETY_RULE` —— 那是战略偏好，不是安全约束）。
+     * 因此独立复算必须从**快照自己声明的来源**出发，并额外锁死两件事：
+     * ① 快照必须真的声明了来源；② 声明的来源必须是合法值。
+     */
+    const declaredSource =
+      (decision.diagnostics.decisionSource as Readonly<Record<string, unknown>> | null)?.['kind'] ?? null;
+    if (decision.action === 'RAISE' || decision.action === 'ALL_IN') {
+      assert.ok(
+        declaredSource === null || typeof declaredSource === 'string',
+        '加注/全下必须声明动作来源（decisionSource.kind）',
+      );
+    }
     const basis = decisionBasisOf({
       action: decision.action,
       actionable: decision.actionable,
       facingBet: context.math.callCost > 0,
       callEV: context.math.callEV,
       uncertaintyBand: band,
+      evidenceSource: typeof declaredSource === 'string' ? declaredSource : null,
     });
     assert.equal(
       post.decisionBasisKind,

@@ -87,6 +87,12 @@ export type ConsistencyViolation = {
  */
 export type DecisionBasisKind =
   | 'CHIP_EV'
+  | 'ACTION_EV_COMPARISON'
+  | 'SUPPORTED_ACTION_PRIORITY'
+  | 'HEURISTIC_TIEBREAK'
+  | 'STRATEGIC_HEURISTIC'
+  | 'FALLBACK'
+  | 'HARD_CONSTRAINT'
   | 'PREFERENCE_SCORE'
   | 'MATH_INDIFFERENCE'
   | 'MODEL_UNCERTAINTY_OVERRIDE'
@@ -121,11 +127,44 @@ export function decisionBasisOf(input: {
   allowUncertaintyOverride?: boolean;
   /** 本次动作是否由覆盖规则产生（由决策层告知） */
   overrodeByUncertainty?: boolean;
+  /**
+   * 🔴 **无人下注时是否由「下注决策模型」的 EV 比较选出**（BET DECISION ENGINE）。
+   *
+   * 真 ⇒ 依据写 `ACTION_EV_COMPARISON`（并附合法动作表），
+   * **不再**说是「价值守门器的偏好分」—— 解释层与行为层必须同一事实来源（§9）。
+   */
+  byBetDecisionModel?: boolean;
+  /** 合法动作与 EV（供 `ACTION_EV_COMPARISON` 的依据说明） */
+  betDecisionTableZh?: string;
+  /**
+   * 🔴 **证据裁决来源**（PREFLOP EVIDENCE PRIORITY FIX）。
+   *
+   * 只要下注/加注分支经过了 `chooseByEvidencePriority`，就必须把真实来源传进来：
+   * `SUPPORTED_ACTION_PRIORITY` / `HEURISTIC_TIEBREAK` / `STRATEGIC_HEURISTIC` /
+   * `FALLBACK` / `HARD_CONSTRAINT`。
+   *
+   * ⚠️ 修复前「加注/全下」一律写 `SAFETY_RULE` —— 而它实际表达的是
+   * **战略偏好**（「这种牌通常加注」），不是安全约束。使用者 §17 要求把
+   * 「安全」这个名字只留给真正的合法性/输入保护。
+   */
+  evidenceSource?: string | null;
+  evidenceNoteZh?: string | null;
 }): DecisionBasis {
   if (!input.actionable || input.action === null) {
     return { kind: 'NO_ACTION', noteZh: '信息不足 ⇒ 不给方向（这不是「弃牌」）' };
   }
   if (!input.facingBet) {
+    if (input.byBetDecisionModel === true) {
+      return {
+        kind: 'ACTION_EV_COMPARISON',
+        noteZh:
+          '无人下注：动作由**下注决策模型**的合法动作 EV 比较选出' +
+          (input.betDecisionTableZh === undefined || input.betDecisionTableZh === ''
+            ? ''
+            : ` —— ${input.betDecisionTableZh}`) +
+          '（⚠️ 启发式代理 EV，不是 Solver EV；零点 = 当前决策点，已投入筹码为沉没成本）',
+      };
+    }
     return {
       kind: 'PREFERENCE_SCORE',
       noteZh: '无人下注：动作由**价值守门器的偏好分**（下注分 vs 过牌分）选出 —— 内部评分，不是 chip EV',
@@ -165,9 +204,29 @@ export function decisionBasisOf(input: {
           : ''),
     };
   }
+  const evidenceKinds: readonly string[] = [
+    'SUPPORTED_ACTION_PRIORITY',
+    'HEURISTIC_TIEBREAK',
+    'STRATEGIC_HEURISTIC',
+    'FALLBACK',
+    'HARD_CONSTRAINT',
+  ];
+  if (input.evidenceSource !== undefined && input.evidenceSource !== null && evidenceKinds.includes(input.evidenceSource)) {
+    return {
+      kind: input.evidenceSource as DecisionBasisKind,
+      noteZh:
+        `来源 = ${input.evidenceSource}` +
+        (input.evidenceNoteZh === undefined || input.evidenceNoteZh === null ? '' : ` —— ${input.evidenceNoteZh}`) +
+        (input.evidenceSource === 'STRATEGIC_HEURISTIC' || input.evidenceSource === 'HEURISTIC_TIEBREAK'
+          ? '。⚠️ 加注 EV 不可得（缺 fold-to-3bet / call-3bet / 4bet 响应数据）⇒ 这是**战略启发式**，不是 EV 结论'
+          : ''),
+    };
+  }
   return {
     kind: 'SAFETY_RULE',
-    noteZh: '加注/全下：本项目**没有**可信的对手弃牌率估计 ⇒ 加注 EV 不可算，动作由安全规则（`shouldRaise` 量级保护 + 权益优势）选出',
+    noteZh:
+      '加注/全下：只有**合法性/输入安全**才配叫安全约束；本条是真正的安全规则（`shouldRaise` 量级保护 + 权益优势），' +
+      '且当前没有更高质量的证据可选',
   };
 }
 

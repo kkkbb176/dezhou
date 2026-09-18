@@ -228,3 +228,127 @@ export function riverActionCountsOf(input: {
     evidenceQuality: reachable >= 200 ? 'HIGH' : reachable >= 60 ? 'MEDIUM' : 'LOW',
   };
 }
+
+/* ============================================================
+ * 概率质量口径（P0 修复 · 使用者 §7 要求的调试证据）
+ * ============================================================ */
+
+export type RiverActionMasses = {
+  /** 参与度量的**概率质量总和**（Σp；可达组合，已扣除与 Hero/公共牌重叠者） */
+  totalMass: number;
+  /** 参与度量的组合数（分母） */
+  reachableRangeCount: number;
+  clearValueMass: number;
+  thinValueMass: number;
+  showdownMass: number;
+  uncertainMass: number;
+  bluffCandidateMass: number;
+  /** 价值下注候选质量占比 = (明确取值 + 薄价值) / 总质量 */
+  valueMassShare: number;
+  /** 诈唬候选质量占比 = 无摊牌价值 / 总质量 */
+  bluffMassShare: number;
+  showdownMassShare: number;
+  uncertainMassShare: number;
+  /** 证据质量（按组合数判定，与计数版同一判据） */
+  evidenceQuality: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+};
+
+/**
+ * 遍历**可达范围**，按河牌动作类别累加**概率质量**（而不是组合数）。
+ *
+ * ## 为什么必须补这一版
+ *
+ * 计数版（`riverActionCountsOf`）回答「有几手牌属于这一类」，
+ * 但 Hero 面对的是一个**加权范围**：一个概率 0.001 的组合与概率 0.05 的
+ * 组合在权益与 EV 里的分量差 50 倍。使用者 §7 要求的调试证据
+ * （「大注范围质量 / 价值质量 / 薄价值质量 / 诈唬质量 / 诈唬占比」）
+ * 必须用**质量**口径，否则画像调整（它只改概率、不改组合数）
+ * 在证据里会**完全看不见** —— 计数版的每一列都不会变。
+ *
+ * ⚠️ 分类本身**复用** `classifyRiverAction`（单一事实来源），
+ * 与计数版逐组合判定完全一致；两版只有「加 1」与「加 p」的差别。
+ *
+ * @returns 总质量为 0 或输入不合法时返回 `null`（不编造 0）
+ */
+export function riverActionMassesOf(input: {
+  entries: readonly { cardIndices: readonly [number, number]; probability: number }[];
+  board: readonly Card[];
+  heroHole: readonly Card[];
+}): RiverActionMasses | null {
+  if (input.board.length < 3 || input.heroHole.length !== 2) return null;
+  let heroEval;
+  try {
+    heroEval = evaluateCards([...input.heroHole, ...input.board]);
+  } catch {
+    return null;
+  }
+
+  const heroKeys = new Set(input.heroHole.map((c) => `${c.rank}${c.suit}`));
+  const boardKeys = new Set(input.board.map((c) => `${c.rank}${c.suit}`));
+
+  let reachable = 0;
+  let total = 0;
+  let clearValue = 0;
+  let thinValue = 0;
+  let showdown = 0;
+  let uncertain = 0;
+  let bluff = 0;
+
+  for (const entry of input.entries) {
+    const p = entry.probability;
+    if (!(p > 0)) continue;
+    const hole: [Card, Card] = [
+      ALL_CARDS[entry.cardIndices[0]]!,
+      ALL_CARDS[entry.cardIndices[1]]!,
+    ];
+    if (hole.some((c) => heroKeys.has(`${c.rank}${c.suit}`) || boardKeys.has(`${c.rank}${c.suit}`))) {
+      continue;
+    }
+
+    let versusHero: VersusHero;
+    try {
+      const cmp = compareHands(evaluateCards([...hole, ...input.board]), heroEval);
+      versusHero = cmp > 0 ? 'STRONGER' : cmp < 0 ? 'WEAKER' : 'EQUAL';
+    } catch {
+      continue; // 比较失败 ⇒ 不计入（宁可少算，也不编造）
+    }
+    reachable += 1;
+    total += p;
+
+    const tier = boardRelativeTierOf(hole, input.board) ?? 5;
+    switch (classifyRiverAction({ versusHero, tier })) {
+      case RiverActionClass.CLEAR_VALUE:
+        clearValue += p;
+        break;
+      case RiverActionClass.THIN_VALUE:
+        thinValue += p;
+        break;
+      case RiverActionClass.SHOWDOWN:
+        showdown += p;
+        break;
+      case RiverActionClass.UNCERTAIN:
+        uncertain += p;
+        break;
+      default:
+        bluff += p;
+        break;
+    }
+  }
+
+  if (reachable === 0 || !(total > 0)) return null;
+
+  return {
+    totalMass: total,
+    reachableRangeCount: reachable,
+    clearValueMass: clearValue,
+    thinValueMass: thinValue,
+    showdownMass: showdown,
+    uncertainMass: uncertain,
+    bluffCandidateMass: bluff,
+    valueMassShare: (clearValue + thinValue) / total,
+    bluffMassShare: bluff / total,
+    showdownMassShare: showdown / total,
+    uncertainMassShare: uncertain / total,
+    evidenceQuality: reachable >= 200 ? 'HIGH' : reachable >= 60 ? 'MEDIUM' : 'LOW',
+  };
+}

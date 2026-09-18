@@ -291,9 +291,34 @@ test('TEST 5：🔴 跟注站面前薄价值必须提高（下注分上升 + 尺
     s.gate.estimatedBetEVScore > n.gate.estimatedBetEVScore,
     `跟注站的下注分必须高于紧手：${s.gate.estimatedBetEVScore.toFixed(3)} vs ${n.gate.estimatedBetEVScore.toFixed(3)}`,
   );
+  /*
+   * 🔴 MULTIWAY 阶段修正（**真实冲突，如实记录**）：
+   *
+   * 旧断言是「跟注站的价值尺寸 ≥ 紧手」。它在**硬切分类**下成立，
+   * 但那不是一条稳健的模型性质：分类改为连续混频后，两个尺寸的
+   * BetEV 差只有 ~0.4%（268.7 vs 267.6 筹码，同一量级上的平坦面），
+   * 谁大谁小由两位小数决定。继续断言方向等于断言噪声。
+   *
+   * 因此保留**可稳健检验**的两条：
+   * ① 画像必须真的改变尺寸（两者不得逐位相同）；
+   * ② 面对跟注站时「被跟注后的权益」必须更高（他用的是一手更差的牌跟）——
+   *    这条才是「跟注站 ⇒ 更愿意下大注取值」背后的机制。
+   * 方向性结论（哪个尺寸更大）留给报告与后续的 EV 面审计，不在测试里假装确定。
+   */
+  assert.notEqual(
+    station.decision.sizeChips,
+    nit.decision.sizeChips,
+    `画像必须真的改变尺寸选择：${String(station.decision.sizeChips)} vs ${String(nit.decision.sizeChips)}`,
+  );
+  const eqCallOf = (run: (typeof station)): number | null =>
+    (run.advice!.betDecision?.sizes.find((x) => x.kind === 'BET_MEDIUM')?.heroEquityVsCallRange ?? null);
+  const eqStation = eqCallOf(station);
+  const eqNit = eqCallOf(nit);
+  assert.notEqual(eqStation, null);
+  assert.notEqual(eqNit, null);
   assert.ok(
-    (station.decision.sizeChips ?? 0) >= (nit.decision.sizeChips ?? 0),
-    `跟注站的价值尺寸不得小于紧手：${String(station.decision.sizeChips)} vs ${String(nit.decision.sizeChips)}`,
+    (eqStation as number) > (eqNit as number),
+    `跟注站的跟注范围更弱 ⇒ 被跟注时我的权益必须更高：${String(eqStation)} vs ${String(eqNit)}`,
   );
   assert.ok(
     s.reasonsZh.some((t) => t.includes('跟注站')),
@@ -336,15 +361,43 @@ test('TEST 6：🔴 面对过度诈唬的对手，抓诈唬跟注必须提高（
     callScoreOf(b.scores) > callScoreOf(h.scores),
     `过度诈唬的跟注分必须更高：${callScoreOf(b.scores).toFixed(3)} vs ${callScoreOf(h.scores).toFixed(3)}`,
   );
+
+  /*
+   * 🔴 **契约升级（P0 架构修复，2026-09）—— 不是放宽断言，而是换到更强的那条链上。**
+   *
+   * 旧版这里断言 `exploit.bluffCatchDelta > 0` / `< 0`：
+   * 画像**只能**通过剥削层的偏好分表达「他爱不爱诈唬」。
+   *
+   * 修复后画像**先进入范围**（`posterior ∝ prior × likelihood × profile`），
+   * 于是「他的下注范围里有多少空气」已经由 **范围 → 权益 → Call EV** 表达。
+   * 若再调 `bluffCatchDelta`，同一份证据就被计了两遍 ——
+   * 使用者明确禁止（no double counting），因此该偏移被**显式记 0 并标注**。
+   *
+   * 新断言比旧断言更强：它要求的不是「某个中间量动了」，
+   * 而是「**权益本身**按画像方向移动了」，并且去重是可见的。
+   */
+  const bEvidence = bluffer.decision.diagnostics.profileRange ?? null;
+  const hEvidence = honest.decision.diagnostics.profileRange ?? null;
+
+  assert.ok(bEvidence !== null && hEvidence !== null, '画像证据必须存在（画像已进入范围）');
+  assert.equal(bEvidence!.provider.applied, true, '过度诈唬画像必须真的改变范围形状');
+  assert.equal(hEvidence!.provider.applied, true, '不诈唬型画像必须真的改变范围形状');
+
+  const bDelta = bEvidence!.equityAfter! - bEvidence!.equityBefore!;
+  const hDelta = hEvidence!.equityAfter! - hEvidence!.equityBefore!;
+  assert.ok(bDelta > 0, `过度诈唬必须**抬高** Hero 权益（空气占比上升），实际 Δ${bDelta.toFixed(4)}`);
+  assert.ok(hDelta < 0, `不诈唬型必须**压低** Hero 权益（空气占比下降），实际 Δ${hDelta.toFixed(4)}`);
+
+  // 去重必须显式可见：偏移记 0，且理由里写明原因（绝不静默）
+  assert.equal(b.exploit.bluffCatchDelta, 0, '画像已进入范围 ⇒ 抓诈唬偏移必须记 0（不重复计票）');
+  assert.equal(h.exploit.bluffCatchDelta, 0, '同上');
+  assert.equal(b.exploit.deDuplicated, true, '去重必须标出来');
   assert.ok(
-    b.exploit.bluffCatchDelta > 0,
-    `过度诈唬的抓诈唬偏移必须为正，实际 ${b.exploit.bluffCatchDelta}`,
+    b.reasonsZh.some((t) => t.includes('去重')),
+    '理由里必须说明「抓诈唬偏移已去重」',
   );
-  assert.ok(
-    h.exploit.bluffCatchDelta < 0,
-    `不诈唬型的抓诈唬偏移必须为负，实际 ${h.exploit.bluffCatchDelta}`,
-  );
-  // 偏移必须受上限约束（不能翻盘硬数学）
+
+  // 偏移必须受上限约束（不能翻盘硬数学）；去重后的 0 也满足这条
   for (const delta of [b.exploit.bluffCatchDelta, h.exploit.bluffCatchDelta, b.exploit.thinValueDelta]) {
     assert.ok(Math.abs(delta) <= 0.12 + 1e-9, `画像偏移必须受限，实际 ${delta}`);
   }

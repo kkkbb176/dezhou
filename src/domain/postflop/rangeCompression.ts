@@ -13,15 +13,36 @@
  * | 字段 | 含义 |
  * |---|---|
  * | `strengthFloor` | 范围强度**下限**（0..1，越大 = 最弱的那些牌已经被排除） |
- * | `nutDensity` | 坚果密度（0..1） |
- * | `mediumStrengthDensity` | 中等成手密度 |
- * | `drawDensity` | 听牌密度 |
- * | `airDensity` | 空气密度 |
- * | `showdownDensity` | 摊牌价值密度 |
+ * | `nutDensity` | 坚果强度**特征分**（0..1，**非概率**） |
+ * | `mediumStrengthDensity` | 中等成手**特征分**（0..1，**非概率**，且是**残差**——见下） |
+ * | `drawDensity` | 听牌**特征分**（0..1，**非概率**） |
+ * | `airDensity` | 空气**特征分**（0..1，**非概率**） |
+ * | `showdownDensity` | 摊牌价值**特征分**（0..1，**非概率**） |
  * | `aggressionCredibility` | 他这次进攻的**可信度**（0..1：同样的动作，尺寸越大、街越靠后、人越少 ⇒ 越可信） |
  *
  * ⚠️ 这些是 **0..1 的启发式标尺**，不是频率估计，也不声称是 solver 数据。
  * 它们的作用是**排序与阈值**，不是「他有 37% 诈唬」这种编造。
+ *
+ * ## 🔴 这些 `*Density` **不是概率，也不构成概率分割**
+ * （PLAYER PROFILE QUANTIFICATION V1 · §十五）
+ *
+ * 字段名、`（0..1）` 的写法和 UI 上并列展示，都容易让人读成
+ * 「占比 / 概率」，进而以为五者相加为 1。**实测并非如此**，机制有两条，
+ * 都写在下面的计算里：
+ *
+ * 1. `mediumStrengthDensity` 是**残差**（`1 − air − nut − draw × 0.5`），
+ *    不是独立测得的密度；那个 `× 0.5` 还是一个人为系数；
+ * 2. `showdownDensity = mediumStrengthDensity × 0.8` —— **摊牌那一块本就
+ *    包含在中等成手质量里**，两者相加等于**重复计入**同一批 combo。
+ *
+ * 再加上 `Math.min(1, …)` 会**静默丢弃**溢出质量，因此
+ * `nut + medium + draw + air + showdown` **既不等于 1，也不保证 ≤ 1**。
+ *
+ * 纪律：**只允许排序与阈值 —— 禁止当概率、禁止归一化、禁止要求合计为 1。**
+ * 需要真正的概率分割时用 `riverActionMassesOf`
+ * （按概率质量统计，见 `riverActionClass.ts`）。
+ * 该性质由 `test/postflopModules.test.ts` 的断言锁住，防止有人再把文档改回
+ * 「占比」而让下游按概率使用。
  *
  * ## 🔴 `strengthFloor` 的语义必须是「尾部」，不能是「占比」（审计修复）
  *
@@ -37,8 +58,9 @@
  * 但下游不再用它回答「有没有更差的牌」这个问题，那一问改由
  * `OpponentRangeFacts.weakerShare` 精确回答）。
  *
- * 同时**密度**类字段（`nutDensity`）改回由 `strongShare` 驱动 —— 密度是占比，
- * 占比就该用占比算。此前它由 `strengthFloor` 派生，两个语义被绑死。
+ * 同时**密度**类字段（`nutDensity`）改回由 `strongShare` 驱动 —— 它是
+ * **由占比派生的特征分**，不是占比本身（见上面「不是概率」一节）。
+ * 此前它由 `strengthFloor` 派生，两个语义被绑死。
  *
  * ## 压缩因子（使用者点名的公式）
  *
@@ -224,8 +246,12 @@ export function compressionStateOf(
   const airDensity = Math.max(0, baseAir * (1 - factor * 0.8));
   const drawDensity = Math.max(0, baseDraw * (1 - factor * 0.35));
   /*
-   * 坚果密度 = **强牌占比**被压缩抬升后的值（占比用占比算）。
-   * 它回答「他手里有多大概率是强牌」，不回答「他手里有没有更差的牌」。
+   * 坚果特征分 = **强牌占比**被压缩抬升后的派生值。
+   *
+   * ⚠️ 它**不是**「他手里有多大概率是强牌」—— 那是概率语言，本字段不承担
+   * 那个语义（见文件头「不是概率」一节）。它只回答「强牌这一端被抬到多高」，
+   * 供下游做**排序与阈值**。它也不回答「他手里有没有更差的牌」，
+   * 那一问由 `OpponentRangeFacts.weakerShare` 精确回答。
    */
   const nutDensity = Math.max(0, Math.min(1, baseStrong * (0.7 + 0.6 * factor)));
   const mediumStrengthDensity = Math.max(

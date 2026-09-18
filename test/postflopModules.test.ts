@@ -307,6 +307,56 @@ test('COMP-3：压缩状态必须把质量从空气搬到强牌，且没有范�
   assert.ok(wet > dry, '湿面湿度必须更高');
 });
 
+/*
+ * §十五（PLAYER PROFILE QUANTIFICATION V1）：`*Density` 是**特征分**，不是概率。
+ *
+ * 这条测试锁的不是某个数值，而是**「不得当概率用」这个语义**：
+ * 五者相加既不等于 1、也**不保证 ≤ 1**（实测恒 > 1）。一旦有人把它们
+ * 当归一化概率喂给下游，或把文档改回「占比」，就会得出「他有 68% 空气」
+ * 这类**编造**结论 —— 而本项目的立场是「宁可没有数据，也不编造数据」。
+ *
+ * 机制（写死在实现里，两条都可在 `rangeCompression.ts` 核对）：
+ * 1. `mediumStrengthDensity` 是**残差** `1 − air − nut − draw × 0.5`；
+ * 2. `showdownDensity = mediumStrengthDensity × 0.8` ⇒ **摊牌那一块本就包含在
+ *    中等成手质量里**，相加等于重复计入同一批 combo（两者**不互斥**）。
+ *
+ * ⚠️ 若这条变红：说明密度的**语义**变了。正确处理是**同步更新**
+ * `rangeCompression.ts` 文件头的「不是概率」声明与 UI 措辞
+ *（`decisionViewModel` / `postflopAdvisor` / `decisionEngine` 的「密度评分」），
+ * 而**不是**删掉这条断言。
+ */
+test('COMP-4（§十五）：*Density 不是概率分割 —— 不得归一化、不得要求合计为 1', () => {
+  const stateAt = (strongShare: number) =>
+    compressionStateOf(
+      { ...compressionBase, betRatioToPot: 1.2, aggressive: true },
+      { strongShare, drawShare: 0.2, meanTier: 2.6 },
+    );
+
+  // 结构证据 1：摊牌质量由中等成手质量**派生** ⇒ 两者同时为正时不互斥，
+  // 因此五项不可能构成概率分割（分割要求各部分互斥且合计为 1）。
+  const s = stateAt(0.3);
+  assert.ok(s.mediumStrengthDensity > 0, '夹具必须让中等成手特征分为正');
+  assert.equal(
+    s.showdownDensity,
+    Math.min(1, s.mediumStrengthDensity * 0.8),
+    '摊牌特征分必须是中等成手特征分的派生量（⇒ 相加即重复计入，非互斥）',
+  );
+
+  // 结构证据 2：扫过强牌占比，五者之和**从不等于 1**，且实测恒 > 1。
+  const sums = [0, 0.1, 0.3, 0.5, 0.7, 0.9, 1].map((strongShare) => {
+    const st = stateAt(strongShare);
+    return (
+      st.nutDensity + st.mediumStrengthDensity + st.drawDensity + st.airDensity + st.showdownDensity
+    );
+  });
+  const shown = sums.map((x) => x.toFixed(3)).join(' / ');
+  assert.ok(
+    sums.every((x) => Math.abs(x - 1) > 0.02),
+    `五者之和不得等于 1（它们不是分割）：${shown}`,
+  );
+  assert.ok(sums.every((x) => x > 1), `实测五者之和恒 > 1（重复计入摊牌质量）：${shown}`);
+});
+
 /* ============================================================
  * 四、Multiway Penalty
  * ============================================================ */

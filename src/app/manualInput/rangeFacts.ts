@@ -50,7 +50,13 @@ import { boardRelativeTierOf } from '../../domain/poker/boardRelativeStrength.ts
 import { compareHands, evaluateCards, type EvaluatedHand } from '../../domain/poker/handEval.ts';
 import { drawProfileOf } from '../../domain/postflop/draws.ts';
 import { suitCountsOf } from '../../domain/postflop/draws.ts';
-import { riverActionCountsOf } from '../../domain/postflop/riverActionClass.ts';
+import { riverActionCountsOf, riverActionMassesOf } from '../../domain/postflop/riverActionClass.ts';
+import { riverComboClassOf } from '../../domain/postflop/riverProfileClassify.ts';
+import {
+  effectiveCombosOf,
+  posteriorMassCombosOf,
+} from '../../domain/player/profileRangeMetrics.ts';
+import type { RiverComboClass } from '../../domain/player/behaviorProfile.ts';
 import { SUIT_ORDER } from '../../domain/postflop/suit.ts';
 import { ALL_CARDS } from '../../domain/types.ts';
 import type { OpponentRangeFacts } from '../../domain/postflop/types.ts';
@@ -170,6 +176,96 @@ export function opponentRangeFactsOf(
     heroHole,
   });
 
+  /*
+   * 🔴 **质量口径**（P0 修复）：画像只改概率、不改组合数，
+   * 因此「画像有没有起作用」只有质量口径看得见（见 `riverActionMassesOf`）。
+   */
+  const actionMasses = riverActionMassesOf({
+    entries: range.entries.map((e) => ({
+      cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
+      probability: e.probability,
+    })),
+    board,
+    heroHole,
+  });
+
+  /*
+   * 🔴 **画像手牌类别的质量分解**（PLAYER PROFILE QUANTIFICATION V1 · §二十）。
+   *
+   * 用 `riverComboClassOf`（画像模型的**同一套判据**）再累加一遍，
+   * 使「画像到底把哪些牌推多了」在证据里**看得见**：
+   * `actionMasses` 只到「诈唬候选」这一层，分不出
+   * 「错过听牌」与「纯空气」，而 §二十 要求它们是两条独立断言。
+   *
+   * ⚠️ 与 `riverActionMassesOf` 同一纪律：与 Hero/公共牌重叠的组合
+   * 不计入任何一侧；分类失败的质量单列 `unclassifiedMass`（不猜）。
+   */
+  const profileClassMasses = (() => {
+    let total = 0;
+    let reachable = 0;
+    let unclassified = 0;
+    /** 后验权重（用于 §二十七 等效组合数与 §二十八 质量集中度） */
+    const weights: number[] = [];
+    const byClass: Record<RiverComboClass, number> = {
+      NUT_VALUE: 0,
+      STRONG_VALUE: 0,
+      THIN_VALUE: 0,
+      SHOWDOWN_VALUE: 0,
+      MISSED_FLUSH_DRAW: 0,
+      MISSED_STRAIGHT_DRAW: 0,
+      MISSED_COMBO_DRAW: 0,
+      PURE_AIR: 0,
+    };
+    for (const entry of range.entries) {
+      const p = entry.probability;
+      if (!(p > 0)) continue;
+      const hole: [Card, Card] = [
+        ALL_CARDS[entry.combo.cardIndices[0]]!,
+        ALL_CARDS[entry.combo.cardIndices[1]]!,
+      ];
+      if (hole.some((c) => heroSet.has(`${c.rank}${c.suit}`) || boardSet.has(`${c.rank}${c.suit}`))) {
+        continue;
+      }
+      reachable += 1;
+      total += p;
+      weights.push(p);
+      const comboClass = riverComboClassOf({ hole, board, heroHole });
+      if (comboClass === null) {
+        unclassified += p;
+        continue;
+      }
+      byClass[comboClass.category] += p;
+    }
+    if (!(total > 0)) return null;
+    const missedDrawMass =
+      byClass.MISSED_FLUSH_DRAW + byClass.MISSED_STRAIGHT_DRAW + byClass.MISSED_COMBO_DRAW;
+    const valueMass = byClass.NUT_VALUE + byClass.STRONG_VALUE + byClass.THIN_VALUE;
+    return {
+      totalMass: total,
+      reachableRangeCount: reachable,
+      nutValueMass: byClass.NUT_VALUE,
+      strongValueMass: byClass.STRONG_VALUE,
+      thinValueMass: byClass.THIN_VALUE,
+      showdownMass: byClass.SHOWDOWN_VALUE,
+      missedFlushMass: byClass.MISSED_FLUSH_DRAW,
+      missedStraightMass: byClass.MISSED_STRAIGHT_DRAW,
+      missedComboMass: byClass.MISSED_COMBO_DRAW,
+      pureAirMass: byClass.PURE_AIR,
+      valueMass,
+      missedDrawMass,
+      bluffMass: missedDrawMass + byClass.PURE_AIR,
+      unclassifiedMassShare: unclassified / total,
+      /*
+       * V2 §二十七 / §二十八 —— 让「组合数」不再被读成「等权手牌数」。
+       * 精确定义见 `domain/player/profileRangeMetrics.ts` 的文件头。
+       */
+      rawSupportCombos: reachable,
+      effectiveCombos: effectiveCombosOf(weights),
+      posteriorMassCombos90: posteriorMassCombosOf(weights, 0.9),
+      posteriorMassCombos95: posteriorMassCombosOf(weights, 0.95),
+    };
+  })();
+
   return {
     strongShare: strong / total,
     // 「顶对及以上」与「强牌档」同源：档 ≤2 已经涵盖顶对/超对/两对/强成手
@@ -183,5 +279,7 @@ export function opponentRangeFactsOf(
     strongerShare: stronger / total,
     supportSize,
     counts,
+    actionMasses,
+    profileClassMasses,
   };
 }
