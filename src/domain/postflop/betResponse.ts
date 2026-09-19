@@ -234,10 +234,73 @@ export type ResponseTendencies = {
   streetFoldScale?: number;
   streetCallScale?: number;
   streetCheckRaiseScale?: number;
+  /**
+   * 🔴 **TEST 08 P0-2：分街下注倾向**（Hero 过牌之后他开枪的倾向）。
+   *
+   * `riverBetScale` 是**河牌专属**（由 aggression / bluffTendency / passivity
+   * 合成，语义是「河牌他愿不愿意开最后一枪」）。翻牌/转牌用同一个数会
+   * 忽略「他这一街到底爱不爱开火」。
+   *
+   * 本字段把 V3 的**分街**证据接进来：他在这条街上**继续游戏**的强度越高
+   * （`streetCallScale` 由该街的面对下注弃牌率反推），说明他的范围在这一街
+   * 越有黏性 ⇒ 开枪倾向越高。幅度刻意**很温和**（±20%），因为
+   * 「不爱弃」与「爱下注」是两个不同的量，不能等同。
+   *
+   * ⚠️ 缺省（无统计 / 非河牌以外的旧调用）为**精确的 1** ⇒ V2 恒等。
+   */
+  streetBetScale?: number;
+  /**
+   * 🔴 **TEST 09**：实际参与计算的四个维度（已含标签/实测的合并结果）。
+   *
+   * 为什么必须显式带出来：下游（例如 `bettingRange.ts`）需要
+   * `bluffTendency` 来定「他拿无摊牌价值的牌诈唬的比例」，而
+   * `ResponseTendencies` 只暴露**已按可信度缩放**的倍率
+   * （`bluffRaiseScale = 1 + 0.35 × center(bluff) × confidence`），
+   * 从它反推维度要除一个可能为 0 的 `confidence` —— 那既脆弱又会掩盖错误。
+   *
+   * `null` ⇒ 无画像（四个维度都是中立 0.5）。
+   */
+  effectiveDimensions?: {
+    tightness: number;
+    aggression: number;
+    bluffTendency: number;
+    passivity: number;
+  } | null;
   /** 参与计算的画像可信度（0 = 无画像 ⇒ 全部为 1） */
   confidence: number;
   noteZh: string;
 };
+
+/**
+ * 🔴 **TEST 08 P0-2：分街下注倾向（最终值）**。
+ *
+ * 输入是 V3 已经算好的 `StreetFactors.betScale`（由**未受节点语义门约束**的
+ * 该街弃牌统计导出，见 `observedStats.streetBetScaleOfTrait`），
+ * 这里只按画像可信度收缩一次。
+ *
+ * ```text
+ * streetBetScale = 1 + (betScaleFromStats − 1) × confidence
+ * ```
+ *
+ * - `betScaleFromStats = 1`（无统计 / 无语义）⇒ 结果**精确的 1** ⇒ V2 恒等；
+ * - `confidence` 只在这里乘**一次**（`observedStats` 那边已经通过
+ *   `effectiveRate` 收过一次，但那是**统计的**收缩，不是**画像可信度**的）
+ *   —— 两者是不同来源，不构成重复计费。
+ *
+ * ⚠️ 保留 `streetFoldScale` 形参**只为向后兼容签名**，不再参与计算：
+ * 第一版用它做映射，符号是错的（高 `foldScale` = 他更爱弃 ≠ 他更爱开枪）；
+ * 正确做法是从统计的**原始语义**出发（见 `streetBetScaleOfTrait`）。
+ */
+export function streetBetScaleOf(
+  streetFoldScale: number,
+  confidence: number,
+  betScaleFromStats: number,
+): number {
+  void streetFoldScale;
+  const raw = Number.isFinite(betScaleFromStats) ? betScaleFromStats : 1;
+  const conf = Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0;
+  return 1 + (raw - 1) * conf;
+}
 
 /** 中立倾向（无画像 / 可信度 0） */
 export function neutralResponseTendencies(noteZh = '无画像：响应概率只用范围与尺寸决定'): ResponseTendencies {
@@ -254,6 +317,8 @@ export function neutralResponseTendencies(noteZh = '无画像：响应概率只�
     streetFoldScale: 1,
     streetCallScale: 1,
     streetCheckRaiseScale: 1,
+    streetBetScale: 1,
+    effectiveDimensions: null,
     confidence: 0,
     noteZh,
   });
@@ -285,7 +350,7 @@ export function responseTendenciesOf(
    * `null` / 未给 ⇒ 三个分街系数恒为 1 ⇒ 与 V2 **逐位一致**。
    * 给了 ⇒ 只有「属于这一街」的连续统计生效（例如河牌只看 `FoldToRiverBet`）。
    */
-  streetInput?: { street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER'; factors: { foldScale: number; callScale: number; checkRaiseScale: number } } | null,
+  streetInput?: { street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER'; factors: { foldScale: number; callScale: number; checkRaiseScale: number; betScale?: number } } | null,
 ): ResponseTendencies {
   const conf = Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0;
   const streetFactors = streetInput?.factors ?? null;
@@ -297,15 +362,23 @@ export function responseTendenciesOf(
      * 反过来也一样。因此这里不能用「conf<=0 ⇒ 全部中立」一刀切。
      */
     if (streetFactors === null) return neutralResponseTendencies();
+    const noLabelDims = {
+      tightness: 0.5,
+      aggression: 0.5,
+      bluffTendency: 0.5,
+      passivity: 0.5,
+    };
     return Object.freeze({
       ...neutralResponseTendencies('无标签证据：响应基线只用范围与尺寸；但**有 V3 分街统计**'),
       streetFoldScale: streetFactors.foldScale,
       streetCallScale: streetFactors.callScale,
       streetCheckRaiseScale: streetFactors.checkRaiseScale,
+      streetBetScale: streetFactors.betScale ?? 1,
+      effectiveDimensions: Object.freeze(noLabelDims),
       noteZh:
         `无标签证据（可信度 0）｜**V3 分街系数**（${street ?? '?'}）：` +
         `弃 ×${streetFactors.foldScale.toFixed(3)}、跟 ×${streetFactors.callScale.toFixed(3)}、` +
-        `过牌加注 ×${streetFactors.checkRaiseScale.toFixed(3)}`,
+        `过牌加注 ×${streetFactors.checkRaiseScale.toFixed(3)}、下注 ×${(streetFactors.betScale ?? 1).toFixed(3)}`,
     });
   }
 
@@ -341,6 +414,18 @@ export function responseTendenciesOf(
     streetFoldScale,
     streetCallScale,
     streetCheckRaiseScale,
+    /*
+     * 🔴 分街下注倾向：河牌用 `riverBetScale`（不变），翻牌/转牌用本字段。
+     * 无统计 ⇒ `callScale = 1` ⇒ 本字段**精确为 1**（P0-2 的门在
+     * `classifyVillainAfterCheck` 里按街选用）。
+     */
+    streetBetScale: streetBetScaleOf(streetFoldScale, conf, sf?.betScale ?? 1),
+    effectiveDimensions: Object.freeze({
+      tightness: dimensions.tightness,
+      aggression: dimensions.aggression,
+      bluffTendency: dimensions.bluffTendency,
+      passivity: dimensions.passivity,
+    }),
     confidence: conf,
     noteZh:
       `画像响应倾向（可信度 ${conf.toFixed(2)}）：跟注 ×${(1 + 0.30 * passive - 0.18 * tight).toFixed(3)}、` +
@@ -350,7 +435,8 @@ export function responseTendenciesOf(
       (sf === null || sf === undefined
         ? '｜**无分街统计**（V3 分街系数 = 1.000，与 V2 一致）'
         : `｜**V3 分街系数**（${street ?? '?'}）：弃 ×${streetFoldScale.toFixed(3)}、` +
-          `跟 ×${streetCallScale.toFixed(3)}、过牌加注 ×${streetCheckRaiseScale.toFixed(3)}`),
+          `跟 ×${streetCallScale.toFixed(3)}、过牌加注 ×${streetCheckRaiseScale.toFixed(3)}、` +
+          `下注 ×${streetBetScaleOf(streetFoldScale, conf, sf?.betScale ?? 1).toFixed(3)}`),
   });
 }
 
@@ -1124,6 +1210,17 @@ export type VillainAfterCheckClassification = {
   valueBet: boolean;
   /** 是否诈唬下注（弱尾 + 画像偏诈唬） */
   bluffBet: boolean;
+  /**
+   * 🔴 **TEST 09**：该组合**有没有摊牌价值**（牌面相对档 ≥4 = 弱尾）。
+   *
+   * `bluffBet` 是「弱尾 **且** 画像偏诈唬」的**结论**；本字段是**前提**。
+   * 分开暴露是必要的：下游（`bettingRange.ts`）需要在
+   * 「用一个显式的范围构成假设」构造下注范围时，知道**哪些组合可以当诈唬**，
+   * 而不能依赖「原模型是否已经决定诈唬」—— 那会让注入点失效
+   *（实测：NORMAL 的 `riverBetScale = 1.0` ⇒ `bluffBet` 恒 false ⇒
+   *  注入 50% 诈唬也一个组合都进不来，下注范围 100% 价值）。
+   */
+  weakTail: boolean;
   noteZh: string;
 };
 
@@ -1154,37 +1251,66 @@ export function classifyVillainAfterCheck(input: {
   const strongMade = input.tier <= 2;
   const weakTail = input.tier >= 4;
 
+  /*
+   * 🔴 **TEST 08 P0-2：本函数不再只服务河牌**。
+   *
+   * 原实现把「Hero 过牌后他开枪」只放在河牌，因此 `bluffBet` 的条件里
+   * 硬写了「② 河牌（无未来街，不存在半诈唬）」。翻牌/转牌上他同样可以开枪 ——
+   * 只是那属于**半诈唬**（还有未来街可以改进）。
+   *
+   * 分街下注倾向的来源按街分开：
+   * - 河牌 ⇒ `riverBetScale`（**逐位不变**，T4/T6 锁的就是它）
+   * - 翻牌/转牌 ⇒ `streetBetScale`（V3 分街统计驱动，无统计时精确为 1）
+   */
+  const onRiver = input.street === 'RIVER';
+  const betScale = onRiver ? t.riverBetScale : (t.streetBetScale ?? 1);
+
   const valueBet = strongMade && (input.versusHero === 'STRONGER' || input.tier <= 1);
   /*
-   * 诈唬需要**独立条件**（不能因为「他弱」就假定他一定下注）：
-   * ① 弱尾（档 ≥4，没有摊牌价值）；② 河牌（无未来街，不存在半诈唬）；
-   * ③ 画像的下注倾向高于基线（riverBetScale > 1）。
+   * 诈唬/半诈唬需要**独立条件**（不能因为「他弱」就假定他一定下注）：
+   * ① 弱尾（档 ≥4，没有摊牌价值）；② 分街下注倾向高于基线（`betScale > 1`）。
+   *
+   * ⚠️ 河牌上「无未来街 ⇒ 不存在半诈唬」仍然成立，但它**不是**判据的一部分：
+   * 河牌用 `riverBetScale`、翻牌/转牌用 `streetBetScale`，两者都是
+   * 「这一街他愿不愿意开枪」的直接度量。因此不需要再写街的硬条件。
    */
-  const bluffBet = weakTail && t.riverBetScale > 1;
+  const bluffBet = weakTail && betScale > 1;
 
   if (valueBet) {
-    const share = Math.max(0, Math.min(0.85, 0.55 + 0.25 * (t.raiseScale - 1) + 0.15 * (t.riverBetScale - 1)));
+    /*
+     * 强成手的开枪份额：河牌保持原式（逐位不变）；翻牌/转牌把
+     * `riverBetScale` 换成 `streetBetScale`。
+     */
+    const share = Math.max(
+      0,
+      Math.min(0.85, 0.55 + 0.25 * (t.raiseScale - 1) + 0.15 * (betScale - 1)),
+    );
     return {
       weights: { checkBack: 1 - share, bet: share },
       valueBet: true,
       bluffBet: false,
+      weakTail,
       noteZh: `强成手（档 ${input.tier}）⇒ 下注权重 ${share.toFixed(3)}（其余慢打/check-back）`,
     };
   }
   if (bluffBet) {
-    const share = Math.max(0, Math.min(0.5, 0.22 * (t.riverBetScale - 1) * 4));
+    const share = Math.max(0, Math.min(0.5, 0.22 * (betScale - 1) * 4));
     return {
       weights: { checkBack: 1 - share, bet: share },
       valueBet: false,
       bluffBet: true,
-      noteZh: `弱尾（档 ${input.tier}）+ 画像下注倾向 ×${t.riverBetScale.toFixed(2)} ⇒ 诈唬下注权重 ${share.toFixed(3)}`,
+      weakTail,
+      noteZh:
+        `弱尾（档 ${input.tier}）+ ${onRiver ? '河牌' : input.street}下注倾向 ` +
+        `×${betScale.toFixed(2)} ⇒ ${onRiver ? '诈唬' : '半诈唬'}下注权重 ${share.toFixed(3)}`,
     };
   }
   return {
     weights: { checkBack: 1, bet: 0 },
     valueBet: false,
     bluffBet: false,
-    noteZh: `档 ${input.tier} 且无诈唬条件 ⇒ 全部过牌摊牌`,
+    weakTail,
+    noteZh: `档 ${input.tier} 且无${onRiver ? '诈唬' : '半诈唬'}条件 ⇒ 全部过牌摊牌`,
   };
 }
 
@@ -1239,6 +1365,14 @@ export function composeCheckEVTree(input: {
     heroEquityVsCheckBackRange: number | null;
     heroEquityVsBetRange: number | null;
     villainBetAmount: number;
+    /**
+     * 🔴 **TEST 08 P0-2 诊断**：与范围宽度无关的「平均一手牌的开枪意愿」。
+     *
+     * `betLikelihood` 是**份额**（会被宽范围稀释），因此不能用它比较
+     * 「MANIAC 是否比 NIT 更爱开枪」。本字段是逐组合下注权重的范围均值，
+     * 只用于审计与可读对比，**不参与 EV**。
+     */
+    fireWeight?: number | null;
   } | null;
 }): CheckTreeResult {
   const pot = Math.max(0, input.pot);
@@ -1247,7 +1381,23 @@ export function composeCheckEVTree(input: {
     raiseResponse: 'NOT_IMPLEMENTED' as const,
   };
 
-  if (input.street !== 'RIVER') {
+  /*
+   * 🔴 **TEST 08 P0-2：OOP CHECK 树不再限定河牌**。
+   *
+   * 修复前这里只认 `RIVER`：转牌（乃至翻牌）的 OOP 过牌一律走
+   * `HEURISTIC_ONE_STREET`，`betLikelihood` 被硬编码为 0 ——
+   * 等于宣称「我过牌之后他一定过牌」，对 MANIAC / NIT 给出**完全相同**的结果。
+   *
+   * 但「我 OOP 过牌 ⇒ 他仍可下注」这件事与街无关，是**行动顺序**问题。
+   * `afterCheck` 分流数据在翻牌/转牌同样算得出来（`classifyVillainAfterCheck`
+   * 本来就收 `street`），所以门应当只由 `isInPosition` 决定。
+   *
+   * ⚠️ 我这里**保持 `isInPosition` 的摊牌终止分支在下面优先**：后位（他刚过牌）
+   * 时我过牌即摊牌，动作终止，与街无关。
+   */
+  const afterCheck = input.afterCheck ?? null;
+
+  if (input.street !== 'RIVER' && (input.isInPosition || afterCheck === null)) {
     const realized =
       input.heroEquityVsArrivalRange === null
         ? null
@@ -1268,12 +1418,13 @@ export function composeCheckEVTree(input: {
       heroBestResponseEV: null,
       components: Object.freeze({ realizedEquity: realized ?? 0, pot }),
       noteZh:
-        `翻牌/转牌：过牌后仍有未来街 ⇒ 用权益实现代理（${input.realizationFactor.toFixed(3)}）；` +
+        `翻牌/转牌：${input.isInPosition ? '我在后位（对手已过牌）⇒ 过牌后**动作终止**' : '拿不到「他过牌/下注」的分流数据'} ⇒ ` +
+        `用权益实现代理（${input.realizationFactor.toFixed(3)}）；` +
         '这不是摊牌 EV（HEURISTIC_ONE_STREET）',
     });
   }
 
-  if (input.isInPosition) {
+  if (input.isInPosition && input.street === 'RIVER') {
     const eq = input.heroEquityVsArrivalRange;
     const ev = eq === null ? null : eq * pot;
     return Object.freeze({
@@ -1315,8 +1466,30 @@ export function composeCheckEVTree(input: {
   }
 
   const bet = Math.max(0, tree.villainBetAmount);
-  const evShowdown = tree.heroEquityVsCheckBackRange === null ? null : tree.heroEquityVsCheckBackRange * pot;
-  const heroCallEV = tree.heroEquityVsBetRange === null ? null : tree.heroEquityVsBetRange * (pot + 2 * bet) - bet;
+  /*
+   * 🔴 **翻牌/转牌：两条分支都要乘权益实现因子**。
+   *
+   * 河牌没有未来街，权益即最终权益（因子 = 1，逐位不变）。
+   * 但翻牌/转牌上：
+   * - 他过牌后**仍有未来街**（半诈唬可能开出、我被反超）⇒ 过牌分支必须打折；
+   * - 我跟注后**也仍有未来街** ⇒ 跟注分支同样不能用裸权益，否则
+   *   「跟注 EV」会系统性高于「过牌 EV」，逼出无条件的跟注。
+   *
+   * 用的是**入口传进来的那个 `realizationFactor`**，与既有的
+   * `HEURISTIC_ONE_STREET` 分支同一个因子 —— 不引入第二个来源。
+   */
+  const futureStreets = input.street !== 'RIVER';
+  const realize = (eq: number | null): number | null =>
+    eq === null
+      ? null
+      : futureStreets
+        ? Math.max(0, Math.min(1, eq * input.realizationFactor))
+        : eq;
+
+  const eqCheckBack = realize(tree.heroEquityVsCheckBackRange);
+  const eqVsBet = realize(tree.heroEquityVsBetRange);
+  const evShowdown = eqCheckBack === null ? null : eqCheckBack * pot;
+  const heroCallEV = eqVsBet === null ? null : eqVsBet * (pot + 2 * bet) - bet;
   const heroBestResponseEV = heroCallEV === null ? null : Math.max(0, heroCallEV);
   const checkEV =
     evShowdown === null || heroBestResponseEV === null
@@ -1344,12 +1517,21 @@ export function composeCheckEVTree(input: {
       heroCallEV: heroCallEV ?? 0,
       villainBetAmount: bet,
       pot,
+      realizationFactor: futureStreets ? input.realizationFactor : 1,
+      /*
+       * 诊断量：与范围宽度无关的开枪意愿。**不进 EV 公式**。
+       * 缺省时记为 0 而不是伪造一个值。
+       */
+      fireWeight: tree.fireWeight ?? 0,
     }),
     noteZh:
-      `河牌 + 我在前位 ⇒ 过牌**不是**摊牌：` +
+      `${input.street} + 我在前位 ⇒ 过牌**不是**摊牌：` +
       `P(他过牌) ${tree.checkBackLikelihood.toFixed(3)} × 摊牌 EV ${evShowdown === null ? '—' : evShowdown.toFixed(1)}` +
       ` + P(他下注 ${bet.toFixed(1)}) ${tree.betLikelihood.toFixed(3)} × Hero 最佳应手 ${heroBestResponseEV === null ? '—' : heroBestResponseEV.toFixed(1)}` +
-      ` = ${checkEV === null ? '—' : checkEV.toFixed(1)}（加注应手 NOT_IMPLEMENTED；HEURISTIC）`,
+      ` = ${checkEV === null ? '—' : checkEV.toFixed(1)}` +
+      `（加注应手 NOT_IMPLEMENTED；HEURISTIC` +
+      (futureStreets ? `；两分支均乘权益实现 ${input.realizationFactor.toFixed(3)}` : '') +
+      '）',
   });
 }
 

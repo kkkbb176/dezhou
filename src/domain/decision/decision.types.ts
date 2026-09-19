@@ -204,8 +204,32 @@ export type PostflopFacts = {
     nonNutFlushDraw: boolean;
     notesZh: readonly string[];
   };
-  /** 对手范围在当前牌面上的统计（`null` = 算不出来） */
+  /** 对手范围在当前牌面上的统计（`null` = 算不出来）—— **到达范围**口径 */
   opponentRangeFacts: OpponentRangeFacts | null;
+  /**
+   * 🔴 **TEST 09 P0-1：BET RANGE —— 他的**下注**范围**。
+   *
+   * 与 `opponentRangeFacts`（**到达**范围）**并列但不同义**（§十九）：
+   *
+   * | 字段 | 回答的问题 |
+   * |---|---|
+   * | `opponentRangeFacts` | 他走到这个节点**拥有**什么 |
+   * | `bettingRangeFacts` | 他在这里实际**选择下注**的是哪些牌 |
+   *
+   * 两者都保留：前者是「我领先他的整体范围吗」，后者是
+   * 「跟这一注划不划算」。`null` = 当前不是「他在下注」的节点。
+   */
+  bettingRangeFacts?: BettingRangeFactsSnapshot | null;
+  /** 尺寸口径（`actualRatio` / `modeledRatio` / `SIZE_APPROXIMATION`） */
+  betRangeSizing?: {
+    readonly actualBetChips: number;
+    readonly potChips: number;
+    readonly actualRatio: number;
+    readonly modeledRatio: number;
+    readonly sizeApproximation: boolean;
+  } | null;
+  /** 与 `opponentRangeFacts` 同名的量，但取自**下注范围** */
+  heroEquityVsBetRange?: number | null;
   /**
    * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
    *
@@ -217,6 +241,16 @@ export type PostflopFacts = {
    *（与 `opponentRangeFacts` 同一条架构纪律）。`null` = 算不出来（翻前 / 无范围）。
    */
   betDecision: BetDecisionFacts | null;
+};
+
+/** `bettingRangeFacts` 的可序列化快照（与 `bettingRange.ts` 同形，此处避免循环依赖） */
+export type BettingRangeFactsSnapshot = {
+  readonly classMasses: Readonly<Record<string, number>>;
+  readonly arrivalMass: number;
+  readonly betMass: number;
+  readonly betShareOfArrival: number;
+  readonly entryCount: number;
+  readonly noteZh: string;
 };
 
 /**
@@ -466,8 +500,22 @@ export type MathSnapshot = {
     layerCount: number;
     costMs: number;
   };
-  /** 权益估计（依赖对手范围） */
+  /** 权益估计（依赖对手范围）——**到达范围**口径 */
   heroEquity: number | null;
+  /**
+   * 🔴 **TEST 09 P0-1**：`Hero vs Villain **下注范围**` 的权益。
+   *
+   * 与 `heroEquity`（到达范围）是**两个不同的量**，刻意分开保存（§八）：
+   *
+   * | 字段 | 回答的问题 |
+   * |---|---|
+   * | `heroEquity` | 我领先他走到这个节点的**整体范围**吗 |
+   * | `heroEquityVsBetRange` | 跟**这一注**划不划算 |
+   *
+   * `callEV` 在「面对已下注」节点用的是**本字段**。`null` 表示
+   * 该节点不适用（不是面对下注 / 算不出下注范围）——不是 0。
+   */
+  heroEquityVsBetRange: number | null;
   /** 权益的来源与精度 */
   equitySource: EquitySource | null;
   /** 跟注的期望收益（筹码单位） */
@@ -925,6 +973,20 @@ export type DecisionContext = {
     baseArchetype: string | null;
     observedStatCount: number;
     confidenceTierZh: string;
+    /**
+     * 🔴 **TEST 08 P0-3**：当前决策点的**动作节点语义**。
+     *
+     * `FACING_CBET` / `FACING_DONK` / `GENERIC_BET`，或 `null`（本街尚无人下注）。
+     * `FoldTo*CBet` 这类「面对持续下注」的统计**只**在 `FACING_CBET` 下生效。
+     */
+    actionContext?: 'FACING_CBET' | 'FACING_DONK' | 'GENERIC_BET' | null;
+    /**
+     * 🔴 **TEST 08 P0-3**：统计**给了但因节点语义不匹配而未生效**的分街条目。
+     *
+     * 非空表示「引擎刻意忽略了这些统计」——这是设计行为（避免证据错配），
+     * 但必须可审计，否则会变成静默失效。
+     */
+    deniedStreetTraits?: readonly string[];
     dimensions: Readonly<Record<string, number>>;
     street: Readonly<Record<string, Readonly<Record<string, number>>>>;
     trace: readonly Readonly<Record<string, unknown>>[];

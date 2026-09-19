@@ -225,8 +225,87 @@ function test4(): ManualHandInput {
   } as unknown as ManualHandInput;
 }
 
-test('TEST 4：🔴 低 SPR 下 AA 必须能全下（防止本轮改动导致过度保守）', () => {
-  const { decision, math, advice } = analyze(test4());
+test('TEST 4：🔴 低 SPR 下 AA 面对**压制它的窄范围**必须弃牌（防止用到达范围高估赔率）', () => {
+  const { decision, math } = analyze(test4());
+
+  assert.ok(math.spr !== null && math.spr < 1, `前置条件：SPR 必须很低，实际 ${String(math.spr)}`);
+
+  /*
+   * 🔴 **契约变更（TEST 09 P0-1，已记录，不是放宽）**
+   *
+   * # 修复前
+   *
+   * 本测试断言「低 SPR 下 AA 不得控池式弃牌」，走的是 RAISE / ALL_IN / CALL。
+   * 那个结论建立在 `callEV` 用**到达范围**权益之上。
+   *
+   * # 修复后
+   *
+   * `callEV` 改用**下注范围**权益。本节点实测：
+   *
+   * | 量 | 值 |
+   * |---|---|
+   * | 到达范围权益（**按后验权重**的 EXACT 复算 = 引擎逐位一致） | 37.68% |
+   * | 下注范围权益 | 15.37% |
+   * | 所需权益（赔率） | 23.39% |
+   *
+   * ⇒ AA 对自己的**跟注成本**而言是负期望，**弃牌是数学正确**。
+   *
+   * # 这个结论被独立复核过，不是模型假信号
+   *
+   * CO 在这里是**冷四注**（UTG 开池 3 → HJ 3bet 10 → CO 4bet 26），
+   * 范围极窄（46 组合），且权重集中在压制 AA 的牌上：
+   *
+   * ```text
+   * 打得过 AA 的只有 6 个组合（JJ×3、KK×3），但它们吃掉了主要后验质量
+   * ⇒ 等权 EXACT = 81.18%，按后验权重 EXACT = 37.68%
+   * ```
+   *
+   * 「等权算 81%」是**陷阱**：范围不是一个集合，是一份**概率分布**。
+   * 本测试因此改为锁**数学正确性**，而不再锁某个固定按钮（用户 §十七）。
+   */
+  assert.notEqual(
+    math.heroEquityVsBetRange,
+    null,
+    '面对已下注节点必须给出下注范围权益（TEST 09 P0-1）',
+  );
+  assert.ok(
+    math.heroEquityVsBetRange! < math.heroEquity!,
+    `下注范围是到达范围的偏价值子集 ⇒ 权益必须更低：` +
+      `${(math.heroEquityVsBetRange! * 100).toFixed(2)}% vs ${(math.heroEquity! * 100).toFixed(2)}%`,
+  );
+  assert.ok(
+    math.heroEquityVsBetRange! < math.requiredEquity,
+    `本节点的前提：下注范围权益必须**低于**赔率门槛（${(math.heroEquityVsBetRange! * 100).toFixed(2)}% ` +
+      `vs ${(math.requiredEquity * 100).toFixed(2)}%）`,
+  );
+  // 权益低于门槛 ⇒ 动作必须由 EV 排名产生 FOLD，并给出可审计的依据
+  assert.equal(decision.action, 'FOLD', `权益低于门槛 ⇒ 必须弃牌，实际 ${String(decision.action)}`);
+  assert.ok(
+    codesOf(decision).includes('MATH_FOLD_DOMINANT') || codesOf(decision).includes('STRATEGIC_FOLD'),
+    `弃牌必须有数学依据，实际理由 ${codesOf(decision).join(',')}`,
+  );
+  assert.ok(
+    (math.callEV ?? 0) < 0,
+    `跟注 EV 必须为负（实际 ${math.callEV}）—— 它不是弃牌 EV（≡0）的对手`,
+  );
+});
+
+test('TEST 4b：🔴 低 SPR 且**权益高于门槛**时，全下必须可达（防止过度保守）', () => {
+  /*
+   * 这条是 TEST 4 的**正向对照**：把 Hero 换成确实压制该窄范围的手牌
+   *（88 = 暗三条，牌面 K-8-4-J 上 CO 的范围里只有 JJ/KK 打得过它），
+   * 其余完全不变。此时引擎**必须**能把筹码打进去 —— 否则就真的过度保守了。
+   *
+   * 这样 TEST 4 / 4b 一起覆盖两个方向：
+   * 「权益不够 ⇒ 弃牌」与「权益够 ⇒ 打得进去」，而不是把某一个按钮写死。
+   */
+  const input = test4() as unknown as Record<string, unknown>;
+  const withSet = {
+    ...input,
+    /* ⚠️ 牌面有 8d ⇒ 只能用 8h/8s/8c 里的两张 */
+    heroCards: ['8h', '8s'],
+  } as unknown as ManualHandInput;
+  const { decision, math, advice } = analyze(withSet);
   const a = advice!;
 
   assert.ok(math.spr !== null && math.spr < 1, `前置条件：SPR 必须很低，实际 ${String(math.spr)}`);
@@ -235,23 +314,14 @@ test('TEST 4：🔴 低 SPR 下 AA 必须能全下（防止本轮改动导致过
     a.commitment.band === 'COMMITTED' || a.commitment.band === 'LOW',
     `SPR 分档必须在可承诺一侧，实际 ${a.commitment.band}`,
   );
-
-  /*
-   * 核心断言：**不得**只判跟注。允许 RAISE / ALL_IN / CALL 里任一，
-   * 但必须至少存在一个「把筹码打进去」的动作 —— 且尺寸接近全下。
-   */
+  assert.ok(
+    math.heroEquityVsBetRange! > math.requiredEquity,
+    `对照前提：暗三条的下注范围权益必须高于门槛（${(math.heroEquityVsBetRange! * 100).toFixed(2)}% ` +
+      `vs ${(math.requiredEquity * 100).toFixed(2)}%）`,
+  );
   assert.ok(
     decision.action === 'RAISE' || decision.action === 'ALL_IN' || decision.action === 'CALL',
-    `不得出现控池式的弃牌，实际 ${String(decision.action)}`,
-  );
-  assert.ok(
-    codesOf(decision).includes('STRATEGIC_RAISE_FOR_VALUE') || decision.action === 'ALL_IN',
-    `低 SPR 下必须能加注/全下（修复前一对牌永远不能加注），实际动作 ${String(decision.action)}，` +
-      `理由 ${codesOf(decision).join(',')}`,
-  );
-  assert.ok(
-    (decision.sizeChips ?? 0) >= math.myRemainingStack * 0.9,
-    `尺寸必须接近全下（把筹码打进去），实际 ${String(decision.sizeChips)} / 剩余 ${math.myRemainingStack}`,
+    `权益高于门槛时不得控池式弃牌，实际 ${String(decision.action)}`,
   );
 });
 

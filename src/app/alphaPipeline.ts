@@ -1060,6 +1060,10 @@ export function analyzeManualHand(
       parsed.value.villain?.observedStats !== null
         ? { observedStats: parsed.value.villain.observedStats }
         : {}),
+      /* 🔴 TEST 09 §二十：下注范围构成注入点（仅供测试 / 审计，生产不传） */
+      ...(parsed.value.villain?.betRangeBluffShareOverride !== undefined
+        ? { betRangeBluffShareOverride: parsed.value.villain.betRangeBluffShareOverride }
+        : {}),
       ...(options.budget !== undefined ? { budget: options.budget } : {}),
       /*
        * 🔴 把「整条链已经花掉多少时间」交给上下文组装层，让它能给

@@ -1,0 +1,22 @@
+########## MODE = after ##########
+
+=== D-A 非法数值（observed / priorWeight）===
+  A0 对照：observed 30/50（合法）                             ✔ 权益=57.6956% 所需=29.79% callEV=13.1169 动作=CALL —
+  A1 observed successes = NaN                          ✖ ok=false stage=PARSE :: [{"code":"INVALID_NUMBER","message":"对手的行为条目「riverBluff」的 successes 必须是**有限非负整数**，收到 NaN。（项目纪律：非法数值阻断，不做静默修正 —— 夹取会把「数据坏了」变成「数据看起来正常」）","field":"villain.behaviorProfile.traits.riverBluff.successes"},{
+  A2 observed opportunities = NaN                      ✖ ok=false stage=PARSE :: [{"code":"INVALID_NUMBER","message":"对手的行为条目「riverBluff」的 successes 必须是**有限非负整数**，收到 NaN。（项目纪律：非法数值阻断，不做静默修正 —— 夹取会把「数据坏了」变成「数据看起来正常」）","field":"villain.behaviorProfile.traits.riverBluff.successes"},{
+  A3 observed opportunities = Infinity                 ✖ ok=false stage=PARSE :: [{"code":"INVALID_NUMBER","message":"对手的行为条目「riverBluff」的 opportunities 必须是**有限非负整数**，收到 Infinity。（项目纪律：非法数值阻断，不做静默修正 —— 夹取会把「数据坏了」变成「数据看起来正常」）","field":"villain.behaviorProfile.traits.riverBluff.oppo
+  A4 observed successes = -5（负数）                       ✔ 权益=57.3455% 所需=29.79% callEV=12.9524 动作=CALL —
+
+=== D-B 残缺画像（traits 缺条目）===
+  B0 对照：完整画像                                           ✔ 权益=57.6091% 所需=29.79% callEV=13.0763 动作=CALL —
+  B1 traits = {} （空对象）                                 ✔ 权益=56.2000% 所需=29.79% callEV=12.4140 动作=CALL —
+  B2 traits 只有 riverBluff 一条                           ✔ 权益=56.3031% 所需=29.79% callEV=12.4625 动作=CALL —
+
+=== D-C profileMaterialityOf 非有限输入 ===
+  C0 正常 TRIVIAL                            ⇒ TRIVIAL    equityDelta=0.010000000000000009 画像物性 TRIVIAL（EXPERIMENTAL 阈值）：权益差 1.00pp｜诈唬质量差 1.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+  C1 equityB = NaN                         ⇒ NO_EFFECT  equityDelta=null 画像物性 NO_EFFECT：输入含**非有限数值**（NaN / Infinity）⇒ **无法判定**。这不是「影响很小」—— 「算不出来」与「影响很小」必须分开。
+  C2 equityB = Infinity                    ⇒ NO_EFFECT  equityDelta=null 画像物性 NO_EFFECT：输入含**非有限数值**（NaN / Infinity）⇒ **无法判定**。这不是「影响很小」—— 「算不出来」与「影响很小」必须分开。
+  C3 bluffMassB = NaN（权益大差）                ⇒ NO_EFFECT  equityDelta=null 画像物性 NO_EFFECT：输入含**非有限数值**（NaN / Infinity）⇒ **无法判定**。这不是「影响很小」—— 「算不出来」与「影响很小」必须分开。
+  C4 equityA = null 但 mass 差 0.5           ⇒ NO_EFFECT  equityDelta=null 画像物性 NO_EFFECT（EXPERIMENTAL 阈值）：权益差 —｜诈唬质量差 50.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+
+（以上输出即为本 MODE 的完整证据）

@@ -244,6 +244,21 @@ export type ManualVillain = {
    * 「观测到了 0 次」，`null` 表示「没观测过」，语义完全不同（§十四）。
    */
   observedStats?: PlayerObservedStats | null;
+  /**
+   * 🔴 **TEST 09 §二十：下注范围构成注入点（仅供测试 / 审计）**。
+   *
+   * 给了就把它当作「他拿**无摊牌价值**的牌下注的概率」，**不再**由画像推导。
+   * 用途是独立验证「给定范围构成 ⇒ 权益 ⇒ 动作」这条链路：
+   *
+   * ```text
+   * 50% 无解价值 + 50% 纯诈唬  ⇒  抓诈牌权益 ≈ 50%  ⇒  面对 120% 池应 CALL
+   * 80% 价值     + 20% 诈唬    ⇒  抓诈牌权益 ≈ 20%  ⇒  应 FOLD
+   * ```
+   *
+   * ⚠️ **它不是模型参数**：缺省 `undefined` 时一切由画像推导，
+   * 生产路径永远不传它。
+   */
+  betRangeBluffShareOverride?: number | null;
 };
 
 export type ManualHandInput = {

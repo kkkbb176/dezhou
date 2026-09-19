@@ -1,0 +1,173 @@
+============================================================
+ V2.1 第一轮 · 补充指标（无人下注节点 = 行为层作用面）
+============================================================
+
+------------------------------------------------------------
+【A1】跟注站 · 弱牌诈唬（空气，河牌对手过牌）
+  我的位置：CO ｜ 我的手牌：9c 8c ｜ 公共牌：Ad Ks 7h 3c 2d
+
+  NEUTRAL      动作=CHECK  权益=2.38%    过牌EV=0.26    底池=11.0   门槛=0.0%
+      BET_SMALL       33%池   1.83BB 弃  10.2% 跟  82.2% 加   7.6% BetEV= -2.457 Δvs过牌= -2.719 EqVsCall=   0.0% EXACT/439
+      BET_MEDIUM      67%池   3.67BB 弃  19.5% 跟  74.3% 加   6.3% BetEV= -4.219 Δvs过牌= -4.480 EqVsCall=   0.0% EXACT/390
+      BET_LARGE      100%池   5.50BB 弃  26.8% 跟  68.1% 加   5.1% BetEV= -5.665 Δvs过牌= -5.927 EqVsCall=   0.0% EXACT/333
+      候选下注 EV 的最优/次优差 = 1.7613 筹码（= 底池的 16.01%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@3=EV_NOT_AVAILABLE BET@4=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@7=EV_NOT_AVAILABLE BET@8=EV_NOT_AVAILABLE BET@11=EV_NOT_AVAILABLE BET@195=EV_NOT_AVAILABLE ALL_IN@195=EV_NOT_AVAILABLE
+  STATION      动作=CHECK  权益=2.47%    过牌EV=0.27    底池=11.0   门槛=0.0%
+      BET_SMALL       33%池   1.83BB 弃   7.0% 跟  85.5% 加   7.5% BetEV= -2.916 Δvs过牌= -3.188 EqVsCall=   0.0% EXACT/439
+      BET_MEDIUM      67%池   3.67BB 弃  15.6% 跟  78.3% 加   6.1% BetEV= -4.927 Δvs过牌= -5.199 EqVsCall=   0.0% EXACT/390
+      BET_LARGE      100%池   5.50BB 弃  20.5% 跟  74.6% 加   4.9% BetEV= -7.031 Δvs过牌= -7.303 EqVsCall=   0.0% EXACT/390
+      候选下注 EV 的最优/次优差 = 2.0112 筹码（= 底池的 18.28%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@3=EV_NOT_AVAILABLE BET@4=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@7=EV_NOT_AVAILABLE BET@8=EV_NOT_AVAILABLE BET@11=EV_NOT_AVAILABLE BET@195=EV_NOT_AVAILABLE ALL_IN@195=EV_NOT_AVAILABLE
+  VERY_TIGHT   动作=CHECK  权益=2.17%    过牌EV=0.24    底池=11.0   门槛=0.0%
+      BET_SMALL       33%池   1.83BB 弃  12.8% 跟  79.6% 加   7.6% BetEV= -2.065 Δvs过牌= -2.304 EqVsCall=   0.0% EXACT/439
+      BET_MEDIUM      67%池   3.67BB 弃  24.1% 跟  69.7% 加   6.2% BetEV= -3.361 Δvs过牌= -3.599 EqVsCall=   0.0% EXACT/333
+      BET_LARGE      100%池   5.50BB 弃  31.4% 跟  63.6% 加   5.0% BetEV= -4.654 Δvs过牌= -4.892 EqVsCall=   0.0% EXACT/321
+      候选下注 EV 的最优/次优差 = 1.2957 筹码（= 底池的 11.78%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@3=EV_NOT_AVAILABLE BET@4=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@7=EV_NOT_AVAILABLE BET@8=EV_NOT_AVAILABLE BET@11=EV_NOT_AVAILABLE BET@195=EV_NOT_AVAILABLE ALL_IN@195=EV_NOT_AVAILABLE
+
+  Δ 对手弃牌率（第一档尺寸）STATION  vs 中性：-3.16pp
+  Δ 对手跟注率（第一档尺寸）STATION  vs 中性：+3.30pp
+  Δ 对手加注率（第一档尺寸）STATION  vs 中性：-0.14pp
+  Δ 对手弃牌率（第一档尺寸）TIGHT    vs 中性：+2.66pp
+  Δ 下注 EV（第一档尺寸）     STATION vs 中性：-0.4586 筹码
+  Δ 下注 EV（第一档尺寸）     TIGHT   vs 中性：0.3923 筹码
+  Δ 最优/次优下注 EV 差       STATION vs 中性：0.2500 筹码
+  Δ 过牌 EV                   STATION vs 中性：0.0103 筹码
+  Δ 权益                      STATION vs 中性：+0.09pp
+
+------------------------------------------------------------
+【A3】跟注站 · 边缘牌薄价值（一对 T，河牌对手过牌）
+  我的位置：CO ｜ 我的手牌：Th 9d ｜ 公共牌：Ah Ts 5c 3d 2h
+
+  NEUTRAL      动作=CHECK  权益=10.41%   过牌EV=1.98    底池=19.0   门槛=0.0%
+      BET_SMALL       33%池   3.17BB 弃   7.6% 跟  50.0% 加  42.4% BetEV= -6.205 Δvs过牌= -8.184 EqVsCall=   5.6% EXACT/306
+      BET_MEDIUM      67%池   6.33BB 弃   9.8% 跟  55.4% 加  34.7% BetEV=-13.406 Δvs过牌=-15.385 EqVsCall=   2.2% EXACT/244
+      BET_LARGE      100%池   9.50BB 弃  11.1% 跟  60.8% 加  28.1% BetEV=-19.833 Δvs过牌=-21.811 EqVsCall=   0.8% EXACT/244
+      候选下注 EV 的最优/次优差 = 7.2011 筹码（= 底池的 37.90%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@5=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@10=EV_NOT_AVAILABLE BET@13=EV_NOT_AVAILABLE BET@14=EV_NOT_AVAILABLE BET@19=EV_NOT_AVAILABLE BET@191=EV_NOT_AVAILABLE ALL_IN@191=EV_NOT_AVAILABLE
+  STATION      动作=CHECK  权益=10.86%   过牌EV=2.06    底池=19.0   门槛=0.0%
+      BET_SMALL       33%池   3.17BB 弃   6.9% 跟  51.8% 加  41.3% BetEV= -5.947 Δvs过牌= -8.009 EqVsCall=   7.6% EXACT/306
+      BET_MEDIUM      67%池   6.33BB 弃   9.0% 跟  57.4% 加  33.6% BetEV=-13.189 Δvs过牌=-15.251 EqVsCall=   3.5% EXACT/253
+      BET_LARGE      100%池   9.50BB 弃  10.3% 跟  62.7% 加  27.0% BetEV=-19.524 Δvs过牌=-21.586 EqVsCall=   1.9% EXACT/244
+      候选下注 EV 的最优/次优差 = 7.2424 筹码（= 底池的 38.12%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@5=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@10=EV_NOT_AVAILABLE BET@13=EV_NOT_AVAILABLE BET@14=EV_NOT_AVAILABLE BET@19=EV_NOT_AVAILABLE BET@191=EV_NOT_AVAILABLE ALL_IN@191=EV_NOT_AVAILABLE
+  VERY_TIGHT   动作=CHECK  权益=10.10%   过牌EV=1.92    底池=19.0   门槛=0.0%
+      BET_SMALL       33%池   3.17BB 弃   8.1% 跟  49.5% 加  42.4% BetEV= -6.305 Δvs过牌= -8.224 EqVsCall=   4.1% EXACT/253
+      BET_MEDIUM      67%池   6.33BB 弃  10.4% 跟  55.0% 加  34.6% BetEV=-13.442 Δvs过牌=-15.361 EqVsCall=   1.3% EXACT/244
+      BET_LARGE      100%池   9.50BB 弃  12.6% 跟  59.5% 加  27.9% BetEV=-19.374 Δvs过牌=-21.294 EqVsCall=   0.5% EXACT/234
+      候选下注 EV 的最优/次优差 = 7.1368 筹码（= 底池的 37.56%）
+      mathDominance：dominant=false evGap=0.0000 evGapToPotRatio=0.00% 阈值=15%
+      候选动作（diagnostics.candidates）：FOLD=0.000 CHECK=0.000 BET@2=EV_NOT_AVAILABLE BET@5=EV_NOT_AVAILABLE BET@6=EV_NOT_AVAILABLE BET@10=EV_NOT_AVAILABLE BET@13=EV_NOT_AVAILABLE BET@14=EV_NOT_AVAILABLE BET@19=EV_NOT_AVAILABLE BET@191=EV_NOT_AVAILABLE ALL_IN@191=EV_NOT_AVAILABLE
+
+  Δ 对手弃牌率（第一档尺寸）STATION  vs 中性：-0.70pp
+  Δ 对手跟注率（第一档尺寸）STATION  vs 中性：+1.87pp
+  Δ 对手加注率（第一档尺寸）STATION  vs 中性：-1.17pp
+  Δ 对手弃牌率（第一档尺寸）TIGHT    vs 中性：+0.54pp
+  Δ 下注 EV（第一档尺寸）     STATION vs 中性：0.2587 筹码
+  Δ 下注 EV（第一档尺寸）     TIGHT   vs 中性：-0.0996 筹码
+  Δ 最优/次优下注 EV 差       STATION vs 中性：0.0413 筹码
+  Δ 过牌 EV                   STATION vs 中性：0.0841 筹码
+  Δ 权益                      STATION vs 中性：+0.44pp
+
+------------------------------------------------------------
+ 面对下注的节点：候选动作 EV / EqVsCall / 最优-次优差 的可用性
+------------------------------------------------------------
+  NEUTRAL    动作=CALL 权益=56.26% CallEV=12.442 门槛=29.79% 底池赔率=29.79% 可争夺量=47.0
+      候选下注 EV=NOT_AVAILABLE（我面对下注 ⇒ 响应模型不构建） ｜ mathDominance={"dominant":true,"evGap":12.4416535155835,"evGapToPotRatio":0.3770198035025303,"thresholdProvenance":"HEURISTIC_THRESHOLD","thresholdRatio":0.15,"noteZh":"跟注 在**可比较 EV 的动作**里明显占优（EV 差 12.44 筹码，相当于底池的 37.7% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）"}
+  MANIAC     动作=CALL 权益=57.61% CallEV=13.076 门槛=29.79% 底池赔率=29.79% 可争夺量=47.0
+      候选下注 EV=NOT_AVAILABLE（我面对下注 ⇒ 响应模型不构建） ｜ mathDominance={"dominant":true,"evGap":13.076294880064953,"evGapToPotRatio":0.39625136000196826,"thresholdProvenance":"HEURISTIC_THRESHOLD","thresholdRatio":0.15,"noteZh":"跟注 在**可比较 EV 的动作**里明显占优（EV 差 13.08 筹码，相当于底池的 39.6% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）"}
+
+  ---- 无人下注节点上「候选动作 EV」的真实字段名核查 ----
+  postflopFacts.betDecision.checkTree.checkEV = 0.261
+  原始 SizeResponseWithEquity 第一档的键：kind, ratioToPot, labelZh, betAmount, requestedAmount, wasCapped, requestedKind, heroIsAllIn, foldLikelihood, callLikelihood, raiseLikelihood, rawFoldLikelihood, rawCallLikelihood, rawRaiseLikelihood, buckets, classificationKind, noteZh, heroEquityVsCallRange, heroEquityVsRaiseRange, equityMethod, equityIterations, multiway, evKind
+  原始第一档：{
+    "kind": "BET_SMALL",
+    "ratioToPot": 0.3333333333333333,
+    "labelZh": "小注（≈1/3 池）",
+    "betAmount": 3.6666666666666665,
+    "requestedAmount": 3.6666666666666665,
+    "wasCapped": false,
+    "requestedKind": "BET_SMALL",
+    "heroIsAllIn": false,
+    "foldLikelihood": 0.10151565039584762,
+    "callLikelihood": 0.8222319946171666,
+    "raiseLikelihood": 0.07625235498697981,
+    "rawFoldLikelihood": 0.10151565039584762,
+    "rawCallLikelihood": 0.8222319946171666,
+    "rawRaiseLikelihood": 0.07625235498697981,
+    "buckets": [
+      {
+        "bucket": "FOLD",
+        "entries": [
+          {
+            "cardIndices": [
+              41,
+              43
+            ],
+            "probability": 0.006886312489842677
+          },
+          {
+            "cardIndices": [
+              42,
+              43
+  diagnostics.postflop.betDecision 的键：pot, checkEV, checkRealizationFactor, bestSize, preferredAction, sizes, heroEquityVsArrivalRange, draw, realization, profileEvidence, checkTree, droppedSizes, legalSizes, tendenciesZh, modelNoteZh, evidence
+  checkEV=0.261 checkScore=—
+  诊断 sizes[0] 的键：size, ratioToPot, betAmount, requestedAmount, wasCapped, requestedKind, heroIsAllIn, legal, foldLikelihood, callLikelihood, raiseLikelihood, foldRangeMass, callRangeMass, raiseRangeMass, foldComboCount, callComboCount, raiseComboCount, heroEquityVsCallRange, heroEquityVsRaiseRange, realizedEquityVsCall, evFoldBranch, evCallBranch, evRaiseBranch, evRaiseFoldLowerBound, betEV, deltaVsCheck, score, equityMethod, equityIterations
+  诊断 sizes[0]：{
+    "size": "BET_SMALL",
+    "ratioToPot": 0.3333333333333333,
+    "betAmount": 3.6666666666666665,
+    "requestedAmount": 3.6666666666666665,
+    "wasCapped": false,
+    "requestedKind": "BET_SMALL",
+    "heroIsAllIn": false,
+    "legal": true,
+    "foldLikelihood": 0.10151565039584762,
+    "callLikelihood": 0.8222319946171666,
+    "raiseLikelihood": 0.07625235498697981,
+    "foldRangeMass": 0.10151565039584762,
+    "callRangeMass": 0.8222319946171666,
+    "raiseRangeMass": 0.07625235498697981,
+    "foldComboCount": 224,
+    "callComboCount": 439,
+    "raiseComboCount": 57,
+    "heroEquityVsCallRange": 0,
+    "heroEquityVsRaiseRange": 0,
+    "realizedEquityVsCall": 0,
+    "evFoldBranch": 11,
+    "evCallBranch": -3.6666666666666665,
+    "evRaiseBranch": -7.333333333333333,
+    "evRaiseFoldLowerBound": -3.6666666666666665,
+    "betEV": -2.457362429146472,
+    "deltaVsCheck": -2.7188140448685223,
+    "score": 0.37641754341506717,
+    "equityMethod": "EXACT",
+    "equityIterations": 439
+  }
+
+------------------------------------------------------------
+ 决策稳定性 A：跨尺寸档宽扫描（2–30 BB，覆盖 SMALL/MEDIUM/LARGE/OVERBET）
+------------------------------------------------------------
+  NORMAL：2BB:CALL,56.26%  3BB:CALL,56.26%  4BB:CALL,56.26%  5BB:CALL,56.26%  6BB:CALL,56.26%  7BB:CALL,56.26%  8BB:CALL,56.26%  10BB:CALL,56.26%  12BB:CALL,56.26%  15BB:CALL,56.26%  20BB:CALL,56.26%  25BB:CALL,56.26%  30BB:CALL,56.26%
+  ⇒ 动作跳变次数=0  相邻步最大权益跳变=0.000pp  出现过的不同权益值=1/13
+  MANIAC：2BB:CALL,56.97%  3BB:CALL,56.97%  4BB:CALL,56.97%  5BB:CALL,56.97%  6BB:CALL,57.61%  7BB:CALL,57.61%  8BB:CALL,57.61%  10BB:CALL,57.61%  12BB:CALL,57.61%  15BB:CALL,57.61%  20BB:CALL,57.61%  25BB:CALL,57.61%  30BB:CALL,57.61%
+  ⇒ 动作跳变次数=0  相邻步最大权益跳变=0.642pp  出现过的不同权益值=2/13
+
+------------------------------------------------------------
+ 决策稳定性 B：合理输入微扰（6.0–8.0 BB，步长 0.25 BB）
+------------------------------------------------------------
+  NORMAL           6.00:CALL,56.26% 6.25:CALL,56.26% 6.50:CALL,56.26% 6.75:CALL,56.26% 7.00:CALL,56.26% 7.25:CALL,56.26% 7.50:CALL,56.26% 7.75:CALL,56.26% 8.00:CALL,56.26%
+  ⇒ 动作跳变次数=0  相邻步最大权益跳变=0.000pp
+  MANIAC           6.00:CALL,57.61% 6.25:CALL,57.61% 6.50:CALL,57.61% 6.75:CALL,57.61% 7.00:CALL,57.61% 7.25:CALL,57.61% 7.50:CALL,57.61% 7.75:CALL,57.61% 8.00:CALL,57.61%
+  ⇒ 动作跳变次数=0  相邻步最大权益跳变=0.000pp
+  CALLING_STATION  6.00:CALL,55.81% 6.25:CALL,55.81% 6.50:CALL,55.81% 6.75:CALL,55.81% 7.00:CALL,55.81% 7.25:CALL,55.81% 7.50:CALL,55.81% 7.75:CALL,55.81% 8.00:CALL,55.81%
+  ⇒ 动作跳变次数=0  相邻步最大权益跳变=0.000pp
+
+============================================================
+ 说明：本探针不改变任何生产代码，只读取现有接口。
+============================================================

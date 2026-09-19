@@ -177,6 +177,13 @@ import {
 } from '../../domain/postflop/betResponse.ts';
 import { boardTextureOf } from '../../domain/postflop/boardDelta.ts';
 import {
+  ActionContext,
+  actionContextOf,
+  lastAggressorOfStreet,
+  type ActionContextValue,
+} from '../../domain/postflop/actionContext.ts';
+import { buildBettingRangeFacts } from './bettingRange.ts';
+import {
   boardTextureLabelOf,
   riverComboClassOf,
 } from '../../domain/postflop/riverProfileClassify.ts';
@@ -296,6 +303,21 @@ export type ContextBuildInput = {
    * 不传 / 全 `null` ⇒ 所有分街系数 = 1 ⇒ 与 V2 archetype-only **逐位一致**。
    */
   observedStats?: PlayerObservedStats | null;
+  /**
+   * 🔴 **下注范围构成注入点**（TEST 09 §二十：合成向量测试）。
+   *
+   * 给了就把它当作「无摊牌价值的牌下注的概率」，**不再**由画像推导，
+   * 用于独立验证「给定范围构成 ⇒ 权益 ⇒ 动作」这条链路：
+   *
+   * ```text
+   * 50% 无解价值 + 50% 纯诈唬  ⇒  抓诈牌权益 ≈ 50%  ⇒  面对 120% 池应 CALL
+   * 80% 价值     + 20% 诈唬    ⇒  抓诈牌权益 ≈ 20%  ⇒  应 FOLD
+   * ```
+   *
+   * ⚠️ 它**不是**模型参数，不进任何默认路径（缺省 `undefined` 时一切由画像推导）。
+   * 只允许测试 / 审计脚本显式传入。
+   */
+  betRangeBluffShareOverride?: number | null;
   /** 蒙特卡洛种子（可复现） */
   equitySeed?: number;
   /**
@@ -385,6 +407,16 @@ function buildMathSnapshot(
   opponentId: string | undefined,
   equity: { value: number | null; source: EquitySource | null },
   options: { layeredEV?: MathSnapshot['layeredEV'] } = {},
+  /**
+   * 🔴 **TEST 09 P0-1**：`Hero vs Villain **下注范围**` 的权益。
+   *
+   * 面对已下注节点时，`callEV` **必须**用它而不是 `equity.value`（到达范围）。
+   * 详见 `bettingRange.ts` 的说明与调用点的注释。
+   *
+   * `null` / 未给 ⇒ 沿用到达范围权益（非面对下注节点、或多人口径），
+   * 此时行为与修复前**逐位一致**。
+   */
+  heroEquityVsBetRange: number | null = null,
 ): MathSnapshot {
   const pot = computePot(state);
   const callCost = requiredCallAmount(state, hero.id);
@@ -513,8 +545,19 @@ function buildMathSnapshot(
    * 这样 `callEV` 与「判方向用的那个 EV」永远是同一个数 ——
    * 否则 `finalMathSanityCheck` 的「建议跟注但 EV 为负」会误报。
    */
+  /*
+   * 🔴 **TEST 09 P0-1：`callEV` 的权益输入对象**。
+   *
+   * - 面对 Villain 已下注、且算得出他的**下注范围** ⇒ 用 `heroEquityVsBetRange`；
+   * - 其余情形 ⇒ 用到达范围权益（与修复前逐位一致）。
+   *
+   * ⚠️ 这两个量**不能共用同一个字段**：到达范围回答「他拥有什么」，
+   * 下注范围回答「他选择下注的是什么」。前者用于「我领先他的整体范围吗」，
+   * 后者用于「跟这一注划不划算」。混用会系统性高估 `CALL EV`。
+   */
+  const equityForCallEV = heroEquityVsBetRange ?? equity.value;
   const lowerBoundCallEV =
-    equity.value !== null && callCost > 0 ? equity.value * winnable - callCost : null;
+    equityForCallEV !== null && callCost > 0 ? equityForCallEV * winnable - callCost : null;
 
   const board = allBoardCards(state);
   const described =
@@ -563,6 +606,11 @@ function buildMathSnapshot(
     ...(layeredEV !== undefined ? { layeredEV } : {}),
     heroEquity: equity.value,
     equitySource: equity.source,
+    /*
+     * 🔴 **TEST 09 P0-1**：与 `heroEquity`（到达范围）**分开保存**（§八）。
+     * `null` 表示「不是面对下注节点，或算不出下注范围」——不是 0。
+     */
+    heroEquityVsBetRange,
     callEV,
     handRankZh:
       described !== null
@@ -1610,6 +1658,53 @@ function rangeEquityOfMany(
 }
 
 /**
+ * 🔴 **TEST 08 P0-3：节点语义判定**。
+ *
+ * ## 问的是什么
+ *
+ * **首要对手**在这个决策点处于哪种下注节点语义 —— 由此决定
+ * `FoldTo*CBet` 这类「他面对下注时的反应」统计能不能进直接通道。
+ *
+ * ## 关键：不能只看「本街谁已经下注」
+ *
+ * 第一版只找本街最后一个下注者，结果 TEST 08（Hero 正在决定要不要领打）
+ * 返回 `null` —— **门根本没触发**，`FoldToTurnCBet` 照样生效。
+ *
+ * 正确的问法是「**这一注属于哪一类**」，而答案取决于
+ * 「下注者 vs 上一街进攻者」，与「是不是 Hero 在下注」无关：
+ *
+ * | 情形 | 本街下注者 | 判定 |
+ * |---|---|---|
+ * | Hero 正在领打（尚未下注） | Hero | 与上一街进攻者比较 ⇒ DONK / CBET |
+ * | Hero 已经下注 | Hero | 同上 |
+ * | 对手下注 | 对手 | 与上一街进攻者比较 ⇒ CBET / DONK |
+ * | 本街无人下注且无人正在下注 | — | `null`（他还没面对任何下注） |
+ *
+ * 上一街无人进攻（check-check / 未到该街）⇒ `GENERIC_BET`（延迟 cbet 与探牌
+ * 从行动序列上无法区分，不猜）。
+ */
+function nodeActionContextOf(
+  state: GameState,
+  hero: PlayerState,
+  primaryOpponent: PlayerState | null,
+): ActionContextValue | null {
+  if (primaryOpponent === null) return null;
+  /*
+   * 「谁在下注」：已发生的最后一个下注者优先；否则若正轮到 Hero 行动，
+   * 则他**正在决定要不要下注** —— 对响应层来说这就是「他面对 Hero 的下注」。
+   */
+  const bettor = lastAggressorOfStreet(state.actions, state.street) ?? hero.position;
+  if (bettor !== hero.position && bettor !== primaryOpponent.position) {
+    return ActionContext.GENERIC_BET;
+  }
+  return actionContextOf({
+    street: state.street,
+    bettorPosition: bettor,
+    actions: state.actions,
+  });
+}
+
+/**
  * 构建下注决策事实包：响应模型（逐尺寸概率 + 条件范围）+ 条件范围权益 +
  * Hero 听牌潜力 + 权益实现因子。
  *
@@ -1672,7 +1767,7 @@ function buildBetDecisionFacts(input: {
   v3Street?:
     | {
         street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER';
-        factors: { foldScale: number; callScale: number; checkRaiseScale: number };
+        factors: { foldScale: number; callScale: number; checkRaiseScale: number; betScale?: number };
       }
     | undefined;
   /**
@@ -2051,16 +2146,19 @@ function buildBetDecisionFacts(input: {
   })();
 
   /*
-   * ---- 河牌 CHECK 树（§5/§6）----
+   * ---- CHECK 树（§5/§6；TEST 08 P0-2：**不再限定河牌**）----
    *
    * Hero 在**前位**过牌之后对手仍可下注，因此不能把过牌当成摊牌。
-   * 这里构建最小树：`CHECK_BACK` | `BET`（代表尺寸 = 2/3 池，按他的有效筹码封顶），
-   * 并分别算「对他过牌范围」与「对他下注范围」的权益。
-   * 后位（他刚过牌）时 `composeCheckEVTree` 会走摊牌终止分支，不做多余计算。
+   * 修复前这里写的是 `input.street === 'RIVER' && !inPosition` ——
+   * 结果翻牌/转牌的前位过牌一律退化成 `HEURISTIC_ONE_STREET`，
+   * `betLikelihood` 恒为 0（对 MANIAC 与 NIT 给出完全相同的结果）。
+   *
+   * 但「我前位过牌 ⇒ 他仍可下注」是**行动顺序**问题，与街无关。
+   * 因此门只由 `inPosition` 决定：后位（他刚过牌）⇒ 摊牌终止；
+   * 前位 ⇒ 构建 `CHECK_BACK | BET` 最小树。
    */
   const checkTree = (() => {
-    const heroIsOopOnRiver = input.street === 'RIVER' && !inPosition;
-    if (!heroIsOopOnRiver) {
+    if (inPosition) {
       return composeCheckEVTree({
         pot: input.pot,
         street: input.street,
@@ -2085,6 +2183,27 @@ function buildBetDecisionFacts(input: {
     const betEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
     let checkBackMass = 0;
     let betMass = 0;
+    /*
+     * 🔴 **TEST 08 P0-2 诊断：与范围构成无关的「行为倾向」**。
+     *
+     * `betLikelihood = betMass / (betMass + checkBackMass)` 是**占到达范围的份额**，
+     * 会被范围宽度稀释：MANIAC 开池 58% ⇒ 带进来大量「必然过牌」的弱牌
+     * （tier 3 中段、tier 4/5 垃圾），份额被摊薄。实测 MANIAC 0.1159 < NIT 0.1215，
+     * 但**不是因为他不爱开枪**，而是因为他的分母大。
+     *
+     * 因此这里额外累积**逐组合下注权重的范围均值**（按到达概率加权）：
+     *
+     * ```text
+     * fireWeight = Σ p(combo) × betWeight(combo) / Σ p(combo)
+     * ```
+     *
+     * 它是「他拿着**平均一手牌**时的开枪意愿」，与范围宽窄无关 ——
+     * 这才是画像下注倾向应该驱动的量。两者都保留：
+     * - `betLikelihood` 用于 EV 计算（它必须是份额，否则 EV 不一致）
+     * - `fireWeight` 用于**方向审计**与画像差异的可读对比
+     */
+    let betWeightAcc = 0;
+    let weightAll = 0;
     let heroEval;
     try {
       heroEval = evaluateCards([...input.heroHole, ...input.board]);
@@ -2114,6 +2233,8 @@ function buildBetDecisionFacts(input: {
         street: input.street,
       });
       const w = classification.weights;
+      betWeightAcc += entry.probability * w.bet;
+      weightAll += entry.probability;
       if (w.checkBack > 0) {
         checkBackEntries.push({
           cardIndices: entry.combo.cardIndices as unknown as readonly [number, number],
@@ -2129,6 +2250,8 @@ function buildBetDecisionFacts(input: {
         betMass += entry.probability * w.bet;
       }
     }
+    /** 与范围宽度无关的「平均一手牌的开枪意愿」（0..1） */
+    const fireWeight = weightAll > 0 ? betWeightAcc / weightAll : null;
     const totalMass = checkBackMass + betMass;
     if (!(totalMass > 0)) {
       return composeCheckEVTree({
@@ -2172,6 +2295,7 @@ function buildBetDecisionFacts(input: {
         heroEquityVsCheckBackRange: checkBackEquity.value,
         heroEquityVsBetRange: betEquity.value,
         villainBetAmount: representative,
+        ...(fireWeight !== null ? { fireWeight } : {}),
       },
     });
   })();
@@ -3371,14 +3495,18 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     }
     return map;
   })();
+  /* 当前街（由公共牌张数判定）—— 必须在 profile 解析**之前**算好：
+   * 分街统计要按各自街做语义门匹配（TEST 09）。 */
+  const boardNow = allBoardCards(state).length;
+  const streetOfNow: 'FLOP' | 'TURN' | 'RIVER' =
+    boardNow >= 5 ? 'RIVER' : boardNow === 4 ? 'TURN' : 'FLOP';
   const resolvedV3 = resolvePlayerProfile({
     baseArchetype: (input.quickProfile ?? null) as never,
     observedStats: observedForPrimary,
     opportunities: opportunitiesForPrimary as never,
+    actionContext: nodeActionContextOf(state, hero, primaryOpponent),
+    street: streetOfNow,
   });
-  const boardNow = allBoardCards(state).length;
-  const streetOfNow: 'FLOP' | 'TURN' | 'RIVER' =
-    boardNow >= 5 ? 'RIVER' : boardNow === 4 ? 'TURN' : 'FLOP';
   const v3StreetInput = {
     street: streetOfNow,
     factors: resolvedV3.resolved.street[streetOfNow],
@@ -3415,6 +3543,68 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         ),
   );
 
+  /* ---- 4c. BETTING RANGE（TEST 09 P0-1）---- */
+  /*
+   * 🔴 面对 Villain **已经下注**的节点，`CALL EV` 必须用
+   * 「Hero vs 他的**下注范围**」的权益，而不是「vs 他的**到达范围**」。
+   *
+   * 到达范围里有一大半是根本不会下注的牌（中对、底对、错失听牌）；
+   * 拿它们摊牌等于假设他会用这些牌主动打光全部筹码 —— 他的下注范围
+   * 远比到达范围**偏价值**，所以真实权益**更低**，`CALL EV` 被系统性高估。
+   *
+   * 这里在 `math` 之前算好，供 `buildMathSnapshot` 的 `callEV` 使用；
+   * `math.heroEquity`（到达范围）**保持原义不变**，另有
+   * `math.heroEquityVsBetRange` 单独承载新口径（§八：不共用同一个字段）。
+   */
+  const bettingRangeFacts = mark('bettingRange', () => {
+    const bettorPosition = lastAggressorOfStreet(state.actions, state.street);
+    const primaryPosition = primaryOpponent === null ? null : primaryOpponent.position;
+    if (bettorPosition === null || primaryPosition === null) return null;
+    /*
+     * 只有「首要对手正在下注」时才有下注范围可言。
+     * Hero 自己下注时，该量是「Hero 的下注范围」——不是本模块的对象。
+     */
+    if (bettorPosition !== primaryPosition) return null;
+    if (primaryBuild.range === null || hero.holeCards === null || hero.holeCards.length !== 2) {
+      return null;
+    }
+    const betChips = state.currentBet;
+    if (!(betChips > 0)) return null;
+    const potBeforeBet = Math.max(0, computePot(state) - betChips);
+    if (!(potBeforeBet > 0)) return null;
+    const ownDimensions =
+      playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions;
+    const tendencies = responseTendenciesOf(
+      ownDimensions,
+      playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
+      v3StreetInput,
+    );
+    return buildBettingRangeFacts({
+      arrivalEntries: primaryBuild.range.entries.map((e) => ({
+        cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
+        probability: e.probability,
+      })),
+      board: allBoardCards(state),
+      heroHole: hero.holeCards,
+      potChips: potBeforeBet,
+      betChips,
+      street: streetOfNow,
+      tendencies,
+      ...(input.betRangeBluffShareOverride !== undefined
+        ? { bluffShareOverride: input.betRangeBluffShareOverride }
+        : {}),
+    });
+  });
+  const heroEquityVsBetRange =
+    bettingRangeFacts === null
+      ? null
+      : rangeEquityOfMany(
+          hero.holeCards ?? [],
+          allBoardCards(state),
+          [bettingRangeFacts.entries],
+          (input.equitySeed ?? 20260913) + 1301,
+        ).value;
+
   /* ---- 5. 数学 ---- */
   const math = mark('math', () =>
     buildMathSnapshot(
@@ -3426,6 +3616,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         source: equity.source,
       },
       layeredEV !== undefined ? { layeredEV } : {},
+      heroEquityVsBetRange,
     ),
   );
 
@@ -3645,6 +3836,28 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
             hero.holeCards ?? [],
           ),
           /*
+           * 🔴 **TEST 09 P0-1：BET RANGE（他的**下注**范围）**。
+           *
+           * 与上面的 `opponentRangeFacts`（**到达**范围）**并列但不同义**（§十九）：
+           * - `opponentRangeFacts` 回答「他走到这个节点**拥有**什么」
+           * - `bettingRangeFacts` 回答「他在这里实际**选择下注**的是哪些牌」
+           *
+           * `null` 表示当前不是「他在下注」的节点（或算不出来）——不是空范围。
+           */
+          bettingRangeFacts:
+            bettingRangeFacts === null
+              ? null
+              : {
+                  classMasses: Object.freeze({ ...bettingRangeFacts.classMasses }),
+                  arrivalMass: bettingRangeFacts.arrivalMass,
+                  betMass: bettingRangeFacts.betMass,
+                  betShareOfArrival: bettingRangeFacts.betShareOfArrival,
+                  entryCount: bettingRangeFacts.entries.length,
+                  noteZh: bettingRangeFacts.noteZh,
+                },
+          betRangeSizing: bettingRangeFacts?.sizing ?? null,
+          heroEquityVsBetRange,
+          /*
            * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
            *
            * 只有这里能算：决策层拿不到 `Range` 对象，而「面对每个尺寸的
@@ -3821,6 +4034,12 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
       baseArchetype: (input.quickProfile ?? null) as string | null,
       observedStatCount: resolvedV3.observedStatCount,
       confidenceTierZh: resolvedV3.confidenceTierZh,
+      /*
+       * 🔴 **TEST 08 P0-3**：节点语义与「被语义门挡下的分街条目」。
+       * 不暴露它们的话，「统计给了却毫无影响」会变成一个无法审计的静默行为。
+       */
+      actionContext: resolvedV3.actionContext,
+      deniedStreetTraits: Object.freeze([...resolvedV3.deniedStreetTraits]),
       dimensions: Object.freeze({ ...resolvedV3.resolved.dimensions }),
       street: Object.freeze({
         PREFLOP: Object.freeze({ ...resolvedV3.resolved.street.PREFLOP }),

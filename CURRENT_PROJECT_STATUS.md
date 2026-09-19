@@ -389,7 +389,7 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 117 个文件 / 58554 行（含新增 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
 | 测试代码 | **84 个文件 / 44116 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,820 项 / 137 套件 / 88 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**） |
+| 测试 | **1,847 项 / 137 套件 / 90 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**） |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **152 个产物 / 6 类** |，已接入 `npm run verify` |
 | Git 状态（V2.1 审计后） | ⚠️ **不是干净基线**：`HEAD = c3391ef`，**26 个已修改**（其中 5 个是本轮修的缺陷）+ 大量未跟踪文件（既有工作一律保留）。可复现清单与逐个 sha256 见 `reports/evidence/v21-repro-state.txt` |

@@ -1,0 +1,22 @@
+
+================ LIMPED（S7 逐字） ================
+  UNKNOWN          ok=true 权益=0.07845850542399040 动作=FOLD profileRange=null
+  NORMAL           ok=true 权益=0.07872806694852144 动作=FOLD profileRange=有
+  none             ok=true 权益=0.07845850542399040 动作=FOLD profileRange=null
+  explicitNeutral  ok=true 权益=0.07845850542399040 动作=FOLD profileRange=null
+  ---- 判定 ----
+  UNKNOWN vs NORMAL          : Δ权益 = 2.695615e-4  ⇒ **不同**
+  UNKNOWN vs 完全不给画像     : Δ权益 = 0.000000e+0  ⇒ 逐位相同
+  UNKNOWN vs 显式中性画像     : Δ权益 = 0.000000e+0  ⇒ 逐位相同
+  ⇒ NEUTRAL_PARITY（UNKNOWN == NORMAL，本结构）= **FAIL**
+
+================ SRP 对照 ================
+  UNKNOWN          ok=true 权益=0.11021033037680723 动作=FOLD profileRange=null
+  NORMAL           ok=true 权益=0.11021033037680723 动作=FOLD profileRange=有
+  none             ok=true 权益=0.11021033037680723 动作=FOLD profileRange=null
+  explicitNeutral  ok=true 权益=0.11021033037680723 动作=FOLD profileRange=null
+  ---- 判定 ----
+  UNKNOWN vs NORMAL          : Δ权益 = 0.000000e+0  ⇒ 逐位相同
+  UNKNOWN vs 完全不给画像     : Δ权益 = 0.000000e+0  ⇒ 逐位相同
+  UNKNOWN vs 显式中性画像     : Δ权益 = 0.000000e+0  ⇒ 逐位相同
+  ⇒ NEUTRAL_PARITY（UNKNOWN == NORMAL，本结构）= PASS

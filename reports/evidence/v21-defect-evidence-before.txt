@@ -1,0 +1,22 @@
+########## MODE = before ##########
+
+=== D-A 非法数值（observed / priorWeight）===
+  A0 对照：observed 30/50（合法）                             ✔ 权益=57.6956% 所需=29.79% callEV=13.1169 动作=CALL —
+  A1 observed successes = NaN                          ✔ 权益=67.5071% 所需=29.79% callEV=17.7283 动作=CALL —
+  A2 observed opportunities = NaN                      ✔ 权益=67.5071% 所需=29.79% callEV=17.7283 动作=CALL —
+  A3 observed opportunities = Infinity                 ✔ 权益=56.9904% 所需=29.79% callEV=12.7855 动作=CALL —
+  A4 observed successes = -5（负数）                       ✔ 权益=57.3455% 所需=29.79% callEV=12.9524 动作=CALL —
+
+=== D-B 残缺画像（traits 缺条目）===
+  B0 对照：完整画像                                           ✔ 权益=57.6091% 所需=29.79% callEV=13.0763 动作=CALL —
+  B1 traits = {} （空对象）                                 ✖ ok=false stage=CONTEXT :: [{"code":"CONTEXT_BUILD_FAILED","message":"构建决策上下文失败：Cannot read properties of undefined (reading 'effectiveRate')"}]
+  B2 traits 只有 riverBluff 一条                           ✖ ok=false stage=CONTEXT :: [{"code":"CONTEXT_BUILD_FAILED","message":"构建决策上下文失败：Cannot read properties of undefined (reading 'effectiveRate')"}]
+
+=== D-C profileMaterialityOf 非有限输入 ===
+  C0 正常 TRIVIAL                            ⇒ TRIVIAL    equityDelta=0.010000000000000009 画像物性 TRIVIAL（EXPERIMENTAL 阈值）：权益差 1.00pp｜诈唬质量差 1.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+  C1 equityB = NaN                         ⇒ TRIVIAL    equityDelta=NaN 画像物性 TRIVIAL（EXPERIMENTAL 阈值）：权益差 NaNpp｜诈唬质量差 1.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+  C2 equityB = Infinity                    ⇒ STRONG     equityDelta=Infinity 画像物性 STRONG（EXPERIMENTAL 阈值）：权益差 Infinitypp｜诈唬质量差 1.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+  C3 bluffMassB = NaN（权益大差）                ⇒ STRONG     equityDelta=0.06000000000000005 画像物性 STRONG（EXPERIMENTAL 阈值）：权益差 6.00pp｜诈唬质量差 NaNpp｜EV 差 0.00 筹码｜范围距离 0.0000
+  C4 equityA = null 但 mass 差 0.5           ⇒ NO_EFFECT  equityDelta=null 画像物性 NO_EFFECT（EXPERIMENTAL 阈值）：权益差 —｜诈唬质量差 50.00pp｜EV 差 0.00 筹码｜范围距离 0.0000
+
+（以上输出即为本 MODE 的完整证据）

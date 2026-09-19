@@ -158,6 +158,8 @@ function nodeB(profile: string, hint = 'UNKNOWN'): ManualHandInput {
 type Run = {
   action: string | null;
   equity: number | null;
+  /** 🔴 TEST 09 P0-1：`Hero vs Villain **下注范围**` 的权益（与 `equity` 分开） */
+  betRangeEquity: number | null;
   required: number;
   callEV: number | null;
   margin: string | null;
@@ -178,6 +180,8 @@ function run(input: ManualHandInput): Run {
   return {
     action: result.decision.action,
     equity: math.heroEquity,
+    /* 🔴 TEST 09 P0-1：面对下注时 `callEV` 用的是**下注范围**权益（与 `equity` 分开） */
+    betRangeEquity: math.heroEquityVsBetRange,
     required: math.requiredEquity,
     callEV: math.callEV,
     margin: result.decision.diagnostics.decisionMargin?.kind ?? null,
@@ -278,45 +282,83 @@ test('T1：画像必须进入范围主链，且 A(紧) < B(普通) < C(诈唬多
  * T2：门槛邻近节点 —— 画像合法地翻转动作
  * ============================================================ */
 
-test('T2：门槛邻近节点上，画像必须能把权益推过所需权益（于是 Call EV > 0 且动作变 CALL）', () => {
+test('T2：门槛邻近节点上，画像必须改变「面对下注」的权益（方向 + 由 EV 排名产生动作）', () => {
   const normal = run(nodeB('NORMAL'));
   const veryTight = run(nodeB('VERY_TIGHT'));
   const bluffHeavy = run(nodeB('BLUFF_HEAVY'));
   const maniac = run(nodeB('MANIAC'));
 
-  // 基线：权益略低于所需 ⇒ 弃牌，Call EV < 0
+  /*
+   * 🔴 **契约变更（TEST 09 P0-1，已记录，非放宽）**
+   *
+   * 修复前本测试断言「画像必须把权益**推过所需权益** ⇒ Call EV > 0 ⇒ CALL」。
+   * 那个结论建立在 `callEV` 用**到达范围**权益之上 —— 而面对已下注节点，
+   * 到达范围权益会**系统性高估**跟注 EV（到达范围里一大半是不会下注的牌）。
+   *
+   * 修正后 `callEV` 用**下注范围**权益，本节点（实测）：
+   *
+   * | 画像 | 到达权益 | **下注范围权益** | 所需 |
+   * |---|---|---|---|
+   * | NORMAL | 19.20% | 6.92% | 19.35% |
+   * | VERY_TIGHT | 17.08% | 1.77% | 19.35% |
+   * | BLUFF_HEAVY | 23.09% | 15.21% | 19.35% |
+   * | MANIAC | 24.01% | 16.91% | 19.35% |
+   *
+   * 即便 MANIAC 也没过 19.35% ⇒ 真实答案是 FOLD。**本轮不锁定按钮**
+   *（用户 §十七 明确要求：修复后仍可能全是 FOLD）。
+   *
+   * 仍然锁死的是**方向**与**因果关系**：
+   * ①「到达权益」与「下注范围权益」都必须随画像单调变化，且后者恒不高于前者；
+   * ② 动作必须由 EV 排名自然产生（不是被覆盖出来的）。
+   */
+  const pBetEq = (r: Run): number => r.betRangeEquity ?? 0;
+
+  // 基线：无论用哪个口径，权益都低于门槛 ⇒ FOLD、Call EV < 0
   assert.ok(
     normal.equity! < normal.required,
-    `基线（无画像调整）必须略低于门槛：${(normal.equity! * 100).toFixed(2)}% vs ${(normal.required * 100).toFixed(2)}%`,
+    `基线（到达口径）必须低于门槛：${(normal.equity! * 100).toFixed(2)}% vs ${(normal.required * 100).toFixed(2)}%`,
   );
   assert.equal(normal.action, 'FOLD');
   assert.ok(normal.callEV! < 0, `基线 Call EV 必须为负：${normal.callEV!.toFixed(3)}`);
 
-  // C 类画像：权益被推过门槛 ⇒ Call EV > 0 ⇒ 动作自然变 CALL（不是被覆盖出来的）
-  for (const [name, r] of [['BLUFF_HEAVY', bluffHeavy], ['MANIAC', maniac]] as const) {
+  /*
+   * ① 下注范围权益必须存在、且**不高于**到达范围权益（它是偏价值子集）。
+   */
+  for (const [name, r] of [['NORMAL', normal], ['VERY_TIGHT', veryTight], ['BLUFF_HEAVY', bluffHeavy], ['MANIAC', maniac]] as const) {
+    assert.notEqual(r.betRangeEquity, null, `${name}：必须给出下注范围权益`);
     assert.ok(
-      r.equity! > r.required,
-      `${name}：权益必须被推过门槛：${(r.equity! * 100).toFixed(2)}% vs ${(r.required * 100).toFixed(2)}%`,
+      r.betRangeEquity! <= r.equity! + 1e-12,
+      `${name}：下注范围是到达范围的偏价值子集 ⇒ 权益不得更高：` +
+        `${(r.betRangeEquity! * 100).toFixed(2)}% vs ${(r.equity! * 100).toFixed(2)}%`,
     );
-    assert.ok(r.callEV! > 0, `${name}：Call EV 必须为正：${r.callEV!.toFixed(3)}`);
-    assert.equal(r.action, 'CALL', `${name}：动作必须是 CALL（由 EV 排名自然产生）`);
-    /*
-     * ⚠️ 这里是**边缘跟注**（Call EV 为正但落在工程容差带内）⇒ 边际记 `MARGINAL`。
-     * 这不是矛盾：**动作**由 EV 排名决定，**边际**描述离翻面有多远 ——
-     * 两者是分开的两个量（见 T13）。
-     */
-    assert.equal(r.margin, 'MARGINAL', `${name}：这是边缘跟注，边际应记 MARGINAL`);
   }
 
-  // A 类画像：反方向（更该弃牌）
-  assert.ok(veryTight.equity! < normal.equity!, 'VERY_TIGHT 必须比基线更低');
-  assert.equal(veryTight.action, 'FOLD');
-
-  // 单调性也在这个节点上成立
+  /*
+   * ② 方向：诈唬倾向越高 ⇒ 下注范围里空气越多 ⇒ 抓诈牌对其权益越高。
+   *    这是本轮修复**真正**要保住的性质。
+   */
   assert.ok(
-    veryTight.equity! < normal.equity! && normal.equity! < Math.min(bluffHeavy.equity!, maniac.equity!),
-    'A < B < C 的权益单调性必须在门槛邻近节点上同样成立',
+    pBetEq(veryTight) < pBetEq(normal),
+    `VERY_TIGHT 的诈唬最少 ⇒ 下注范围权益最低：${pBetEq(veryTight).toFixed(4)} vs ${pBetEq(normal).toFixed(4)}`,
   );
+  assert.ok(
+    pBetEq(normal) < pBetEq(bluffHeavy),
+    `BLUFF_HEAVY 比普通更爱诈唬 ⇒ 下注范围权益更高：${pBetEq(normal).toFixed(4)} vs ${pBetEq(bluffHeavy).toFixed(4)}`,
+  );
+  assert.ok(
+    pBetEq(bluffHeavy) <= pBetEq(maniac) + 1e-12,
+    `MANIAC 是诈唬上限 ⇒ 不得低于 BLUFF_HEAVY：${pBetEq(maniac).toFixed(4)} vs ${pBetEq(bluffHeavy).toFixed(4)}`,
+  );
+
+  // ③ 动作必须跟随 EV 符号（不是被画像覆盖出来的）
+  for (const [name, r] of [['NORMAL', normal], ['VERY_TIGHT', veryTight], ['BLUFF_HEAVY', bluffHeavy], ['MANIAC', maniac]] as const) {
+    const positive = r.callEV !== null && r.callEV > 0;
+    assert.equal(
+      r.action === 'CALL',
+      positive,
+      `${name}：动作必须由 EV 排名产生（Call EV ${r.callEV} ⇒ ${r.action}）`,
+    );
+  }
 });
 
 /* ============================================================
@@ -394,7 +436,30 @@ test('T4：画像进入范围后，末端抓诈唬偏移必须归零并**标注�
 
 test('T13：`decisionMargin`（离翻面多远）与模型置信度（首选比次选好多少）必须分开', () => {
   const deep = analyzeManualHand(nodeA('NORMAL'), OPTIONS);
-  const edge = analyzeManualHand(nodeB('BLUFF_HEAVY'), OPTIONS);
+  /*
+   * 🔴 **契约变更（TEST 09 P0-1，已记录，非放宽）**
+   *
+   * 修复前这里用 `nodeB('BLUFF_HEAVY')` 当「边缘节点」，因为当时
+   * `callEV` 用**到达范围**权益，那个节点恰好落在容差带内。
+   *
+   * 改用**下注范围**权益后，该节点 `callEV = −192.69`（带 ±77.50）——
+   * **已经不在带内**，用它就测不到「带内 ⇒ MARGINAL」这条性质了。
+   *
+   * 因此这里改用显式的**范围构成注入**构造一个真正带内的节点（§二十）：
+   * 假设他的下注范围里有 90% 的空气，则抓诈牌的 `callEV = −2.03`，
+   * 落在 ±77.50 内。这样「带内」这个前提是**被构造出来的、可复现的**，
+   * 而不是依赖某个恰好成立的旧数值。
+   */
+  const edgeNode: ManualHandInput = {
+    ...(nodeB('NORMAL') as unknown as Record<string, unknown>),
+    villain: {
+      quickProfile: 'NORMAL',
+      dynamicHint: 'UNKNOWN',
+      stackBB: 100,
+      betRangeBluffShareOverride: 0.9,
+    },
+  } as unknown as ManualHandInput;
+  const edge = analyzeManualHand(edgeNode, OPTIONS);
   assert.equal(deep.ok, true);
   assert.equal(edge.ok, true);
   if (!deep.ok || !edge.ok) return;
@@ -415,13 +480,31 @@ test('T13：`decisionMargin`（离翻面多远）与模型置信度（首选比�
     '说明里必须标明容差带是工程容差（不是统计误差）',
   );
 
-  // 边缘节点：EV 落在容差带内 ⇒ MARGINAL，但动作仍可以是 CALL
+  // 边缘节点：EV 落在容差带内 ⇒ MARGINAL（动作仍由 EV 排名决定，可以是 FOLD）
   assert.equal(edgeMargin?.kind, 'MARGINAL');
-  assert.ok(Math.abs(edgeMargin!.evChips!) <= edgeMargin!.bandChips);
-  assert.equal(edge.decision.action, 'CALL');
+  assert.ok(
+    Math.abs(edgeMargin!.evChips!) <= edgeMargin!.bandChips,
+    `边缘节点的 EV 必须落在容差带内：|${edgeMargin!.evChips!.toFixed(2)}| vs ${edgeMargin!.bandChips.toFixed(2)}`,
+  );
+  /*
+   * 动作必须跟随 EV 符号（带内不改变排名）—— 本条不锁具体按钮（§十七）。
+   */
+  assert.equal(
+    edge.decision.action === 'CALL',
+    (edge.decision.diagnostics.math.callEV ?? 0) > 0,
+    `带内动作仍必须由 EV 排名产生（callEV=${edge.decision.diagnostics.math.callEV}）`,
+  );
 
-  // 两者都进诊断（供界面与 JSONL 追溯），且字段不同名
+  /*
+   * 核心断言：两个量**必须可区分**，且**不能**由一方推出另一方。
+   * 实测：深水区 = CLEAR_FOLD + 置信度 HIGH；边缘区 = MARGINAL + 置信度 MEDIUM。
+   */
   assert.notEqual(deepMargin!.kind, edgeMargin!.kind, '两个节点的边际必须可区分');
+  assert.notEqual(
+    deep.decision.diagnostics.postflop?.confidence,
+    edge.decision.diagnostics.postflop?.confidence,
+    '两个节点的偏好分置信度必须可区分（否则两个量无法证明是独立的）',
+  );
 });
 
 /* ============================================================

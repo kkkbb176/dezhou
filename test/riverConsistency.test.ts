@@ -236,12 +236,38 @@ test('R3：节点增量 EV —— `callEV = 权益 × 可争夺量 − 跟注额
   const { context } = runPipeline(riverSpot());
   const math = context.math;
   assert.notEqual(math.heroEquity, null, '本用例需要算得出权益');
-  const equity = math.heroEquity!;
-  const expected = equity * math.winnable - math.callCost;
+  /*
+   * 🔴 **契约变更（TEST 09 P0-1，已记录，非放宽）**
+   *
+   * 修复前 `callEV` 用的是 **到达范围**权益（`math.heroEquity`）。
+   * 面对 Villain 已下注的节点，那会**系统性高估**跟注 EV ——
+   * 到达范围里有一大半是根本不会下注的牌（中对、底对、错失听牌），
+   * 拿它们摊牌等于假设他会用这些牌主动打光全部筹码。
+   *
+   * 现在面对下注时 `callEV` 用 **`math.heroEquityVsBetRange`**（他的**下注**范围）。
+   * 本测试的**不变量**（`callEV = 权益输入 × winnable − callCost`）**没有变**，
+   * 变的只是「权益输入」是哪一个字段 —— 因此断言改为读引擎**实际使用的**那个，
+   * 并同时验证两个字段确实分开保存（§八）。
+   */
+  const equityInput = math.heroEquityVsBetRange ?? math.heroEquity!;
+  const expected = equityInput * math.winnable - math.callCost;
   assert.notEqual(math.callEV, null, '必须给出跟注 EV');
   assert.ok(
     Math.abs(math.callEV! - expected) < 1e-9,
     `跟注 EV 必须等于「权益 × 可争夺量 − 跟注额」：${expected.toFixed(4)} vs ${math.callEV!.toFixed(4)}`,
+  );
+  /*
+   * 面对下注的节点必须**真的**用了下注范围权益 —— 否则本轮的修复没有生效。
+   */
+  assert.notEqual(
+    math.heroEquityVsBetRange,
+    null,
+    '面对已下注节点必须给出 `heroEquityVsBetRange`（下注范围权益），不得只有到达范围权益',
+  );
+  assert.ok(
+    math.heroEquityVsBetRange! <= math.heroEquity! + 1e-12,
+    `下注范围是到达范围的**偏价值**子集 ⇒ 对其权益不得高于到达范围权益：` +
+      `${(math.heroEquityVsBetRange! * 100).toFixed(3)}% vs ${(math.heroEquity! * 100).toFixed(3)}%`,
   );
   /*
    * 零交叉：把权益**换成**所需权益时，EV 必须恰为 0。

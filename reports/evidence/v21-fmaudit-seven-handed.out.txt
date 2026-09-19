@@ -1,0 +1,4 @@
+9 座 / 7 人局：无画像                               ok=true 动作=CALL  权益=0.562588 callEV=12.4417
+9 座 / 7 人局：quickProfile=MANIAC               ok=true 动作=CALL  权益=0.576091 callEV=13.0763
+9 座 / 7 人局：quickProfile=CALLING_STATION      ok=true 动作=CALL  权益=0.558080 callEV=12.2298
+9 座 / 7 人局：tableSize=7（物理容量非法）               ok=false stage=PARSE issues=[{"code":"INVALID_TABLE_SIZE","message":"桌型只能是 6 人桌或 9 人桌（收到 7）","field":"tableSize"},{"code":"INVALID_POSITION","message":"7 人桌上没有「CO」这个位置。可选：（桌型无效）","field":"heroPosition"},{"code":"POSITION_NOT_AT_TABLE","message":"第 1 条行动记录的位置「UTG2」不在 7 人桌上","field":"actio

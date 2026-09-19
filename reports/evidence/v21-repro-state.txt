@@ -1,0 +1,371 @@
+# V2.1 文件状态与哈希（可复现）
+
+生成时刻：2026-09-18T11:48:20.518Z
+git 快照来源：`logs/v21-git.txt`（由 shell 落盘，脚本不 spawn git）
+
+## 1. Git
+
+```text
+HEAD      = c3391ef19942b568784562057c65b508b9e2aaef
+HEAD 提交 = cache keys: 黄金向量 + 规范化序列化 + 碰撞防线（CACHE KEY GOLDEN VECTOR — PASS）
+```
+
+- 已修改（tracked）：**26**
+- 未跟踪：**139**
+- 其中**本轮 V2.1 新增**：**80**
+- **接手前就有的既有工作**（未跟踪，未计入本轮）：**59**
+
+> ⚠️ **这不是「干净 Git 基线」** —— 工作区带着既有未提交工作。
+> 「基线」在本报告里的含义是「本节列出的具体文件 + 具体哈希」，不是「工作区干净」。
+
+## 2. 已修改的 tracked 文件（sha256）
+
+| 文件 | 字节 | sha256 | 本轮 V2.1 是否修改 |
+|---|---|---|---|
+| `CURRENT_PROJECT_STATUS.md` | 111539 | `93c7ef2a6cfa9a1b…` | 否（既有工作） |
+| `data/artifact-manifest.json` | 63630 | `e4d00acbe9859365…` | 否（既有工作） |
+| `src/app/alphaPipeline.ts` | 60000 | `26535e196733aa6d…` | 否（既有工作） |
+| `src/app/decision/decisionEngine.ts` | 132333 | `1229f1c294906cb6…` | 否（既有工作） |
+| `src/app/decision/postflopAdvisor.ts` | 42167 | `9fe6e11ec52bba8b…` | **是** |
+| `src/app/manualInput/contextBuilder.ts` | 161125 | `5c1c24c47411095a…` | **是** |
+| `src/app/manualInput/legalActions.ts` | 17434 | `4d93d6b9562401f3…` | 否（既有工作） |
+| `src/app/manualInput/manualInput.ts` | 43700 | `e3696ad4a26961a1…` | **是** |
+| `src/app/manualInput/rangeFacts.ts` | 11639 | `ec69c4e8525650ce…` | 否（既有工作） |
+| `src/domain/decision/decision.types.ts` | 61341 | `7a572b550bbc3cf2…` | **是** |
+| `src/domain/decision/decisionConsistency.ts` | 20078 | `6eeaf5085d645842…` | 否（既有工作） |
+| `src/domain/postflop/boardDelta.ts` | 19686 | `d75e0304b140d743…` | 否（既有工作） |
+| `src/domain/postflop/draws.ts` | 8872 | `61c7381175540e3a…` | 否（既有工作） |
+| `src/domain/postflop/exploit.ts` | 8907 | `9fbdd4d7f25c99b7…` | 否（既有工作） |
+| `src/domain/postflop/rangeCompression.ts` | 12449 | `e605841902864a28…` | 否（既有工作） |
+| `src/domain/postflop/riverActionClass.ts` | 13349 | `53a89fd74e599417…` | 否（既有工作） |
+| `src/domain/postflop/types.ts` | 12288 | `8bdcfaf832c01020…` | 否（既有工作） |
+| `src/domain/postflop/valueBetGate.ts` | 25579 | `571b6af0e9ed621a…` | 否（既有工作） |
+| `src/infra/artifactDefinitions.ts` | 51825 | `bfca03b3f6d6bc46…` | 否（既有工作） |
+| `src/viewmodels/decisionViewModel.ts` | 56848 | `5a89bc1ae498cf1a…` | 否（既有工作） |
+| `test/alphaRedteamRegression.test.ts` | 53665 | `5dcce9d55014af21…` | 否（既有工作） |
+| `test/postflopModules.test.ts` | 31425 | `ce5537f785311d52…` | 否（既有工作） |
+| `test/postflopOutput.test.ts` | 10251 | `adf0856203bcb646…` | 否（既有工作） |
+| `test/postflopRangeFoundation.test.ts` | 16536 | `7bb539818c03315a…` | 否（既有工作） |
+| `test/postflopRegressionCases.test.ts` | 21122 | `79d28f29fcf0f701…` | 否（既有工作） |
+| `test/riverConsistency.test.ts` | 27228 | `a6fa5ee219ba4c47…` | 否（既有工作） |
+
+## 3. 未跟踪文件（sha256）
+
+### 3.1 本轮 V2.1 新增（脚本 / 报告 / 证据）
+
+| 文件 | 字节 | sha256 |
+|---|---|---|
+| `reports/PROFILE_V21_SENSITIVITY_AUDIT.md` | 83858 | `b0a691279005151a…` |
+| `reports/PROFILE_V21_SMALL_SCALE_AUDIT.md` | 38341 | `d08fcc6f566f0f84…` |
+| `reports/V21_CHAIN_DISTANCE_PROBE_OUTPUT.txt` | 9580 | `af8f558d7b681c10…` |
+| `reports/V21_CHAIN_GOLDEN_TEST_OUTPUT.txt` | 667 | `746a851c70ccdc1c…` |
+| `reports/V21_CHAIN_PROFILE_PROBE_OUTPUT.txt` | 29955 | `68ca9efe6f84b23c…` |
+| `reports/V21_FAILURE_MODE_AUDIT.md` | 66296 | `1fd5f06042019d84…` |
+| `reports/V21_PRODUCTION_CHAIN_VERIFICATION.md` | 51205 | `d80c6d98325140e0…` |
+| `reports/V21_REVIEW_1_STATISTICS.md` | 47939 | `445ef4b31101c03b…` |
+| `reports/V21_REVIEW_2_POKER_LOGIC.md` | 37076 | `4b4356fc00d0b035…` |
+| `reports/V21_REVIEW_3_PIPELINE.md` | 33110 | `dcf17f5c37a52086…` |
+| `reports/V21_REVIEW_4_NUMERICS.md` | 44037 | `3c934cc350e23fda…` |
+| `reports/V21_REVIEW_5_COUNTEREVIDENCE.md` | 49625 | `349eaffc51afe70c…` |
+| `reports/V21_RISK_REGISTER.md` | 18612 | `12cad961e1beef96…` |
+| `reports/evidence/v21-decision-impact.json` | 57619 | `eaf968bc97a4249b…` |
+| `reports/evidence/v21-defect-evidence-after.txt` | 3391 | `ef9b9d5769e5276e…` |
+| `reports/evidence/v21-defect-evidence-before.txt` | 2572 | `295c8b4794fe46e3…` |
+| `reports/evidence/v21-fmaudit-dedup.out.txt` | 1246 | `bf51ec9a35c470c5…` |
+| `reports/evidence/v21-fmaudit-golden-test.out.txt` | 668 | `f77af5926a6b4e4c…` |
+| `reports/evidence/v21-fmaudit-model.out.txt` | 12292 | `049cf0f2db5ce744…` |
+| `reports/evidence/v21-fmaudit-noise-sweep.out.txt` | 6503 | `ef1ad4065a17010c…` |
+| `reports/evidence/v21-fmaudit-noise.out.txt` | 7283 | `88293a0d86708c15…` |
+| `reports/evidence/v21-fmaudit-pipeline.out.txt` | 30830 | `3d0ea123a5113320…` |
+| `reports/evidence/v21-fmaudit-rangeprofile-test.out.txt` | 1467 | `57743df8948909dc…` |
+| `reports/evidence/v21-fmaudit-seven-handed.out.txt` | 785 | `4260cd8807cf42b6…` |
+| `reports/evidence/v21-profile-sensitivity.json` | 2099838 | `0d0f5956c67431d4…` |
+| `reports/evidence/v21-repro-state.txt` | 0 | `e3b0c44298fc1c14…` |
+| `reports/evidence/v21-rev5-adversarial-BEFORE.out.txt` | 13218 | `59a306b285bed67f…` |
+| `reports/evidence/v21-rev5-adversarial.out.txt` | 13927 | `039568f18e17b879…` |
+| `reports/evidence/v21-rev5-limp-parity.out.txt` | 1419 | `f702f9b07b9d910a…` |
+| `reports/evidence/v21-rev5-parity.out.txt` | 6236 | `2b49682c3f3f3747…` |
+| `reports/evidence/v21-rev5-slots-BEFORE.out.txt` | 4711 | `f98b912bf4f474e7…` |
+| `reports/evidence/v21-rev5-slots.out.txt` | 4711 | `f98b912bf4f474e7…` |
+| `reports/evidence/v21-summary.md` | 14366 | `fa9d41b5c7bde99d…` |
+| `reports/evidence/v21-supplement.out.txt` | 14096 | `3e53b4339530cc58…` |
+| `scripts/v21-chain-distance-probe.ts` | 19921 | `44480b337e3f0c83…` |
+| `scripts/v21-chain-profile-probe.ts` | 25161 | `1bde03aeb166e158…` |
+| `scripts/v21-corpus-debug.ts` | 6236 | `c3f6324c25834056…` |
+| `scripts/v21-decision-impact.ts` | 36502 | `005de332246eba36…` |
+| `scripts/v21-defect-evidence.ts` | 6609 | `3ba36a9afbf4f158…` |
+| `scripts/v21-equity-debug.ts` | 5430 | `cfe3fafe52dbed97…` |
+| `scripts/v21-fmaudit-dedup.ts` | 6221 | `a2ec5cb7f5fb8b9b…` |
+| `scripts/v21-fmaudit-diag-shape.ts` | 2848 | `05e2a88ff46724e0…` |
+| `scripts/v21-fmaudit-model.ts` | 19689 | `683960c23ace0d02…` |
+| `scripts/v21-fmaudit-noise.ts` | 11397 | `9b5fd116dd59ae0d…` |
+| `scripts/v21-fmaudit-pipeline.ts` | 39751 | `b0c2f1c16dedeb58…` |
+| `scripts/v21-fmaudit-seven-handed.ts` | 3373 | `c554085c3e736590…` |
+| `scripts/v21-limp-debug.ts` | 2680 | `e69d3b8fd45f034b…` |
+| `scripts/v21-order-debug.ts` | 2682 | `cd35aaaf6fe97345…` |
+| `scripts/v21-profile-sensitivity-audit.ts` | 37280 | `35847cc1a298c81a…` |
+| `scripts/v21-repro-state.ts` | 5401 | `a49baf5b397d7272…` |
+| `scripts/v21-rev1-denominator-check.ts` | 6519 | `a76caf079a148ea8…` |
+| `scripts/v21-rev1-matrix-distinct.ts` | 24911 | `10aff6affeb0f32f…` |
+| `scripts/v21-rev1-model-stats.ts` | 22202 | `3ef38de0bfa1a25b…` |
+| `scripts/v21-rev1-pipeline-probe.ts` | 12153 | `2302bcbbbbbe45db…` |
+| `scripts/v21-rev2-boundary.ts` | 5642 | `b172bc202de811e3…` |
+| `scripts/v21-rev2-final.ts` | 8208 | `ac32922c59779264…` |
+| `scripts/v21-rev2-hand.ts` | 11208 | `c30c95b3c0bdf8ee…` |
+| `scripts/v21-rev2-likelihood.ts` | 8590 | `2e74d7c8aa5f307a…` |
+| `scripts/v21-rev2-priors.ts` | 8070 | `8ae4fdb4758dab7e…` |
+| `scripts/v21-rev2-size04.ts` | 4124 | `f227b52a08c26a14…` |
+| `scripts/v21-rev2-sizecount.ts` | 7630 | `a45f51084f30ca22…` |
+| `scripts/v21-rev2-thin-response.ts` | 13206 | `7875d8212e0d5fb9…` |
+| `scripts/v21-rev3-probe-http.ts` | 2491 | `c1223a3411a1595d…` |
+| `scripts/v21-rev3-probe-primary.ts` | 3870 | `323c2e485b50a912…` |
+| `scripts/v21-rev3-probe.ts` | 16153 | `882ff08d1a0f6dd1…` |
+| `scripts/v21-rev3-probe2.ts` | 20540 | `cdf04823e6ea3f60…` |
+| `scripts/v21-rev3-probe3.ts` | 6070 | `8db44f08860935d7…` |
+| `scripts/v21-rev4-clamp-path.ts` | 8882 | `3808415b583059da…` |
+| `scripts/v21-rev4-masses.ts` | 11070 | `5c025a2bb1492102…` |
+| `scripts/v21-rev4-mutation-emulation.ts` | 12300 | `0c0e80553f76a080…` |
+| `scripts/v21-rev4-norm-enums.ts` | 11967 | `9fe3d81add044f6f…` |
+| `scripts/v21-rev4-odds.ts` | 16384 | `6ede9b8bff8f2af1…` |
+| `scripts/v21-rev4-thresholds.ts` | 12986 | `446310531084abc8…` |
+| `scripts/v21-rev5-adversarial.ts` | 22212 | `9e423f663ca2d04e…` |
+| `scripts/v21-rev5-limp-parity.ts` | 5994 | `26503df4b6a1dcb0…` |
+| `scripts/v21-rev5-parity.ts` | 9499 | `0e376232cdf836e5…` |
+| `scripts/v21-rev5-slots.ts` | 10136 | `ea437ef2d9c3fb91…` |
+| `scripts/v21-small-scale-scenarios.ts` | 49655 | `511af2231f0a56de…` |
+| `scripts/v21-small-scale-supplement.ts` | 19544 | `90956112f17b60b4…` |
+| `scripts/v21-summarize.ts` | 21495 | `67935677090cc801…` |
+
+### 3.2 接手前既有工作（未跟踪）—— **本轮一律保留，未修改、未删除**
+
+| 文件 | 字节 | sha256 |
+|---|---|---|
+| `reports/BET_DECISION_ENGINE_PHASE1_REPORT.md` | 16031 | `6308dfa7a61c1d95…` |
+| `reports/MULTIWAY_POSTFLOP_RESPONSE_TREE_PHASE1_REPORT.md` | 15017 | `3586bc7b39ba4189…` |
+| `reports/MULTI_LIMP_ISOLATION_RAISE_PHASE1_REPORT.md` | 14860 | `a1d342d6859ad31f…` |
+| `reports/NODE_DETERMINISM_ORDER_DEPENDENCY_AUDIT.md` | 15916 | `5ba114e9235b63c0…` |
+| `reports/PLAYER_PROFILE_QUANTIFICATION_V1_REPORT.md` | 16281 | `91e23d3213d3068e…` |
+| `reports/PLAYER_PROFILE_QUANTIFICATION_V2_REPORT.md` | 24423 | `a81bdf6d8744412e…` |
+| `reports/PREFLOP_EVIDENCE_PRIORITY_FIX_REPORT.md` | 14351 | `764ad404c41cd851…` |
+| `reports/PROFILE_RANGE_MAINCHAIN_REPORT.md` | 21034 | `5ed58e7ba765a27e…` |
+| `reports/RIVER_LEGAL_ACTION_TREE_FIX_REPORT.md` | 13669 | `863cf0a9dd378a6c…` |
+| `reports/TEST_HAND_MULTIWAY_TURN_FIX_REPORT.md` | 9550 | `bf4a1fe1ba36f99a…` |
+| `reports/TURN_SEMIBLUFF_ZERO_AUDIT.md` | 19665 | `7a05866eae929d4b…` |
+| `scripts/audit-turn-bet-zero.ts` | 28764 | `48512f408dfd223f…` |
+| `scripts/bet-decision-probe.ts` | 6615 | `090930e94d67dbd2…` |
+| `scripts/board-delta-probe.ts` | 2169 | `692e9f375e3d300e…` |
+| `scripts/flop-turn-probe.ts` | 2145 | `435ad2891f19d375…` |
+| `scripts/iso-mutations.ts` | 5106 | `8e015d8169cbf502…` |
+| `scripts/multiway-mutations.ts` | 5267 | `973bafa072616197…` |
+| `scripts/node-b-determinism-probe.ts` | 8854 | `5032f89eb970a46f…` |
+| `scripts/preflop-iso-probe.ts` | 5609 | `c9cbd804dd8971ff…` |
+| `scripts/profile-flip-search.ts` | 4953 | `ba11380bac04f851…` |
+| `scripts/profile-range-probe.ts` | 8669 | `18e83acf70330c65…` |
+| `scripts/review-hand-01.ts` | 10368 | `e37950393aba9213…` |
+| `scripts/review-hand-02.ts` | 7507 | `ed175923d003ea4c…` |
+| `scripts/review-hand-03-matrix.ts` | 5160 | `ae4e031c1f91c6f5…` |
+| `scripts/review-hand-03.ts` | 7275 | `305821f5c87d616f…` |
+| `scripts/review-hand-04.ts` | 10757 | `7a77248b8b4aaafa…` |
+| `scripts/review-hand-05.ts` | 9245 | `94364292cf9ed66c…` |
+| `scripts/review-hand-06.ts` | 6168 | `609b041bf96c51cb…` |
+| `scripts/review-hand-07.ts` | 7025 | `a6004da288ce0b44…` |
+| `scripts/review-hand-08.ts` | 13289 | `fafddcf328871a82…` |
+| `scripts/review-hand-09.ts` | 9579 | `d64c5dd758c2aa1c…` |
+| `scripts/review-hand-10.ts` | 8320 | `3b5dfb682d18fe22…` |
+| `scripts/seat-profile-probe.ts` | 856 | `fc8bbde786817e47…` |
+| `scripts/station-size-probe.ts` | 2886 | `234a369a4a5dab13…` |
+| `scripts/v2-unified-likelihood-probe.ts` | 5716 | `73b00c8455a4aa5a…` |
+| `scripts/v21b-make-snapshot.ps1` | 7352 | `c059b7f9c4a00c4d…` |
+| `src/app/manualInput/limpIsolation.ts` | 29087 | `e66856dc45c6d8ce…` |
+| `src/domain/decision/evidencePriority.ts` | 21799 | `871ba3f84bb36cfa…` |
+| `src/domain/player/archetypeDimensions.ts` | 13512 | `58b42cedf760b57a…` |
+| `src/domain/player/behaviorProfile.ts` | 56323 | `2229938c4255789b…` |
+| `src/domain/player/profileRangeMetrics.ts` | 6209 | `6954f78f5bec47ee…` |
+| `src/domain/player/tendencyProvider.ts` | 25894 | `ac3717c7c14990ca…` |
+| `src/domain/postflop/betResponse.ts` | 78724 | `ec916827ed7030ef…` |
+| `src/domain/postflop/riverProfileClassify.ts` | 11815 | `425f340fb7b2db83…` |
+| `test-out.txt` | 176290 | `26afbaa516866efe…` |
+| `test/betDecisionEngine.test.ts` | 48840 | `8122c887f23b1208…` |
+| `test/multiLimpIsolation.test.ts` | 17875 | `6ee655554ed24368…` |
+| `test/multiwayBetResponse.test.ts` | 20825 | `247997218087b1a8…` |
+| `test/multiwayTurnFix.test.ts` | 12241 | `2922a78c4683926d…` |
+| `test/nodeDeterminism.test.ts` | 13873 | `f0e659d7b7f93da3…` |
+| `test/preflopEvidencePriority.test.ts` | 12480 | `9f7ed76cc887e767…` |
+| `test/profileQuantification.test.ts` | 11936 | `178ad040db4f1586…` |
+| `test/profileQuantificationGolden.test.ts` | 19394 | `4f78c46d13e478b8…` |
+| `test/profileRangeAdjustment.test.ts` | 36363 | `5c47b62c7b8cf5ec…` |
+| `test/profileV2Metrics.test.ts` | 11467 | `baebd8d6388de07d…` |
+| `test/reportVerdictConsistency.test.ts` | 6713 | `f7c938e4d0bb619d…` |
+| `verify-out.txt` | 176332 | `934eabb05479ceca…` |
+| `verify-v21-baseline.txt` | 182791 | `f31aa2e7dd584305…` |
+| `verify-v21-final.txt` | 183998 | `730d11e984781688…` |
+
+## 4. 完整 git status
+
+```text
+ M CURRENT_PROJECT_STATUS.md
+ M data/artifact-manifest.json
+ M src/app/alphaPipeline.ts
+ M src/app/decision/decisionEngine.ts
+ M src/app/decision/postflopAdvisor.ts
+ M src/app/manualInput/contextBuilder.ts
+ M src/app/manualInput/legalActions.ts
+ M src/app/manualInput/manualInput.ts
+ M src/app/manualInput/rangeFacts.ts
+ M src/domain/decision/decision.types.ts
+ M src/domain/decision/decisionConsistency.ts
+ M src/domain/postflop/boardDelta.ts
+ M src/domain/postflop/draws.ts
+ M src/domain/postflop/exploit.ts
+ M src/domain/postflop/rangeCompression.ts
+ M src/domain/postflop/riverActionClass.ts
+ M src/domain/postflop/types.ts
+ M src/domain/postflop/valueBetGate.ts
+ M src/infra/artifactDefinitions.ts
+ M src/viewmodels/decisionViewModel.ts
+ M test/alphaRedteamRegression.test.ts
+ M test/postflopModules.test.ts
+ M test/postflopOutput.test.ts
+ M test/postflopRangeFoundation.test.ts
+ M test/postflopRegressionCases.test.ts
+ M test/riverConsistency.test.ts
+?? reports/BET_DECISION_ENGINE_PHASE1_REPORT.md
+?? reports/MULTIWAY_POSTFLOP_RESPONSE_TREE_PHASE1_REPORT.md
+?? reports/MULTI_LIMP_ISOLATION_RAISE_PHASE1_REPORT.md
+?? reports/NODE_DETERMINISM_ORDER_DEPENDENCY_AUDIT.md
+?? reports/PLAYER_PROFILE_QUANTIFICATION_V1_REPORT.md
+?? reports/PLAYER_PROFILE_QUANTIFICATION_V2_REPORT.md
+?? reports/PREFLOP_EVIDENCE_PRIORITY_FIX_REPORT.md
+?? reports/PROFILE_RANGE_MAINCHAIN_REPORT.md
+?? reports/PROFILE_V21_SENSITIVITY_AUDIT.md
+?? reports/PROFILE_V21_SMALL_SCALE_AUDIT.md
+?? reports/RIVER_LEGAL_ACTION_TREE_FIX_REPORT.md
+?? reports/TEST_HAND_MULTIWAY_TURN_FIX_REPORT.md
+?? reports/TURN_SEMIBLUFF_ZERO_AUDIT.md
+?? reports/V21_CHAIN_DISTANCE_PROBE_OUTPUT.txt
+?? reports/V21_CHAIN_GOLDEN_TEST_OUTPUT.txt
+?? reports/V21_CHAIN_PROFILE_PROBE_OUTPUT.txt
+?? reports/V21_FAILURE_MODE_AUDIT.md
+?? reports/V21_PRODUCTION_CHAIN_VERIFICATION.md
+?? reports/V21_REVIEW_1_STATISTICS.md
+?? reports/V21_REVIEW_2_POKER_LOGIC.md
+?? reports/V21_REVIEW_3_PIPELINE.md
+?? reports/V21_REVIEW_4_NUMERICS.md
+?? reports/V21_REVIEW_5_COUNTEREVIDENCE.md
+?? reports/V21_RISK_REGISTER.md
+?? reports/evidence/v21-decision-impact.json
+?? reports/evidence/v21-defect-evidence-after.txt
+?? reports/evidence/v21-defect-evidence-before.txt
+?? reports/evidence/v21-fmaudit-dedup.out.txt
+?? reports/evidence/v21-fmaudit-golden-test.out.txt
+?? reports/evidence/v21-fmaudit-model.out.txt
+?? reports/evidence/v21-fmaudit-noise-sweep.out.txt
+?? reports/evidence/v21-fmaudit-noise.out.txt
+?? reports/evidence/v21-fmaudit-pipeline.out.txt
+?? reports/evidence/v21-fmaudit-rangeprofile-test.out.txt
+?? reports/evidence/v21-fmaudit-seven-handed.out.txt
+?? reports/evidence/v21-profile-sensitivity.json
+?? reports/evidence/v21-repro-state.txt
+?? reports/evidence/v21-rev5-adversarial-BEFORE.out.txt
+?? reports/evidence/v21-rev5-adversarial.out.txt
+?? reports/evidence/v21-rev5-limp-parity.out.txt
+?? reports/evidence/v21-rev5-parity.out.txt
+?? reports/evidence/v21-rev5-slots-BEFORE.out.txt
+?? reports/evidence/v21-rev5-slots.out.txt
+?? reports/evidence/v21-summary.md
+?? reports/evidence/v21-supplement.out.txt
+?? scripts/audit-turn-bet-zero.ts
+?? scripts/bet-decision-probe.ts
+?? scripts/board-delta-probe.ts
+?? scripts/flop-turn-probe.ts
+?? scripts/iso-mutations.ts
+?? scripts/multiway-mutations.ts
+?? scripts/node-b-determinism-probe.ts
+?? scripts/preflop-iso-probe.ts
+?? scripts/profile-flip-search.ts
+?? scripts/profile-range-probe.ts
+?? scripts/review-hand-01.ts
+?? scripts/review-hand-02.ts
+?? scripts/review-hand-03-matrix.ts
+?? scripts/review-hand-03.ts
+?? scripts/review-hand-04.ts
+?? scripts/review-hand-05.ts
+?? scripts/review-hand-06.ts
+?? scripts/review-hand-07.ts
+?? scripts/review-hand-08.ts
+?? scripts/review-hand-09.ts
+?? scripts/review-hand-10.ts
+?? scripts/seat-profile-probe.ts
+?? scripts/station-size-probe.ts
+?? scripts/v2-unified-likelihood-probe.ts
+?? scripts/v21-chain-distance-probe.ts
+?? scripts/v21-chain-profile-probe.ts
+?? scripts/v21-corpus-debug.ts
+?? scripts/v21-decision-impact.ts
+?? scripts/v21-defect-evidence.ts
+?? scripts/v21-equity-debug.ts
+?? scripts/v21-fmaudit-dedup.ts
+?? scripts/v21-fmaudit-diag-shape.ts
+?? scripts/v21-fmaudit-model.ts
+?? scripts/v21-fmaudit-noise.ts
+?? scripts/v21-fmaudit-pipeline.ts
+?? scripts/v21-fmaudit-seven-handed.ts
+?? scripts/v21-limp-debug.ts
+?? scripts/v21-order-debug.ts
+?? scripts/v21-profile-sensitivity-audit.ts
+?? scripts/v21-repro-state.ts
+?? scripts/v21-rev1-denominator-check.ts
+?? scripts/v21-rev1-matrix-distinct.ts
+?? scripts/v21-rev1-model-stats.ts
+?? scripts/v21-rev1-pipeline-probe.ts
+?? scripts/v21-rev2-boundary.ts
+?? scripts/v21-rev2-final.ts
+?? scripts/v21-rev2-hand.ts
+?? scripts/v21-rev2-likelihood.ts
+?? scripts/v21-rev2-priors.ts
+?? scripts/v21-rev2-size04.ts
+?? scripts/v21-rev2-sizecount.ts
+?? scripts/v21-rev2-thin-response.ts
+?? scripts/v21-rev3-probe-http.ts
+?? scripts/v21-rev3-probe-primary.ts
+?? scripts/v21-rev3-probe.ts
+?? scripts/v21-rev3-probe2.ts
+?? scripts/v21-rev3-probe3.ts
+?? scripts/v21-rev4-clamp-path.ts
+?? scripts/v21-rev4-masses.ts
+?? scripts/v21-rev4-mutation-emulation.ts
+?? scripts/v21-rev4-norm-enums.ts
+?? scripts/v21-rev4-odds.ts
+?? scripts/v21-rev4-thresholds.ts
+?? scripts/v21-rev5-adversarial.ts
+?? scripts/v21-rev5-limp-parity.ts
+?? scripts/v21-rev5-parity.ts
+?? scripts/v21-rev5-slots.ts
+?? scripts/v21-small-scale-scenarios.ts
+?? scripts/v21-small-scale-supplement.ts
+?? scripts/v21-summarize.ts
+?? scripts/v21b-make-snapshot.ps1
+?? src/app/manualInput/limpIsolation.ts
+?? src/domain/decision/evidencePriority.ts
+?? src/domain/player/archetypeDimensions.ts
+?? src/domain/player/behaviorProfile.ts
+?? src/domain/player/profileRangeMetrics.ts
+?? src/domain/player/tendencyProvider.ts
+?? src/domain/postflop/betResponse.ts
+?? src/domain/postflop/riverProfileClassify.ts
+?? test-out.txt
+?? test/betDecisionEngine.test.ts
+?? test/multiLimpIsolation.test.ts
+?? test/multiwayBetResponse.test.ts
+?? test/multiwayTurnFix.test.ts
+?? test/nodeDeterminism.test.ts
+?? test/preflopEvidencePriority.test.ts
+?? test/profileQuantification.test.ts
+?? test/profileQuantificationGolden.test.ts
+?? test/profileRangeAdjustment.test.ts
+?? test/profileV2Metrics.test.ts
+?? test/reportVerdictConsistency.test.ts
+?? verify-out.txt
+?? verify-v21-baseline.txt
+?? verify-v21-final.txt
+```

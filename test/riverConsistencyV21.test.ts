@@ -49,7 +49,18 @@ import type { ManualHandInput } from '../src/app/manualInput/manualInput.ts';
 import type { Card } from '../src/domain/types.ts';
 
 const RULES = loadKnowledgeBaseOrThrow().allRules();
-const OPTIONS = { rules: RULES, asOf: 1_757_000_000_000, writeLog: false } as const;
+/*
+ * 🔴 **TEST 09**：`equitySeed` 必须与 `runPipeline` 里 `buildDecisionContext`
+ * 用的**同一个**。否则同一份输入在两条路径上各算一次权益：
+ * `analyzeManualHand` 用这里的默认种子，`buildDecisionContext` 用另一个，
+ * 于是一个中等牌力的抓诈节点会给出**两个 callEV**（实测 `Jh Th` 在
+ * 1BB 下相差约 80 筹码 = 带内/带外的差别）。
+ *
+ * 这类「两处口径」在本项目已被反复禁止；本文件的容差带测试
+ *（`inBandSpot` 自校准）对它有直接依赖。
+ */
+const EQUITY_SEED = 20260913;
+const OPTIONS = { rules: RULES, asOf: 1_757_000_000_000, writeLog: false, equitySeed: EQUITY_SEED } as const;
 const F = (position: string) => ({ position, type: 'FOLD' as const });
 
 /* ============================================================
@@ -58,7 +69,21 @@ const F = (position: string) => ({ position, type: 'FOLD' as const });
 
 const BOARD = ['Qd', '8c', '5c', '2h', 'Kc'] as const;
 
-function riverSpot(hero: readonly [string, string]): ManualHandInput {
+function riverSpot(
+  hero: readonly [string, string],
+  /**
+   * 🔴 **TEST 09 P0-1**：河牌下注额（默认 22BB = 原用例）。
+   *
+   * 容差带测试需要 EV **落在带内**（±5% 可争夺量）。修复后 `callEV` 改用
+   * **下注范围**权益，而该范围内价值牌占绝对多数 ⇒ 抓诈牌的权益与门槛
+   * 差距被放大，原来那个 22BB 节点已经落在带外。
+   *
+   * 因此带内测试显式指定一个**小额下注**：门槛随之降到 2.74%，
+   * 于是「权益略偏离门槛」的局面重新存在（实测 `callEV = −82.99`，
+   * 带 ±182.5 ⇒ 带内）。这是**构造出来的前提**，不是放宽断言。
+   */
+  riverBetBB = 22,
+): ManualHandInput {
   return {
     tableSize: 9,
     heroPosition: 'BTN',
@@ -77,11 +102,112 @@ function riverSpot(hero: readonly [string, string]): ManualHandInput {
       { position: 'CO', type: 'CHECK', street: 'TURN' },
       { position: 'BTN', type: 'BET', amountBB: 10, street: 'TURN' },
       { position: 'CO', type: 'CALL', amountBB: 10, street: 'TURN' },
-      { position: 'CO', type: 'BET', amountBB: 22, street: 'RIVER' },
+      { position: 'CO', type: 'BET', amountBB: riverBetBB, street: 'RIVER' },
     ],
     environment: 'MID_LOW_STAKES',
     villain: { quickProfile: 'NORMAL', dynamicHint: 'UNKNOWN' },
   } as unknown as ManualHandInput;
+}
+
+/**
+ * 容差带测试的候选手牌空间。
+ *
+ * 选取理由：本牌面（`Qd 8c 5c 2h Kc`）上抓诈牌的「对下注范围权益」分布很宽，
+ * 从 0.01%（7h4d）到 13.2%（Qs8s）都有，因此**需要多个手牌**才能覆盖
+ * 「权益 ≈ 门槛」那一小段（单个手牌未必有合适的尺寸）。
+ */
+const BAND_HEROES = [
+  ['Ac', 'Qs'],
+  ['Qh', 'Jd'],
+  ['Ah', 'Kd'],
+  ['Qs', '8s'],
+  ['Qc', 'Jc'],
+  ['Jh', 'Th'],
+  ['9h', '9d'],
+  ['Th', 'Tc'],
+  ['Ah', 'Jd'],
+  ['Jh', '9h'],
+] as const satisfies readonly (readonly [string, string])[];
+
+/**
+ * 🔴 **TEST 09 P0-1：自校准的「容差带内」节点构造器**。
+ *
+ * ## 为什么需要它（一次实测教训）
+ *
+ * 容差带测试要求 `|callEV| ≤ 5% × winnable`。修复 `callEV` 的权益口径后
+ *（改用**下注范围**权益），原来那个 `Ac Qs + 22BB` 节点从带内掉到
+ * `callEV = −2160.95`（带 ±392.5）—— **前提失效**。
+ *
+ * 手工换手牌 / 换尺寸去「找」一个带内节点是错的做法：**每改一次模型
+ * 就得重扫一遍**（下注范围从「两分支分类」改成「按手牌类别」后，
+ * 全部手工校准的数字一次作废）。
+ *
+ * ## 现在的做法：在候选空间里**挑最优**，而不是挑第一个碰上的
+ *
+ * `callEV` 的符号在某个尺寸处翻转，而该处的 `|callEV|` 与「换手牌带来的
+ * 权益跳变」同阶 —— 本牌面上抓诈牌的权益会从 7.72% 直接掉到 0.50%，
+ * 因此**单个手牌**未必有落在 ±5% 内的尺寸。
+ *
+ * 所以这里对「手牌 × 尺寸」的**整个候选空间**求 `|callEV| / band` 的最小值，
+ * 取最接近门槛的那个组合。它对模型变化更稳健（不需要某个特定数字成立），
+ * 且失败时会把整个候选空间如实打印出来，便于定位。
+ *
+ * @param wantSign 需要的 `callEV` 符号（`-1` 弃牌侧 / `+1` 跟注侧）
+ */
+function inBandSpot(
+  heroes: readonly (readonly [string, string])[],
+  wantSign: -1 | 1,
+): { input: ManualHandInput; run: ReturnType<typeof runPipeline>; betBB: number; hero: readonly [string, string] } {
+  /*
+   * ⚠️ 候选下注额必须**合法**（规则层要求 ≥ 1 个大盲，`ISSUE.BET_BELOW_MIN`）。
+   * 覆盖「EV 由正转负」的跨点：小注偏向跟注侧、大注偏向弃牌侧。
+   */
+  const candidates = [1, 1.5, 2, 3, 4, 5, 6];
+  type Cand = {
+    hero: readonly [string, string];
+    betBB: number;
+    input: ManualHandInput;
+    run: ReturnType<typeof runPipeline>;
+    ev: number;
+    band: number;
+    score: number;
+  };
+  const all: Cand[] = [];
+  for (const hero of heroes) {
+    for (const betBB of candidates) {
+      const input = riverSpot(hero, betBB);
+      const run = runPipeline(input);
+      const ev = run.context.math.callEV;
+      if (ev === null || !Number.isFinite(ev)) continue;
+      const band = 0.05 * run.context.math.winnable;
+      if (!(band > 0)) continue;
+      all.push({ hero, betBB, input, run, ev, band, score: Math.abs(ev) / band });
+    }
+  }
+  /* 先按「符号 + 带内」筛，再取最接近门槛的一个 */
+  const eligible = all
+    .filter((x) => Math.sign(x.ev) === wantSign && x.score <= 1)
+    .sort((a, b) => a.score - b.score);
+  if (eligible.length > 0) {
+    const best = eligible[0]!;
+    return { input: best.input, run: best.run, betBB: best.betBB, hero: best.hero };
+  }
+  /*
+   * 没有任何组合落在带内 ⇒ 这是**夹具失效**，不是断言失败。
+   * 把整个候选空间打印出来，便于定位是「模型变了」还是「候选不够」。
+   */
+  const dump = all
+    .map(
+      (x) =>
+        `${x.hero.join('')}@${x.betBB}BB→ev=${x.ev.toFixed(2)}(±${x.band.toFixed(2)},score=${x.score.toFixed(2)})`,
+    )
+    .join('、');
+  throw new Error(
+    `无法构造「带内且符号 ${wantSign}」的节点 —— ` +
+      `候选空间共 ${all.length} 个组合均不满足（best score=` +
+      `${all.length > 0 ? Math.min(...all.map((x) => x.score)).toFixed(2) : 'n/a'}）。` +
+      `实测：${dump}`,
+  );
 }
 
 function runPipeline(input: ManualHandInput) {
@@ -96,6 +222,18 @@ function runPipeline(input: ManualHandInput) {
     rules: RULES,
     environment: 'MID_LOW_STAKES',
     asOf: 1_757_000_000_000,
+    /*
+     * 🔴 **TEST 09**：必须传固定种子。
+     *
+     * 修复前这里没传 ⇒ `buildDecisionContext` 用它的内部默认种子，
+     * 而 `analyzeManualHand` 用 `OPTIONS` —— 两条路径各自算一次权益。
+     * 加了**下注范围**权益后这个差别变得可见：同为「Ac Qs + 1BB」，
+     * 本函数给出 `callEV = +84.71`（下注范围权益 5.06%），
+     * 而 `analyzeManualHand` 给出 `−82.99`（0.47%）—— 同一个决策点两个答案。
+     *
+     * 这本来就是本项目反复禁止的「两处口径」，只是以前没被触发。
+     */
+    equitySeed: EQUITY_SEED,
   });
   const hero = gate.state.players.find((p) => p.holeCards !== null)!;
   const legal = deriveLegalActions(gate.state, hero);
@@ -241,7 +379,18 @@ test('BAND-1：Fold EV = 0 > Call EV < 0 ⇒ 数学排序必须是 FOLD > CALL�
 });
 
 test('BAND-2：存在模型容差带时，不得再出现「数学无差异 / 没有明显优劣」的表述', () => {
-  const { decision, context } = runPipeline(riverSpot(['Ac', 'Qs']));
+  /*
+   * 🔴 **TEST 09 P0-1 契约变更（已记录，非放宽）**
+   *
+   * 原来用默认 22BB 下注。修复后 `callEV` 改用**下注范围**权益，
+   * 该节点 EV 变成 −2160.95（带 ±392.50）——**落在带外**，
+   * 于是「带内不得写『没有明显优劣』」这条性质就测不到了。
+   *
+   * 现在用**自校准**的带内节点（`inBandSpot`）：让测试自己挑一个
+   * 满足 `|callEV| ≤ 5% × winnable` 的尺寸，而不是靠一个碰巧成立的常数。
+   */
+  const { run } = inBandSpot(BAND_HEROES, -1);
+  const { decision, context } = run;
   const math = context.math;
   const band = 0.05 * math.winnable;
   assert.ok(
@@ -293,19 +442,39 @@ test('BAND-3：容差带**不改变 EV 排名** —— 动作必须由 `decision
 });
 
 test('BAND-4：显式开启 `allowUncertaintyOverride` 后，偏离 EV 排名必须被标成 MODEL_UNCERTAINTY_OVERRIDE', () => {
-  const { context, legal } = runPipeline(riverSpot(['Ac', 'Qs']));
+  /*
+   * 🔴 **TEST 09 P0-1 契约变更（已记录，非放宽）**
+   *
+   * 原来用 `Ac Qs` + 22BB。修复后该节点 EV = −2160.95（带 ±392.50）——
+   * 带外，`allowUncertaintyOverride` 不再适用（它**只在**带内才允许
+   * 取代价最小的方向，这正是它的语义）。
+   *
+   * 现在两个形态都由 `inBandSpot` **自校准**构造：
+   * 一个带内且 EV 为正（验证「跟随 EV 排名」），
+   * 一个带内且 EV 为负（验证「覆盖 ⇒ 取代价最小方向」）。
+   */
+  const posSpot = inBandSpot(BAND_HEROES, 1);
+  const { context, legal } = posSpot.run;
   const math = context.math;
-  assert.ok((math.callEV ?? 0) < 0, '本用例前提：跟注 EV 为负');
+  assert.ok((math.callEV ?? 0) > 0, '本用例前提：跟注 EV 为正');
+  assert.ok(
+    Math.abs(math.callEV!) <= 0.05 * math.winnable,
+    `本用例前提：EV 落在容差带内（|${math.callEV!.toFixed(2)}| ≤ ${(0.05 * math.winnable).toFixed(2)}）`,
+  );
 
-  // ① 关闭（默认）：跟随 EV 排名 → FOLD
+  // ① 关闭（默认）：跟随 EV 排名 → CALL
   const strict = decideAlpha(context, legal);
-  assert.equal(strict.action, 'FOLD', '未开启覆盖时必须跟随 EV 排名');
+  assert.equal(strict.action, 'CALL', '未开启覆盖时必须跟随 EV 排名');
   assert.equal(strict.diagnostics.decisionBasis?.kind, 'CHIP_EV');
 
-  // ② 开启：允许在容差带内取代价最小方向 → CALL，且依据必须是覆盖
-  const overridden = decideAlpha(context, legal, { allowUncertaintyOverride: true });
-  const band = 0.05 * math.winnable;
-  assert.ok(Math.abs(math.callEV!) <= band, '本节点确实落在容差带内');
+  // ② 开启覆盖：只在「带内 + EV 为负」时才会取代价最小的方向
+  const negSpot = inBandSpot(BAND_HEROES, -1);
+  const neg = negSpot.run;
+  assert.notEqual(neg.context.math.callEV, null, '覆盖用例必须算得出跟注 EV');
+  assert.ok((neg.context.math.callEV ?? 0) < 0, '覆盖用例前提：跟注 EV 为负');
+  const band = 0.05 * neg.context.math.winnable;
+  assert.ok(Math.abs(neg.context.math.callEV!) <= band, '本节点确实落在容差带内');
+  const overridden = decideAlpha(neg.context, neg.legal, { allowUncertaintyOverride: true });
   assert.equal(overridden.action, 'CALL', '开启覆盖后允许取代价最小的方向');
   assert.equal(
     overridden.diagnostics.decisionBasis?.kind,

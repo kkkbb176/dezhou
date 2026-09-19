@@ -1,0 +1,73 @@
+估计量/种子敏感度扫描（同一夹具，逐行改 equitySeed）
+
+===== 无画像（宽裕预算 120s） =====
+  seed=         1 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=         2 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=         3 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=        42 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=      1234 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=  20260913 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed= 999999999 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  ⇒ 极差 = 0.0000pp（min 56.2588% / max 56.2588%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp
+
+===== MANIAC（宽裕预算 120s） =====
+  seed=         1 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=         2 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=         3 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=        42 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=      1234 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=  20260913 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed= 999999999 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  ⇒ 极差 = 0.0000pp（min 57.6091% / max 57.6091%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp
+
+===== CALLING_STATION（宽裕预算 120s） =====
+  seed=         1 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=         2 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=         3 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=        42 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=      1234 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=  20260913 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed= 999999999 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  ⇒ 极差 = 0.0000pp（min 55.8080% / max 55.8080%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp
+
+===== 无画像（交互默认预算） =====
+  seed=         1 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=         2 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=         3 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=        42 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=      1234 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed=  20260913 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  seed= 999999999 ok=true 动作=CALL  权益=0.562588 callEV=12.4417 来源=[object Object] 迭代=null 诈唬质量=0.018421
+  ⇒ 极差 = 0.0000pp（min 56.2588% / max 56.2588%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp
+
+===== MANIAC（交互默认预算） =====
+  seed=         1 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=         2 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=         3 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=        42 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=      1234 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed=  20260913 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  seed= 999999999 ok=true 动作=CALL  权益=0.576091 callEV=13.0763 来源=[object Object] 迭代=null 诈唬质量=0.050014
+  ⇒ 极差 = 0.0000pp（min 57.6091% / max 57.6091%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp
+
+===== CALLING_STATION（交互默认预算） =====
+  seed=         1 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=         2 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=         3 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=        42 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=      1234 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed=  20260913 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  seed= 999999999 ok=true 动作=CALL  权益=0.558080 callEV=12.2298 来源=[object Object] 迭代=null 诈唬质量=0.007846
+  ⇒ 极差 = 0.0000pp（min 55.8080% / max 55.8080%）
+  ⇒ 动作集合 = {CALL}
+  ⇒ 诈唬质量极差 = 0.000000pp

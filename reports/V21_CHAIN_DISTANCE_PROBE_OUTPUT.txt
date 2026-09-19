@@ -1,0 +1,102 @@
+================ 0. 夹具 ================
+board = 14d 8s 4s 2c 13d   hero = 14c 11h
+
+================ 1. 真实分类（riverComboClassOf） ================
+ALL_COMBOS=1326；与 Hero/公共牌重叠=336；无法分类=0
+  SHOWDOWN_VALUE          471 个组合
+  MISSED_STRAIGHT_DRAW    208 个组合
+  PURE_AIR                142 个组合
+  THIN_VALUE               86 个组合
+  MISSED_COMBO_DRAW        32 个组合
+  STRONG_VALUE             29 个组合
+  MISSED_FLUSH_DRAW        22 个组合
+选中的两个类别：SHOWDOWN_VALUE（取 3c2d/3c2h/3c2s） 与 MISSED_STRAIGHT_DRAW（取 6c3c/6c3d/6c3h）
+
+================ 变体：变体 1 · 二进制精确权重（每个类别内部重新分配质量） ================
+  逐组合原始权重 A：3c2d[SHOWDOWN_VALUE]=0.5  3c2h[SHOWDOWN_VALUE]=0.25  3c2s[SHOWDOWN_VALUE]=0.25  6c3c[MISSED_STRAIGHT_DRAW]=0.5  6c3d[MISSED_STRAIGHT_DRAW]=0.25  6c3h[MISSED_STRAIGHT_DRAW]=0.25
+  逐组合原始权重 B：3c2d[SHOWDOWN_VALUE]=0.875  3c2h[SHOWDOWN_VALUE]=0.0625  3c2s[SHOWDOWN_VALUE]=0.0625  6c3c[MISSED_STRAIGHT_DRAW]=0.0625  6c3d[MISSED_STRAIGHT_DRAW]=0.0625  6c3h[MISSED_STRAIGHT_DRAW]=0.875
+  类别总权重 SHOWDOWN_VALUE         A=1  B=1  C=1.5
+  类别总权重 MISSED_STRAIGHT_DRAW   A=1  B=1  C=0.5
+  生产聚合器（profileClassMasses）逐字段比较：
+    totalMass              A=1                      B=1                      ==
+    reachableRangeCount    A=6                      B=6                      ==
+    nutValueMass           A=0                      B=0                      ==
+    strongValueMass        A=0                      B=0                      ==
+    thinValueMass          A=0                      B=0                      ==
+    showdownMass           A=0.5                    B=0.5                    ==
+    missedFlushMass        A=0                      B=0                      ==
+    missedStraightMass     A=0.5                    B=0.5                    ==
+    missedComboMass        A=0                      B=0                      ==
+    pureAirMass            A=0                      B=0                      ==
+    valueMass              A=0                      B=0                      ==
+    missedDrawMass         A=0.5                    B=0.5                    ==
+    bluffMass              A=0.5                    B=0.5                    ==
+    rawSupportCombos       A=6                      B=6                      ==
+    effectiveCombos        A=5.333333333333333      B=2.585858585858586      !=
+    posteriorMassCombos90  A=6                      B=3                      !=
+    posteriorMassCombos95  A=6                      B=5                      !=
+  黄金测试的 5 分量向量（坚果+强价值, 薄价值, 摊牌, 错过听牌, 纯空气）：
+    A = [0.00000000000000, 0.00000000000000, 0.50000000000000, 0.50000000000000, 0.00000000000000]
+    B = [0.00000000000000, 0.00000000000000, 0.50000000000000, 0.50000000000000, 0.00000000000000]
+    JSON 逐位相同 = true
+
+  (a) 类别级：profileRangeDistance(黄金5分量A, 黄金5分量B) = { totalVariation: 0, jsDivergence: 0, sharedSupport: 2 }
+  entries 数：A=6 B=6；canonicalId 序列逐位对齐=true
+    逐组合后验 A = [0.25000000000000, 0.12500000000000, 0.12500000000000, 0.25000000000000, 0.12500000000000, 0.12500000000000]
+    逐组合后验 B = [0.43750000000000, 0.03125000000000, 0.03125000000000, 0.03125000000000, 0.03125000000000, 0.43750000000000]
+  (b) 逐组合：profileRangeDistance(后验A, 后验B) = { totalVariation: 0.5, jsDivergence: 0.2200241522709298, sharedSupport: 6 }
+
+  正对照（把质量挪到**另一个类别**）：C 的 5 分量 = [0.00000000000000, 0.00000000000000, 0.75000000000000, 0.25000000000000, 0.00000000000000] ⇒ totalVariation: 0.25, jsDivergence: 0.0487949406953985
+  ⇒ 同一函数：**跨类别** TV=0.25 vs **同类别内部** TV=0；逐组合口径 TV=0.5
+
+================ 变体：变体 2 · 十进制权重（0.2/0.2/0.2 对 0.5/0.05/0.05） ================
+  逐组合原始权重 A：3c2d[SHOWDOWN_VALUE]=0.2  3c2h[SHOWDOWN_VALUE]=0.2  3c2s[SHOWDOWN_VALUE]=0.2  6c3c[MISSED_STRAIGHT_DRAW]=0.13333333333333333  6c3d[MISSED_STRAIGHT_DRAW]=0.13333333333333333  6c3h[MISSED_STRAIGHT_DRAW]=0.13333333333333333
+  逐组合原始权重 B：3c2d[SHOWDOWN_VALUE]=0.5  3c2h[SHOWDOWN_VALUE]=0.05  3c2s[SHOWDOWN_VALUE]=0.05  6c3c[MISSED_STRAIGHT_DRAW]=0.3  6c3d[MISSED_STRAIGHT_DRAW]=0.05  6c3h[MISSED_STRAIGHT_DRAW]=0.05
+  类别总权重 SHOWDOWN_VALUE         A=0.6000000000000001  B=0.6000000000000001  C=0.8
+  类别总权重 MISSED_STRAIGHT_DRAW   A=0.4  B=0.39999999999999997  C=0.2
+  生产聚合器（profileClassMasses）逐字段比较：
+    totalMass              A=1                      B=0.9999999999999998     !=
+    reachableRangeCount    A=6                      B=6                      ==
+    nutValueMass           A=0                      B=0                      ==
+    strongValueMass        A=0                      B=0                      ==
+    thinValueMass          A=0                      B=0                      ==
+    showdownMass           A=0.6000000000000001     B=0.5999999999999999     !=
+    missedFlushMass        A=0                      B=0                      ==
+    missedStraightMass     A=0.4                    B=0.3999999999999999     !=
+    missedComboMass        A=0                      B=0                      ==
+    pureAirMass            A=0                      B=0                      ==
+    valueMass              A=0                      B=0                      ==
+    missedDrawMass         A=0.4                    B=0.3999999999999999     !=
+    bluffMass              A=0.4                    B=0.3999999999999999     !=
+    rawSupportCombos       A=6                      B=6                      ==
+    effectiveCombos        A=5.769230769230768      B=2.8571428571428568     !=
+    posteriorMassCombos90  A=6                      B=5                      !=
+    posteriorMassCombos95  A=6                      B=5                      !=
+  黄金测试的 5 分量向量（坚果+强价值, 薄价值, 摊牌, 错过听牌, 纯空气）：
+    A = [0.00000000000000, 0.00000000000000, 0.60000000000000, 0.40000000000000, 0.00000000000000]
+    B = [0.00000000000000, 0.00000000000000, 0.60000000000000, 0.40000000000000, 0.00000000000000]
+    JSON 逐位相同 = false
+
+  (a) 类别级：profileRangeDistance(黄金5分量A, 黄金5分量B) = { totalVariation: 5.551115123125783e-17, jsDivergence: -9.610279511444755e-17, sharedSupport: 2 }
+  entries 数：A=6 B=6；canonicalId 序列逐位对齐=true
+    逐组合后验 A = [0.20000000000000, 0.20000000000000, 0.20000000000000, 0.13333333333333, 0.13333333333333, 0.13333333333333]
+    逐组合后验 B = [0.50000000000000, 0.05000000000000, 0.05000000000000, 0.30000000000000, 0.05000000000000, 0.05000000000000]
+  (b) 逐组合：profileRangeDistance(后验A, 后验B) = { totalVariation: 0.46666666666666673, jsDivergence: 0.16950491685150207, sharedSupport: 6 }
+
+  正对照（把质量挪到**另一个类别**）：C 的 5 分量 = [0.00000000000000, 0.00000000000000, 0.80000000000000, 0.20000000000000, 0.00000000000000] ⇒ totalVariation: 0.19999999999999998, jsDivergence: 0.0348515545596771
+  ⇒ 同一函数：**跨类别** TV=0.19999999999999998 vs **同类别内部** TV=5.551115123125783e-17；逐组合口径 TV=0.46666666666666673
+
+================ 4. 黄金夹具 03A(CALLING_STATION) vs 03B(MANIAC) 的真实距离 ================
+  03A 5 分量 = [0.11539219557984, 0.29601805190890, 0.58074376011729, 0.00491544454395, 0.00293054785002]
+  03B 5 分量 = [0.10643042563804, 0.28756315004423, 0.55599225799210, 0.03402886893302, 0.01598529739261]
+  §二十三 实际断言的就是这个距离：{ totalVariation: 0.04216817393165691, jsDivergence: 0.0127654409487184, sharedSupport: 5 }
+  03A/03B 的类别质量（生产路径）：bluffMass 0.007845992393969235 → 0.05001416632562606；pureAirMass 0.0029305478500156615 → 0.01598529739260974；rawSupportCombos 449 → 449；effectiveCombos 125.64494604014571 → 136.02461217449195
+
+================ 5. 生产输出的可观测面 ================
+  DecisionContext 的字段：activeOpponentCount, board, deadlineBudget, dynamic, environment, heroCards, isClosingAction, math, opponentRanges, player, playersRemainingToAct, playersYetToAct, postflopFacts, profileRangeEvidence, range, realizedOpponentCount, timings
+  RangeSnapshot 的字段：collapsed, confidence, metrics, opponentId, opponentPositionZh, sourceDescription, sourceId, sourceKind, supportShare, supportSize, updateTrace
+  opponentRangeFacts 的字段：actionMasses, counts, drawShare, equalShare, meanTier, profileClassMasses, strongShare, strongerShare, suitFit, supportSize, tierHistogram, topPairPlusShare, weakerShare
+  ⇒ 逐组合后验（cardIndices + probability）**不在**任何公开字段里：Range.entries 只活在 contextBuilder 内部，公开面只有类别质量 / 分位数 / 标量指标。
+  生产聚合里的逐组合中间量：effectiveCombos=136.02461217449195、posteriorMassCombos90=152、posteriorMassCombos95=259（都是**标量**，不是向量）
+  范围熵（RangeSnapshot.metrics.entropyBits）= 7.5172043322712065（标量；熵相同不蕴含分布相同，更不可能反推逐组合后验）
+  comboIdOf('Ad','Kd') = AdKd（`comboIdOf` 只用于**构建**范围，不是读取出口）

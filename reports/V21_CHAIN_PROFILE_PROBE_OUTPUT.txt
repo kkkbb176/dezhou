@@ -1,0 +1,358 @@
+================ 0. 环境 ================
+ALL_QUICK_PROFILES = UNKNOWN / VERY_TIGHT / TIGHT / NORMAL / LOOSE / VERY_LOOSE / CALLING_STATION / AGGRESSIVE / BLUFF_HEAVY / UNDERBLUFFER / MANIAC
+QUICK_PROFILE_CONFIDENCE = 0.35；NO_DATA_NEUTRAL = 0.5
+
+================ A0 完全不给画像 （1336 ms） ================
+player.quickProfile=null  confidence=0.5  neutralized=true
+profileRangeEvidence：字段**不存在**（没有任何画像/倾向证据）
+范围：supportSize=449  entropyBits=7.355069734  effectiveComboCount=127.243371  topProbability=0.012294789
+profileClassMasses：bluff=0.018421440 missedDraw=0.012016015 pureAir=0.006405425 value=0.406720277 effectiveCombos=127.243371 mass90=125
+决策：equity=56.2588%  callEV=12.441654  action=CALL
+digests：range=37da1689d1b3be7c math=e3dd978b1a708175 facts=aba31333300cd4e3 player=654deba6671c281a dynamic=e16c74dff0328bb0 decision=70855d66940f5199
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A1 quickProfile=UNKNOWN （1077 ms） ================
+player.quickProfile=UNKNOWN  confidence=0.5  neutralized=true
+profileRangeEvidence：字段**不存在**（没有任何画像/倾向证据）
+范围：supportSize=449  entropyBits=7.355069734  effectiveComboCount=127.243371  topProbability=0.012294789
+profileClassMasses：bluff=0.018421440 missedDraw=0.012016015 pureAir=0.006405425 value=0.406720277 effectiveCombos=127.243371 mass90=125
+决策：equity=56.2588%  callEV=12.441654  action=CALL
+digests：range=37da1689d1b3be7c math=e3dd978b1a708175 facts=aba31333300cd4e3 player=89fcdddc26ab4fb8 dynamic=e16c74dff0328bb0 decision=70855d66940f5199
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A2 quickProfile=NORMAL （1176 ms） ================
+player.quickProfile=NORMAL  confidence=0.35  neutralized=false
+profileRangeEvidence：存在；applied=false；tier=USER_ARCHETYPE
+  provider.finalMultiplier.calls=2970  profile effective/calls=0/2970  observation.calls=0
+  equityBefore=0.5625883726719894 → equityAfter=0.5625883726719894（Δ=0.0000pp）  combos 449 → 449
+范围：supportSize=449  entropyBits=7.355069734  effectiveComboCount=127.243371  topProbability=0.012294789
+profileClassMasses：bluff=0.018421440 missedDraw=0.012016015 pureAir=0.006405425 value=0.406720277 effectiveCombos=127.243371 mass90=125
+决策：equity=56.2588%  callEV=12.441654  action=CALL
+digests：range=37da1689d1b3be7c math=e3dd978b1a708175 facts=aba31333300cd4e3 player=6468404fc2bcba63 dynamic=e16c74dff0328bb0 decision=70855d66940f5199
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A3 quickProfile=MANIAC （1169 ms） ================
+player.quickProfile=MANIAC  confidence=0.35  neutralized=false
+profileRangeEvidence：存在；applied=true；tier=USER_ARCHETYPE
+  provider.finalMultiplier.calls=2970  profile effective/calls=2970/2970  observation.calls=0
+  equityBefore=0.5625883726719894 → equityAfter=0.5760913804269139（Δ=1.3503pp）  combos 449 → 449
+范围：supportSize=449  entropyBits=7.517204332  effectiveComboCount=136.024612  topProbability=0.012121908
+profileClassMasses：bluff=0.050014166 missedDraw=0.034028869 pureAir=0.015985297 value=0.393993576 effectiveCombos=136.024612 mass90=152
+决策：equity=57.6091%  callEV=13.076295  action=CALL
+digests：range=f6c2dcfd8e61c28e math=6a38963e0a2e65df facts=dcf245b012c2344c player=256d016350e42f81 dynamic=e16c74dff0328bb0 decision=972e6cc8adbcb777
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A3b MANIAC + 显式 behaviorProfile(MANIAC) （1047 ms） ================
+player.quickProfile=MANIAC  confidence=0.35  neutralized=false
+profileRangeEvidence：存在；applied=true；tier=USER_ARCHETYPE
+  provider.finalMultiplier.calls=2970  profile effective/calls=2970/2970  observation.calls=0
+  equityBefore=0.5625883726719894 → equityAfter=0.5760913804269139（Δ=1.3503pp）  combos 449 → 449
+范围：supportSize=449  entropyBits=7.517204332  effectiveComboCount=136.024612  topProbability=0.012121908
+profileClassMasses：bluff=0.050014166 missedDraw=0.034028869 pureAir=0.015985297 value=0.393993576 effectiveCombos=136.024612 mass90=152
+决策：equity=57.6091%  callEV=13.076295  action=CALL
+digests：range=f6c2dcfd8e61c28e math=6a38963e0a2e65df facts=dcf245b012c2344c player=256d016350e42f81 dynamic=e16c74dff0328bb0 decision=972e6cc8adbcb777
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A4 只给显式 behaviorProfile(MANIAC) （740 ms） ================
+player.quickProfile=null  confidence=0.5  neutralized=true
+profileRangeEvidence：字段**不存在**（没有任何画像/倾向证据）
+范围：supportSize=449  entropyBits=7.511453278  effectiveComboCount=135.568308  topProbability=0.011899686
+profileClassMasses：bluff=0.049965199 missedDraw=0.033906641 pureAir=0.016058558 value=0.393650017 effectiveCombos=135.568308 mass90=152
+决策：equity=57.6645%  callEV=13.102311  action=CALL
+digests：range=342d35d07cc56b8e math=47fd5f1e5ac2d50b facts=4321737156106afb player=654deba6671c281a dynamic=e16c74dff0328bb0 decision=75d5b5cd1a67a0ea
+动态层：applied=false state=UNKNOWN adapted=0  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A5 不给画像 + dynamicHint=AGGRESSION_UP （849 ms） ================
+player.quickProfile=null  confidence=0.5  neutralized=true
+profileRangeEvidence：存在；applied=false；tier=PRIOR
+  provider.finalMultiplier.calls=2970  profile effective/calls=0/2970  observation.calls=0
+  equityBefore=0.5625883726719894 → equityAfter=0.5625883726719894（Δ=0.0000pp）  combos 449 → 449
+范围：supportSize=449  entropyBits=7.355069734  effectiveComboCount=127.243371  topProbability=0.012294789
+profileClassMasses：bluff=0.018421440 missedDraw=0.012016015 pureAir=0.006405425 value=0.406720277 effectiveCombos=127.243371 mass90=125
+决策：equity=56.2588%  callEV=12.441654  action=CALL
+digests：range=37da1689d1b3be7c math=e3dd978b1a708175 facts=aba31333300cd4e3 player=654deba6671c281a dynamic=3f04626db3372a06 decision=70855d66940f5199
+动态层：applied=false state=AGGRESSION_UP adapted=3  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ A6 UNKNOWN + dynamicHint=AGGRESSION_UP （816 ms） ================
+player.quickProfile=UNKNOWN  confidence=0.5  neutralized=true
+profileRangeEvidence：存在；applied=false；tier=PRIOR
+  provider.finalMultiplier.calls=2970  profile effective/calls=0/2970  observation.calls=0
+  equityBefore=0.5625883726719894 → equityAfter=0.5625883726719894（Δ=0.0000pp）  combos 449 → 449
+范围：supportSize=449  entropyBits=7.355069734  effectiveComboCount=127.243371  topProbability=0.012294789
+profileClassMasses：bluff=0.018421440 missedDraw=0.012016015 pureAir=0.006405425 value=0.406720277 effectiveCombos=127.243371 mass90=125
+决策：equity=56.2588%  callEV=12.441654  action=CALL
+digests：range=37da1689d1b3be7c math=e3dd978b1a708175 facts=aba31333300cd4e3 player=89fcdddc26ab4fb8 dynamic=3f04626db3372a06 decision=70855d66940f5199
+动态层：applied=false state=AGGRESSION_UP adapted=3  explanation=["近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 9 次分散在多项指标上）"]
+河牌 trace noteZh：统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+去重闸门（diagnostics.postflop.betDecision.profileEvidence）：null
+
+================ 1. 逐位比较（sha256 of canonical JSON，前 16 hex） ================
+
+--- A1(UNKNOWN) vs A0(完全不给) ---
+  rangeDigest     37da1689d1b3be7c == 37da1689d1b3be7c
+  mathDigest      e3dd978b1a708175 == e3dd978b1a708175
+  factsDigest     aba31333300cd4e3 == aba31333300cd4e3
+  playerDigest    89fcdddc26ab4fb8 != 654deba6671c281a
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  70855d66940f5199 == 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 10 条被列出）：
+    deadlineBudget.elapsedMs: 264 !== 316
+    player.quickProfile: UNKNOWN !== null
+    timings.dynamic: 1 !== 9
+    timings.environment: 0 !== 1
+    timings.equity: 3 !== 15
+    timings.legal: 0 !== 1
+    timings.math: 0 !== 2
+    timings.player: 0 !== 4
+    timings.range: 260 !== 280
+    timings.total: 264 !== 316
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+--- A2(NORMAL) vs A1(UNKNOWN) ---
+  rangeDigest     37da1689d1b3be7c == 37da1689d1b3be7c
+  mathDigest      e3dd978b1a708175 == e3dd978b1a708175
+  factsDigest     aba31333300cd4e3 == aba31333300cd4e3
+  playerDigest    6468404fc2bcba63 != 89fcdddc26ab4fb8
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  70855d66940f5199 == 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 14 条被列出）：
+    deadlineBudget.elapsedMs: 359 !== 264
+    player.adjustment.confidence: 0.35 !== 0.5
+    player.adjustment.dimensions.confidence: 0.35 !== 0
+    player.confidence: 0.35 !== 0.5
+    player.neutralized: false !== true
+    player.note: 无实测数据，采用用户手选画像「NORMAL」（主观判断，可信度上限 0.35） !== 没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）
+    player.quickProfile: NORMAL !== UNKNOWN
+    postflopFacts.betDecision.tendencies.confidence: 0.35 !== 0
+    postflopFacts.betDecision.tendencies.noteZh: 画像响应倾向（可信度 0.35）：跟注 ×1.000、弃牌 ×1.000、加注 ×1.000、诈唬加注 ×1.000、过牌后下注 ×1.000（按可信度缩放到最终值） !== 无画像：响应概率只用范围与尺寸决定
+    profileRangeEvidence: {"combosAfter":449,"combosBefore":449,"dimensionNoteZh":"无实测数据，改用用户手选画像原型（可信度上限 0.35）——... !== __UNDEFINED__
+    timings.dynamic: 2 !== 1
+    timings.player: 1 !== 0
+    timings.range: 353 !== 260
+    timings.total: 359 !== 264
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+--- A2(NORMAL) vs A0(完全不给) ---
+  rangeDigest     37da1689d1b3be7c == 37da1689d1b3be7c
+  mathDigest      e3dd978b1a708175 == e3dd978b1a708175
+  factsDigest     aba31333300cd4e3 == aba31333300cd4e3
+  playerDigest    6468404fc2bcba63 != 654deba6671c281a
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  70855d66940f5199 == 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 18 条被列出）：
+    deadlineBudget.elapsedMs: 359 !== 316
+    player.adjustment.confidence: 0.35 !== 0.5
+    player.adjustment.dimensions.confidence: 0.35 !== 0
+    player.confidence: 0.35 !== 0.5
+    player.neutralized: false !== true
+    player.note: 无实测数据，采用用户手选画像「NORMAL」（主观判断，可信度上限 0.35） !== 没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）
+    player.quickProfile: NORMAL !== null
+    postflopFacts.betDecision.tendencies.confidence: 0.35 !== 0
+    postflopFacts.betDecision.tendencies.noteZh: 画像响应倾向（可信度 0.35）：跟注 ×1.000、弃牌 ×1.000、加注 ×1.000、诈唬加注 ×1.000、过牌后下注 ×1.000（按可信度缩放到最终值） !== 无画像：响应概率只用范围与尺寸决定
+    profileRangeEvidence: {"combosAfter":449,"combosBefore":449,"dimensionNoteZh":"无实测数据，改用用户手选画像原型（可信度上限 0.35）——... !== __UNDEFINED__
+    timings.dynamic: 2 !== 9
+    timings.environment: 0 !== 1
+    timings.equity: 3 !== 15
+    timings.legal: 0 !== 1
+    timings.math: 0 !== 2
+    timings.player: 1 !== 4
+    timings.range: 353 !== 280
+    timings.total: 359 !== 316
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+--- A3(MANIAC) vs A1(UNKNOWN) ---
+  rangeDigest     f6c2dcfd8e61c28e != 37da1689d1b3be7c
+  mathDigest      6a38963e0a2e65df != e3dd978b1a708175
+  factsDigest     dcf245b012c2344c != aba31333300cd4e3
+  playerDigest    256d016350e42f81 != 89fcdddc26ab4fb8
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  972e6cc8adbcb777 != 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 24 条被列出）：
+    deadlineBudget.elapsedMs: 381 !== 264
+    math.callEV: 13.076294880064953 !== 12.4416535155835
+    math.heroEquity: 0.5760913804269139 !== 0.5625883726719894
+    opponentRanges[0].metrics.effectiveComboCount: 136.02461217449255 !== 127.24337131738527
+    opponentRanges[0].metrics.entropyBits: 7.5172043322712065 !== 7.355069734108621
+    opponentRanges[0].metrics.normalizedEntropy: 0.8532027936337256 !== 0.8348005145439933
+    opponentRanges[0].metrics.probabilitySum: 0.9999999999999978 !== 1.0000000000000047
+    opponentRanges[0].metrics.topProbability: 0.012121907975865397 !== 0.012294788595569345
+    opponentRanges[0].metrics.weightedConfidence: 0.2999999999999996 !== 0.30000000000000165
+    opponentRanges[0].updateTrace[0].entropyAfter: 8.707601382841707 !== 8.704105044336607
+    opponentRanges[0].updateTrace[1].entropyAfter: 8.037447518402054 !== 8.03437338643474
+    opponentRanges[0].updateTrace[1].entropyBefore: 8.707601382841707 !== 8.704105044336607
+    opponentRanges[0].updateTrace[2].entropyAfter: 7.871249181087056 !== 7.86774252199254
+    opponentRanges[0].updateTrace[2].entropyBefore: 8.037447518402054 !== 8.03437338643474
+    opponentRanges[0].updateTrace[3].entropyAfter: 7.5172043322712065 !== 7.355069734108621
+    opponentRanges[0].updateTrace[3].entropyBefore: 7.871249181087056 !== 7.86774252199254
+    player.adjustment.confidence: 0.35 !== 0.5
+    player.adjustment.dimensions.aggression: 0.92 !== 0.5
+    player.adjustment.dimensions.bluffTendency: 0.9 !== 0.5
+    player.adjustment.dimensions.confidence: 0.35 !== 0
+    player.adjustment.dimensions.passivity: 0.35 !== 0.5
+    player.adjustment.dimensions.tightness: 0.15 !== 0.5
+    player.confidence: 0.35 !== 0.5
+    player.neutralized: false !== true
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：24 条
+    facts.actionMasses.bluffCandidateMass: 0.05001416632562607 !== 0.01842144005887408
+    facts.actionMasses.bluffMassShare: 0.05001416632562618 !== 0.018421440058873993
+    facts.actionMasses.clearValueMass: 0.10643042563804249 !== 0.11012048706820535
+    facts.actionMasses.showdownMass: 0.4626295360262705 !== 0.48025078769095714
+    facts.actionMasses.showdownMassShare: 0.46262953602627155 !== 0.4802507876909549
+    facts.actionMasses.thinValueMass: 0.28756315004422905 !== 0.2965997895077872
+
+--- A3b(MANIAC+显式) vs A3(MANIAC) ---
+  rangeDigest     f6c2dcfd8e61c28e == f6c2dcfd8e61c28e
+  mathDigest      6a38963e0a2e65df == 6a38963e0a2e65df
+  factsDigest     dcf245b012c2344c == dcf245b012c2344c
+  playerDigest    256d016350e42f81 == 256d016350e42f81
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  972e6cc8adbcb777 == 972e6cc8adbcb777
+  完整 context 的差异路径（最多列 24 条，共 3 条被列出）：
+    deadlineBudget.elapsedMs: 379 !== 381
+    timings.range: 222 !== 236
+    timings.total: 379 !== 381
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+--- A4(只给显式 behaviorProfile) vs A0(完全不给) ---
+  rangeDigest     342d35d07cc56b8e != 37da1689d1b3be7c
+  mathDigest      47fd5f1e5ac2d50b != e3dd978b1a708175
+  factsDigest     4321737156106afb != aba31333300cd4e3
+  playerDigest    654deba6671c281a == 654deba6671c281a
+  dynamicDigest   e16c74dff0328bb0 == e16c74dff0328bb0
+  decisionDigest  75d5b5cd1a67a0ea != 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 24 条被列出）：
+    deadlineBudget.elapsedMs: 127 !== 316
+    math.callEV: 13.102311308919177 !== 12.4416535155835
+    math.heroEquity: 0.5766449214663655 !== 0.5625883726719894
+    opponentRanges[0].metrics.effectiveComboCount: 135.56830845411497 !== 127.24337131738527
+    opponentRanges[0].metrics.entropyBits: 7.511453278124202 !== 7.355069734108621
+    opponentRanges[0].metrics.normalizedEntropy: 0.8525500489100658 !== 0.8348005145439933
+    opponentRanges[0].metrics.probabilitySum: 0.9999999999999996 !== 1.0000000000000047
+    opponentRanges[0].metrics.topProbability: 0.011899686396604275 !== 0.012294788595569345
+    opponentRanges[0].metrics.weightedConfidence: 0.29999999999999827 !== 0.30000000000000165
+    opponentRanges[0].updateTrace[3].entropyAfter: 7.511453278124202 !== 7.355069734108621
+    postflopFacts.betDecision.checkTree.checkEV: 19.02928240839006 !== 18.56541629817565
+    postflopFacts.betDecision.checkTree.components.equityVsCheckedRange: 0.5766449214663655 !== 0.5625883726719894
+    postflopFacts.betDecision.checkTree.evShowdown: 19.02928240839006 !== 18.56541629817565
+    postflopFacts.betDecision.checkTree.heroEquityVsCheckBackRange: 0.5766449214663655 !== 0.5625883726719894
+    postflopFacts.betDecision.heroEquityVsArrivalRange: 0.5766449214663655 !== 0.5625883726719894
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[0].probability: 0.00036394298881286765 !== 0.00046713207280331653
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[1].probability: 0.003265408478087134 !== 0.004191252690136819
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[2].probability: 0.0005039210614332014 !== 0.0006467982546507459
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[3].probability: 0.003265408478087134 !== 0.004191252690136819
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[4].probability: 0.003265408478087134 !== 0.004191252690136819
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[5].probability: 0.00036394298881286765 !== 0.00046713207280331653
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[6].probability: 0.003265408478087134 !== 0.004191252690136819
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[7].probability: 0.003265408478087134 !== 0.004191252690136819
+    postflopFacts.betDecision.sizes[0].buckets[0].entries[8].probability: 0.003265408478087134 !== 0.004191252690136819
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：24 条
+    facts.actionMasses.bluffCandidateMass: 0.04996519898363891 !== 0.01842144005887408
+    facts.actionMasses.bluffMassShare: 0.04996519898363893 !== 0.018421440058873993
+    facts.actionMasses.clearValueMass: 0.10658168310638437 !== 0.11012048706820535
+    facts.actionMasses.showdownMass: 0.46481757053586176 !== 0.48025078769095714
+    facts.actionMasses.showdownMassShare: 0.464817570535862 !== 0.4802507876909549
+    facts.actionMasses.thinValueMass: 0.2870683341162453 !== 0.2965997895077872
+
+--- A5(不给画像+AGGRESSION_UP) vs A0 ---
+  rangeDigest     37da1689d1b3be7c == 37da1689d1b3be7c
+  mathDigest      e3dd978b1a708175 == e3dd978b1a708175
+  factsDigest     aba31333300cd4e3 == aba31333300cd4e3
+  playerDigest    654deba6671c281a == 654deba6671c281a
+  dynamicDigest   3f04626db3372a06 != e16c74dff0328bb0
+  decisionDigest  70855d66940f5199 == 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 16 条被列出）：
+    deadlineBudget.elapsedMs: 223 !== 316
+    dynamic.adapted: [{"conflicting":false,"direction":"INCREASE","magnitudeProvenance":"UNVERIFIED_MAGNITUD... !== []
+    dynamic.confidence: 0.25 !== 0
+    dynamic.state: AGGRESSION_UP !== UNKNOWN
+    dynamic.stateProvenance: USER_HINT !== OBSERVED_BEHAVIOR
+    postflopFacts.betDecision.tendencies.confidence: 0.5 !== 0
+    postflopFacts.betDecision.tendencies.noteZh: 画像响应倾向（可信度 0.50）：跟注 ×1.000、弃牌 ×1.000、加注 ×1.000、诈唬加注 ×1.000、过牌后下注 ×1.000（按可信度缩放到最终值） !== 无画像：响应概率只用范围与尺寸决定
+    profileRangeEvidence: {"combosAfter":449,"combosBefore":449,"dimensionNoteZh":"没有实测数据，也没有手选画像 ⇒ 维度全中立，范围不做任何画... !== __UNDEFINED__
+    timings.dynamic: 1 !== 9
+    timings.environment: 0 !== 1
+    timings.equity: 2 !== 15
+    timings.legal: 0 !== 1
+    timings.math: 1 !== 2
+    timings.player: 0 !== 4
+    timings.range: 219 !== 280
+    timings.total: 223 !== 316
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+--- A6(UNKNOWN+AGGRESSION_UP) vs A1(UNKNOWN) ---
+  rangeDigest     37da1689d1b3be7c == 37da1689d1b3be7c
+  mathDigest      e3dd978b1a708175 == e3dd978b1a708175
+  factsDigest     aba31333300cd4e3 == aba31333300cd4e3
+  playerDigest    89fcdddc26ab4fb8 == 89fcdddc26ab4fb8
+  dynamicDigest   3f04626db3372a06 != e16c74dff0328bb0
+  decisionDigest  70855d66940f5199 == 70855d66940f5199
+  完整 context 的差异路径（最多列 24 条，共 12 条被列出）：
+    deadlineBudget.elapsedMs: 196 !== 264
+    dynamic.adapted: [{"conflicting":false,"direction":"INCREASE","magnitudeProvenance":"UNVERIFIED_MAGNITUD... !== []
+    dynamic.confidence: 0.25 !== 0
+    dynamic.state: AGGRESSION_UP !== UNKNOWN
+    dynamic.stateProvenance: USER_HINT !== OBSERVED_BEHAVIOR
+    postflopFacts.betDecision.tendencies.confidence: 0.5 !== 0
+    postflopFacts.betDecision.tendencies.noteZh: 画像响应倾向（可信度 0.50）：跟注 ×1.000、弃牌 ×1.000、加注 ×1.000、诈唬加注 ×1.000、过牌后下注 ×1.000（按可信度缩放到最终值） !== 无画像：响应概率只用范围与尺寸决定
+    profileRangeEvidence: {"combosAfter":449,"combosBefore":449,"dimensionNoteZh":"没有实测数据，也没有手选画像 ⇒ 维度全中立，范围不做任何画... !== __UNDEFINED__
+    timings.equity: 2 !== 3
+    timings.player: 1 !== 0
+    timings.range: 192 !== 260
+    timings.total: 196 !== 264
+  **范围链路**（range.metrics + updateTrace + opponentRangeFacts）差异：0 条（逐位相同）
+
+================ 2. 去重闸门（postflopAdvisor 的 rangeLayerApplied / rangeProfileApplied） ================
+参考：profileCompressionMultiplier('MANIAC', 0.35)=0.902000（闸门开启时会乘上去） vs ('MANIAC', 0)=1.000000（闸门关闭 = 恒等）
+
+--- A0 完全不给画像 ---
+  profileRangeEvidence=缺席 ⇒ 闸门 rangeLayerApplied=false
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5752777777777778,"exploit.applied":false,"exploit.bluffCatchDelta":0,"exploit.bluffDelta":0,"exploit.deDuplicated":false,"exploit.sizingMultiplier":1,"exploit.thinValueDelta":0,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11209569866430097,"gate.verdict":"PREFER_CHECK"}
+
+--- A2 quickProfile=NORMAL ---
+  profileRangeEvidence=存在(applied=false) ⇒ 闸门 rangeLayerApplied=false
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5752777777777778,"exploit.applied":false,"exploit.bluffCatchDelta":0,"exploit.bluffDelta":0,"exploit.deDuplicated":false,"exploit.sizingMultiplier":1,"exploit.thinValueDelta":0,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11209569866430097,"gate.verdict":"PREFER_CHECK"}
+
+--- A3 quickProfile=MANIAC ---
+  profileRangeEvidence=存在(applied=true) ⇒ 闸门 rangeLayerApplied=true
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5752777777777778,"exploit.applied":true,"exploit.bluffCatchDelta":0,"exploit.bluffDelta":0.020999999999999998,"exploit.deDuplicated":true,"exploit.sizingMultiplier":1.0350000000000001,"exploit.thinValueDelta":-0.010499999999999999,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11235583708604993,"gate.verdict":"PREFER_CHECK"}
+
+--- A4 只给显式 behaviorProfile(MANIAC) ---
+  profileRangeEvidence=缺席 ⇒ 闸门 rangeLayerApplied=false
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5752777777777778,"exploit.applied":false,"exploit.bluffCatchDelta":0,"exploit.bluffDelta":0,"exploit.deDuplicated":false,"exploit.sizingMultiplier":1,"exploit.thinValueDelta":0,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11306071265367512,"gate.verdict":"PREFER_CHECK"}
+
+--- A3(MANIAC) 的受控反事实：把 profileRangeEvidence 拿掉（模拟「画像已改范围但证据缺失」） ---
+有 profileRangeEvidence（生产路径）：
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5752777777777778,"exploit.applied":true,"exploit.bluffCatchDelta":0,"exploit.bluffDelta":0.020999999999999998,"exploit.deDuplicated":true,"exploit.sizingMultiplier":1.0350000000000001,"exploit.thinValueDelta":-0.010499999999999999,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11235583708604993,"gate.verdict":"PREFER_CHECK"}
+拿掉 profileRangeEvidence：
+  {"betDecision":null,"compression.aggressionCredibility(=压缩因子)":0.5189005555555556,"exploit.applied":true,"exploit.bluffCatchDelta":0.034999999999999996,"exploit.bluffDelta":0.020999999999999998,"exploit.deDuplicated":false,"exploit.sizingMultiplier":1.0350000000000001,"exploit.thinValueDelta":-0.010499999999999999,"gate.estimatedBetEVScore":0,"gate.estimatedCheckEVScore":0.11235583708604993,"gate.verdict":"PREFER_CHECK"}
+差异 3 条：
+  compression.aggressionCredibility(=压缩因子): 0.5752777777777778 !== 0.5189005555555556
+  exploit.bluffCatchDelta: 0 !== 0.034999999999999996
+  exploit.deDuplicated: true !== false
+
+================ 3. 证据与行为是否一致（A4：显式 behaviorProfile、无 quickProfile） ================
+A4 profileRangeEvidence 缺席 = true；但范围链路 digest 342d35d07cc56b8e vs 基线 37da1689d1b3be7c ⇒ 范围**已改变**
+A4 熵 7.511453278 vs 基线 7.355069734；A4 诈唬质量 0.049965199 vs 基线 0.018421440
+范围链路差异 24 条（列前 8 条）：
+  facts.actionMasses.bluffCandidateMass: 0.04996519898363891 !== 0.01842144005887408
+  facts.actionMasses.bluffMassShare: 0.04996519898363893 !== 0.018421440058873993
+  facts.actionMasses.clearValueMass: 0.10658168310638437 !== 0.11012048706820535
+  facts.actionMasses.showdownMass: 0.46481757053586176 !== 0.48025078769095714
+  facts.actionMasses.showdownMassShare: 0.464817570535862 !== 0.4802507876909549
+  facts.actionMasses.thinValueMass: 0.2870683341162453 !== 0.2965997895077872
+  facts.actionMasses.totalMass: 0.9999999999999996 !== 1.0000000000000047
+  facts.actionMasses.uncertainMass: 0.09156721325786428 !== 0.0946074956741815

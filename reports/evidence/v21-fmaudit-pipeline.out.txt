@@ -1,0 +1,268 @@
+
+================================================================================================
+A 中性对照：无画像 / UNKNOWN / NORMAL / 显式中性画像 / 原型画像
+================================================================================================
+A1 无 quickProfile / 无 behaviorProfile          ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 1011ms
+A2 quickProfile=UNKNOWN                        ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 599ms
+A3 quickProfile=NORMAL                         ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=false shape=true ΔEQ=0.000pp 737ms
+A4 只注入中性 behaviorProfile                       ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 624ms
+A5 只注入 MANIAC behaviorProfile                  ok=true  act=CALL  EQ=0.5766 callEV=13.10 bluffM=0.0500 airM=0.0161 sup=449 effC=135.6 prov=null shape=null ΔEQ=—pp 594ms
+A6 quickProfile=MANIAC + 中性画像                  ok=true  act=CALL  EQ=0.5620 callEV=12.41 bluffM=0.0184 airM=0.0064 sup=449 effC=127.7 prov=true shape=true ΔEQ=-0.059pp 878ms
+A7 quickProfile=MANIAC（界面路径）                   ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 1037ms
+A8 quickProfile=CALLING_STATION（界面路径）          ok=true  act=CALL  EQ=0.5581 callEV=12.23 bluffM=0.0078 airM=0.0029 sup=449 effC=125.6 prov=true shape=true ΔEQ=-0.451pp 782ms
+
+— A 组逐位对照 —
+A1 vs A2 权益：逐位相等｜诈唬质量：逐位相等
+A1 vs A3 权益：逐位相等｜诈唬质量：逐位相等
+A1 vs A4 权益：逐位相等｜诈唬质量：逐位相等
+A1 vs A5（只画像似然通道）权益差 = 1.4057pp
+A1 vs A6（只倾斜通道）  权益差 = -0.0588pp
+A1 vs A7（界面路径＝两条通道）权益差 = 1.3503pp
+A1 vs A8（跟注站标签）  权益差 = -0.4509pp
+
+A 组画像证据对象（provider.evidence + 维度来源）：
+  A1 无 quickProfile / 无 behaviorProfile
+     维度来源=null applied=null 形状层生效=null
+     
+     决策层去重：null
+     combosBefore/After = undefined/undefined
+  A6 quickProfile=MANIAC + 中性画像
+     维度来源=USER_ARCHETYPE applied=true 形状层生效=true
+     形状层 ×1.004–1.150（990/990 生效）｜似然层 ×0.938–0.957（2970/2970 生效）
+     决策层去重：画像「疯子」：抓诈唬意愿提高、自己的诈唬也提高；**但仍受尺寸/牌面/前序行动/SPR 约束**
+     combosBefore/After = 449/449
+  A7 quickProfile=MANIAC（界面路径）
+     维度来源=USER_ARCHETYPE applied=true 形状层生效=true
+     形状层 ×1.004–1.150（990/990 生效）｜似然层 ×0.938–0.957（2970/2970 生效）
+     决策层去重：画像「疯子」：抓诈唬意愿提高、自己的诈唬也提高；**但仍受尺寸/牌面/前序行动/SPR 约束**
+     combosBefore/After = 449/449
+  A8 quickProfile=CALLING_STATION（界面路径）
+     维度来源=USER_ARCHETYPE applied=true 形状层生效=true
+     形状层 ×0.967–1.028（990/990 生效）｜似然层 ×1.031–1.075（2970/2970 生效）
+     决策层去重：画像「跟注站」：薄价值提高、诈唬降低、价值下注尺寸放大（他们不会因为你下注大就弃牌）
+     combosBefore/After = 449/449
+A7 的范围更新轨迹 noteZh：
+    [FLOP] CHECK
+    [FLOP] CALL
+    [TURN] CHECK
+    [RIVER] BET —— 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+A6（只倾斜通道）的范围更新轨迹 noteZh：
+    [FLOP] CHECK
+    [FLOP] CALL
+    [TURN] CHECK
+    [RIVER] BET —— 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+
+================================================================================================
+B 样本 / 非法数值（observed 直接注入生产入口）
+================================================================================================
+B1 MANIAC + observed 0/0                       ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 1047ms
+B2 MANIAC + observed 1/1                       ok=true  act=CALL  EQ=0.5768 callEV=13.11 bluffM=0.0515 airM=0.0176 sup=449 effC=136.4 prov=true shape=true ΔEQ=1.418pp 1178ms
+B3 MANIAC + observed 2/2                       ok=true  act=CALL  EQ=0.5773 callEV=13.14 bluffM=0.0528 airM=0.0189 sup=449 effC=136.8 prov=true shape=true ΔEQ=1.476pp 842ms
+B4 MANIAC + observed 0/1                       ok=true  act=CALL  EQ=0.5755 callEV=13.05 bluffM=0.0486 airM=0.0145 sup=449 effC=135.6 prov=true shape=true ΔEQ=1.288pp 1018ms
+B5 MANIAC + observed 30/50                     ok=true  act=CALL  EQ=0.5770 callEV=13.12 bluffM=0.0520 airM=0.0180 sup=449 effC=136.6 prov=true shape=true ΔEQ=1.437pp 705ms
+B6 MANIAC + observed NaN/10                    ok=true  act=CALL  EQ=0.6751 callEV=17.73 bluffM=0.0629 airM=0.0218 sup=449 effC=177.4 prov=true shape=true ΔEQ=11.248pp 587ms
+B7 MANIAC + observed 3/NaN                     ok=true  act=CALL  EQ=0.6751 callEV=17.73 bluffM=0.0629 airM=0.0218 sup=449 effC=177.4 prov=true shape=true ΔEQ=11.248pp 755ms
+B8 MANIAC + observed 3/Infinity                ok=true  act=CALL  EQ=0.5699 callEV=12.79 bluffM=0.0361 airM=0.0016 sup=449 effC=132.2 prov=true shape=true ΔEQ=0.732pp 648ms
+B9 MANIAC + observed 99/10（successes>opps）     ok=true  act=CALL  EQ=0.5803 callEV=13.28 bluffM=0.0595 airM=0.0258 sup=449 effC=138.6 prov=true shape=true ΔEQ=1.773pp 824ms
+B10 MANIAC + observed -3/10                    ok=true  act=CALL  EQ=0.5735 callEV=12.95 bluffM=0.0441 airM=0.0099 sup=449 effC=134.4 prov=true shape=true ΔEQ=1.087pp 677ms
+B11 MANIAC + observed 1/2.5（浮点机会数）             ok=true  act=CALL  EQ=0.5758 callEV=13.06 bluffM=0.0494 airM=0.0154 sup=449 effC=135.9 prov=true shape=true ΔEQ=1.324pp 780ms
+
+B6/B7 的范围更新轨迹（看「更新失败」是否被如实记录）：
+  B6 MANIAC + observed NaN/10: ok=true 动作=CALL 权益=0.6751 轨迹条数=4
+      [FLOP] CHECK
+      [FLOP] CALL
+      [TURN] CHECK
+      [RIVER] BET（更新失败：RANGE_VALIDATION_FAILED）
+  B7 MANIAC + observed 3/NaN: ok=true 动作=CALL 权益=0.6751 轨迹条数=4
+      [FLOP] CHECK
+      [FLOP] CALL
+      [TURN] CHECK
+      [RIVER] BET（更新失败：RANGE_VALIDATION_FAILED）
+  B8 MANIAC + observed 3/Infinity: ok=true 动作=CALL 权益=0.5699 轨迹条数=4
+      [FLOP] CHECK
+      [FLOP] CALL
+      [TURN] CHECK
+      [RIVER] BET —— 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 0/990（无饱和）
+
+================================================================================================
+C 极端 / 残缺画像
+================================================================================================
+C1 全条目 effectiveRate=0.999（注入）                 ok=true  act=CALL  EQ=0.3720 callEV=3.48 bluffM=0.1412 airM=0.0491 sup=449 effC=94.2 prov=null shape=null ΔEQ=—pp 432ms
+C2 全条目 effectiveRate=1（注入）                     ok=true  act=CALL  EQ=0.3720 callEV=3.48 bluffM=0.1412 airM=0.0491 sup=449 effC=94.2 prov=null shape=null ΔEQ=—pp 476ms
+C3 全条目 effectiveRate=0.0001（注入）                ok=true  act=CALL  EQ=0.7799 callEV=22.65 bluffM=0.0001 airM=0.0000 sup=449 effC=92.5 prov=null shape=null ΔEQ=—pp 526ms
+C4 全条目 effectiveRate=0（注入）                     ok=true  act=CALL  EQ=0.7799 callEV=22.65 bluffM=0.0001 airM=0.0000 sup=449 effC=92.5 prov=null shape=null ΔEQ=—pp 429ms
+C5 全条目 effectiveRate=NaN（注入）                   ok=true  act=CALL  EQ=0.6748 callEV=17.72 bluffM=0.0630 airM=0.0219 sup=449 effC=176.9 prov=null shape=null ΔEQ=—pp 425ms
+C6 全条目 effectiveRate=Infinity（注入）              ok=true  act=CALL  EQ=0.3720 callEV=3.48 bluffM=0.1412 airM=0.0491 sup=449 effC=94.2 prov=null shape=null ΔEQ=—pp 421ms
+C7 残缺画像（traits 只有 riverBluff）                  ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 157ms
+    issues/stage: CONTEXT [{"code":"CONTEXT_BUILD_FAILED","message":"构建决策上下文失败：Cannot read properties of undefined (reading 'effectiveRate')"}]
+C8 traits={} 完全缺失                              ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 143ms
+    issues/stage: CONTEXT [{"code":"CONTEXT_BUILD_FAILED","message":"构建决策上下文失败：Cannot read properties of undefined (reading 'effectiveRate')"}]
+
+  C2 全条目 effectiveRate=1（注入）: ok=true stage=- 权益=0.3720 动作=CALL
+      trace [FLOP] CHECK
+      trace [FLOP] CALL
+      trace [TURN] CHECK
+      trace [RIVER] BET —— 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 490/990（**饱和：类别区分被压平！**）
+  C5 全条目 effectiveRate=NaN（注入）: ok=true stage=- 权益=0.6748 动作=CALL
+      trace [FLOP] CHECK
+      trace [FLOP] CALL
+      trace [TURN] CHECK
+      trace [RIVER] BET（更新失败：RANGE_VALIDATION_FAILED）
+  C6 全条目 effectiveRate=Infinity（注入）: ok=true stage=- 权益=0.3720 动作=CALL
+      trace [FLOP] CHECK
+      trace [FLOP] CALL
+      trace [TURN] CHECK
+      trace [RIVER] BET —— 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_CHECK_BACK/LARGE/DRY；条目数 0–3；钳位 490/990（**饱和：类别区分被压平！**）
+  C8 traits={} 完全缺失: ok=false stage=CONTEXT 权益=— 动作=-
+      issues=[{"code":"CONTEXT_BUILD_FAILED","message":"构建决策上下文失败：Cannot read properties of undefined (reading 'effectiveRate')"}]
+
+================================================================================================
+D 陈旧 / 重复 / 分母
+================================================================================================
+D1 observed 30/50，asOf=2020-01-01              ok=true  act=CALL  EQ=0.5770 callEV=13.12 bluffM=0.0520 airM=0.0180 sup=449 effC=136.6 prov=true shape=true ΔEQ=1.437pp 625ms
+D2 observed 30/50，asOf=2125（未来 100 年）          ok=true  act=CALL  EQ=0.5770 callEV=13.12 bluffM=0.0520 airM=0.0180 sup=449 effC=136.6 prov=true shape=true ΔEQ=1.437pp 739ms
+D3 同一手被数两次：observed 1/1                        ok=true  act=CALL  EQ=0.5768 callEV=13.11 bluffM=0.0515 airM=0.0176 sup=449 effC=136.4 prov=true shape=true ΔEQ=1.418pp 711ms
+D4 同一手被数两次：observed 2/2（同一手重复）                 ok=true  act=CALL  EQ=0.5773 callEV=13.14 bluffM=0.0528 airM=0.0189 sup=449 effC=136.8 prov=true shape=true ΔEQ=1.476pp 642ms
+D4b 同一手重复 10 次：observed 10/10                  ok=true  act=CALL  EQ=0.5803 callEV=13.28 bluffM=0.0595 airM=0.0258 sup=449 effC=138.6 prov=true shape=true ΔEQ=1.773pp 623ms
+D4c 同一手重复 100 次：observed 100/100               ok=true  act=CALL  EQ=0.5908 callEV=13.77 bluffM=0.0830 airM=0.0502 sup=449 effC=145.1 prov=true shape=true ΔEQ=2.822pp 723ms
+D5 正确分母 12/50（河牌面对下注）                          ok=true  act=CALL  EQ=0.5742 callEV=12.99 bluffM=0.0457 airM=0.0115 sup=449 effC=134.8 prov=true shape=true ΔEQ=1.156pp 706ms
+D6 错分母 12/1000（总手数）                            ok=true  act=CALL  EQ=0.5709 callEV=12.83 bluffM=0.0384 airM=0.0040 sup=449 effC=132.8 prov=true shape=true ΔEQ=0.834pp 812ms
+D7 unknownOutcome 500 与 opportunities 1 并存     ok=true  act=CALL  EQ=0.5768 callEV=13.11 bluffM=0.0515 airM=0.0176 sup=449 effC=136.4 prov=true shape=true ΔEQ=1.418pp 652ms
+
+D1 vs D2 权益：逐位相等｜诈唬质量：逐位相等｜动作 CALL/CALL
+重复计数单调抬高诈唬质量：1/1 0.0515 → 2/2 0.0528 → 10/10 0.0595 → 100/100 0.0830（中性基线 0.0184）
+对应权益：0.5768 → 0.5773 → 0.5803 → 0.5908（中性 0.5626）
+D5 vs D6（分母错 20 倍）权益差 = -0.3224pp｜诈唬质量差 = -0.7224pp｜动作 CALL vs CALL
+
+================================================================================================
+E 玩家身份与座位绑定
+================================================================================================
+E1 villain.playerId=BB（=位置名，非内部 id）            ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 515ms
+E1b villain.playerId=seat_BB（内部 id）            ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 684ms
+E2 villain.playerId=BTN（已弃牌的座位）                ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 446ms
+E3 villain.playerId=CO（Hero 自己的座位）             ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 482ms
+E4 villain.playerId="nonsense"（自由字符串）          ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 441ms
+E5 不写 playerId（默认第一个已实现对手）                     ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 701ms
+E6 seatProfiles={BB:MANIAC}（座位画像，无 villain.quickProfile） ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 481ms
+E7 seatProfiles={BTN:MANIAC}（弃牌座位）             ok=true  act=CALL  EQ=0.5626 callEV=12.44 bluffM=0.0184 airM=0.0064 sup=449 effC=127.2 prov=null shape=null ΔEQ=—pp 645ms
+E8 seatProfiles={BB:MANIAC} + villain.quickProfile=CALLING_STATION ok=true  act=CALL  EQ=0.5581 callEV=12.23 bluffM=0.0078 airM=0.0029 sup=449 effC=125.6 prov=true shape=true ΔEQ=-0.451pp 771ms
+
+================================================================================================
+F 结构：翻前 / 多人池 / 单位
+================================================================================================
+F1 翻前：无画像                                      ok=true  act=CALL  EQ=0.6157 callEV=4.47 bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 377ms
+F2 翻前：只注入 MANIAC behaviorProfile               ok=true  act=CALL  EQ=0.6157 callEV=4.47 bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 380ms
+F3 翻前：quickProfile=MANIAC（倾斜通道）                ok=true  act=CALL  EQ=0.6157 callEV=4.47 bluffM=— airM=— sup=null effC=— prov=false shape=false ΔEQ=0.000pp 182ms
+F4 翻前：quickProfile=CALLING_STATION             ok=true  act=CALL  EQ=0.6157 callEV=4.47 bluffM=— airM=— sup=null effC=— prov=false shape=false ΔEQ=0.000pp 180ms
+F5 7 人桌（tableSize=7）                           ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 0ms
+    issues/stage: PARSE [{"code":"INVALID_TABLE_SIZE","message":"桌型只能是 6 人桌或 9 人桌（收到 7）","field":"tableSize"},{"code":"INVALID_POSITION","message":"7 人桌上没有「CO」这个位置。可选：（桌型无效）","field":"heroPosition"},{"code":"POSITION_NOT_AT_TABLE","message":"第 1 条行动记录的位置「UTG」不在 7 人桌上","field":"actionHistory[0].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 2 条行动记录的位置「UTG1」不在 7 人桌上","field":"actionHistory[1].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 3 条行动记录的位置「UTG2」不在 7 人桌上","field":"actionHistory[2].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 4 条行动记录的位置「LJ」不在 7 人桌上","field":"actionHistory[3].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 5 条行动记录的位置「HJ」不在 7 人桌上","field":"actionHistory[4].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 6 条行动记录的位置「CO」不在 7 人桌上","field":"actionHistory[5].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 7 条行动记录的位置「BTN」不在 7 人桌上","field":"actionHistory[6].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 8 条行动记录的位置「SB」不在 7 人桌上","field":"actionHistory[7].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 9 条行动记录的位置「BB」不在 7 人桌上","field":"actionHistory[8].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 10 条行动记录的位置「BB」不在 7 人桌上","field":"actionHistory[9].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 11 条行动记录的位置「CO」不在 7 人桌上","field":"actionHistory[10].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 12 条行动记录的位置「BB」不在 7 人桌上","field":"actionHistory[11].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 13 条行动记录的位置「BB」不在 7 人桌上","field":"actionHistory[12].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 14 条行动记录的位置「CO」不在 7 人桌上","field":"actionHistory[13].position"},{"code":"POSITION_NOT_AT_TABLE","message":"第 15 条行动记录的位置「BB」不在 7 人桌上","field":"actionHistory[14].position"},{"code":"INVALID_POSITION","message":"7 人桌上没有「UTG」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.UTG"},{"code":"INVALID_POSITION","message":"7 人桌上没有「UTG1」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.UTG1"},{"code":"INVALID_POSITION","message":"7 人桌上没有「UTG2」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.UTG2"},{"code":"INVALID_POSITION","message":"7 人桌上没有「LJ」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.LJ"},{"code":"INVALID_POSITION","message":"7 人桌上没有「HJ」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.HJ"},{"code":"INVALID_POSITION","message":"7 人桌上没有「CO」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.CO"},{"code":"INVALID_POSITION","message":"7 人桌上没有「BTN」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.BTN"},{"code":"INVALID_POSITION","message":"7 人桌上没有「SB」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.SB"},{"code":"INVALID_POSITION","message":"7 人桌上没有「BB」这个位置，因此无法为它设置筹码。可选：","field":"seatStacksBB.BB"}]
+F6 8 人局（9 座桌 − UTG）                            ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 1157ms
+F7 4 人局（3 家到河牌）：BTN 带 MANIAC                   ok=true  act=CALL  EQ=0.3745 callEV=4.10 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2968ms
+F8 4 人局：无画像对照                                  ok=true  act=CALL  EQ=0.3349 callEV=2.40 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2191ms
+F8b 4 人局：BTN + CALLING_STATION                 ok=true  act=CALL  EQ=0.3243 callEV=1.95 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2285ms
+F9 bigBlindBB=100（同一手，仅筹码面额不同）                 ok=true  act=CALL  EQ=0.5761 callEV=653.81 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 1122ms
+F10 bigBlindBB=1（同一手）                          ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 0ms
+    issues/stage: PARSE [{"code":"INVALID_NUMBER","message":"大盲的筹码面额必须是**不小于 2 的整数**（收到 1）。它表示「1BB 等于多少筹码」（常用 100）。小于 2 或带小数时，常见下注额会被静默取整成另一个数，或小盲无法用整数筹码表示 —— 系统不会替你改数字，因此直接阻断","field":"bigBlindBB"}]
+F11 缺 board（street=RIVER, board=[]）            ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 0ms
+    issues/stage: PARSE [{"code":"CARD_COUNT_MISMATCH","message":"河牌应有 5 张公共牌，当前填了 0 张。请检查「当前街道」与「公共牌」是否对得上","field":"board"}]
+F12 缺 heroCards                                ok=false act=-     EQ=— callEV=— bluffM=— airM=— sup=null effC=— prov=null shape=null ΔEQ=—pp 0ms
+    issues/stage: PARSE [{"code":"MISSING_FIELD","message":"Hero 手牌必须是 2 张（收到 0 张）","field":"heroCards"}]
+F13 4 人局：只注入 MANIAC behaviorProfile（无 quickProfile） ok=true  act=CALL  EQ=0.3749 callEV=4.12 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2691ms
+
+F1 vs F2（翻前只 behaviorProfile）：权益 逐位相等｜动作 CALL/CALL
+F1 vs F3（翻前 quickProfile 倾斜）：权益差 0.0000pp｜动作 CALL/CALL
+F1 vs F4（翻前 CALLING_STATION）：权益差 0.0000pp｜动作 CALL/CALL
+F1 vs F13（多人池翻前只 behaviorProfile）：差 0.6157
+F7 vs F8（4 人局画像 vs 无画像）：权益差 3.9608pp｜动作 CALL/CALL｜权益 0.3745/0.3349
+F8 vs F8b（跟注站）：权益差 -1.0550pp
+F9/F10 与 A1 的动作对比（单位一致性）：
+  A7 quickProfile=MANIAC（界面路径）                   动作=CALL pot=33.0000 spr=5.3636 reqEQ=0.297872 EQ=0.576091 callEV=13.0763
+  A1 无 quickProfile / 无 behaviorProfile          动作=CALL pot=33.0000 spr=5.3636 reqEQ=0.297872 EQ=0.562588 callEV=12.4417
+  F9 bigBlindBB=100（同一手，仅筹码面额不同）                 动作=CALL pot=1650.0000 spr=5.3636 reqEQ=0.297872 EQ=0.576091 callEV=653.8147
+  F10 bigBlindBB=1（同一手）                          动作=- pot=— spr=— reqEQ=— EQ=— callEV=—
+
+  F11 缺 board（street=RIVER, board=[]）: stage=PARSE issues=[{"code":"CARD_COUNT_MISMATCH","message":"河牌应有 5 张公共牌，当前填了 0 张。请检查「当前街道」与「公共牌」是否对得上","field":"board"}]
+  F12 缺 heroCards: stage=PARSE issues=[{"code":"MISSING_FIELD","message":"Hero 手牌必须是 2 张（收到 0 张）","field":"heroCards"}]
+
+================================================================================================
+G 缓存 / 跨调用污染（同一进程内变换画像）
+================================================================================================
+G1 MANIAC（第一次）                                 ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 827ms
+G2 CALLING_STATION（第二次）                        ok=true  act=CALL  EQ=0.5581 callEV=12.23 bluffM=0.0078 airM=0.0029 sup=449 effC=125.6 prov=true shape=true ΔEQ=-0.451pp 758ms
+G3 MANIAC（第三次，应与 G1 逐位相同）                      ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 812ms
+G4 CALLING_STATION（第四次）                        ok=true  act=CALL  EQ=0.5581 callEV=12.23 bluffM=0.0078 airM=0.0029 sup=449 effC=125.6 prov=true shape=true ΔEQ=-0.451pp 815ms
+G5 MANIAC（第五次，应与 G1 逐位相同）                      ok=true  act=CALL  EQ=0.5761 callEV=13.08 bluffM=0.0500 airM=0.0160 sup=449 effC=136.0 prov=true shape=true ΔEQ=1.350pp 668ms
+G1 vs G3: EQ 逐位相等；bluffMass 逐位相等；轨迹条数 4/4
+G2 vs G4: EQ 逐位相等；bluffMass 逐位相等
+G1 vs G3 全部轨迹文本逐字相等：true
+G5 vs G1: EQ 逐位相等
+
+================================================================================================
+I 画像对象的 playerId 与绑定座位（4 人局，两个已实现对手：CO 与 BTN）
+================================================================================================
+I0 4 人局：无画像                                    ok=true  act=CALL  EQ=0.3329 callEV=2.32 bluffM=0.0829 airM=0.0263 sup=990 effC=314.3 prov=null shape=null ΔEQ=—pp 1752ms
+I1 画像 playerId=Alice，不写 villain.playerId       ok=true  act=CALL  EQ=0.3329 callEV=2.32 bluffM=0.0829 airM=0.0263 sup=990 effC=314.3 prov=null shape=null ΔEQ=—pp 1909ms
+I2 画像 playerId=Alice + villain.playerId=seat_CO ok=true  act=CALL  EQ=0.3329 callEV=2.32 bluffM=0.0829 airM=0.0263 sup=990 effC=314.3 prov=null shape=null ΔEQ=—pp 2135ms
+I3 画像 playerId=Alice + villain.playerId=seat_BTN ok=true  act=CALL  EQ=0.3749 callEV=4.12 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2700ms
+I4 画像 playerId=seat_BTN，不写 villain.playerId    ok=true  act=CALL  EQ=0.3329 callEV=2.32 bluffM=0.0829 airM=0.0263 sup=990 effC=314.3 prov=null shape=null ΔEQ=—pp 1991ms
+I5 画像 playerId=seat_CO，不写 villain.playerId     ok=true  act=CALL  EQ=0.3329 callEV=2.32 bluffM=0.0829 airM=0.0263 sup=990 effC=314.3 prov=null shape=null ΔEQ=—pp 2140ms
+I6 villain.playerId=seat_BTN（画像来自 quickProfile） ok=true  act=CALL  EQ=0.3745 callEV=4.10 bluffM=0.0830 airM=0.0263 sup=990 effC=316.9 prov=null shape=null ΔEQ=—pp 2575ms
+I7 villain.playerId=seat_CO（画像来自 quickProfile） ok=true  act=CALL  EQ=0.3311 callEV=2.24 bluffM=0.0828 airM=0.0264 sup=990 effC=312.9 prov=true shape=true ΔEQ=-0.181pp 2721ms
+
+★ 若 I1 == I5 且 I1 ≠ I4，说明「绑定由输入里的座位 id 决定，画像对象自带的 playerId 被忽略」。
+I0/I1/I4/I5 权益：0.3329 / 0.3329 / 0.3329 / 0.3329
+I0/I2/I3 权益（按输入座位绑定）：0.3329 / 0.3329 / 0.3749
+I6/I7（quickProfile 路径）权益：0.3745 / 0.3311
+
+================================================================================================
+J 画像不是首要对手时的 profileRangeEvidence 与决策层去重信号
+================================================================================================
+J1 单挑 9-max：BLUFF_HEAVY（首要＝BB）
+    动作=CALL 权益=0.572429 callEV=12.9041 诈唬质量=0.041421
+    profileRangeEvidence 是否存在=true providerApplied=true
+    决策层剥削层文本：画像「过度诈唬」：抓诈唬意愿提高（他们的进攻里诈唬比例偏高）
+J2 单挑 9-max：无画像
+    动作=CALL 权益=0.562588 callEV=12.4417 诈唬质量=0.018421
+    profileRangeEvidence 是否存在=false providerApplied=null
+    决策层剥削层文本：null
+J3 4 人局：BLUFF_HEAVY@BTN（首要＝CO，非画像家）
+    动作=CALL 权益=0.367642 callEV=3.8086 诈唬质量=0.083044
+    profileRangeEvidence 是否存在=false providerApplied=null
+    决策层剥削层文本：画像「过度诈唬」：抓诈唬意愿提高（他们的进攻里诈唬比例偏高）
+J4 4 人局：BLUFF_HEAVY@CO（画像家＝首要）
+    动作=CALL 权益=0.328708 callEV=2.1345 诈唬质量=0.082543
+    profileRangeEvidence 是否存在=true providerApplied=true
+    决策层剥削层文本：画像「过度诈唬」：抓诈唬意愿提高（他们的进攻里诈唬比例偏高）
+J5 4 人局：无画像
+    动作=CALL 权益=0.334892 callEV=2.4003 诈唬质量=0.083044
+    profileRangeEvidence 是否存在=false providerApplied=null
+    决策层剥削层文本：null
+
+J1 vs J2（单挑：画像 vs 无画像）权益差 = 0.9840pp
+J3 vs J5（4 人局：画像家在 BTN，非首要）权益差 = 3.2750pp
+J4 vs J5（4 人局：画像家＝首要 CO）权益差 = -0.6183pp
+
+================================================================================================
+H 弃牌者的底牌：死牌集合、范围支持集、分母（item 11）
+================================================================================================
+state.players 的 id / 位置 / 是否弃牌 / holeCards：
+    id=seat_UTG pos=UTG   folded=true  holeCards=null（未知）
+    id=seat_UTG1 pos=UTG1  folded=true  holeCards=null（未知）
+    id=seat_UTG2 pos=UTG2  folded=true  holeCards=null（未知）
+    id=seat_LJ pos=LJ    folded=true  holeCards=null（未知）
+    id=seat_HJ pos=HJ    folded=true  holeCards=null（未知）
+    id=seat_CO pos=CO    folded=false holeCards=14c11h
+    id=seat_BTN pos=BTN   folded=true  holeCards=null（未知）
+    id=seat_SB pos=SB    folded=true  holeCards=null（未知）
+    id=seat_BB pos=BB    folded=false holeCards=null（未知）
+持有底牌的玩家数 = 1（只有 Hero）
+context.board = 14d 8s 4s 2c 13d
+activeOpponentCount=1 realizedOpponentCount=1 playersYetToAct=0 opponentRanges=1
+首要对手范围：supportSize=449 sourceKind=HEURISTIC supportShare=0.3386
+profileClassMasses：totalMass=1.0000 reachableRangeCount=449 effectiveCombos=127.24 unclassifiedMassShare=0.000000
+★ 死牌集合口径 = Hero 底牌 2 张 + 公共牌 5 张 ⇒ 可用牌 45 张 ⇒ C(45,2)=990 个组合
+  实测 range.entries 数（见上面轨迹「钳位 N/990」）= 990 ⇒ 与「只有 Hero+公共牌是死牌」一致
+  ⇒ 弃牌者的未知底牌**没有**被当成死牌（正确：它们不可知，也没有被踢出范围）
+合成状态（UTG 已弃牌但底牌已知 = AsKs）：supportSize=449 reachableRangeCount=449 权益=0.5626
+  对照（未合成）：supportSize=449 reachableRangeCount=449 权益=0.5626
+  ⇒ 已弃牌者的已知底牌是否被排除、是否改变分母：见上两行对比

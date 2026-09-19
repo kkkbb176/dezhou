@@ -1,0 +1,2437 @@
+{
+ "meta": {
+  "generatedAtUtc": "2026-09-18T11:12:08.587Z",
+  "nodeVersion": "v24.19.0",
+  "asOf": 1757000000000,
+  "equitySeed": 20260913,
+  "scenario": {
+   "id": "S1_RIVER_BLUFFCATCH_TURN_CHECKBACK",
+   "myPosition": "CO",
+   "heroCards": "Ac Jh",
+   "board": "Ad 8s 4s 2c Kd",
+   "potBB": 19.5,
+   "effectiveStackBB": 100,
+   "structure": "SRP",
+   "villainBetBB": 7,
+   "potRatio": 0.358974358974359,
+   "note": "与 V2 报告 §10 同一节点（TURN_CHECK_BACK + LARGE）"
+  },
+  "units": {
+   "equity": "0..1 比例（×100 = 百分点）",
+   "bluffMass": "概率质量占比；分母 = 对手可达组合后验质量之和",
+   "ev": "筹码（本项目 1BB = 2 筹码 ⇒ EV ÷ 2 = BB）",
+   "foldCallRaise": "概率（响应模型对所选尺寸的三桶质量）",
+   "sizing": "BB；potRatio = 金额 ÷ 下注前底池"
+  }
+ },
+ "determinismSelfCheck": [
+  {
+   "id": "REF_NEUTRAL_NORMAL",
+   "bitIdentical": true,
+   "equity": 0.5625883726719894,
+   "bluffMass": 0.018421440058874052,
+   "action": "CALL"
+  },
+  {
+   "id": "NO_PROFILE_UNKNOWN",
+   "bitIdentical": true,
+   "equity": 0.5625883726719894,
+   "bluffMass": 0.018421440058874052,
+   "action": "CALL"
+  },
+  {
+   "id": "TAG_CALLING_STATION",
+   "bitIdentical": true,
+   "equity": 0.5577395263456295,
+   "bluffMass": 0.007540331059829269,
+   "action": "CALL"
+  },
+  {
+   "id": "TAG_UNDERBLUFFER",
+   "bitIdentical": true,
+   "equity": 0.5575483193693133,
+   "bluffMass": 0.0071112508599995685,
+   "action": "CALL"
+  },
+  {
+   "id": "TAG_MANIAC",
+   "bitIdentical": true,
+   "equity": 0.5766449214663655,
+   "bluffMass": 0.04996519898363892,
+   "action": "CALL"
+  },
+  {
+   "id": "OBS_MANIAC_50_45",
+   "bitIdentical": true,
+   "equity": 0.5821281434829153,
+   "bluffMass": 0.06226988599829602,
+   "action": "CALL"
+  },
+  {
+   "id": "OBS_STATION_50_5",
+   "bitIdentical": true,
+   "equity": 0.5575832606105563,
+   "bluffMass": 0.0071896611516276705,
+   "action": "CALL"
+  },
+  {
+   "id": "OBS_ZERO_OPPORTUNITIES",
+   "bitIdentical": true,
+   "equity": 0.5766449214663655,
+   "bluffMass": 0.04996519898363892,
+   "action": "CALL"
+  },
+  {
+   "id": "TAG_THEN_HIGH_DEVIATION",
+   "bitIdentical": true,
+   "equity": 0.5645170707290436,
+   "bluffMass": 0.022749556970095623,
+   "action": "CALL"
+  },
+  {
+   "id": "TAG_THEN_LOW_DEVIATION_AGGRESSIVE",
+   "bitIdentical": true,
+   "equity": 0.5723511066000533,
+   "bluffMass": 0.040329614674015635,
+   "action": "CALL"
+  },
+  {
+   "id": "EXTREME_ALL_VERY_HIGH",
+   "bitIdentical": true,
+   "equity": 0.4459549831603556,
+   "bluffMass": 0.12832868586759433,
+   "action": "CALL"
+  }
+ ],
+ "degeneracySelfCheck": {
+  "equitySpreadAcrossProfiles": 0.13617316032255972,
+  "bluffMassSpreadAcrossProfiles": 0.12121743500759476
+ },
+ "baselines": {
+  "UNKNOWN_noProfile": {
+   "ok": true,
+   "action": "CALL",
+   "sizingBB": null,
+   "sizingPotRatio": null,
+   "heroEquity": 0.5625883726719894,
+   "requiredEquity": 0.2978723404255319,
+   "callEV": 12.4416535155835,
+   "foldEV": null,
+   "bluffMass": 0.018421440058874052,
+   "missedDrawMass": 0.012016015469874703,
+   "valueMass": 0.4067202765759925,
+   "classVector": [
+    0.11012048706820535,
+    0.2965997895077872,
+    0.5748582833651369,
+    0.012016015469874703,
+    0.006405424588999348
+   ],
+   "rawSupportCombos": 449,
+   "effectiveCombos": 127.24337131738645,
+   "combosBefore": 449,
+   "combosAfter": 449,
+   "foldLikelihood": null,
+   "callLikelihood": null,
+   "raiseLikelihood": null,
+   "sizeTable": [],
+   "bestSize": null,
+   "checkEV": null,
+   "candidateEVs": {},
+   "evGapBestSecond": null,
+   "confidence": "HIGH",
+   "clampedCount": 0,
+   "clampedTotal": 0,
+   "clampedUniverse": 990,
+   "clampCheckAvailable": true,
+   "unifiedLikelihoodEngaged": true,
+   "traitCountRange": [
+    0,
+    3
+   ],
+   "equitySource": "EXACT"
+  },
+  "NORMAL_tag": {
+   "ok": true,
+   "action": "CALL",
+   "sizingBB": null,
+   "sizingPotRatio": null,
+   "heroEquity": 0.5625883726719894,
+   "requiredEquity": 0.2978723404255319,
+   "callEV": 12.4416535155835,
+   "foldEV": null,
+   "bluffMass": 0.018421440058874052,
+   "missedDrawMass": 0.012016015469874703,
+   "valueMass": 0.4067202765759925,
+   "classVector": [
+    0.11012048706820535,
+    0.2965997895077872,
+    0.5748582833651369,
+    0.012016015469874703,
+    0.006405424588999348
+   ],
+   "rawSupportCombos": 449,
+   "effectiveCombos": 127.24337131738645,
+   "combosBefore": 449,
+   "combosAfter": 449,
+   "foldLikelihood": null,
+   "callLikelihood": null,
+   "raiseLikelihood": null,
+   "sizeTable": [],
+   "bestSize": null,
+   "checkEV": null,
+   "candidateEVs": {},
+   "evGapBestSecond": null,
+   "confidence": "HIGH",
+   "clampedCount": 0,
+   "clampedTotal": 0,
+   "clampedUniverse": 990,
+   "clampCheckAvailable": true,
+   "unifiedLikelihoodEngaged": true,
+   "traitCountRange": [
+    0,
+    3
+   ],
+   "equitySource": "EXACT"
+  }
+ },
+ "perProfile": [
+  {
+   "id": "REF_NEUTRAL_NORMAL",
+   "archetype": "NORMAL",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5625883726719894,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.4416535155835,
+    "foldEV": null,
+    "bluffMass": 0.018421440058874052,
+    "missedDrawMass": 0.012016015469874703,
+    "valueMass": 0.4067202765759925,
+    "classVector": [
+     0.11012048706820535,
+     0.2965997895077872,
+     0.5748582833651369,
+     0.012016015469874703,
+     0.006405424588999348
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 127.24337131738645,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0,
+    "bluffMassDelta": 0,
+    "eqVsCall": 0.26471603224645746,
+    "callEVDelta": 0,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0,
+     "jsDivergence": 0,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "NO_PROFILE_UNKNOWN",
+   "archetype": "UNKNOWN",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5625883726719894,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.4416535155835,
+    "foldEV": null,
+    "bluffMass": 0.018421440058874052,
+    "missedDrawMass": 0.012016015469874703,
+    "valueMass": 0.4067202765759925,
+    "classVector": [
+     0.11012048706820535,
+     0.2965997895077872,
+     0.5748582833651369,
+     0.012016015469874703,
+     0.006405424588999348
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 127.24337131738645,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0,
+    "bluffMassDelta": 0,
+    "eqVsCall": 0.26471603224645746,
+    "callEVDelta": 0,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0,
+     "jsDivergence": 0,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "TAG_CALLING_STATION",
+   "archetype": "CALLING_STATION",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5577395263456295,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.213757738244588,
+    "foldEV": null,
+    "bluffMass": 0.007540331059829269,
+    "missedDrawMass": 0.004739949633757144,
+    "valueMass": 0.4112288995656882,
+    "classVector": [
+     0.11134120751964675,
+     0.29988769204604143,
+     0.5812307693744817,
+     0.004739949633757144,
+     0.0028003814260721253
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 124.49796022813877,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": -0.004848846326359846,
+    "bluffMassDelta": -0.010881108999044783,
+    "eqVsCall": 0.2598671859200976,
+    "callEVDelta": -0.22789577733891164,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.010881108999044764,
+     "jsDivergence": 0.0017230873441302147,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "TAG_UNDERBLUFFER",
+   "archetype": "UNDERBLUFFER",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5575483193693133,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.204771010357724,
+    "foldEV": null,
+    "bluffMass": 0.0071112508599995685,
+    "missedDrawMass": 0.004720772125636998,
+    "valueMass": 0.4114066903454283,
+    "classVector": [
+     0.11138934479823544,
+     0.3000173455471929,
+     0.5814820587945719,
+     0.004720772125636998,
+     0.0023904787343625705
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 124.39099374904062,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": -0.005040053302676095,
+    "bluffMassDelta": -0.011310189198874485,
+    "eqVsCall": 0.25967597894378136,
+    "callEVDelta": -0.23688250522577547,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.011310189198874429,
+     "jsDivergence": 0.0018957532866509036,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "TAG_MANIAC",
+   "archetype": "MANIAC",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5766449214663655,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 13.102311308919177,
+    "foldEV": null,
+    "bluffMass": 0.04996519898363892,
+    "missedDrawMass": 0.03390664068505717,
+    "valueMass": 0.3936500172226297,
+    "classVector": [
+     0.10658168310638437,
+     0.2870683341162453,
+     0.5563847837937284,
+     0.03390664068505717,
+     0.016058558298581754
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 135.56830845411486,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0.014056548794376122,
+    "bluffMassDelta": 0.03154375892476487,
+    "eqVsCall": 0.2787725810408336,
+    "callEVDelta": 0.6606577933356768,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.03154375892476509,
+     "jsDivergence": 0.00565266979004447,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "OBS_MANIAC_50_45",
+   "archetype": "MANIAC",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5821281434829153,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 13.36002274369702,
+    "foldEV": null,
+    "bluffMass": 0.06226988599829602,
+    "missedDrawMass": 0.03346748771834303,
+    "valueMass": 0.38855153004083803,
+    "classVector": [
+     0.10520125551497798,
+     0.28335027452586004,
+     0.5491785839608637,
+     0.03346748771834303,
+     0.02880239827995299
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 138.95224162320997,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0.01953977081092595,
+    "bluffMassDelta": 0.04384844593942197,
+    "eqVsCall": 0.2842558030573834,
+    "callEVDelta": 0.9183692281135194,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.04384844593942224,
+     "jsDivergence": 0.009717150409749803,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "OBS_STATION_50_5",
+   "archetype": "CALLING_STATION",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5575832606105563,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.206413248696148,
+    "foldEV": null,
+    "bluffMass": 0.0071896611516276705,
+    "missedDrawMass": 0.004741624419902085,
+    "valueMass": 0.4113742007854497,
+    "classVector": [
+     0.11138054817221131,
+     0.29999365261323835,
+     0.5814361380629242,
+     0.004741624419902085,
+     0.002448036731725585
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 124.41053435476873,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": -0.005005112061433059,
+    "bluffMassDelta": -0.011231778907246382,
+    "eqVsCall": 0.2597109201850244,
+    "callEVDelta": -0.23524026688735233,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.011231778907246321,
+     "jsDivergence": 0.0018618921685563377,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "OBS_ZERO_OPPORTUNITIES",
+   "archetype": "MANIAC",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5766449214663655,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 13.102311308919177,
+    "foldEV": null,
+    "bluffMass": 0.04996519898363892,
+    "missedDrawMass": 0.03390664068505717,
+    "valueMass": 0.3936500172226297,
+    "classVector": [
+     0.10658168310638437,
+     0.2870683341162453,
+     0.5563847837937284,
+     0.03390664068505717,
+     0.016058558298581754
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 135.56830845411486,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0.014056548794376122,
+    "bluffMassDelta": 0.03154375892476487,
+    "eqVsCall": 0.2787725810408336,
+    "callEVDelta": 0.6606577933356768,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.03154375892476509,
+     "jsDivergence": 0.00565266979004447,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "TAG_THEN_HIGH_DEVIATION",
+   "archetype": "VERY_TIGHT",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5645170707290436,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.532302324265046,
+    "foldEV": null,
+    "bluffMass": 0.022749556970095623,
+    "missedDrawMass": 0.008880714338222953,
+    "valueMass": 0.4049269072227597,
+    "classVector": [
+     0.10963492802911898,
+     0.2952919791936407,
+     0.572323535807141,
+     0.008880714338222953,
+     0.01386884263187267
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 128.3398643943848,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0.0019286980570542012,
+    "bluffMassDelta": 0.00432811691122157,
+    "eqVsCall": 0.26664473030351166,
+    "callEVDelta": 0.09064880868154646,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.007463418042873406,
+     "jsDivergence": 0.0011883823565032145,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "TAG_THEN_LOW_DEVIATION_AGGRESSIVE",
+   "archetype": "MANIAC",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.5723511066000533,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 12.900502010202505,
+    "foldEV": null,
+    "bluffMass": 0.040329614674015635,
+    "missedDrawMass": 0.034250533661006666,
+    "valueMass": 0.39764255299645324,
+    "classVector": [
+     0.1076626717105228,
+     0.28997988128593044,
+     0.5620278323295294,
+     0.034250533661006666,
+     0.0060790810130089655
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 132.93007027490387,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": 0.009762733928063927,
+    "bluffMassDelta": 0.021908174615141583,
+    "eqVsCall": 0.2744787661745214,
+    "callEVDelta": 0.458848494619005,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.02223451819113207,
+     "jsDivergence": 0.004110210783587322,
+     "sharedSupport": 5
+    }
+   }
+  },
+  {
+   "id": "EXTREME_ALL_VERY_HIGH",
+   "archetype": "MANIAC",
+   "snapshot": {
+    "ok": true,
+    "action": "CALL",
+    "sizingBB": null,
+    "sizingPotRatio": null,
+    "heroEquity": 0.4459549831603556,
+    "requiredEquity": 0.2978723404255319,
+    "callEV": 6.959884208536714,
+    "foldEV": null,
+    "bluffMass": 0.12832868586759433,
+    "missedDrawMass": 0.0851904250166479,
+    "valueMass": 0.5361306976959503,
+    "classVector": [
+     0.06427653072483985,
+     0.47185416697111054,
+     0.3355406164364527,
+     0.0851904250166479,
+     0.04313826085094642
+    ],
+    "rawSupportCombos": 449,
+    "effectiveCombos": 117.94788669299643,
+    "combosBefore": 449,
+    "combosAfter": 449,
+    "foldLikelihood": null,
+    "callLikelihood": null,
+    "raiseLikelihood": null,
+    "sizeTable": [],
+    "bestSize": null,
+    "checkEV": null,
+    "candidateEVs": {},
+    "evGapBestSecond": null,
+    "confidence": "HIGH",
+    "clampedCount": 0,
+    "clampedTotal": 0,
+    "clampedUniverse": 990,
+    "clampCheckAvailable": true,
+    "unifiedLikelihoodEngaged": true,
+    "traitCountRange": [
+     0,
+     3
+    ],
+    "equitySource": "EXACT"
+   },
+   "vsNeutralNormal": {
+    "equityDelta": -0.11663338951163377,
+    "bluffMassDelta": 0.10990724580872027,
+    "eqVsCall": 0.1480826427348237,
+    "callEVDelta": -5.481769307046786,
+    "foldLikelihoodDelta": null,
+    "callLikelihoodDelta": null,
+    "raiseLikelihoodDelta": null,
+    "equitySource": "EXACT",
+    "actionFrom": "CALL",
+    "actionTo": "CALL",
+    "flipped": false,
+    "sizingFromBB": null,
+    "sizingToBB": null,
+    "categoryRangeDistance": {
+     "totalVariation": 0.2851616232720463,
+     "jsDivergence": 0.07528554974135358,
+     "sharedSupport": 5
+    }
+   }
+  }
+ ],
+ "conflict1_historyPassive_currentStrong": {
+  "id": "C1_HISTORY_PASSIVE_CURRENT_STRONG",
+  "description": "历史标签「跟注站」（被动、诈唬低）↔ 当前河牌**超池**下注（更强范围证据）",
+  "rows": [
+   {
+    "betShareOfPot": 0.25,
+    "betBB": 4.88,
+    "neutral": {
+     "equity": 0.5625883726719891,
+     "bluffMass": 0.018421440058874042,
+     "action": "CALL",
+     "fold": null
+    },
+    "callingStation": {
+     "equity": 0.5591421237023602,
+     "bluffMass": 0.010687845683545666,
+     "action": "CALL",
+     "fold": null
+    },
+    "maniac": {
+     "equity": 0.5702355642929245,
+     "bluffMass": 0.035582207788627744,
+     "action": "CALL",
+     "fold": null
+    }
+   },
+   {
+    "betShareOfPot": 0.5,
+    "betBB": 9.75,
+    "neutral": {
+     "equity": 0.5625883726719892,
+     "bluffMass": 0.018421440058874052,
+     "action": "CALL",
+     "fold": null
+    },
+    "callingStation": {
+     "equity": 0.5577395263456295,
+     "bluffMass": 0.007540331059829269,
+     "action": "CALL",
+     "fold": null
+    },
+    "maniac": {
+     "equity": 0.5766449214663655,
+     "bluffMass": 0.04996519898363892,
+     "action": "CALL",
+     "fold": null
+    }
+   },
+   {
+    "betShareOfPot": 0.75,
+    "betBB": 14.63,
+    "neutral": {
+     "equity": 0.5625883726719894,
+     "bluffMass": 0.018421440058874052,
+     "action": "CALL",
+     "fold": null
+    },
+    "callingStation": {
+     "equity": 0.55773952634563,
+     "bluffMass": 0.007540331059829269,
+     "action": "CALL",
+     "fold": null
+    },
+    "maniac": {
+     "equity": 0.5766449214663656,
+     "bluffMass": 0.04996519898363895,
+     "action": "CALL",
+     "fold": null
+    }
+   },
+   {
+    "betShareOfPot": 1,
+    "betBB": 19.5,
+    "neutral": {
+     "equity": 0.5625883726719892,
+     "bluffMass": 0.018421440058874052,
+     "action": "CALL",
+     "fold": null
+    },
+    "callingStation": {
+     "equity": 0.5577395263456295,
+     "bluffMass": 0.007540331059829269,
+     "action": "CALL",
+     "fold": null
+    },
+    "maniac": {
+     "equity": 0.5766449214663655,
+     "bluffMass": 0.049965198983638937,
+     "action": "CALL",
+     "fold": null
+    }
+   },
+   {
+    "betShareOfPot": 1.5,
+    "betBB": 29.25,
+    "neutral": {
+     "equity": 0.5625883726719892,
+     "bluffMass": 0.018421440058874052,
+     "action": "CALL",
+     "fold": null
+    },
+    "callingStation": {
+     "equity": 0.5577395263456295,
+     "bluffMass": 0.007540331059829269,
+     "action": "CALL",
+     "fold": null
+    },
+    "maniac": {
+     "equity": 0.5766449214663655,
+     "bluffMass": 0.04996519898363892,
+     "action": "CALL",
+     "fold": null
+    }
+   }
+  ]
+ },
+ "conflict2_historyAggressive_currentWeak": {
+  "id": "C2_HISTORY_AGGRESSIVE_CURRENT_WEAK",
+  "description": "历史标签「疯子」（诈唬高）↔ 当前干燥面 + 三次过牌后 **小注 2.5BB（13% 池）**（削弱诈唬解释）",
+  "neutral": {
+   "equity": 1,
+   "bluffMass": 0.2985183693061232,
+   "action": "RAISE",
+   "fold": null
+  },
+  "maniac": {
+   "equity": 1,
+   "bluffMass": 0.2985183693061232,
+   "action": "RAISE",
+   "fold": null
+  },
+  "station": {
+   "equity": 1,
+   "bluffMass": 0.11265048221091442,
+   "action": "RAISE",
+   "fold": null
+  }
+ },
+ "conflict3_historyTightWeak_recentAggressive": {
+  "id": "C3_HISTORY_TIGHTWEAK_recentAggressive",
+  "description": "历史标签「极紧」（诈唬低）↔ 少量近期行为看似激进（人工读 VERY_HIGH / 2 手中 2 次开火）",
+  "tagOnly": {
+   "equity": 0.5603971678738563,
+   "bluffMass": 0.013504241896068381,
+   "action": "CALL",
+   "fold": null
+  },
+  "manualVeryHigh": {
+   "equity": 0.5645170707290436,
+   "bluffMass": 0.022749556970095623,
+   "action": "CALL",
+   "fold": null
+  },
+  "observed2of2": {
+   "equity": 0.5615067830026087,
+   "bluffMass": 0.01599428640362008,
+   "action": "CALL",
+   "fold": null,
+   "note": "2/2 = observedRate 1.0，但收缩后 effectiveRate = (0.12×6 + 2)/(6+2) = 0.34"
+  },
+  "observed30of30": {
+   "equity": 0.565319061044631,
+   "bluffMass": 0.02454927250091193,
+   "action": "CALL",
+   "fold": null
+  }
+ },
+ "profileDominance": {
+  "checks": [
+   "heroEquity / requiredEquity / bluffMass ∈ [0,1] 且有限",
+   "类别质量向量之和 ≤ 1 且无负分量",
+   "可达组合集不变（combosBefore === combosAfter）",
+   "似然钳位次数 = 0（否则类别区分被压平）",
+   "（不变量）requiredEquity 只由价格决定 ⇒ 必须**不随画像变化**"
+  ],
+  "rows": [
+   {
+    "id": "REF_NEUTRAL_NORMAL",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5625883726719894,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.018421440058874052,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "NO_PROFILE_UNKNOWN",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5625883726719894,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.018421440058874052,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "TAG_CALLING_STATION",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5577395263456295,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.007540331059829269,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "TAG_UNDERBLUFFER",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5575483193693133,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.0071112508599995685,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "TAG_MANIAC",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5766449214663655,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.04996519898363892,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "OBS_MANIAC_50_45",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5821281434829153,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.06226988599829602,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "OBS_STATION_50_5",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5575832606105563,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.0071896611516276705,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "OBS_ZERO_OPPORTUNITIES",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5766449214663655,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.04996519898363892,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "TAG_THEN_HIGH_DEVIATION",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5645170707290436,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.022749556970095623,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "TAG_THEN_LOW_DEVIATION_AGGRESSIVE",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.5723511066000533,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.040329614674015635,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   },
+   {
+    "id": "EXTREME_ALL_VERY_HIGH",
+    "violated": false,
+    "violations": [],
+    "fp": {
+     "heroEquity": 0.4459549831603556,
+     "requiredEquity": 0.2978723404255319,
+     "bluffMass": 0.12832868586759433,
+     "combosBefore": 449,
+     "combosAfter": 449,
+     "clampedCount": 0,
+     "clampedUniverse": 990,
+     "clampCheckAvailable": true,
+     "traitCountRange": [
+      0,
+      3
+     ],
+     "action": "CALL",
+     "fold": null,
+     "call": null,
+     "raise": null
+    }
+   }
+  ],
+  "requiredEquityInvariant": {
+   "distinctValues": [
+    0.2978723404255319
+   ],
+   "holds": true
+  }
+ },
+ "inputPerturbationStability": {
+  "boundaryNote": "合理输入边界：下注额 ±5%、asOf ±1 天、权益种子取值。**不含**改牌/改底池/改位置/改筹码（那些是不同的牌局）。",
+  "rows": [
+   {
+    "id": "REF_NEUTRAL_NORMAL",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "NO_PROFILE_UNKNOWN",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "TAG_CALLING_STATION",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "TAG_UNDERBLUFFER",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "TAG_MANIAC",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "OBS_MANIAC_50_45",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "OBS_STATION_50_5",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "OBS_ZERO_OPPORTUNITIES",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "TAG_THEN_HIGH_DEVIATION",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "TAG_THEN_LOW_DEVIATION_AGGRESSIVE",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   },
+   {
+    "id": "EXTREME_ALL_VERY_HIGH",
+    "distinctActions": [
+     "CALL"
+    ],
+    "actionFlipsUnderPerturbation": false,
+    "equityRange": [
+     0.5625883726719892,
+     0.5625883726719894
+    ],
+    "equitySpread": 1.1102230246251565e-16,
+    "sizingRangeBB": null,
+    "rows": [
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "-5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719892,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "0%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "BET_AMOUNT_PCT",
+      "detail": "5%",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "-1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "0d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "ASOF_SHIFT_DAY",
+      "detail": "1d",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "20260913",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "1",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     },
+     {
+      "kind": "EQUITY_SEED",
+      "detail": "7",
+      "ok": true,
+      "action": "CALL",
+      "equity": 0.5625883726719894,
+      "sizingBB": null
+     }
+    ]
+   }
+  ]
+ },
+ "evGaps": [
+  {
+   "id": "REF_NEUTRAL_NORMAL",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "NO_PROFILE_UNKNOWN",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "TAG_CALLING_STATION",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "TAG_UNDERBLUFFER",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "TAG_MANIAC",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "OBS_MANIAC_50_45",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "OBS_STATION_50_5",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "OBS_ZERO_OPPORTUNITIES",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "TAG_THEN_HIGH_DEVIATION",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "TAG_THEN_LOW_DEVIATION_AGGRESSIVE",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  },
+  {
+   "id": "EXTREME_ALL_VERY_HIGH",
+   "action": "CALL",
+   "candidateEVs": {},
+   "bestSize": null,
+   "checkEV": null,
+   "evGapBestSecond": null,
+   "note": "BET/RAISE 的 ev 依赖弃牌率；本项目无可信弃牌率估计 ⇒ 多数候选 ev = null（RAISE EV = NOT_AVAILABLE 未改）"
+  }
+ ]
+}

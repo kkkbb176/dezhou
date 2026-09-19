@@ -70,6 +70,11 @@ import {
 } from './behaviorProfile.ts';
 import { ARCHETYPE_DIMENSIONS } from './archetypeDimensions.ts';
 import { STAT_SOURCE_ZH } from './behaviorProfile.ts';
+import {
+  ActionContext,
+  isTraitAllowedInContext,
+  type ActionContextValue,
+} from '../postflop/actionContext.ts';
 
 /* ============================================================
  * ① 连续统计的输入结构
@@ -253,7 +258,21 @@ export const STAT_EVIDENCE_SPECS: Readonly<Record<ObservedStatKey, StatEvidenceS
 
 export type StatNormalizeIssue = {
   field: string;
-  code: 'OUT_OF_RANGE' | 'NOT_FINITE' | 'NEGATIVE_HANDS' | 'WRONG_UNIT_SUSPECTED';
+  code:
+    | 'OUT_OF_RANGE'
+    | 'NOT_FINITE'
+    | 'NEGATIVE_HANDS'
+    | 'WRONG_UNIT_SUSPECTED'
+    /**
+     * 🔴 **TEST 09 §十四**：传入了 `PlayerObservedStats` **不支持**的键。
+     *
+     * 典型：`turnCBet` / `flopCBet` / `riverBet` / `betWhenCheckedTo` ——
+     * 它们是**主动下注**统计，本系统只有**面对下注**（`FoldTo*`）统计。
+     *
+     * 修复前归一化器只遍历已知键，未知键被**静默丢弃且 `issues` 为空** ——
+     * 审计脚本会误以为这些字段进了模型。现在必须显式报告。
+     */
+    | 'UNKNOWN_OBSERVED_STAT';
   message: string;
   /** 被拒绝的原始值（用于诊断，不参与计算） */
   raw: number;
@@ -264,6 +283,13 @@ export type NormalizeResult = {
   stats: PlayerObservedStats;
   /** 被拒绝的字段（如实记录，便于界面提示用户） */
   issues: readonly StatNormalizeIssue[];
+  /**
+   * 🔴 **TEST 09 §十四**：被忽略的**未知键** + 它们的原始值。
+   *
+   * 与 `issues` 分开是因为语义不同：`issues` 是「已知字段给了非法值」，
+   * 这里是「这个字段本系统根本没有」。两者都必须可见。
+   */
+  ignoredStatKeys: readonly { key: string; raw: unknown }[];
 };
 
 /**
@@ -306,6 +332,36 @@ export function normalizeObservedStats(input: {
     Number.isFinite(handsRaw) && handsRaw > 0 ? Math.floor(handsRaw) : 0;
 
   const out: Record<string, number | null> = {};
+
+  /*
+   * 🔴 **TEST 09 §十四：未知键必须显式报告，不得静默丢弃**。
+   *
+   * 本系统只支持**面对下注**类统计（`FoldTo*`）与 `*CheckRaise`。
+   * 调用方常会传**主动下注**统计（`turnCBet` / `flopCBet` / `riverBet` /
+   * `betWhenCheckedTo`）—— 那些字段**没有**进入模型的通道。
+   *
+   * 修复前归一化器只遍历 `ALL_OBSERVED_STAT_KEYS`，未知键被静默丢掉、
+   * `issues` 保持为空 ⇒ 审计脚本会得出「这些字段已被消费」的错误结论。
+   */
+  const known = new Set<string>([...ALL_OBSERVED_STAT_KEYS, 'handsObserved']);
+  const ignoredStatKeys: { key: string; raw: unknown }[] = [];
+  for (const key of Object.keys(input.stats)) {
+    if (known.has(key)) continue;
+    const raw = (input.stats as Record<string, unknown>)[key];
+    ignoredStatKeys.push({ key, raw });
+    issues.push({
+      field: key,
+      code: 'UNKNOWN_OBSERVED_STAT',
+      message:
+        `「${key}」不是本系统支持的统计键 ⇒ **未进入模型**。` +
+        `支持的键：${ALL_OBSERVED_STAT_KEYS.join(' / ')}。` +
+        '⚠️ 注意区分：`FoldTo*CBet` 是「**面对**别人下注时的弃牌率」，' +
+        '而 `*CBet` / `*Bet` 是「**自己**主动下注的频率」——两者语义不同，' +
+        '后者当前**没有**输入通道（主动下注频率由画像维度推导）。',
+      raw: typeof raw === 'number' ? raw : Number.NaN,
+    });
+  }
+
   for (const key of ALL_OBSERVED_STAT_KEYS) {
     const raw = input.stats[key];
     if (raw === null || raw === undefined) { out[key] = null; continue; }
@@ -351,6 +407,7 @@ export function normalizeObservedStats(input: {
       ...out,
     } as PlayerObservedStats,
     issues: Object.freeze(issues),
+    ignoredStatKeys: Object.freeze(ignoredStatKeys),
   };
 }
 
@@ -779,6 +836,18 @@ export type StreetFactors = {
   callScale: number;
   /** 过牌-加注的倍率；>1 = 更爱过牌-加注 */
   checkRaiseScale: number;
+  /**
+   * 🔴 **TEST 08 P0-2：他自己在这一街开火的倍率**；>1 = 更爱主动下注。
+   *
+   * 与上面三个的区别：前三个是「他**面对**下注时的反应」，
+   * 本字段是「他**主动**开枪的倾向」。前者受**节点语义门**约束
+   * （Turn Donk 上不得用 `FoldToTurnCBet`），后者不受 —— 它就是这个统计
+   * 的原始语义。
+   *
+   * ⚠️ 可选：旧调用方（与 `neutralStreetFactors()`）不给时按 **1** 处理，
+   * 保证无统计路径与 V2 **逐位一致**。
+   */
+  betScale?: number;
 };
 
 export type StreetProfile = {
@@ -809,12 +878,25 @@ export type ResolvedPlayerProfile = {
   observedStatCount: number;
   /** 整体可信度的可读档位 */
   confidenceTierZh: string;
+  /**
+   * 🔴 **TEST 08 P0-3**：当前节点语义，以及被它挡下的分街条目。
+   *
+   * `deniedStreetTraits` 非空表示「统计给了，但因为节点语义不匹配而**未生效**」——
+   * 这是设计行为（避免证据错配），但必须可审计。
+   */
+  actionContext: ActionContextValue | null;
+  deniedStreetTraits: readonly StreetTraitKey[];
   noteZh: string;
 };
 
 /** 中立的分街因子（全 1 ⇒ 恒等变换） */
 export function neutralStreetFactors(): StreetProfile {
-  const one: StreetFactors = Object.freeze({ foldScale: 1, callScale: 1, checkRaiseScale: 1 });
+  const one: StreetFactors = Object.freeze({
+    foldScale: 1,
+    callScale: 1,
+    checkRaiseScale: 1,
+    betScale: 1,
+  });
   return Object.freeze({ PREFLOP: one, FLOP: one, TURN: one, RIVER: one });
 }
 
@@ -835,6 +917,80 @@ export function neutralStreetFactors(): StreetProfile {
 const STREET_FACTOR_SPAN = 0.35;
 export function streetFactorOf(value: number, span = STREET_FACTOR_SPAN): number {
   return 1 + span * centerOf(value);
+}
+
+/**
+ * 🔴 **标签对「面对下注弃牌」的先验**（TEST 08 P0-2 配套）。
+ *
+ * `traitPriorOf` 的返回值被 `as never` 抹掉了类型，在别处只能靠断言取用。
+ * 这里给出一条**有类型**的窄接口：只取「fold 类统计」的那一个先验。
+ *
+ * 它的用途是：**当某条街没有任何观测时，分街条目应当等于这个先验**，
+ * 而不是一个与标签无关的常量 0.5 —— 否则标签先验对分街通道毫无贡献，
+ * 且会把「没观测」当成「他这一街弃牌率恰好等于 0.5」。
+ *
+ * `archetype` 为 `null` 时 `traitPriorOf` 给出中性 0.45。
+ */
+export function foldPriorOf(archetype: QuickProfile | null): number {
+  const trait = traitPriorOf(archetype) as unknown as { fold: number };
+  const v = trait.fold;
+  return Number.isFinite(v) ? v : 0.45;
+}
+
+/**
+ * 🔴 **TEST 08 P0-2：开火倾向 —— 标签校准的维度通道（§九 优先级第 2 档）**。
+ *
+ * ```text
+ * shape(凶, 诈, 被) = 1 + 0.3×(凶−0.5)×2 + 0.25×(诈−0.5)×2 − 0.3×(被−0.5)×2
+ *
+ * betScale = shape(dims) + [ shape(标签基线) − shape(0.5, 0.5, 0.5) ]
+ *          = shape(dims) + [ shape(标签基线) − 1 ]
+ * ```
+ *
+ * `shape` 与 `responseTendenciesOf` 的 `riverBetScale` **同一公式同一刻度**
+ * —— 用标签维度代入时得到的正是 `riverBetScale` 那张表：
+ * `NORMAL 1.000 / MANIAC 1.542 / CALLING_STATION 0.625 / VERY_TIGHT 0.825`。
+ *
+ * ## 为什么要加「标签校准项」（**两次踩坑后的结论**）
+ *
+ * 1. **只用 `shape(dims)`（第一版）⇒ 全体系统性低于 1**。
+ *    因为 `resolvePlayerProfile` 的 Beta-Binomial 收缩会把实测率往先验拉，
+ *    解出的 `aggression` 普遍低于 0.5：MANIAC 实测 VPIP 0.58 / PFR 0.39
+ *    解出来只有 **0.387**。四个原型全部落在 0.88–0.97 ⇒ **每个对手的开火
+ *    倾向都被无端压低**，这是一条凭空出现的偏置，不是证据。
+ * 2. **改用 `FoldTo*CBet` 反推（第二版）⇒ 方向反了**。
+ *    那条统计的语义是「**对手**面对他的下注弃不弃」，不是「他开不开枪」；
+ *    且 `traitPriorOf` 给 MANIAC 的 fold 先验本就低（0.429），
+ *    于是「MANIAC 实测 0.25」反而**高于**他自己的先验 ⇒ 推出「他更少开枪」。
+ *
+ * 加上校准项后：
+ * - 实测维度 == 标签基线 ⇒ 结果 = `shape(标签基线)`，**与标签直出完全一致**
+ *   （无实测时逐位回到 V2 的量级，不再有系统性偏置）；
+ * - 实测偏离标签 ⇒ 在标签基线上**平移**，方向与幅度都由实测决定；
+ * - 无标签、无实测（dims 全 0.5，基线项为 0）⇒ 结果**精确的 1**
+ *   ⇒ 与 V2 恒等。
+ */
+export function calibratedBetScaleOf(input: {
+  baseArchetype: QuickProfile | null;
+  dimensions: { aggression: number; bluffTendency: number; passivity: number };
+}): number {
+  const shape = (d: { aggression: number; bluffTendency: number; passivity: number }): number => {
+    const c = (v: number): number => {
+      const x = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5;
+      return (x - 0.5) * 2;
+    };
+    return 1 + 0.3 * c(d.aggression) + 0.25 * c(d.bluffTendency) - 0.3 * c(d.passivity);
+  };
+  const baseline =
+    input.baseArchetype === null ? null : (ARCHETYPE_DIMENSIONS[input.baseArchetype] ?? null);
+  const calibration = baseline === null
+    ? 0
+    : shape({
+        aggression: baseline.aggression,
+        bluffTendency: baseline.bluffTendency,
+        passivity: baseline.passivity,
+      }) - 1;
+  return shape(input.dimensions) + calibration;
 }
 
 /**
@@ -869,6 +1025,24 @@ export function resolvePlayerProfile(input: {
    */
   opportunities?: Partial<Record<ObservedStatKey, number | null>> | null;
   /** 手选标签的先验可信度（默认与 `ARCHETYPE_CONFIDENCE` 同值由调用方给） */
+  /**
+   * 🔴 **ACTION CONTEXT（TEST 08 P0-3）**：当前决策点的节点语义。
+   *
+   * 分街统计 `FoldTo*CBet` 只在 `FACING_CBET` 下才允许进入直接统计通道。
+   * 不匹配（例如面对 Turn Donk）时该分街条目**保持中立 0.5**
+   * ⇒ `foldScale = 1` ⇒ 回落到「范围构成 + 标签维度 + 通用弃牌倾向」。
+   *
+   * `null` / 未给 ⇒ 不做节点判定（放行一切）—— 保持旧调用路径逐位不变。
+   */
+  actionContext?: ActionContextValue | null;
+  /**
+   * 🔴 **当前街**（TEST 09 修正）。
+   *
+   * 分街统计必须**逐条目按各自街**匹配：`foldToFlopBet` 描述翻牌，
+   * 在河牌节点上本就不适用，不能因为「河牌算出了 FACING_CBET」就被放行。
+   * 未给 ⇒ 不做街匹配（等同旧行为）。
+   */
+  street?: Street | null;
 }): ResolvedPlayerProfile {
   const raw = input.observedStats;
   const normalized = normalizeObservedStats({
@@ -944,6 +1118,15 @@ export function resolvePlayerProfile(input: {
     turnCheckRaise: 0.5,
     riverCheckRaise: 0.5,
   };
+  /**
+   * 🔴 **被节点语义门挡下的分街条目**（TEST 08 P0-3）。
+   *
+   * 被挡下 ⇒ 该条目保持中立 0.5。必须记录下来，否则
+   * 「统计明明给了却毫无影响」会变成又一个无法审计的静默行为。
+   */
+  const streetTraitDenied = new Set<StreetTraitKey>();
+  /** 当前节点语义（`null` = 调用方未提供 ⇒ 不做节点判定） */
+  const context: ActionContextValue | null = input.actionContext ?? null;
 
   let observedStatCount = 0;
 
@@ -1018,7 +1201,32 @@ export function resolvePlayerProfile(input: {
        * 且**不再**乘可信度 —— 那会把 confidence **算两次**
        *（一次在 `effectiveRate` 里、一次在 `streetFactorOf` 外）。
        */
-      streetTraitValue[mapping.streetTrait] = ev.effectiveRate;
+      /*
+       * 🔴 **TEST 08 P0-3：节点语义门**。
+       *
+       * `FoldToTurnCBet` 描述的是「他开第二枪时对手弃牌的比例」。
+       * 但在 Turn Donk 节点上，他是**面对**领打的一方 —— 拿这条统计
+       * 回答「他面对 donk 会怎么反应」属于**证据错配**。
+       *
+       * 语义不匹配时**不找替代统计**（那只是换一种错配），
+       * 直接让该分街条目保持中立 0.5 ⇒ `foldScale = 1`：
+       * 通用弃牌倾向仍由 `tightness` / `passivity` 维度承担。
+       */
+      /*
+       * ⚠️ 这条通道**只**服务「他面对下注时的反应」（`streetFoldScale` /
+       * `streetCallScale`），因此必须受节点语义门约束。
+       *
+       * **开火倾向不走这里**：它是另一个量（「他自己开不开枪」），
+       * 由 `streetBetScaleOfDimensions` 从画像维度取（§九 优先级第 2 档）。
+       * 第一版试图让同一批分街条目同时承担两个量，结果门口一关，
+       * 分街进攻性也一起归零 ⇒ 方向反了。
+       */
+      if (isTraitAllowedInContext(mapping.streetTrait, context, input.street ?? null)) {
+        streetTraitValue[mapping.streetTrait] = ev.effectiveRate;
+      } else {
+        streetTraitValue[mapping.streetTrait] = 0.5;
+        streetTraitDenied.add(mapping.streetTrait);
+      }
     }
 
     trace.push({
@@ -1068,6 +1276,15 @@ export function resolvePlayerProfile(input: {
 
   // ---- 分街因子 ----
   const factorsOf = (street: Street): StreetFactors => {
+    /*
+     * ⚠️ `PREFLOP` 没有对应的分街统计（`STAT_TO_STREET_TRAIT` 只覆盖
+     * 翻牌/转牌/河牌），因此它**必须保持中性 0.5 ⇒ 因子恒为 1**。
+     *
+     * 不要在 `PREFLOP` 上套用标签的 fold 先验（试过一次，`P1b` 立刻报
+     * `PREFLOP.foldScale = 0.916 !== 1`）：那条先验是「面对**翻后**持续下注
+     * 的弃牌率」，与翻前无关；而且 P1b 明确锁定「无统计 ⇒ 四条街全部
+     * 精确恒等」，任何街的先验注入都会破坏这条不变量。
+     */
     const foldTrait =
       street === 'FLOP' ? streetTraitValue.foldToFlopBet
         : street === 'TURN' ? streetTraitValue.foldToTurnBet
@@ -1078,6 +1295,10 @@ export function resolvePlayerProfile(input: {
         : street === 'TURN' ? streetTraitValue.turnCheckRaise
           : street === 'RIVER' ? streetTraitValue.riverCheckRaise
             : 0.5;
+    /*
+     * 开火倾向**直接来自画像维度**（§九 优先级第 2 档），
+     * 不经过分街统计 —— 理由见 `streetBetScaleOfDimensions` 的说明。
+     */
     const foldScale = streetFactorOf(foldTrait);
     return Object.freeze({
       foldScale,
@@ -1088,6 +1309,27 @@ export function resolvePlayerProfile(input: {
        */
       callScale: Math.max(0.1, Math.min(2, 2 - foldScale)),
       checkRaiseScale: streetFactorOf(xrTrait),
+      /*
+       * 🔴 **开火倾向按 §九 优先级取来源**：
+       *
+       * 1. 有该街的**开火类**观测统计 ⇒ 用统计（本系统目前**没有**
+       *    `TurnCBet` / `RiverBet` 字段 ⇒ 这条恒不成立，如实标注
+       *    `TURN_CBET_INPUT_CHANNEL = NOT_IMPLEMENTED`，**不伪造**）；
+       * 2. 否则用**画像维度**（`aggression` / `bluffTendency` / `passivity`）
+       *    —— 与 `riverBetScale` 同一公式同一刻度，保证跨街可比；
+       * 3. 再否则（无任何画像）恒为 1 ⇒ V2 恒等。
+       *
+       * ⚠️ **不用 `FoldTo*CBet` 反推开火倾向**（第一版这么做过，方向是错的）：
+       * 那条统计要回答的是「**对手**面对他的下注弃不弃」，
+       * 与「他自己开不开枪」是两个量；而且 `traitPriorOf` 给 MANIAC 的
+       * fold 先验本来就只有 0.429（模型认为疯子本来就不爱弃），
+       * 于是「MANIAC 实测 0.25」反而**高于**他自己的先验 ⇒ 推出「他更少开枪」，
+       * 与画像完全相反。
+       */
+      betScale: calibratedBetScaleOf({
+        baseArchetype: input.baseArchetype,
+        dimensions: dims,
+      }),
     });
   };
 
@@ -1113,13 +1355,19 @@ export function resolvePlayerProfile(input: {
     trace: Object.freeze(trace),
     observedStatCount,
     confidenceTierZh,
+    actionContext: context,
+    deniedStreetTraits: Object.freeze([...streetTraitDenied]),
     noteZh:
       `标签「${input.baseArchetype ?? '无'}」（**Prior**）` +
       `＋实测统计 ${observedStatCount}/${ALL_OBSERVED_STAT_KEYS.length} 项（${stats.handsObserved} 手）` +
       ` ⇒ 解析后维度 tightness ${dims.tightness.toFixed(3)} / aggression ${dims.aggression.toFixed(3)}` +
       ` / bluffTendency ${dims.bluffTendency.toFixed(3)} / passivity ${dims.passivity.toFixed(3)}` +
       `｜可信度档 ${confidenceTierZh}` +
-      (observedStatCount === 0 ? '｜⚠️ 无实测 ⇒ 与 V2 archetype-only **逐位一致**' : ''),
+      (observedStatCount === 0 ? '｜⚠️ 无实测 ⇒ 与 V2 archetype-only **逐位一致**' : '') +
+      (streetTraitDenied.size === 0
+        ? ''
+        : `｜🔴 节点语义门：${context ?? '未判定'} ⇒ ` +
+          `[${[...streetTraitDenied].join(', ')}] **未生效**（保持中立 0.5）`),
   });
 }
 

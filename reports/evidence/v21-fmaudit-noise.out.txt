@@ -1,0 +1,60 @@
+
+
+########## 我方主动下注节点（翻牌）的响应模型噪声 ##########
+
+[无画像] 各尺寸的响应模型输出（逐 seed）：
+  seed=        1 权益=0.76465 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005879244762394314,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.140139500000002
+      undefined    ratio=0.3333333333333333 折=0.719085453126016 跟=0.25727714527356826 加=0.023637401600416465 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7968757260890165 跟=0.1911847123990455 加=0.01193956151193811 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8386917734695195 跟=0.15259714722529497 加=0.008711079305185122 权益=undefined 迭代=96030 EV=undefined
+  seed=        2 权益=0.7638 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005886577509892934,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.133314000000001
+      undefined    ratio=0.3333333333333333 折=0.719085453126016 跟=0.25727714527356826 加=0.023637401600416465 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7968757260890165 跟=0.1911847123990455 加=0.01193956151193811 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8386917734695195 跟=0.15259714722529497 加=0.008711079305185122 权益=undefined 迭代=96030 EV=undefined
+  seed= 20260913 权益=0.768825 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005842749605932877,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.17366475
+      undefined    ratio=0.3333333333333333 折=0.719085453126016 跟=0.25727714527356826 加=0.023637401600416465 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7968757260890165 跟=0.1911847123990455 加=0.01193956151193811 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8386917734695195 跟=0.15259714722529497 加=0.008711079305185122 权益=undefined 迭代=96030 EV=undefined
+  seed=      777 权益=0.761625 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005905192259100984,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.1158487500000005
+      undefined    ratio=0.3333333333333333 折=0.719085453126016 跟=0.25727714527356826 加=0.023637401600416465 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7968757260890165 跟=0.1911847123990455 加=0.01193956151193811 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8386917734695195 跟=0.15259714722529497 加=0.008711079305185122 权益=undefined 迭代=96030 EV=undefined
+  seed=999999999 权益=0.76465 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005879244762394314,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.140139500000002
+      undefined    ratio=0.3333333333333333 折=0.719085453126016 跟=0.25727714527356826 加=0.023637401600416465 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7968757260890165 跟=0.1911847123990455 加=0.01193956151193811 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8386917734695195 跟=0.15259714722529497 加=0.008711079305185122 权益=undefined 迭代=96030 EV=undefined
+
+[MANIAC] 各尺寸的响应模型输出（逐 seed）：
+  seed=        1 权益=0.766775 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005860769165000962,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.15720325
+      undefined    ratio=0.3333333333333333 折=0.7119022097504742 跟=0.26317177781236706 加=0.024926012437157277 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7898879384729613 跟=0.19759624043258608 加=0.012515821094452711 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8306734340518969 跟=0.16011130018345596 加=0.009215265764647117 权益=undefined 迭代=96030 EV=undefined
+  seed=        2 权益=0.7614 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005907105795623838,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.114042
+      undefined    ratio=0.3333333333333333 折=0.7119022097504742 跟=0.26317177781236706 加=0.024926012437157277 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7898879384729613 跟=0.19759624043258608 加=0.012515821094452711 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8306734340518969 跟=0.16011130018345596 加=0.009215265764647117 权益=undefined 迭代=96030 EV=undefined
+  seed= 20260913 权益=0.76555 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.00587144493375677,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.1473665
+      undefined    ratio=0.3333333333333333 折=0.7119022097504742 跟=0.26317177781236706 加=0.024926012437157277 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7898879384729613 跟=0.19759624043258608 加=0.012515821094452711 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8306734340518969 跟=0.16011130018345596 加=0.009215265764647117 权益=undefined 迭代=96030 EV=undefined
+  seed=      777 权益=0.761225 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005908592535607288,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.112636750000001
+      undefined    ratio=0.3333333333333333 折=0.7119022097504742 跟=0.26317177781236706 加=0.024926012437157277 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7898879384729613 跟=0.19759624043258608 加=0.012515821094452711 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8306734340518969 跟=0.16011130018345596 加=0.009215265764647117 权益=undefined 迭代=96030 EV=undefined
+  seed=999999999 权益=0.76475 估计={"method":"MONTE_CARLO","iterations":20000,"confidenceHalfWidth":0.005878379932825251,"downgradedFromExact":false} 最优=BET_SMALL checkEV=6.140942500000001
+      undefined    ratio=0.3333333333333333 折=0.7119022097504742 跟=0.26317177781236706 加=0.024926012437157277 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=0.6666666666666666 折=0.7898879384729613 跟=0.19759624043258608 加=0.012515821094452711 权益=undefined 迭代=139590 EV=undefined
+      undefined    ratio=1 折=0.8306734340518969 跟=0.16011130018345596 加=0.009215265764647117 权益=undefined 迭代=96030 EV=undefined
+
+
+########## 估计量来源字段与响应模型（betDecision）的种子敏感度 ##########
+
+[无画像] math 中与权益相关的字段：
+  requiredEquity = 0.2978723404255319
+  requiredEquityApplies = true
+  heroEquity = 0.5625883726719894
+  equitySource = {"method":"EXACT","iterations":990,"confidenceHalfWidth":0,"downgradedFromExact":false}
+  postflop.uncertaintyBandChips = 2.35
+
+[MANIAC] math 中与权益相关的字段：
+  requiredEquity = 0.2978723404255319

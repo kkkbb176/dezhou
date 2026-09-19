@@ -1,0 +1,63 @@
+参考手节点: street=RIVER CO vs BB SRP 2人 line=TURN_CHECK_BACK action=BET size=LARGE texture=SEMI_WET
+betRatio = 7 / 9.5 = 0.7368421052631579  ⇒ BetSizeBucketOf = LARGE
+
+========== 1. 逐类别 trace（MANIAC 画像，让每条 cond ≠ 1 才看得见）==========
+类别                    条目数 槽位K  几何平均     原始乘积      max      K推断  clamped
+NUT_VALUE              0     1.000000 1.000000     1.000000   1.000000  1  no
+   base=0.95000000 raw=0.95000000 like=0.95000000
+   [BASE] trait=- factor=0.950000
+   [SIZE] trait=- factor=1.000000
+   [NODE] trait=- factor=1.000000
+   [PROFILE] trait=- factor=1.000000
+THIN_VALUE             1     1.000000 1.000000     1.000000   1.000000  1  no
+   base=0.22134330 raw=0.22134330 like=0.22134330
+   [BASE] trait=- factor=0.221343
+   [SIZE] trait=- factor=1.000000
+   [NODE] trait=- factor=1.000000
+   [PROFILE] trait=thinValueBet factor=1.000000 rate=0.35
+MISSED_FLUSH_DRAW      3     3.000000 2.915478     24.781609   3.666667  —  no
+   base=0.05533583 raw=0.16133041 like=0.16133041
+   [BASE] trait=- factor=0.055336
+   [SIZE] trait=riverLargeBetBluff factor=2.896552 rate=0.42
+   [NODE] trait=probeAfterTurnCheckBack factor=2.333333 rate=0.5
+   [PROFILE] trait=missedDrawBluff factor=3.666667 rate=0.55
+PURE_AIR               3     3.000000 2.590265     17.379310   2.896552  K=3  no
+   base=0.05533583 raw=0.14333445 like=0.14333445
+   [BASE] trait=- factor=0.055336
+   [SIZE] trait=riverLargeBetBluff factor=2.896552 rate=0.42
+   [NODE] trait=probeAfterTurnCheckBack factor=2.333333 rate=0.5
+   [PROFILE] trait=riverBluff factor=2.571429 rate=0.5
+
+========== 2. 「爱开火」这条倾向：几何平均 vs 乘积 vs max ==========
+类别                   画像     条目   base       乘积       几何平均     max      最终(几何)  最终(乘积)  最终(max)
+(a) MISSED_FLUSH_DRAW  03A-CS     3    0.055336  0.059385  0.390144  0.512195  0.021589    0.003286    0.028343  (K=3)
+(a) MISSED_FLUSH_DRAW  03B-MANIAC 3    0.055336  24.781609  2.915478  3.666667  0.161330    1.000000    0.202898  (K=3)
+(b) PURE_AIR           03A-CS     3    0.055336  0.080843  0.432396  0.512195  0.023927    0.004474    0.028343  (K=3)
+(b) PURE_AIR           03B-MANIAC 3    0.055336  17.379310  2.590265  2.896552  0.143334    0.961698    0.160283  (K=3)
+(c) THIN_VALUE         03A-CS     1    0.221343  1.000000  1.000000  1.000000  0.221343    0.221343    0.221343  (K=1)
+(c) THIN_VALUE         03B-MANIAC 1    0.221343  1.000000  1.000000  1.000000  0.221343    0.221343    0.221343  (K=1)
+(d) NUT_VALUE          03A-CS     0    0.950000  1.000000  1.000000  1.000000  0.950000    0.950000    0.950000  (K=1)
+(d) NUT_VALUE          03B-MANIAC 0    0.950000  1.000000  1.000000  1.000000  0.950000    0.950000    0.950000  (K=1)
+
+========== 3. 三个「开火」条目的池先验 / 03A / 03B 生效值与几率比 ==========
+trait                       池先验   03A(CS)   03B(MANIAC)  cond03A     cond03B
+riverBluff                   0.28     0.15      0.5         0.453782  2.571429
+riverLargeBetBluff           0.2      0.08      0.42        0.347826  2.896552
+missedDrawBluff              0.25     0.1       0.55        0.333333  3.666667
+probeAfterTurnCheckBack      0.3      0.18      0.5         0.512195  2.333333
+thinValueBet                 0.35     0.35      0.35        1.000000  1.000000
+  callTooWide（被动条目，不参与主动似然）= 池 0.5 / 03A 0.72 / 03B 0.45
+
+========== 4. THIN_VALUE：唯一可条件化条目被开几次方 ==========
+THIN_VALUE base（中性校准层） = 0.22134330
+  manual=thinValueBet:VERY_LOW  rate=0.05   cond=0.097744 ⇒ 实测倍率 0.312641  隐含指数 1/2.0000  条目数=1  like=0.069201
+  manual=thinValueBet:LOW       rate=0.2    cond=0.464286 ⇒ 实测倍率 0.681385  隐含指数 1/2.0000  条目数=1  like=0.150820
+  manual=thinValueBet:MEDIUM    rate=0.45   cond=1.519481 ⇒ 实测倍率 1.232672  隐含指数 1/2.0000  条目数=1  like=0.272844
+  manual=thinValueBet:HIGH      rate=0.65   cond=3.448980 ⇒ 实测倍率 1.857143  隐含指数 1/2.0000  条目数=1  like=0.411066
+  manual=thinValueBet:VERY_HIGH rate=0.8    cond=7.428571 ⇒ 实测倍率 2.725541  隐含指数 1/2.0000  条目数=1  like=0.603280
+
+========== 5. 极端 manual thinValueBet ⇒ THIN_VALUE 是否越过 STRONG_VALUE ==========
+STRONG_VALUE base = 0.46113188（结构性基线 THIN < STRONG 见 behaviorProfile.ts:979）
+  STRONG_VALUE（无画像调整，价值端恒 1.000） = 0.46113188
+  THIN_VALUE  （manual VERY_HIGH）           = 0.60328015
+  ⇒ THIN > STRONG ? **是（序关系被翻转）**

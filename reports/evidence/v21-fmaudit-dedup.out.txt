@@ -1,0 +1,6 @@
+=== 决策层去重判据：context.profileRangeEvidence?.provider.applied ===
+A 单挑 9-max：BLUFF_HEAVY（画像家＝首要 BB）                          权益=0.572429 首要对手=seat_BB realized=1 evidence=有(applied=true before=0.5625883726719894 after=0.5724286979958632) | exploit: applied=true bluffCatchDelta=0.000000 deDuplicated=true
+B 单挑 9-max：无画像                                             权益=0.562588 首要对手=seat_BB realized=1 evidence=无 | exploit: applied=false bluffCatchDelta=0.000000 deDuplicated=false
+C 4 人局：BLUFF_HEAVY@seat_BTN（画像家≠首要 CO）                     权益=0.367642 首要对手=seat_CO realized=2 evidence=无 | exploit: applied=true bluffCatchDelta=0.035000 deDuplicated=false
+D 4 人局：BLUFF_HEAVY@seat_CO（画像家＝首要 CO）                      权益=0.328708 首要对手=seat_CO realized=2 evidence=有(applied=true before=0.33294166666666664 after=0.3287083333333333) | exploit: applied=true bluffCatchDelta=0.000000 deDuplicated=true
+E 4 人局：无画像                                                 权益=0.334892 首要对手=seat_CO realized=2 evidence=无 | exploit: applied=false bluffCatchDelta=0.000000 deDuplicated=false

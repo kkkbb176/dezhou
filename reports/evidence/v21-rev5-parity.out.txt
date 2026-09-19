@@ -1,0 +1,100 @@
+================ 全链路 UNKNOWN / NORMAL / 无画像 / 显式中性 逐位比较 ================
+（生产总入口 analyzeManualHand；参考手 9-max CO Ac Jh｜Ad 8s 4s 2c Kd｜BB 河牌 bet 7）
+  U_unknown            ok (798ms)  权益=0.5625883727  动作=CALL
+  N_normal             ok (683ms)  权益=0.5625883727  动作=CALL
+  NO_none              ok (444ms)  权益=0.5625883727  动作=CALL
+  P_explicitNeutral    ok (497ms)  权益=0.5625883727  动作=CALL
+  M_maniac             ok (767ms)  权益=0.5760913804  动作=CALL
+
+  ---- sha256（full = 整个结果对象）----
+  U_unknown            full=76d0e8459c56d58b decision=39175d1628c965f1 trace=91c95e5298653238 profileEvidence=null
+  N_normal             full=d8b6420b535f186b decision=0f6adecb37979808 trace=91c95e5298653238 profileEvidence=null
+  NO_none              full=e9eab3c8c9604bb3 decision=e1f947c6e6acc9f5 trace=91c95e5298653238 profileEvidence=null
+  P_explicitNeutral    full=4cbf4585ff17e79b decision=e1f947c6e6acc9f5 trace=91c95e5298653238 profileEvidence=null
+  M_maniac             full=fa9be918b7cb2730 decision=5ecce26ed959f852 trace=83beca184c000eb0 profileEvidence=null
+
+  ---- 成对判定 ----
+  U_unknown vs N_normal: 整个结果对象=**不同**  decision=不同  权益 0.562588372672 vs 0.562588372672 (Δ=0.000e+0)  profileEvidence=相同
+  U_unknown vs NO_none: 整个结果对象=**不同**  decision=不同  权益 0.562588372672 vs 0.562588372672 (Δ=0.000e+0)  profileEvidence=相同
+  N_normal vs NO_none: 整个结果对象=**不同**  decision=不同  权益 0.562588372672 vs 0.562588372672 (Δ=0.000e+0)  profileEvidence=相同
+  U_unknown vs P_explicitNeutral: 整个结果对象=**不同**  decision=不同  权益 0.562588372672 vs 0.562588372672 (Δ=0.000e+0)  profileEvidence=相同
+  U_unknown vs M_maniac: 整个结果对象=**不同**  decision=不同  权益 0.562588372672 vs 0.576091380427 (Δ=1.350e-2)  profileEvidence=相同
+
+  ⇒ NEUTRAL_PARITY（全链路 UNKNOWN == NORMAL）= **FAIL**
+
+================ 差异叶子逐路径定位 ================
+  UNKNOWN vs NORMAL：不同叶子 30 处
+    $.decision.diagnostics.player.adjustment.confidence: 0.5  ⇒  0.35
+    $.decision.diagnostics.player.adjustment.dimensions.confidence: 0  ⇒  0.35
+    $.decision.diagnostics.player.confidence: 0.5  ⇒  0.35
+    $.decision.diagnostics.player.neutralized: true  ⇒  false
+    $.decision.diagnostics.player.note: 没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）  ⇒  无实测数据，采用用户手选画像「NORMAL」（主观判断，可信度上限 0.35）
+    $.decision.diagnostics.player.quickProfile: UNKNOWN  ⇒  NORMAL
+    $.decision.diagnostics.profileRange: 类型不同 null vs object
+    $.log.inputHash: hf841efa7  ⇒  h52295a52
+    $.log.timingMs.context: 622  ⇒  653
+    $.log.timingMs.decide: 64  ⇒  17
+    $.log.timingMs.parse: 3  ⇒  0
+    $.log.timingMs.total: 788  ⇒  682
+    $.log.timingMs.validate: 15  ⇒  11
+    $.log.timingMs.viewmodel: 83  ⇒  1
+    $.timings.context: 622  ⇒  653
+    $.timings.decide: 64  ⇒  17
+    $.timings.parse: 3  ⇒  0
+    $.timings.total: 788  ⇒  682
+    $.timings.validate: 15  ⇒  11
+    $.timings.viewmodel: 83  ⇒  1
+    $.viewModel.debug.player[2].value: 0.50  ⇒  0.35
+    $.viewModel.debug.player[3].value: 是  ⇒  否
+    $.viewModel.debug.player[4].value: 没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）  ⇒  无实测数据，采用用户手选画像「NORMAL」（主观判断，可信度上限 0.35）
+    $.viewModel.debug.profileRange: 数组长度 1 vs 13
+    $.viewModel.debug.timing[0].value: 3.0 ms  ⇒  0.0 ms
+    $.viewModel.debug.timing[1].value: 15.0 ms  ⇒  11.0 ms
+    $.viewModel.debug.timing[2].value: 622.0 ms  ⇒  653.0 ms
+    $.viewModel.debug.timing[3].value: 64.0 ms  ⇒  17.0 ms
+    $.viewModel.debug.timing[4].value: 83.0 ms  ⇒  1.0 ms
+    $.viewModel.debug.timing[5].value: 788.0 ms  ⇒  682.0 ms
+
+  UNKNOWN vs 完全不给 quickProfile：不同叶子 20 处
+    $.decision.diagnostics.player.quickProfile: 类型不同 string vs null
+    $.log.inputHash: hf841efa7  ⇒  h2d1bba6e
+    $.log.timingMs.context: 622  ⇒  426
+    $.log.timingMs.decide: 64  ⇒  13
+    $.log.timingMs.parse: 3  ⇒  0
+    $.log.timingMs.total: 788  ⇒  444
+    $.log.timingMs.validate: 15  ⇒  3
+    $.log.timingMs.viewmodel: 83  ⇒  2
+    $.timings.context: 622  ⇒  426
+    $.timings.decide: 64  ⇒  13
+    $.timings.parse: 3  ⇒  0
+    $.timings.total: 788  ⇒  444
+    $.timings.validate: 15  ⇒  3
+    $.timings.viewmodel: 83  ⇒  2
+    $.viewModel.debug.timing[0].value: 3.0 ms  ⇒  0.0 ms
+    $.viewModel.debug.timing[1].value: 15.0 ms  ⇒  3.0 ms
+    $.viewModel.debug.timing[2].value: 622.0 ms  ⇒  426.0 ms
+    $.viewModel.debug.timing[3].value: 64.0 ms  ⇒  13.0 ms
+    $.viewModel.debug.timing[4].value: 83.0 ms  ⇒  2.0 ms
+    $.viewModel.debug.timing[5].value: 788.0 ms  ⇒  444.0 ms
+
+  UNKNOWN vs 显式中性 behaviorProfile：不同叶子 20 处
+    $.decision.diagnostics.player.quickProfile: 类型不同 string vs null
+    $.log.inputHash: hf841efa7  ⇒  h2d1bba6e
+    $.log.timingMs.context: 622  ⇒  471
+    $.log.timingMs.decide: 64  ⇒  22
+    $.log.timingMs.parse: 3  ⇒  0
+    $.log.timingMs.total: 788  ⇒  495
+    $.log.timingMs.validate: 15  ⇒  1
+    $.log.timingMs.viewmodel: 83  ⇒  1
+    $.timings.context: 622  ⇒  471
+    $.timings.decide: 64  ⇒  22
+    $.timings.parse: 3  ⇒  0
+    $.timings.total: 788  ⇒  495
+    $.timings.validate: 15  ⇒  1
+    $.timings.viewmodel: 83  ⇒  1
+    $.viewModel.debug.timing[0].value: 3.0 ms  ⇒  0.0 ms
+    $.viewModel.debug.timing[1].value: 15.0 ms  ⇒  1.0 ms
+    $.viewModel.debug.timing[2].value: 622.0 ms  ⇒  471.0 ms
+    $.viewModel.debug.timing[3].value: 64.0 ms  ⇒  22.0 ms
+    $.viewModel.debug.timing[4].value: 83.0 ms  ⇒  1.0 ms
+    $.viewModel.debug.timing[5].value: 788.0 ms  ⇒  495.0 ms

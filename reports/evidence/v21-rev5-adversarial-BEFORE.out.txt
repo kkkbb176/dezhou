@@ -1,0 +1,125 @@
+
+================ A1 ================
+  被测声明: 四级来源「实测 > 人工 > 标签先验 > 池先验」；manual 与原型矛盾时以 manual 为准，不得崩溃
+  期望行为: manual 覆盖原型先验；5 条主动条目全部变为对应档位率；被动条目 callTooWide 不受影响；无 NaN
+  原始输出（生效值）:
+    riverBluff                   effectiveRate=0.8 source=MANUAL_USER_INPUT priorRate=0.8 conf=0
+    riverLargeBetBluff           effectiveRate=0.8 source=MANUAL_USER_INPUT priorRate=0.8 conf=0
+    missedDrawBluff              effectiveRate=0.8 source=MANUAL_USER_INPUT priorRate=0.8 conf=0
+    probeAfterTurnCheckBack      effectiveRate=0.8 source=MANUAL_USER_INPUT priorRate=0.8 conf=0
+    thinValueBet                 effectiveRate=0.8 source=MANUAL_USER_INPUT priorRate=0.8 conf=0
+    callTooWide                  effectiveRate=0.72 source=PROFILE_PRIOR priorRate=0.72 conf=0
+    archetypePriorAvailable=true isUnknownPlayer=false
+    priorNoteZh=标签「CALLING_STATION」提供行为先验（与池先验**不同**）｜人工条目 5 条（riverBluff、riverLargeBetBluff、missedDrawBluff、probeAfterTurnCheckBack、thinValueBet）
+    断言: 5 条 = 0.8 ? true | callTooWide 仍 0.72 ? true | 无 NaN ? true
+    注: riverBluff.priorRate=0.8（CALLING_STATION 标签先验是 0.15） ⇒ 标签先验被**完全丢弃**，而不是注释所说的「叠加在标签先验之上」: true
+  ⇒ A1 判定: **PASS** —— manual 正确覆盖（5 条全部 0.8），被动条目未被污染（callTooWide=0.72）；但 behaviorProfile.ts:441 的注释「人工画像作为伪计数先验**叠加在标签先验之上**」与实测不符（标签先验 0.15 被丢弃）
+
+================ A2 ================
+  被测声明: `statEvidenceOf` 必须把 successes 钳到 opportunities 以内（不得出现 >100% 的率）
+  期望行为: successes 被钳到 3 ⇒ effectiveRate = (0.28×6 + 3)/(6+3) = 0.52；无 NaN
+    原始输出: successes=3 opportunities=3 observedRate=1 effectiveRate=0.52 confidence=0.3333333333333333
+  ⇒ A2 判定: **PASS** —— successes 被钳到 3，率 0.52 ∈ [0,1]，解析式 (0.28×6+3)/(6+3)=0.52
+
+================ A3 ================
+  被测声明: 负机会数必须被当作「无观测」而不是负数分母
+  期望行为: opportunities → 0 ⇒ 逐位回落先验 0.28；confidence 0
+    原始输出: opportunities=0 effectiveRate=0.28 observedRate=null confidence=0
+  ⇒ A3 判定: **PASS** —— opportunities→0，率逐位等于池先验 0.28
+
+================ A4 ================
+  被测声明: 非有限输入（NaN / ∞）不得产生非有限的后验权重 —— 范围引擎契约要求 likelihood ∈ [0,1]
+  期望行为: opportunities = NaN 要么被拒绝并给出可解释的 issue，要么被安全钳到有限值；绝不允许 NaN 进入 likelihood
+    证据层原始输出: opportunities=**NaN** successes=**NaN** effectiveRate=**NaN** confidence=**NaN** observedRate=**NaN**
+    似然层原始输出: base=0.05533582538851817 combinedAdjustment=**NaN** rawLikelihood=**NaN** likelihood=**NaN** clamped=true
+      [BASE] trait=- factor=0.05533582538851817 rate=undefined
+      [SIZE] trait=riverLargeBetBluff factor=1 rate=0.2
+      [NODE] trait=probeAfterTurnCheckBack factor=1 rate=0.3
+      [PROFILE] trait=riverBluff factor=**NaN** rate=**NaN**
+    全链路原始输出: ok action=CALL heroEquity=0.6747883905405524 callEV=17.71505435540596 profileRange=null warnings=0
+  ⇒ A4 判定: **FAIL** —— opportunities = NaN ⇒ effectiveRate=**NaN**，likelihood=**NaN**，heroEquity=0.6747883905405524：**非有限值穿透到生产输出**（似然层已污染）
+
+================ A5 ================
+  被测声明: 非有限输入（NaN / ∞）不得产生非有限的后验权重 —— 范围引擎契约要求 likelihood ∈ [0,1]
+  期望行为: opportunities = Infinity 要么被拒绝并给出可解释的 issue，要么被安全钳到有限值；绝不允许 NaN 进入 likelihood
+    证据层原始输出: opportunities=**Infinity** successes=0 effectiveRate=0 confidence=**NaN** observedRate=0
+    似然层原始输出: base=0.05533582538851817 combinedAdjustment=0.13704703970136958 rawLikelihood=0.007583611058928305 likelihood=0.007583611058928305 clamped=false
+      [BASE] trait=- factor=0.05533582538851817 rate=undefined
+      [SIZE] trait=riverLargeBetBluff factor=1 rate=0.2
+      [NODE] trait=probeAfterTurnCheckBack factor=1 rate=0.3
+      [PROFILE] trait=riverBluff factor=0.0025740025740025735 rate=0
+    全链路原始输出: ok action=CALL heroEquity=0.5601571058382347 callEV=12.327383974397033 profileRange=null warnings=0
+  ⇒ A5 判定: **PASS** —— opportunities = Infinity ⇒ effectiveRate=0，likelihood=0.007583611058928305，heroEquity=0.5601571058382347：全部有限
+
+================ A6 ================
+  被测声明: 非有限输入（NaN / ∞）不得产生非有限的后验权重 —— 范围引擎契约要求 likelihood ∈ [0,1]
+  期望行为: successes = NaN，opportunities = 10 要么被拒绝并给出可解释的 issue，要么被安全钳到有限值；绝不允许 NaN 进入 likelihood
+    证据层原始输出: opportunities=10 successes=**NaN** effectiveRate=**NaN** confidence=0.625 observedRate=**NaN**
+    似然层原始输出: base=0.05533582538851817 combinedAdjustment=**NaN** rawLikelihood=**NaN** likelihood=**NaN** clamped=true
+      [BASE] trait=- factor=0.05533582538851817 rate=undefined
+      [SIZE] trait=riverLargeBetBluff factor=1 rate=0.2
+      [NODE] trait=probeAfterTurnCheckBack factor=1 rate=0.3
+      [PROFILE] trait=riverBluff factor=**NaN** rate=**NaN**
+    全链路原始输出: ok action=CALL heroEquity=0.6747883905405524 callEV=17.71505435540596 profileRange=null warnings=0
+  ⇒ A6 判定: **FAIL** —— successes = NaN，opportunities = 10 ⇒ effectiveRate=**NaN**，likelihood=**NaN**，heroEquity=0.6747883905405524：**非有限值穿透到生产输出**（似然层已污染）
+
+================ A7 ================
+  被测声明: `thinValueBet` 只有 manual/observed 入口；极端读数不得把结构序关系 THIN < STRONG 翻过来并污染 §二十 权益单调性
+  期望行为: 结构基线 THIN_VALUE < STRONG_VALUE 在**任意**画像下都成立，或至少 §二十 四条单调性不被 thin 通道反向
+    STRONG_VALUE 似然（价值端恒 1.000 调整）= 0.4611318782376514
+    类别                   画像                        thinValueBet  cond        倍率        似然        是否越过 STRONG
+    THIN_VALUE             neutral                    VERY_LOW     0.097744  0.312641  0.069201  否
+    THIN_VALUE             neutral                    VERY_HIGH    7.428571  2.725541  0.603280  **是**
+    THIN_VALUE             CALLING_STATION            VERY_LOW     0.097744  0.312641  0.069201  否
+    THIN_VALUE             CALLING_STATION            VERY_HIGH    7.428571  2.725541  0.603280  **是**
+    THIN_VALUE             MANIAC                     VERY_LOW     0.097744  0.312641  0.069201  否
+    THIN_VALUE             MANIAC                     VERY_HIGH    7.428571  2.725541  0.603280  **是**
+    全链路（§二十 方向）：CALLING_STATION + thinValueBet=VERY_HIGH vs MANIAC + thinValueBet=VERY_LOW
+      03A(=CS, thin=VERY_HIGH): ok action=CALL heroEquity=0.3693957550765856 callEV=3.3616004885995245 profileRange=applied=true mult.effective=2970/2970 warnings=0
+      03B(=MANIAC, thin=VERY_LOW): ok action=CALL heroEquity=0.7180132602858421 callEV=19.746623233434576 profileRange=applied=true mult.effective=2970/2970 warnings=0
+      §二十 要求 03B 权益 > 03A：0.7180132603 vs 0.3693957551 ⇒ 成立
+  ⇒ A7 判定: **FAIL** —— manual thinValueBet=VERY_HIGH 让 THIN_VALUE 似然 0.603280 **越过** STRONG_VALUE 0.461132；且单条因子被开平方（条目数=1 但槽位 K=2）后仍足以翻转结构序关系；§二十 权益方向在全链路仍成立
+
+================ A8 ================
+  被测声明: 画像只对**它描述的那一家**注入（contextBuilder.ts:3210）；playerId 不匹配的画像不得生效
+  期望行为: 传入 playerId="seat_BTN" 的 MANIAC 画像去分析 BB 时，范围/权益必须与「不给画像」逐位相同
+    无画像                            : ok action=CALL heroEquity=0.5625883726719894 callEV=12.4416535155835 profileRange=null warnings=0
+    playerId='seat_BTN' 的 MANIAC 画像: ok action=CALL heroEquity=0.5766449214663655 callEV=13.102311308919177 profileRange=null warnings=0
+    playerId='seat_BB'  的 MANIAC 画像: ok action=CALL heroEquity=0.5766449214663655 callEV=13.102311308919177 profileRange=null warnings=0
+  ⇒ A8 判定: **FAIL** —— playerId 不匹配的画像**照样生效**：权益 0.5766449214663655 vs 无画像 0.5625883726719894（BB 匹配时 0.5766449214663655）—— 闸门只挂在**座位**（opponent.id === villainId）上，input.behaviorProfile 被原样采信（contextBuilder.ts:3169），profile.playerId 从未被比对
+
+================ A9 ================
+  被测声明: 画像给一个**翻前就弃牌**的玩家（BTN）不得崩溃，也不得把画像套到别人身上
+  期望行为: ok 或可解释的失败；绝不抛异常
+    villain.playerId='seat_BTN'（翻前已弃牌）+ quickProfile=MANIAC: ok action=CALL heroEquity=0.5625883726719894 callEV=12.4416535155835 profileRange=null warnings=0
+  ⇒ A9 判定: **PASS** —— 未崩溃；返回了完整结果（该座位不在本手 ⇒ 无画像可注入）
+
+================ A10 ================
+  被测声明: 把画像挂在 **Hero 自己**的座位（seat_CO）上：Hero 的牌是已知的，给 Hero 套画像 ＝ 给已知手牌套行为先验
+  期望行为: 要么被忽略（画像只描述对手），要么给出可解释的失败；绝不把 Hero 当对手注入画像
+    villain.playerId='seat_CO'（= Hero）+ quickProfile=MANIAC: ok action=CALL heroEquity=0.5625883726719894 callEV=12.4416535155835 profileRange=null warnings=0
+    无画像对照: ok action=CALL heroEquity=0.5625883726719894 callEV=12.4416535155835 profileRange=null warnings=0
+    权益: 0.5625883726719894 vs 0.5625883726719894
+  ⇒ A10 判定: **PASS** —— 未崩溃、返回可解释结果
+
+================ A11 ================
+  被测声明: 3+ 对手时画像仍只对 villainId 那一家注入；其余座位回落到中立先验
+  期望行为: 逐位只影响一家；不崩溃；给出可解释的多人结果
+    3 家看翻牌（LJ/CO/BB），河牌 BB bet 10 / LJ fold，villain 默认: ok action=CALL heroEquity=0.5617456830987888 callEV=24.939654647903104 profileRange=null warnings=0
+    villain=BB  MANIAC: ok action=CALL heroEquity=0.5684718038296322 callEV=25.47774430637058 profileRange=applied=true mult.effective=2970/2970 warnings=0
+    villain=LJ  MANIAC（河牌已弃牌）: ok action=CALL heroEquity=0.5617456830987888 callEV=24.939654647903104 profileRange=null warnings=0
+  ⇒ A11 判定: **PASS** —— 多人池可分析；villain=BB 时画像生效（权益 0.5684718038 vs 默认 0.5617456831）；villain=LJ（河牌已弃牌）仍返回完整结果
+
+
+================ 用例汇总 ================
+  A1: PASS —— manual 正确覆盖（5 条全部 0.8），被动条目未被污染（callTooWide=0.72）；但 behaviorProfile.ts:441 的注释「人工画像作为伪计数先验**叠加在标签先验之上**」与实测不符（标签先验 0.15 被丢弃）
+  A2: PASS —— successes 被钳到 3，率 0.52 ∈ [0,1]，解析式 (0.28×6+3)/(6+3)=0.52
+  A3: PASS —— opportunities→0，率逐位等于池先验 0.28
+  A4: FAIL —— opportunities = NaN ⇒ effectiveRate=**NaN**，likelihood=**NaN**，heroEquity=0.6747883905405524：**非有限值穿透到生产输出**（似然层已污染）
+  A5: PASS —— opportunities = Infinity ⇒ effectiveRate=0，likelihood=0.007583611058928305，heroEquity=0.5601571058382347：全部有限
+  A6: FAIL —— successes = NaN，opportunities = 10 ⇒ effectiveRate=**NaN**，likelihood=**NaN**，heroEquity=0.6747883905405524：**非有限值穿透到生产输出**（似然层已污染）
+  A7: FAIL —— manual thinValueBet=VERY_HIGH 让 THIN_VALUE 似然 0.603280 **越过** STRONG_VALUE 0.461132；且单条因子被开平方（条目数=1 但槽位 K=2）后仍足以翻转结构序关系；§二十 权益方向在全链路仍成立
+  A8: FAIL —— playerId 不匹配的画像**照样生效**：权益 0.5766449214663655 vs 无画像 0.5625883726719894（BB 匹配时 0.5766449214663655）—— 闸门只挂在**座位**（opponent.id === villainId）上，input.behaviorProfile 被原样采信（contextBuilder.ts:3169），profile.playerId 从未被比对
+  A9: PASS —— 未崩溃；返回了完整结果（该座位不在本手 ⇒ 无画像可注入）
+  A10: PASS —— 未崩溃、返回可解释结果
+  A11: PASS —— 多人池可分析；villain=BB 时画像生效（权益 0.5684718038 vs 默认 0.5617456831）；villain=LJ（河牌已弃牌）仍返回完整结果

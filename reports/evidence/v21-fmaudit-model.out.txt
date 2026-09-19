@@ -1,0 +1,134 @@
+
+==============================================================================
+ITEM 1 零样本：observed { successes: 0, opportunities: 0 }
+==============================================================================
+opportunities=0: observedRate=null confidence=0.000000
+  priorRate=0.280000 effectiveRate=0.280000 逐位相等=true
+  noteZh=实测手牌历史：实测 —｜未知结果 0 次（**不计入分母**）｜先验 0.280（伪计数 6）⇒ 生效 0.280｜置信度 0.000
+  observed 0/0 vs 不传 observed：riverBluff effectiveRate 0.500000 vs 0.500000 逐位相等=true
+  但 source 不同：OBSERVED_HAND_HISTORY vs PROFILE_PRIOR（前者声称「实测手牌历史」，实测为 0 次）
+  似然：observed0=0.147058 无observed=0.147058 逐位相等=true
+  confidence 是否被下游读到：profileMaterialityOf 不读 confidence；此处仅记录
+  MATERIALITY_THRESHOLDS={"equityTrivial":0.005,"equityMaterial":0.02,"equityStrong":0.05,"massTrivial":0.01,"massMaterial":0.05}
+  MANUAL_READ_CONFIDENCE_CAP=0.35 MANUAL_READ_PSEUDO_COUNT=3
+
+==============================================================================
+ITEM 2 极少样本：1/1、2/2、0/1 的收缩
+==============================================================================
+1/1: observedRate=1.000000 effectiveRate=0.382857 confidence=0.142857 相对池先验几率比=1.5952×
+2/2: observedRate=1.000000 effectiveRate=0.460000 confidence=0.250000 相对池先验几率比=2.1905×
+0/1: observedRate=0.000000 effectiveRate=0.240000 confidence=0.142857 相对池先验几率比=0.8120×
+1/2: observedRate=0.500000 effectiveRate=0.335000 confidence=0.250000 相对池先验几率比=1.2954×
+0/0: observedRate=null effectiveRate=0.280000 confidence=0.000000 相对池先验几率比=1.0000×
+5/5: observedRate=1.000000 effectiveRate=0.607273 confidence=0.454545 相对池先验几率比=3.9762×
+60/100: observedRate=0.600000 effectiveRate=0.581887 confidence=0.943396 相对池先验几率比=3.5786×
+2/2 画像 × PURE_AIR 似然=0.073732（钳位=false） 相对中性=1.2987×
+  2/2 不会变成 100%：effectiveRate=0.460000 < 1
+
+==============================================================================
+ITEM 3 缺失字段：无 archetype / 空 manual / 只给一个条目 / 缺 traits 键
+==============================================================================
+无 archetype：isUnknownPlayer=true archetypePriorAvailable=false
+  priorNoteZh=无标签：行为条目只来自人工/实测（缺失的条目回落到池先验，**不是**「一律 0.5」）
+  6 条目是否全部等于池先验：riverBluff=true riverLargeBetBluff=true missedDrawBluff=true probeAfterTurnCheckBack=true thinValueBet=true callTooWide=true
+空 manual {}：逐位等于无 manual = true
+只给 observed.riverBluff：riverBluff source=OBSERVED_HAND_HISTORY，其余 5 条 source=ENVIRONMENT_PRIOR
+  priorNoteZh=无标签：行为条目只来自人工/实测（缺失的条目回落到池先验，**不是**「一律 0.5」）｜实测条目 1 条（riverBluff）
+残缺 traits（只有 riverBluff）→ 抛错：TypeError: Cannot read properties of undefined (reading 'effectiveRate')
+    MISSED_FLUSH_DRAW 也抛：Cannot read properties of undefined (reading 'effectiveRate')
+
+==============================================================================
+ITEM 4 非法数值进 statEvidenceOf
+==============================================================================
+case                          observedRate  effectiveRate  confidence  反推似然（PURE_AIR）
+基线 3/10                       0.300000      0.292500       0.6250      0.057943 (clamped=false)
+successes=NaN                 NaN           NaN            0.6250      NaN (clamped=true)
+opportunities=NaN             NaN           NaN            NaN         NaN (clamped=true)
+successes=Infinity            1.000000      0.730000       0.6250      0.108357 (clamped=false)
+opportunities=Infinity        0.000000      0.000000       NaN         0.007781 (clamped=false)
+priorWeight=Infinity          0.300000      NaN            0.0000      0.057943 (clamped=false)
+opportunities=-5              null          0.280000       0.0000      0.056773 (clamped=false)
+successes=-3                  0.000000      0.105000       0.6250      0.038077 (clamped=false)
+successes=99>opportunities=10 1.000000      0.730000       0.6250      0.108357 (clamped=false)
+priorRate=1.7                 0.300000      0.562500       0.6250      0.057943 (clamped=false)
+priorRate=-0.4                0.300000      0.187500       0.6250      0.057943 (clamped=false)
+priorRate=NaN                 0.300000      0.187500       0.6250      0.057943 (clamped=false)
+opportunities=2.5（浮点）         0.400000      0.315294       0.2941      0.060063 (clamped=false)
+opportunities=10.9（浮点）        0.275229      0.276923       0.6450      0.056484 (clamped=false)
+★ 期望：非法数值必须被拒或被钳；实际见上表（NaN 会穿透整条链）。
+priorWeight=Infinity 的 effectiveRate=NaN
+
+==============================================================================
+ITEM 5 概率边界：rate → 0 / → 1，以及是否可达
+==============================================================================
+（a）经 behaviorProfileOf 是否可达 0 或 1：
+  0/100000: effectiveRate=0.00001679899206047637 ===0?false ===1?false
+  100000/100000: effectiveRate=0.9999568025918444 ===0?false ===1?false
+  0/1: effectiveRate=0.24000000000000002 ===0?false ===1?false
+  1/1: effectiveRate=0.3828571428571429 ===0?false ===1?false
+  manual VERY_HIGH effectiveRate=0.8 VERY_LOW=0.05
+（b）注入式画像（input.behaviorProfile 不经校验）可以给出恰好 0 / 1：
+  effectiveRate=0 PURE_AIR           base=0.056773 combined=0.0029 raw=0.000164 like=0.000164 clamped=false
+  effectiveRate=0 MISSED_FLUSH_DRAW  base=0.056773 combined=0.0030 raw=0.000173 like=0.000173 clamped=false
+  effectiveRate=0 THIN_VALUE         base=0.056773 combined=1.0000 raw=0.056773 like=0.056773 clamped=false
+  effectiveRate=0 NUT_VALUE          base=0.950000 combined=1.0000 raw=0.950000 like=0.950000 clamped=false
+  effectiveRate=1 PURE_AIR           base=0.056773 combined=2881.6146 raw=163.598942 like=1.000000 clamped=true
+  effectiveRate=1 MISSED_FLUSH_DRAW  base=0.056773 combined=3033.5524 raw=172.224958 like=1.000000 clamped=true
+  effectiveRate=1 THIN_VALUE         base=0.056773 combined=1.0000 raw=0.056773 like=0.056773 clamped=false
+  effectiveRate=1 NUT_VALUE          base=0.950000 combined=1.0000 raw=0.950000 like=0.950000 clamped=false
+  effectiveRate=0.999 PURE_AIR           base=0.056773 combined=2881.6146 raw=163.598942 like=1.000000 clamped=true
+  effectiveRate=0.999 MISSED_FLUSH_DRAW  base=0.056773 combined=3033.5524 raw=172.224958 like=1.000000 clamped=true
+  effectiveRate=0.999 THIN_VALUE         base=0.056773 combined=1.0000 raw=0.056773 like=0.056773 clamped=false
+  effectiveRate=0.999 NUT_VALUE          base=0.950000 combined=1.0000 raw=0.950000 like=0.950000 clamped=false
+  effectiveRate=0.001 PURE_AIR           base=0.056773 combined=0.0029 raw=0.000164 like=0.000164 clamped=false
+  effectiveRate=0.001 MISSED_FLUSH_DRAW  base=0.056773 combined=0.0030 raw=0.000173 like=0.000173 clamped=false
+  effectiveRate=0.001 THIN_VALUE         base=0.056773 combined=1.0000 raw=0.056773 like=0.056773 clamped=false
+  effectiveRate=0.001 NUT_VALUE          base=0.950000 combined=1.0000 raw=0.950000 like=0.950000 clamped=false
+（c）rateOdds 的钳位：0 → 1e-3/0.999、1 → 0.999/1e-3（最大/最小几率比）。
+  大注诈唬条目单条几率比范围 = [0.00400×, 3996.0000×]（非 0、非 ∞ ⇒ 概率本身有界）
+
+==============================================================================
+ITEM 6 陈旧数据：StatEvidence / PlayerBehaviorProfile 是否存在时间字段
+==============================================================================
+PlayerBehaviorProfile 字段：playerId, playerName, archetype, traits, isUnknownPlayer, archetypePriorAvailable, priorNoteZh
+StatEvidence 字段：observedRate, opportunities, successes, unknownOutcomeOpportunities, priorRate, priorWeight, effectiveRate, confidence, source, noteZh
+behaviorProfileOf 入参允许的键：playerId / playerName / archetype / manual / observed（见 behaviorProfile.ts:409-417）
+★ 无任何时间戳 ⇒ 「5 年前的 30/50」与「昨天的 30/50」在本层逐位相同。
+
+==============================================================================
+ITEM 10 错误分母：把「总手数」当「该行为的机会数」会发生什么
+==============================================================================
+行为分母 12/50  ： effectiveRate=0.244286 confidence=0.8929
+总手数分母 12/1000： effectiveRate=0.013598 confidence=0.9940
+两者相对池先验的几率比： 0.8312× vs 0.0354× ⇒ 相差 23.45×
+confidence 却从 0.893 升到 0.994（错的分母看起来更可信）
+★ unknownOutcomeOpportunities 与 opportunities 之间无一致性校验：
+  1/1 + unknown 500 ⇒ opportunities=1 unknown=500（被接受）
+
+==============================================================================
+ITEM 17 极端值：似然是否越界 / 会被钳位 / 会不会 0
+==============================================================================
+MANIAC           NUT_VALUE:0.9500 STRONG_VALUE:0.4731 THIN_VALUE:0.2271 SHOWDOWN_VALUE:0.1325 MISSED_FLUSH_DRAW:0.1655 MISSED_STRAIGHT_DRAW:0.1655 MISSED_COMBO_DRAW:0.1655 PURE_AIR:0.1471   （! = 钳到 1）
+CALLING_STATION  NUT_VALUE:0.9500 STRONG_VALUE:0.4731 THIN_VALUE:0.2271 SHOWDOWN_VALUE:0.1325 MISSED_FLUSH_DRAW:0.0221 MISSED_STRAIGHT_DRAW:0.0221 MISSED_COMBO_DRAW:0.0221 PURE_AIR:0.0245   （! = 钳到 1）
+BLUFF_HEAVY      NUT_VALUE:0.9500 STRONG_VALUE:0.4731 THIN_VALUE:0.2271 SHOWDOWN_VALUE:0.1325 MISSED_FLUSH_DRAW:0.1370 MISSED_STRAIGHT_DRAW:0.1370 MISSED_COMBO_DRAW:0.1370 PURE_AIR:0.1217   （! = 钳到 1）
+UNDERBLUFFER     NUT_VALUE:0.9500 STRONG_VALUE:0.4731 THIN_VALUE:0.2271 SHOWDOWN_VALUE:0.1325 MISSED_FLUSH_DRAW:0.0221 MISSED_STRAIGHT_DRAW:0.0221 MISSED_COMBO_DRAW:0.0221 PURE_AIR:0.0209   （! = 钳到 1）
+--- 全条目极值（注入式：6 条全部 effectiveRate=0.999） ---
+  NUT_VALUE            base=0.950000 combined=1.0000 raw=0.950000 like=0.950000 clamped=false
+  STRONG_VALUE         base=0.473111 combined=1.0000 raw=0.473111 like=0.473111 clamped=false
+  THIN_VALUE           base=0.227093 combined=43.0730 raw=9.781602 like=1.000000 clamped=true
+  SHOWDOWN_VALUE       base=0.132471 combined=1.0000 raw=0.132471 like=0.132471 clamped=false
+  MISSED_FLUSH_DRAW    base=0.056773 combined=3033.5524 raw=172.224958 like=1.000000 clamped=true
+  MISSED_STRAIGHT_DRAW base=0.056773 combined=3033.5524 raw=172.224958 like=1.000000 clamped=true
+  MISSED_COMBO_DRAW    base=0.056773 combined=3033.5524 raw=172.224958 like=1.000000 clamped=true
+  PURE_AIR             base=0.056773 combined=2881.6146 raw=163.598942 like=1.000000 clamped=true
+--- 全条目 0.0001 ---
+  NUT_VALUE            base=0.950000 combined=1.000000 raw=0.950000 like=0.950000 clamped=false（>0? true）
+  STRONG_VALUE         base=0.473111 combined=1.000000 raw=0.473111 like=0.473111 clamped=false（>0? true）
+  THIN_VALUE           base=0.227093 combined=0.043116 raw=0.009791 like=0.009791 clamped=false（>0? true）
+  SHOWDOWN_VALUE       base=0.132471 combined=1.000000 raw=0.132471 like=0.132471 clamped=false（>0? true）
+  MISSED_FLUSH_DRAW    base=0.056773 combined=0.003040 raw=0.000173 like=0.000173 clamped=false（>0? true）
+  MISSED_STRAIGHT_DRAW base=0.056773 combined=0.003040 raw=0.000173 like=0.000173 clamped=false（>0? true）
+  MISSED_COMBO_DRAW    base=0.056773 combined=0.003040 raw=0.000173 like=0.000173 clamped=false（>0? true）
+  PURE_AIR             base=0.056773 combined=0.002887 raw=0.000164 like=0.000164 clamped=false（>0? true）
+--- 极小概率下 profileMaterialityOf 的判定 ---
+  画像物性 MATERIAL（EXPERIMENTAL 阈值）：权益差 0.00pp｜诈唬质量差 12.25pp｜EV 差 0.00 筹码｜范围距离 0.0000
