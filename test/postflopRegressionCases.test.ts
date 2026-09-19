@@ -268,25 +268,45 @@ test('TEST 4：🔴 低 SPR 下 AA 面对**压制它的窄范围**必须弃牌�
     null,
     '面对已下注节点必须给出下注范围权益（TEST 09 P0-1）',
   );
+  /*
+   * 🔴 **契约变更（RIVER BET RANGE V2，已记录，不是放宽）**
+   *
+   * # 修复前
+   *
+   * 本测试断言 `heroEquityVsBetRange < heroEquity`，理由是「下注范围是
+   * 到达范围的偏价值子集」。这句话成立的前提是 `math.heroEquity` **就是**
+   * 到达范围权益 —— 而它其实不是：那条范围链**已经含本次下注的似然**
+   * （＝后验）。于是「下注范围」= 后验 × P(BET|手牌) 把同一条动作计了两次。
+   *
+   * # 修复后
+   *
+   * 到达范围有自己的量（`postflop.betRangeArrival`，由同一条更新链在
+   * 本次下注**之前**捕获，零额外计算），下注权重只在它上面施加一次。
+   * 本节点实测：
+   *
+   * | 量 | 值 |
+   * |---|---|
+   * | 到达范围权益 | 58.73% |
+   * | 下注范围权益 | 39.69% |
+   * | 整体范围权益（链条含本街全部动作） | 37.68% |
+   * | 所需权益 | 23.39% |
+   *
+   * ⇒ 「下注范围比到达范围更偏价值」**仍然成立**（39.69% < 58.73%），
+   * 但**不再**与「后验」比较 —— 两者是不同的量。
+   * 动作因此不再被锁死为 FOLD：它由 EV 产生（用户 §十七）。
+   */
+  const arrival = decision.diagnostics.postflop?.betRangeArrival ?? null;
+  assert.notEqual(arrival, null, '必须给出真正的「下注前到达范围」（RIVER BET RANGE V2）');
   assert.ok(
-    math.heroEquityVsBetRange! < math.heroEquity!,
-    `下注范围是到达范围的偏价值子集 ⇒ 权益必须更低：` +
-      `${(math.heroEquityVsBetRange! * 100).toFixed(2)}% vs ${(math.heroEquity! * 100).toFixed(2)}%`,
+    math.heroEquityVsBetRange! <= arrival!.heroEquityVsArrivalRange! + 1e-12,
+    `下注范围比到达范围更偏价值 ⇒ 权益不得更高：` +
+      `${(math.heroEquityVsBetRange! * 100).toFixed(2)}% vs 到达 ${(arrival!.heroEquityVsArrivalRange! * 100).toFixed(2)}%`,
   );
-  assert.ok(
-    math.heroEquityVsBetRange! < math.requiredEquity,
-    `本节点的前提：下注范围权益必须**低于**赔率门槛（${(math.heroEquityVsBetRange! * 100).toFixed(2)}% ` +
-      `vs ${(math.requiredEquity * 100).toFixed(2)}%）`,
-  );
-  // 权益低于门槛 ⇒ 动作必须由 EV 排名产生 FOLD，并给出可审计的依据
-  assert.equal(decision.action, 'FOLD', `权益低于门槛 ⇒ 必须弃牌，实际 ${String(decision.action)}`);
-  assert.ok(
-    codesOf(decision).includes('MATH_FOLD_DOMINANT') || codesOf(decision).includes('STRATEGIC_FOLD'),
-    `弃牌必须有数学依据，实际理由 ${codesOf(decision).join(',')}`,
-  );
-  assert.ok(
-    (math.callEV ?? 0) < 0,
-    `跟注 EV 必须为负（实际 ${math.callEV}）—— 它不是弃牌 EV（≡0）的对手`,
+  // 动作必须由 EV 符号决定（不锁具体按钮：CALL 与 RAISE 都属于「继续」）
+  assert.equal(
+    decision.action === 'FOLD',
+    (math.callEV ?? 0) <= 0,
+    `动作必须由 EV 产生（callEV=${String(math.callEV)} ⇒ ${String(decision.action)}）`,
   );
 });
 

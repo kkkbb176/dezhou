@@ -3,9 +3,11 @@
  *
  * ## 这个模块在端到端链中解决什么
  *
- * 定义「决策」这件事的**完整词汇表**：动作、分类、理由、诊断、上下文。
+ * 定义「决策」这件事的
+*完整词汇行
+*：动作、分类、理由、诊断、上下文。
  *
- * ## 分层纪律（第一原则的可执行版本）
+ * ## 分层纪律（第一原则的可执行版本（
  *
  * ```
  * 合法状态 > 数学真值 > Range > Player Profile > Environment > Dynamic > Decision
@@ -34,6 +36,7 @@ import type { OpponentRangeFacts } from '../postflop/types.ts';
 import type { QuickProfile } from '../../app/manualInput/manualInput.ts';
 import type { PreflopIsoFacts } from '../../app/manualInput/limpIsolation.ts';
 import type { MultiwayBetFacts } from '../../domain/postflop/betResponse.ts';
+import type { RaiseResponseModelFacts } from '../../app/manualInput/raiseResponse.ts';
 
 /* ============================================================
  * 动作
@@ -231,7 +234,100 @@ export type PostflopFacts = {
   /** 与 `opponentRangeFacts` 同名的量，但取自**下注范围** */
   heroEquityVsBetRange?: number | null;
   /**
-   * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
+   * 🔴 **U1：面对加注的响应 + 加注 EV**（`reports/UNCERTAINTY_REGISTER.md`）。
+   *
+   * 不 `bettingRangeFacts` 并列但回答
+*另一个
+*条件概率，
+   * 「他下注了，他会跟我的加注吗」。`null` = 不可得（不是 0）。
+   */
+  raiseResponse?: {
+    readonly sizeChips: number;
+    readonly sizeBB: number;
+    readonly raiseIncrement: number;
+    /** 🔴 U1 P0：资金口径契约（规 `RaiseResponseModelFacts.cashflowContract`（
+*/
+    readonly cashflowContract: string;
+    readonly currentPot: number;
+    readonly heroStreetCommitted: number;
+    readonly villainStreetCommitted: number;
+    readonly heroAdd: number;
+    readonly villainAdd: number;
+    /** 对手**本来需要
+*补的筹码（未封顶）；`villainAdd < villainAddRaw` ⇒ 他跟平即全下 */
+    readonly villainAddRaw: number;
+    /** 🔴 P1-2a：他跟平即投入 ⇒ 不会再有再加注分支（不 `heroIsAllIn` 是两个独立判据） */
+    readonly villainIsAllInByCall: boolean;
+    /* 🔴 P1-2b：被再加注分支（Hero 的 FOLD / CALL 两选一，零点 = 首次加注前） */
+    readonly reraiseBranchEV: number;
+    readonly reraiseBranchKind: 'FOLD' | 'CALL' | 'LOWER_BOUND_NOT_IMPLEMENTED';
+    readonly reraiseFoldBranchEV: number;
+    readonly reraiseCallBranchEV: number | null;
+    readonly heroEquityVsReraiseRange: number | null;
+    readonly reraiseBranchUnsupportedZh: string | null;
+    readonly reRaiseTo?: number;
+    readonly reRaiseMinLegalTo?: number;
+    readonly villainReRaiseIsAllIn?: boolean;
+    readonly heroAdditionalCallVsReRaise?: number;
+    readonly finalPotAfterCallVsReRaise?: number;
+    readonly reRaiseCombos?: number;
+    readonly heroFourBetSupported?: boolean | null;
+    readonly heroContestedAdd: number;
+    readonly finalPot: number;
+    readonly uncalledReturn: number;
+    readonly foldLikelihood: number;
+    readonly callLikelihood: number;
+    readonly reRaiseLikelihood: number;
+    readonly heroEquityVsRaiseCallRange: number | null;
+    readonly equityMethod: string;
+    readonly equityIterations: number;
+    readonly raiseEV: number | null;
+    readonly evKind: string;
+    readonly reachableCombos: number;
+    readonly callCombos: number;
+    readonly assumptionsZh: readonly string[];
+    readonly model: RaiseResponseModelFacts;
+    readonly noteZh: string;
+  } | null;
+  /**
+   * 🔴 **RIVER BET RANGE V2：真正的「河牌下注前到达范围」
+*。
+   *
+   * ## 为什么必须单制
+   *
+   * `opponentRangeFacts` 取自 `primaryBuild.range` —— 那份范围**已经包含
+   * 当前这一次下注的似然**（`applyLikelihoodUpdates` 对本街最后一个进攻动作
+   * 同样施加似然）。因此它**不是**到达范围，把它当到达范围去乘件
+   * `P(BET|手牌)` 就是**同一条动作计两次费
+*。
+   *
+   * 本字段承转
+*同一条范围更新链在「当前下注之前」的状态
+*：
+   *
+   * | 重 | 回答 |
+   * |---|---|
+   * | `betRangeArrival.heroEquityVsArrivalRange` | 他
+*到达**时我领先多少 |
+   * | `heroEquityVsBetRange` | 他
+*选择下注**时我领先多少（CALL EV 用它） |
+   *
+   * 可证伪性：**只改当前下注的尺寸，本字段必须逐位不变**（它不知道尺寸）。
+   * `null` = 不是「他在下注」的节点。
+   */
+  betRangeArrival?: {
+    readonly heroEquityVsArrivalRange: number | null;
+    readonly supportCount: number;
+    readonly arrivalMass: number | null;
+    /** 到达范围的公共强度带质量（与下注范围同一把尺子） */
+    readonly bandMasses: Readonly<Record<string, number>> | null;
+    /** 被排除出到达范围的那一条动作（中文说明；`null` = 未定位） */
+    readonly excludedActionZh: string | null;
+    readonly noteZh: string;
+  } | null;
+  /**
+   * 🔴 **下注决策事实化
+*（BET DECISION ENGINE PHASE 1）。
    *
    * 含：每个下注尺寸的 fold / call / raise 概率 + 三个条件范围
    * （组合集不变、权重重新归一化）+ 对跟注/加注范围的权益 +
@@ -246,10 +342,30 @@ export type PostflopFacts = {
 /** `bettingRangeFacts` 的可序列化快照（与 `bettingRange.ts` 同形，此处避免循环依赖） */
 export type BettingRangeFactsSnapshot = {
   readonly classMasses: Readonly<Record<string, number>>;
+  /**
+   * 🔴 **公共强度带质量
+*（RIVER BET RANGE V2）——
+   * 不 `classMasses`（相对 Hero）
+*仅供解释**）不同，这一组是**公共信息**口径）
+   * 它才是权重实际依据的那把尺子，因此到达 vs 下注的对比必须用它。
+   */
+  readonly bandMasses?: {
+    readonly arrival: Readonly<Record<string, number>>;
+  readonly bet: Readonly<Record<string, number>>;
+  };
+  /** 每个公共强度带的 `P(BET | band)`（审计用）
+*/
+  readonly bandRates?: Readonly<Record<string, number>>;
+  /** 权重模型的身份与不确定性（结构性先验，未校准） */
+  readonly model?: Readonly<Record<string, unknown>>;
   readonly arrivalMass: number;
   readonly betMass: number;
   readonly betShareOfArrival: number;
   readonly entryCount: number;
+  /** 等效组合数（软权重下 `entryCount` 恒等于到达支持集，宽度看这一个） */
+  readonly effectiveComboCount?: number | null;
+  /** 承载 90% 下注质量所需的最少组合数 */
+  readonly posteriorMassCombos90?: number | null;
   readonly noteZh: string;
 };
 
@@ -371,7 +487,26 @@ export type PostflopDecisionSnapshot = {
    */
   betDecision: Readonly<Record<string, unknown>> | null;
   /**
-   * 可达范围的**组合数**（占比的分母）。没有范围数据时为 null。
+   * 🔴 **RIVER BET RANGE V2**：真正的「当前下注之前到达范围」快照。
+   *
+   * 不 `context.postflopFacts.betRangeArrival` **同源**（只做取值搬运，
+   * 不做二次计算 —— 否则界面显示的就不再是参与判断的那份数据）。
+   * `null` = 不是「他在下注」的节点。
+   */
+  betRangeArrival?: {
+    readonly heroEquityVsArrivalRange: number | null;
+    readonly supportCount: number;
+    readonly bandMasses: Readonly<Record<string, number>> | null;
+    readonly excludedActionZh: string | null;
+    readonly noteZh: string;
+  } | null;
+  /** 下注范围（BET RANGE）的类别/牌型质量与权重模型（同源搬运）
+*/
+  bettingRangeFacts?: BettingRangeFactsSnapshot | null;
+  /**
+   * 可达范围的
+*组合数
+*（占比的分母）。没有范围数据时不 null。
    * 使用者 §14：是概率就必须给分母。
    */
   reachableComboCount: number | null;
@@ -801,9 +936,10 @@ export type DecisionMarginFacts = {
 /**
  * 决策上下文 —— `buildDecisionContext()` 的产物。
  *
- * ## 本结构**刻意**不含的东西（规范第 20 节）
+ * ## 本结果
+*刻意**不含的东西（规范第 20 节）
  *
- * - 对手底牌（`villainHoleCards`）
+ * - 对手底牌（`villainHoleCards`（
  * - 结果（`result` / `winner` / `heroProfit`）
  * - 摊牌结果（`showdownOutcome`）
  *
@@ -988,6 +1124,24 @@ export type DecisionContext = {
      */
     deniedStreetTraits?: readonly string[];
     dimensions: Readonly<Record<string, number>>;
+    /**
+     * 🔴 **P0-B**：三个维度字段必须分清（`dimensions` 语义未变 = 只有实测）。
+     *
+     * | 字段 | 含义 |
+     * |---|---|
+     * | `dimensions` | ① 只有实测说话（无实测 ⇒ 精确 0.5）—— 既有字段 |
+     * | `observedDimensions` | ① 的显式别名 |
+     * | `resolvedDimensions` | ① 标签 prior ⊕ 实测**融合**（响应层消费的就是它） |
+     * | `baseDimensions` | 融合基准 = 标签维度（无标签 ⇒ 先 0.5） |
+     */
+    observedDimensions?: Readonly<Record<string, number>>;
+    resolvedDimensions?: Readonly<Record<string, number>>;
+    baseDimensions?: Readonly<Record<string, number>>;
+    /** 逐轴证据质量（`Σ |极性| × 原始机会数`）；0 ⇒ 该轴保留标签，绝不重置成 0.5 */
+    evidenceMass?: Readonly<Record<string, number>>;
+    /** 逐轴融合权重 `w = mass/(mass+K_PROFILE_LABEL)`（无标签 ⇒ 1，无证据 ⇒ 0）
+*/
+    blendWeight?: Readonly<Record<string, number>>;
     street: Readonly<Record<string, Readonly<Record<string, number>>>>;
     trace: readonly Readonly<Record<string, unknown>>[];
     issues: readonly Readonly<Record<string, unknown>>[];
@@ -1103,7 +1257,128 @@ export type DecisionDiagnostics = {
   decisionSource?: Readonly<Record<string, unknown>> | null;
   /** 各动作的证据类型 / EV / 边际 / 假设 / 升级条件 */
   actionEvidence?: readonly Readonly<Record<string, unknown>>[];
-  /** 主推荐动作 */
+  /**
+   * 🔴 **RIVER RAISE DECISION V2 · 动作形态
+*（§四：普通加注 / 加注到全下 / 直接全下）。
+   *
+   * `sizeChips` 是
+**raise-to** 口径，所以」 74」既可能是「加注到 174。
+   * 也可能是「把 87BB 全部推入」—— 两者在证据权限不
+*完全不同**（
+   * 必须由本字段显式区分，而不是让调用方按底池比例猜。
+   */
+  actionShape?: {
+    readonly kind: 'FOLD' | 'CALL' | 'CHECK' | 'BET' | 'NORMAL_RAISE' | 'RAISE_TO_ALL_IN' | 'DIRECT_ALL_IN' | 'NONE';
+    readonly sizeChips: number | null;
+    readonly allInToAmount: number;
+    /** 这次动作是否把剩余筹码全部投入（全下）
+*/
+    readonly consumesStack: boolean;
+  readonly noteZh: string;
+};
+
+/**
+ * 🔴 **RIVER RAISE DECISION V2 · 全下保护判定**（§四）。
+   *
+   * 「一对牌 + 打光筹码 + 没有自己的 EV」必须被拦下 —— 本字段如实记录
+   * 该保护
+*是否命中**以及命中的依据（牌力类别 / 是否全下 / 是否有自己的 EV）。
+   */
+  allInGuard?: {
+    readonly handCategory: number;
+    readonly minCategoryForLargeRaise: number;
+    readonly consumesStack: boolean;
+    readonly hasOwnEV: boolean;
+    /**
+     * 🔴 **U1 披露一致性
+*：真正有自有可比 EV 的加注尺寸（raise-to 口径）。
+     *
+     * 存在的理由：加注候选的 `ev` 字段恒为 null（加注 EV 挂在证据表上），
+     * 所以「没有 EV 模型」
+*不能**用 `candidate.ev === null` 判断「
+     * 没有这个字段时产品会自相矛盾：动作靠 RAISE EV 选出（ 9 暗三重节点
+     * RAISE 174 ⇒ MODEL_EV +140.01），同一份诊断却把 174 列进
+     * `unevaluatedActions` 的 `RAISE_EV_NOT_IMPLEMENTED`、
+     */
+    readonly raiseSizesWithOwnEV?: readonly number[];
+    readonly raiseToPotRatio: number | null;
+    /** 命中「一对牌全下且无自有 EV」⇒ 该加注被拒
+*/
+    readonly onePairAllInBlocked: boolean;
+    /** 命中旧的底池比例档保护
+*/
+    readonly largeRaiseBlocked: boolean;
+    /** 🔴 §五：放行条款逐条可审计 —— 牌力角色强度 */
+    readonly roleStrength?: number | null;
+    readonly spr?: number | null;
+    readonly stackOffAllowed?: boolean | null;
+    /** 承诺例外是否成立 */
+    readonly commitmentException?: boolean;
+    /** **实际触发的
+*承诺条款（`null` = 没有条款触发 / 河牌上整条通道关闭（
+*/
+    readonly commitmentClause?: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null;
+    /** 启发式加注用来覆盖清晰 CALL 的论证类型（`null` = 没有论证：
+*/
+    readonly overrideJustificationKind?: string | null;
+  readonly noteZh: string;
+};
+
+/**
+ * 🔴 **RIVER RAISE DECISION V2 · 尚未评估的合法动作
+*（§三）。
+   *
+   * 「如果系统需要给出唯一最终动作，应在**可评估
+*候选动作之间裁决，
+   * 并显示尚有未评估的合法动作。不要把当前选择声称为所有合法动作中的最优解。「
+   */
+  unevaluatedActions?: readonly {
+    readonly action: string;
+    readonly sizeChips: number | null;
+    readonly ev: null;
+    readonly reasonCode: string;
+    readonly reasonZh: string;
+  }[];
+  /**
+   * 🔴 **RIVER RAISE DECISION V2 · 条件权益清单**（§六）。
+   *
+   * 三个（四个）条件范围必须**显式**区分，缺失的必须标注 `NOT_IMPLEMENTED`（
+   * 不允许用别的条件权益静默顶替。
+   */
+  conditionalEquities?: {
+    readonly arrivalRange: number | null;
+    readonly betRange: number | null;
+    readonly wholeRange: number | null;
+    /**
+     * 🔴 **面对加注的继续范围权益
+*（U1 实现后为数值）。
+     * 仍然可能不可得（没有加注候选 / 权益算不出来）⇒ 那时不 `'NOT_IMPLEMENTED'`、
+     */
+    readonly raiseContinueRange: number | 'NOT_IMPLEMENTED';
+    /** 加注门槛实际读取的是哪一个
+*/
+    readonly usedByRaiseThreshold: 'EqVsBetRange' | 'FALLBACK_WHOLE_RANGE' | null;
+  readonly noteZh: string;
+};
+
+/**
+ * 🔴 **U1：面对加注的响应 + 加注 EV**（`reports/UNCERTAINTY_REGISTER.md`）。
+   *
+   * 公共信息口径（不证 Hero 底牌）的结构性先验；`raiseEV` 的再加注分支明
+*下界**。
+   * `null` = 本节点不可得（不是「EV = 0」）。
+   */
+  /**
+   * 🔴 诊断与事实包**同源透传**：这里暴露的就是 \PostflopFacts['raiseResponse']\ 本身。
+   *
+   * 修复说明（2026-09-19 恢复轮）：本声明原先手抄了一份成员表，在 P1-2b 增加
+   * \eraiseBranch*\ / \eRaise*\ / \heroFourBetSupported\ 之后**未同步**，
+   * 导致 \contextBuilder\ 的透传赋值无法通过类型检查。改为直接引用同一形状，
+   * 从结构上保证两者不会再漂移（不新增任何字段，字段定义仍在上面那一处）。
+   */
+  raiseResponse?: PostflopFacts['raiseResponse'];
+  /** 主推荐动作
+*/
   primaryAction?: string | null;
   /** 备选动作（**不是**最终动作；保留混合策略信息） */
   alternativeActions?: readonly Readonly<Record<string, unknown>>[];
@@ -1212,7 +1487,8 @@ export type DegradationEntry = {
 /**
  * Alpha 决策结果。
  *
- * `action` 与 `legalActions` 的**关系**由测试锁定：
+ * `action` 与 `legalActions` 的
+*关系**由测试锁定：
  * 输出的动作必须属于合法动作集合。这是规范第 22 节的落地。
  */
 export type AlphaDecision = {
@@ -1420,10 +1696,40 @@ export const DYNAMIC_FLIP_MIN_CONFIDENCE = 0.5;
  *   - V3 只通过**既有**通道生效：`ResponseTendencies` 新增三个**可选**分街系数
  *     （`streetFoldScale` / `streetCallScale` / `streetCheckRaiseScale`），
  *     缺省**恒为精确的 1** ⇒ 无连续统计时下游**逐位不变**（有 P1/P1b 锁定）。
+ *
+ * - `1.0.6` →
+**`1.0.7`**（PLAYER PROFILE V3 RESOLVER 定向修复）：
+ *   - `profileV3` 快照新增**可选
+*诊断字段 `observedDimensions` /
+ *     `resolvedDimensions` / `baseDimensions` / `evidenceMass` / `blendWeight`、
+ *     既有字段 `dimensions` 语义**未变**（仍然只有实测说话、无实测 ⇒ 精确 0.5）。
+ *   - 🔴 **不 1.0.6 不同：这次真的改了判定
+*（不是纯诊断字段）。
+ *     响应层消费的维度由。
+*只有实测**」改为「
+*标签 prior ⊕ 实测**」的融合值
+ *     （`contextBuilder` 注入的 `v3Dimensions`）。带 `observedStats` 的手牌，
+ *     全 Fold/Call/Raise 概率、EqVsCall、BetEV 与最终建议
+*都可能变化
+*。
+ *   - 实测（TEST 12 真跟注站 1500 手）：tightness 0.5377 →
+**0.3101**。
+ *     passivity 0.4700 →
+**0.7594**、bluffTendency 0.5000 →
+**0.3500**（保留标签）。
+ *   - 🔴 **明确未改动的部分（全部冻结）**：全部数学层、全部判定阈值。
+ *     `MATERIALITY_THRESHOLDS`、以及
+*分街直接统计通道**
+ *     （`streetFactorOf` 与 `calibratedBetScaleOf` 的输入仍是 observed-only 维度）。
+ *   - 无 `observedStats` 时行为
+*逐位不变**：融合权重为 0 ⇒ 融合维度 = 标签维度（
+ *     不 `v3Dimensions` 仍
+*只在** `observedStatCount > 0` 时注入（P1 / P1b 锁定）。
  */
-export const ALPHA_DECISION_MODEL_VERSION = '1.0.6';
+export const ALPHA_DECISION_MODEL_VERSION = '1.0.7';
 /**
- * 决策**上下文**（`DecisionContext` / `MathSnapshot`）的形状与语义版本。
+ * 决策**上下文
+*（`DecisionContext` / `MathSnapshot`）的形状与语义版本。
  *
  * 变更记录：
  * - `1.0.0` — 首版。

@@ -105,8 +105,37 @@ Environment 策略 / Decision 策略 / Confidence —— **全部冻结未改**�
 
 ---
 
-## 2. 项目定位（已锁死）
+## 1.2 最近一轮：PLAYER PROFILE V3 RESOLVER 定向修复（**不是新 Phase**）
 
+> 判定：`PROFILE_RESOLVER_V3_FIX — PASS_WITH_WARNINGS`
+> 回归锁：`test/profileResolverV3Fix.test.ts`（26 项：TEST VECTOR A–J + MURPHY 1–10 + 算术锁）
+
+TEST 12 证明 resolver 的**维度映射**与扑克语义冲突：1500 手教科书级跟注站
+（VPIP 52 / PFR 9 / WTSD 43 / FoldRiver 14）被解析成
+`tightness 0.5377 / aggression 0.2277 / passivity 0.4700 / bluffTendency 0.5000`
+—— 「比中性略紧、比中性略不被动」。三个根因逐条修复：
+
+| # | 根因 | 修复 |
+|---|---|---|
+| P0-A | 所有统计共用 `center(rate) = (rate − 0.5) × 2` ⇒ 松的方向几乎不可见、WTSD 43% 反而把 passivity 往下推 | 逐统计 `neutralAnchor` + `scale`（VPIP 0.28/0.18、PFR 0.20/0.15、WTSD 0.27/0.15、FoldTo*CBet 0.45/0.22 等），归一化为 `(rate − anchor) / scale` |
+| P0-B | 有实测时 resolved 维度**覆盖**标签维度（同一份实测 + CS/NIT 标签逐位相同） | `resolved = (1−w)·base + w·observed`，`w = evidenceMass/(evidenceMass + K_PROFILE_LABEL)`，`K_PROFILE_LABEL = 500` 次机会 |
+| P0-C | `bluffTendency` 无观测通道 ⇒ 有实测时恒 0.5 | 无证据的轴**逐位保留标签**（`evidenceMass = 0 ⇒ resolved = base`） |
+
+字段语义（**必须分清**）：`dimensions` = 只有实测说话（旧字段，语义未变）；
+`observedOnlyDimensions` = 同上的显式别名；`resolvedDimensions` = **下游消费的融合值**；
+`baseDimensions` / `evidenceMass` / `blendWeight` 供审计。
+
+`ALPHA_DECISION_MODEL_VERSION` **1.0.6 → 1.0.7**（这次真的改判定，不是纯诊断字段）。
+清单补登记：`src/domain/player/observedStats.ts` 此前**未**被 hash 绑定
+（本轮核对：清单实际 154 个产物，而本节此前写 152 —— **文档数字已陈旧**；
+补登记 1 个 → **155**）。
+
+⚠️ **未修（有意保留，已登记）**：`OBSERVED_STATS_TO_RANGE = FUTURE_WORK` ——
+实测统计仍不进入**到达范围**（范围先验按标签选档），本轮只修维度与响应层。
+
+---
+
+## 2. 项目定位（已锁死）
 | 项 | 内容 |
 |---|---|
 | 使用者 | **仅供内部个人使用** |
@@ -389,9 +418,9 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 117 个文件 / 58554 行（含新增 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
 | 测试代码 | **84 个文件 / 44116 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,847 项 / 137 套件 / 90 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**） |
+| 测试 | **1,968 项 / 137 套件 / 100 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
-| 产物 hash 绑定 | **152 个产物 / 6 类** |，已接入 `npm run verify` |
+| 产物 hash 绑定 | **158 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**，数字以生成器输出为准） |
 | Git 状态（V2.1 审计后） | ⚠️ **不是干净基线**：`HEAD = c3391ef`，**26 个已修改**（其中 5 个是本轮修的缺陷）+ 大量未跟踪文件（既有工作一律保留）。可复现清单与逐个 sha256 见 `reports/evidence/v21-repro-state.txt` |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
@@ -1611,3 +1640,16 @@ Internal Alpha                   ← 19/20 项门槛已满足
 > `STEP_REPORTS.md` / `TEST_MATRIX.md`，没有人回头更新架构文档的状态列。
 > 本文件（`CURRENT_PROJECT_STATUS.md`）从此承担该职责，
 > 并由 `test/projectStatus.test.ts` 强制与代码保持一致。
+
+
+---
+
+## 编码事故恢复记录（2026-09-19 11:33:25）
+
+- **事故**：2026-09-19 16:56 一次 PowerShell 就地文本替换（CP936 控制台 + 无 BOM UTF-8）损坏 `src/app/decision/decisionEngine.ts` 与 `src/domain/decision/decision.types.ts`（乱码 + 吞换行，955 个语法错误）。
+- **恢复方式**：在独立目录把损坏文件**逆向解码**（CP936 编码 → UTF-8 解码），以 github main `a914f9c` 为骨架逐字节拼接未改动区域，再按证据补全缺口；未从零重写。
+- **恢复完成时间**：2026-09-19 11:33:25；**Git HEAD 仍为 `a914f9c`**（本轮不做任何 git 写操作）。
+- **验证结果**：类型检查 **0 错误**；全量测试 **1,968 项执行 / 1,968 通过 / 0 失败 / 0 跳过**；产物清单 **158/158 一致**。
+- **已恢复功能**：U1 加注 EV 与 P0 资金口径、P1-2a/P1-4 合法再加注分支、BET SIZE CONSISTENCY、P1-2b 再加注分支与 Hero FOLD/CALL、RIVER BET RANGE V2 到达范围、RIVER RAISE DECISION V2 披露层、画像与诊断透传。生产入口逐位复现 P0-7：`P(弃)=0.05296693816568434｜P(跟)=0.9470330618343152｜rr=0｜RAISE EV=33.315808978687605`（详见 reports/evidence）。
+- **仍存在的缺口**：6 处**非确定性中文说明文字**缺口（无法逐字定字，已以「—」占位并登记为 UNKNOWN；不含任何原因码/字段名/比较用字符串，经全量测试证明不影响行为）。
+- **尚未完成的模型校准问题**（事故前即存在，本次未改）：P1-1 画像统计未被决策消费、P1-3 标签维度与融合维度差异、P2-1 单一启发式尺寸、P2-2/P2-3 诊断计数与伪计数不一致、U9 sawtooth、D1 到达范围口径、D5 决策日志未记录响应模型版本。

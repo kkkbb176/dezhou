@@ -153,6 +153,15 @@ export function legalizeBetSizes(input: {
 
   for (const spec of specs) {
     const requestedAmount = pot * spec.ratioToPot;
+    /*
+     * ⚠️ **合法下注额保留小数**（既有契约，`test/betDecisionEngine.test.ts` 的 P0-1/P0-1b 明写：
+     * 「底池 29 ⇒ 三个尺寸必须是 9.667 / 19.333 / 29」）。
+     *
+     * 我一度在这里加 `Math.round` 去修「被评估金额 vs 被推荐金额」的不一致 ——
+     * 那会破坏这条已验证的比例契约（尺寸必须严格按底池比例），因此**回退**。
+     * 一致性改由**决策层**保证：把「被评估的那个金额」补进候选
+     *（见 `decisionEngine` 的 `candidatesForDecision`），推荐金额随之等于被评估金额。
+     */
     const legalAmount = Math.max(0, Math.min(requestedAmount, maxBet));
     const isAllIn = legalAmount >= heroRemaining - 1e-9 && heroRemaining > 0;
     const base: LegalBetSize = {
@@ -670,6 +679,18 @@ export type ResponseInput = {
    */
   heroIsAllIn: boolean;
   /**
+   * 🔴 **P1-4：对手「跟注即全下」**（他的剩余筹码 ≤ 本次下注额）。
+   *
+   * 与 `heroIsAllIn` 是**两个独立判据**：
+   * | 判据 | 含义 | 为什么他不能加注 |
+   * |---|---|---|
+   * | `heroIsAllIn` | 我把筹码投光 | 没人能再跟 ⇒ 加注无意义 |
+   * | `villainIsAllInByCall` | 他跟这一注就投光 | 他跟注即 allIn，下注轮结束 ⇒ 引擎拒绝他的加注 |
+   *
+   * 生产路径由 `buildResponseModel` 用**实际剩余筹码**算出并传入（见 `villainRemaining`）。
+   */
+  villainIsAllInByCall: boolean;
+  /**
    * 该组合**自己**的听牌等级（用于可玩性/隐含赔率与诈唬加注判定）。
    * 由调用方预计算（每个组合只算一次，三个尺寸共用）。
    */
@@ -828,13 +849,18 @@ export function classifyResponse(input: ResponseInput): ResponseClassification {
      * 原本会加注的权重**迁移到跟注**（`call = 1 − fold`），
      * 因此 `P(弃) + P(跟) = 1` 且强牌不会从条件范围里消失。
      * 这不是「UI 显示 0」—— 它改变了条件范围的构造（有测试锁）。
+     *
+     * 🔴 **P1-4：他跟这一注就投光时同样不能加注**（判据是**他的**筹码）：
+     * 他跟注即 allIn、下注轮结束，引擎会拒绝他的任何加注
+     *（与 U1 加注响应链同一条规则，`villainIsAllInByCall` 与 `heroIsAllIn` **不得合并**）。
      */
     const rawRaiseShare = valueRaise
       ? Math.max(0, Math.min(1, 0.45 + 0.35 * excess + 0.25 * (t.raiseScale - 1) - 0.2 * sizePressure))
       : bluffRaise
         ? Math.max(0, Math.min(1, 0.25 + 0.5 * (t.bluffRaiseScale - 1) - 0.3 * sizePressure))
         : 0;
-    const raiseShare = input.heroIsAllIn ? 0 : rawRaiseShare;
+    const cannotRaise = input.heroIsAllIn || input.villainIsAllInByCall;
+    const raiseShare = cannotRaise ? 0 : rawRaiseShare;
 
     // 混频：继续的那一部分里再按 `raiseShare` 分成跟注与加注
     weights = {
@@ -856,6 +882,11 @@ export function classifyResponse(input: ResponseInput): ResponseClassification {
     } else if (input.heroIsAllIn && rawRaiseShare > 0) {
       reasons.push(
         `Hero 已全下 ⇒ 不能加注：原本 ${rawRaiseShare.toFixed(3)} 的加注权重**迁移到跟注**（弃+跟 = 1）`,
+      );
+    } else if (input.villainIsAllInByCall && rawRaiseShare > 0) {
+      reasons.push(
+        `他跟这一注就**全下**（剩余筹码 ≤ 下注额）⇒ 他不能再加注：` +
+          `原本 ${rawRaiseShare.toFixed(3)} 的加注权重**迁移到跟注**（弃+跟 = 1）`,
       );
     } else {
       reasons.push(`继续指数 ${continueIndex.toFixed(3)} ≥ 价格门槛 ${requiredWithMargin.toFixed(3)} ⇒ 跟注`);
@@ -969,6 +1000,14 @@ export type SizeResponse = {
   rawFoldLikelihood: number;
   rawCallLikelihood: number;
   rawRaiseLikelihood: number;
+  /**
+   * 🔴 **P1-4**：他跟这一注就**全下**（`betAmount ≥ 他的剩余筹码`）。
+   *
+   * 真 ⇒ 他跟注即 allIn、下注轮结束 ⇒ 该尺寸下**不可能**有加注分支
+   *（`raiseLikelihood` 必为 0，原本会加注的权重迁移到跟注）。
+   * 与 `heroIsAllIn` 是**两个独立判据**，不得合并。
+   */
+  villainIsAllInByCall: boolean;
   /** 三桶质量（Σp，已含混频权重；三者之和 = 1） */
   buckets: readonly ResponseBucketRange[];
   /** 分类逐组合的证据等级 */
@@ -1010,6 +1049,11 @@ export function buildResponseModel(input: {
   sizes: readonly LegalBetSize[];
   /** Hero 剩余筹码（用于判定全下：`betAmount ≥ heroRemaining ⇒ 不能加注`） */
   heroRemaining?: number;
+  /**
+   * 🔴 **P1-4：对手剩余筹码**（用于判定「他跟这一注就全下 ⇒ 他不能再加注」）。
+   * 与 `heroRemaining` 分开传入，**不得**用同一个字段代替。
+   */
+  villainRemaining?: number;
 }): ResponseModel | null {
   if (input.board.length < 3 || input.heroHole.length !== 2) return null;
 
@@ -1078,6 +1122,15 @@ export function buildResponseModel(input: {
     const betAmount = Math.max(0, spec.legalAmount);
     const ratioToPot = input.pot > 0 ? betAmount / input.pot : 0;
     const heroIsAllIn = input.heroRemaining !== undefined && betAmount >= input.heroRemaining - 1e-9;
+    /*
+     * 🔴 **P1-4：他跟这一注就投光**（`betAmount ≥ 他的剩余筹码`）⇒ 他不能再加注。
+     * 判据只用**实际筹码**（`villainRemaining` 由调用方从合法动作推导处传入），
+     * 与 `heroIsAllIn` 分开计算，**不合并**。
+     */
+    const villainIsAllInByCall =
+      input.villainRemaining !== undefined &&
+      input.villainRemaining > 0 &&
+      betAmount >= input.villainRemaining - 1e-9;
     const priceRequiredEquity =
       input.pot + 2 * betAmount > 0 ? betAmount / (input.pot + 2 * betAmount) : 0;
 
@@ -1101,6 +1154,7 @@ export function buildResponseModel(input: {
         tendencies: input.tendencies,
         villainDraw: combo.villainDraw,
         heroIsAllIn,
+        villainIsAllInByCall,
       });
       /*
        * **混频**（§8）：同一个组合按权重同时进入多个桶。
@@ -1142,6 +1196,8 @@ export function buildResponseModel(input: {
         wasCapped: spec.wasCapped,
         requestedKind: spec.requestedKind,
         heroIsAllIn,
+        /** 🔴 P1-4：他跟这一注就投光 ⇒ 该尺寸下不可能有加注分支 */
+        villainIsAllInByCall,
         foldLikelihood: foldMass / totalMass,
         callLikelihood: callMass / totalMass,
         raiseLikelihood: raiseMass / totalMass,

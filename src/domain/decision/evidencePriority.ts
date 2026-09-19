@@ -35,6 +35,28 @@
  * 3. **MARGINAL 时允许启发式打断**（`HEURISTIC_TIEBREAK`），
  *    但必须如实标注来源，不得伪装成 EV 优胜。
  *
+ * ## 🔴 RIVER RAISE DECISION V2（2026-09）：规则 1 的例外被收窄
+ *
+ * 修复前规则 1 有一个例外口子：只要启发式动作带 `overrideJustification`，
+ * 它就能覆盖**清晰**的量化赢家。对赌审计实测（AK 面对河牌下注）：
+ *
+ * ```text
+ * CALL : PROXY_EV +19.70，容差带 ±6.65 ⇒ CLEAR_CALL_OVER_FOLD
+ * RAISE: HEURISTIC, ev = null（"加注的 EV 无法计算"）
+ * FINAL: RAISE 174（= 全下 87BB）← 覆盖成功，overrideBlockedReason = null
+ * 理由：LOW_SPR_COMMITMENT（SPR 1.441 ≤ 1.5）
+ * ```
+ *
+ * 而同一个 `commitment` 模块给这次决策生成的注记是：
+ * 「河牌**没有下一街**，SPR 只作背景信息……**不构成打光的理由**」。
+ *
+ * 现在例外只保留给**不消耗筹码**的加注：
+ *
+ * | 启发式动作 | 能否覆盖清晰量化赢家 |
+ * |---|---|
+ * | 不消耗筹码（部分加注 / 4bet 之类） | ✅ 可以（带独立论证时） |
+ * | **打光筹码（全下 / raise-to = 全部剩余）** | ❌ **不可以** —— 只能走 `HEURISTIC_TIEBREAK`（量化证据只到 MARGINAL）或自带 EV |
+ *
  * ⚠️ 本模块**只做权限裁决**：它不产生 EV、不改任何策略参数、不算弃牌率。
  * 未来若 3bet 建立了完整 EV（`MODEL_EV`），它会**自然**在同一张表里参与比较并获胜。
  */
@@ -148,6 +170,30 @@ export type ActionEvidence = {
   assumptionsZh: readonly string[];
   /** 缺什么数据才能升级为更高一档证据（透明化，不伪造） */
   upgradeNoteZh: string | null;
+  /**
+   * 🔴 **RIVER RAISE DECISION V2：这个动作是否**把剩余筹码全部投入**（全下）。
+   *
+   * ## 为什么覆盖权限必须看它
+   *
+   * 2026-09 的对赌审计（`reports/RIVER_RAISE_DECISION_AUDIT.md`）实测：
+   * 一个**没有 EV** 的启发式加注覆盖了边际**清晰**的 CALL（AK 面对河牌下注，
+   * `CALL EV = +19.70`、容差带 ±6.65），理由是 `LOW_SPR_COMMITMENT`；
+   * 而它自己的注释在河牌上写着「SPR 只作背景信息，不构成打光的理由」。
+   *
+   * 两类加注的性质完全不同：
+   *
+   * | 类型 | 后果 | 允许启发式覆盖清晰 EV 赢家？ |
+   * |---|---|---|
+   * | **不消耗筹码**的加注（例如 AA 面对 3bet 的 4bet） | 只投入一部分，决定仍然活着 | ✅ 允许（战略偏好在两条「继续」线之间选择） |
+   * | **打光筹码**的加注（全下 / raise-to = 全部剩余） | 不可逆、一次性押上全部 | ❌ **不允许** —— 没有对手继续范围与加注 EV 就无法论证 |
+   *
+   * 这正是「不得无条件删除合法加注」（AA 面对 3bet 的价值加注仍然可达）
+   * 与「不得用启发式把跟注升级成全下」两条要求的唯一交点。
+   *
+   * `true` ⇒ 该启发式证据**不得**凭借 `overrideJustification` 覆盖清晰的量化赢家
+   *（它只能走 `HEURISTIC_TIEBREAK`：量化证据只到 MARGINAL 时）。
+   */
+  commitsStack?: boolean;
   /**
    * 🔴 **覆盖清晰证据所需的独立论证**（没有它，启发式**不得**覆盖 CLEAR 证据）。
    *
@@ -326,11 +372,27 @@ export function chooseByEvidencePriority(input: {
         ? DecisionSourceKind.INDEPENDENT_STRATEGIC_EVIDENCE
         : DecisionSourceKind.SUPPORTED_ACTION_PRIORITY;
 
-    // ②-a 清晰边际：低质量证据**不得**覆盖 —— 除非它带独立论证
+    // ②-a 清晰边际：低质量证据**不得**覆盖
     if (clear) {
+      /*
+       * 🔴 **RIVER RAISE DECISION V2：打光筹码的启发式动作没有覆盖权。**
+       *
+       * 修复前这里是「只要带 `overrideJustification` 就放行」——于是
+       * 「一对牌 + 没有加注 EV + 河牌把 87BB 全部推入」也能覆盖
+       * `CALL EV = +19.70`（边际 CLEAR）。审计实测（AK 节点）：
+       * `evidenceScope = CALL_CLEAR_CALL_OVER_FOLD_OVERRIDDEN`、
+       * `overrideBlockedReason = null`。
+       *
+       * 现在：
+       * - **不消耗筹码**的加注仍然可以靠独立论证覆盖（AA 面对 3bet 的价值加注
+       *   必须保持可达 —— 见 `ActionEvidence.commitsStack` 的说明）；
+       * - **打光筹码**的加注只能走两条路：① 自带可比 EV（那它本来就在
+       *   `quantified` 里按 EV 比较）；② 量化证据只到 MARGINAL（`HEURISTIC_TIEBREAK`）。
+       */
       const justified =
         strongestHeuristic !== null &&
         strongestHeuristic.action !== best.action &&
+        strongestHeuristic.commitsStack !== true &&
         strongestHeuristic.overrideJustification !== null &&
         strongestHeuristic.overrideJustification !== undefined
           ? strongestHeuristic
@@ -349,16 +411,22 @@ export function chooseByEvidencePriority(input: {
             `${best.action}：${best.estimateType} EV ${best.ev!.toFixed(2)} 筹码，边际 ${String(best.decisionMargin)}`,
             `但 ${justified.action} 带有**独立论证**：${justified.overrideJustification!.kind} —— ` +
               justified.overrideJustification!.noteZh,
-            `⇒ 允许战略启发式覆盖（来源 ${DecisionSourceKind.STRATEGIC_HEURISTIC}；` +
-              '不是 EV 优胜，不得如此呈现）',
+            `该加注**不消耗筹码**（不是全下）⇒ 允许战略启发式覆盖` +
+              `（来源 ${DecisionSourceKind.STRATEGIC_HEURISTIC}；不是 EV 优胜，不得如此呈现）`,
           ]),
         });
       }
+      const stackCommitting =
+        strongestHeuristic !== null &&
+        strongestHeuristic.action !== best.action &&
+        strongestHeuristic.commitsStack === true;
       const blocked =
         strongestHeuristic !== null && strongestHeuristic.action !== best.action
           ? {
               attempt: `${strongestHeuristic.action}_HEURISTIC`,
-              reason: `CANNOT_OVERRIDE_CLEAR_SUPPORTED_${best.action}`,
+              reason: stackCommitting
+                ? `CANNOT_OVERRIDE_CLEAR_SUPPORTED_${best.action}_WITH_UNEVALUATED_ALL_IN`
+                : `CANNOT_OVERRIDE_CLEAR_SUPPORTED_${best.action}`,
             }
           : null;
       return Object.freeze({
@@ -377,9 +445,14 @@ export function chooseByEvidencePriority(input: {
             ? []
             : [
                 `有战略启发式想选 ${strongestHeuristic!.action}（分 ${strongestHeuristic!.heuristicScore.toFixed(2)}），` +
-                  '但它的 EV 不可得（HEURISTIC），且**没有**独立论证（MONSTER 强度优势 / 低 SPR 承诺）' +
+                  '但它的 EV 不可得（HEURISTIC）' +
+                  (stackCommitting
+                    ? '，而且**会把剩余筹码全部投入**（全下）—— 没有对手继续范围与加注 EV 就无法论证这一押'
+                    : '，且**没有**独立论证（MONSTER 强度优势 / 低 SPR 承诺）') +
                   '⇒ **不得覆盖清晰的可比 EV 证据**',
                 `overrideBlockedReason = ${blocked.reason}`,
+                '⚠️ 被阻断的加注仍是**合法但未评估**的动作：本次动作是「在**可评估**候选之间」的裁决，' +
+                  '不是「所有合法动作中的最优解」',
               ]),
           ...(best.estimateType === EstimateType.PROXY_EV ||
           best.estimateType === EstimateType.INDEPENDENT_STRATEGIC_EVIDENCE

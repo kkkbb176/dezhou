@@ -31,6 +31,20 @@
       "impact": "知识政策变化 → 来源优先级链或使用纪律发生变化"
     },
     {
+      "path": "docs/UNCERTAINTY_POLICY.md",
+      "category": "KNOWLEDGE",
+      "sha256": "2c842cd7aa554d9c2a08a166c5ba678ff73f505f9fbb2c8b750b981348274e5d",
+      "bytes": 8666,
+      "impact": "不确定修复处理规则变化 → 「无法确认根因时如何行动、如何分类结论、必须报告什么」的强制纪律发生变化（四种结论定义 / 八条强制规则 / 九行报告格式）"
+    },
+    {
+      "path": "reports/UNCERTAINTY_REGISTER.md",
+      "category": "REPORT",
+      "sha256": "1416b22271d2c08ff4f5eae9ab2bc9ce07fee6169e72c904198d23d4a3b99855",
+      "bytes": 33775,
+      "impact": "未解决条目的登记表变化 → 「哪些动作尚未获得模型支持、哪些改动需要人工裁决」的事实来源发生变化；它缺失或过期时，不得声称任何相关内容已解决"
+    },
+    {
       "path": "src/domain/knowledge/knowledge.types.ts",
       "category": "KNOWLEDGE",
       "sha256": "9a372696dd1bb1a6372f1840ae63c0b322bdd010f8615a3c307b4d666bd3734d",
@@ -185,6 +199,13 @@
       "impact": "手选画像 → 连续维度的原型表变化 → **画像通过似然通道对范围的影响发生变化**（P0 主链修复的入口）"
     },
     {
+      "path": "src/domain/player/observedStats.ts",
+      "category": "PLAYER_MODEL",
+      "sha256": "8d9448ad0ff293e59c0f496d169d392df7b0318a05dfc57fcc26fcc8e9e16e13",
+      "bytes": 78392,
+      "impact": "连续统计 → 人物维度的解析器变化（逐统计中性锚点/半宽、标签 prior 与实测的融合权重、分街条目的收缩与语义门）→ **所有带实测统计的对手的 tightness / aggression / bluffTendency / passivity 与分街系数发生变化** ⇒ Fold/Call/Raise 概率、Hero 权益、BetEV 与最终建议全部受影响"
+    },
+    {
       "path": "reports/PROFILE_RANGE_MAINCHAIN_REPORT.md",
       "category": "REPORT",
       "sha256": "5ed58e7ba765a27eb843d5cd467b913246d6b70bb8910d722aeda9380add62b6",
@@ -201,8 +222,8 @@
     {
       "path": "src/domain/postflop/betResponse.ts",
       "category": "DECISION",
-      "sha256": "b3d22b7c9cdeee43c04fb57648fe6261fa8592279d9cd31393472f825a8b368f",
-      "bytes": 93052,
+      "sha256": "36bf2367f64bd0c828529a40760063c2e17db5c253d0ec8dbc7694d6f6f0e8fc",
+      "bytes": 96174,
       "impact": "下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ **所有「无人下注」节点的下注决策与尺寸选择都会变化**"
     },
     {
@@ -222,8 +243,8 @@
     {
       "path": "src/domain/decision/evidencePriority.ts",
       "category": "DECISION",
-      "sha256": "871ba3f84bb36cfa825dc2b811f516a4732a8d5b151c40467cf39f8255242127",
-      "bytes": 21799,
+      "sha256": "e7e11f2880fed17275626eff49a93c71738ef38df22af66a90a9e24c2ab66978",
+      "bytes": 26090,
       "impact": "动作证据优先级与覆盖权限变化（谁能覆盖谁、UNKNOWN 是否参与比较、MARGINAL 是否允许启发式打断）→ **所有面对下注节点的动作来源与最终动作都可能变化**"
     },
     {
@@ -355,8 +376,8 @@
     {
       "path": "src/domain/decision/decision.types.ts",
       "category": "DECISION",
-      "sha256": "864b2325bb521ede22ed532db65f3ad78e916dc343202b52284257cee6e23bfe",
-      "bytes": 66070,
+      "sha256": "a43c96cdcad1fd193164aed56eddf8f3e952be59fa1447df4a7418fd5d0e1240",
+      "bytes": 78961,
       "impact": "决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ **所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）"
     },
     {
@@ -404,15 +425,22 @@
     {
       "path": "src/app/manualInput/contextBuilder.ts",
       "category": "DECISION",
-      "sha256": "1aaec682d14a1e16f08d18560f39f252324071f2a7e8522abad11594853eb0fc",
-      "bytes": 181459,
+      "sha256": "c477e7be2552d40638e85a9cf13701350bfdb327126858996d2b6dab5d12e83d",
+      "bytes": 215218,
       "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
+    },
+    {
+      "path": "src/app/manualInput/raiseResponse.ts",
+      "category": "DECISION",
+      "sha256": "4800c12fc5b2bc1b2e91a28959359d8ec663c09c1ef284654e1c677f92a230b3",
+      "bytes": 21481,
+      "impact": "面对加注的响应模型变化（公共强度带权重 / 对手跟注所需权益 price / 再加注份额 / 资金口径契约 `CASHFLOW_CONTRACT`）→ **加注 EV、EqVsRaiseCallRange 与「加注 vs 跟注」的排序发生变化**；⚠️ 该文件同时定义 `raiseEVOf`（加注 EV 的唯一公式），改动必须同步 `test/raiseEvCashflowP0.test.ts` 与 `reports/U1_RAISE_EV_LIGHT_AUDIT.md` 的结论"
     },
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "3efe778580cf431f47b3a1664454af7b26c457960ac32e47930d3102f12cede4",
-      "bytes": 132308,
+      "sha256": "36a3474d048d667202ce2713687367bb272dfbdd57d4bc0fe27f2d1febdcb1a1",
+      "bytes": 176793,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
@@ -726,8 +754,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "81cf74e634a56c492f1ad228e17b09688c292b9ec4111565f9f5e53f6d6c0ad6",
-      "bytes": 120514,
+      "sha256": "307bd6b26fa8812dd7112382afc1341257041661dff08e54f596c2b8177cd043",
+      "bytes": 124880,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -796,8 +824,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "bfca03b3f6d6bc469c0bb6d165ab57b2556db1e84bbde9f67e2c3a1ae45c29a2",
-      "bytes": 51825,
+      "sha256": "8b083413180f2913f9a1dfd3eda4099d5fde0c7699bdea0c5f9ca944719b9d04",
+      "bytes": 54411,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -824,8 +852,8 @@
     {
       "path": "test/alphaRedteamRegression.test.ts",
       "category": "DECISION",
-      "sha256": "5dcce9d55014af2124ec516c1d56af39d62c134031a2656f13295ba6741b13c1",
-      "bytes": 53665,
+      "sha256": "7292aae6ac00daf034b1694704ff5ea9a736154453be25838784a4ca7029e1fa",
+      "bytes": 55594,
       "impact": "红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；本文件删掉任何一条断言都等于放弃对应的修复"
     },
     {

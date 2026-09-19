@@ -37,6 +37,20 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact: '知识政策变化 → 来源优先级链或使用纪律发生变化',
   },
   {
+    path: 'docs/UNCERTAINTY_POLICY.md',
+    category: ManifestCategory.KNOWLEDGE,
+    impact:
+      '不确定修复处理规则变化 → 「无法确认根因时如何行动、如何分类结论、必须报告什么」的强制纪律发生变化' +
+      '（四种结论定义 / 八条强制规则 / 九行报告格式）',
+  },
+  {
+    path: 'reports/UNCERTAINTY_REGISTER.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '未解决条目的登记表变化 → 「哪些动作尚未获得模型支持、哪些改动需要人工裁决」的事实来源发生变化；' +
+      '它缺失或过期时，不得声称任何相关内容已解决',
+  },
+  {
     path: 'src/domain/knowledge/knowledge.types.ts',
     category: ManifestCategory.KNOWLEDGE,
     impact: '知识类型与校验变化 → 许可证门禁或「不编造」硬校验的强度发生变化',
@@ -159,6 +173,23 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact:
       '手选画像 → 连续维度的原型表变化 → ' +
       '**画像通过似然通道对范围的影响发生变化**（P0 主链修复的入口）',
+  },
+  /*
+   * 🔴 **本轮补登记（清单覆盖缺口）**：`observedStats.ts` 是
+   * 「连续统计 → 人物维度」的**解析器本身**（逐统计锚点/半宽、标签 prior
+   * 融合权重、分街条目收缩），也是 PLAYER PROFILE V3 修复的落点，
+   * 但此前**没有**被登记进清单 —— 于是「同一批 HUD 数据为什么给出不同建议」
+   * 这个最该被回答的问题恰恰查不到源（同目录的 playerStats / playerClassifier /
+   * archetypeDimensions 都已登记，唯独漏了它）。
+   */
+  {
+    path: 'src/domain/player/observedStats.ts',
+    category: ManifestCategory.PLAYER_MODEL,
+    impact:
+      '连续统计 → 人物维度的解析器变化（逐统计中性锚点/半宽、标签 prior 与实测的融合权重、' +
+      '分街条目的收缩与语义门）→ **所有带实测统计的对手的 ' +
+      'tightness / aggression / bluffTendency / passivity 与分街系数发生变化**' +
+      ' ⇒ Fold/Call/Raise 概率、Hero 权益、BetEV 与最终建议全部受影响',
   },
   {
     path: 'reports/PROFILE_RANGE_MAINCHAIN_REPORT.md',
@@ -361,6 +392,20 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact:
       '决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ ' +
       '**决策层看到的全部输入数据发生变化**',
+  },
+  {
+    /*
+     * 🔴 U1 P0 修复补登记（`reports/U1_RAISE_EV_P0_FIX_REPORT.md`）：
+     * 这个文件产出的**响应权重与对手跟注赔率**直接决定 RAISE EV，
+     * 而它此前**不在产物清单里** —— 改了它不会有任何 hash 提示。
+     */
+    path: 'src/app/manualInput/raiseResponse.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '面对加注的响应模型变化（公共强度带权重 / 对手跟注所需权益 price / 再加注份额 / 资金口径契约 ' +
+      '`CASHFLOW_CONTRACT`）→ **加注 EV、EqVsRaiseCallRange 与「加注 vs 跟注」的排序发生变化**；' +
+      '⚠️ 该文件同时定义 `raiseEVOf`（加注 EV 的唯一公式），改动必须同步 ' +
+      '`test/raiseEvCashflowP0.test.ts` 与 `reports/U1_RAISE_EV_LIGHT_AUDIT.md` 的结论',
   },
   {
     path: 'src/app/decision/decisionEngine.ts',

@@ -82,6 +82,8 @@ export type BetSizeAdvice = Omit<BetEVBreakdown, 'kind'> & {
   wasCapped: boolean;
   requestedKind: BetSizeClass;
   heroIsAllIn: boolean;
+  /** 🔴 P1-4：他跟这一注就全下 ⇒ 该尺寸下不可能有加注分支 */
+  villainIsAllInByCall: boolean;
   labelZh: string;
   /**
    * 🔴 多人联合树（≥2 家才非 null）—— 它才是 `betEV` 的来源（§17 证据等级）。
@@ -618,6 +620,8 @@ export function advisePostflop(
       wasCapped: betDecisionFacts.sizes[index]!.wasCapped,
       requestedKind: betDecisionFacts.sizes[index]!.requestedKind,
       heroIsAllIn: betDecisionFacts.sizes[index]!.heroIsAllIn,
+      /* 🔴 P1-4：把「他跟注即全下」如实带进下注建议（与 Hero 全下分开） */
+      villainIsAllInByCall: betDecisionFacts.sizes[index]!.villainIsAllInByCall,
       labelZh: betDecisionFacts.sizes[index]!.labelZh,
     }));
     /*

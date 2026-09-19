@@ -150,9 +150,97 @@ export type StatEvidenceSpec = {
   priorWeight: number;
   priorRate: number;
   opportunityRate: number;
+  /**
+   * 🔴 **该统计在「人物维度映射」中的中性参考点**（P0-A）。
+   *
+   * ⚠️ **不是**「真实总体人口平均值」——6-max / 9-max / stake / pool 都不同，
+   * 把它写成总体均值会是一句无法验证的断言。它的定义只有一个：
+   * **在这个点上，该统计对人物维度不产生任何推力**（归一化偏离 = 0）。
+   *
+   * 🔴 修复前所有统计共用 `0.5` 当锚点（`(rate − 0.5) × 2`），
+   * 于是 VPIP 52%（极松）只得到 +0.04 的偏离、VPIP 18% 得到 −0.64 ——
+   * 松的方向几乎不可见，而 WTSD 43%（极黏）的偏离是**负的**、把 passivity 往下推。
+   * TEST 12 实测：真跟注站被解析成 tightness 0.5377 / passivity 0.4700。
+   */
+  neutralAnchor: number;
+  /**
+   * 🔴 **归一化半宽**：`(rate − neutralAnchor) / scale` 落在 ±1 时视为「极端」。
+   *
+   * 每个统计**必须**单独设定（禁止统一 scale）：`VPIP` 的人群跨度是 0.10–0.46，
+   * 而 `RiverCheckRaise` 是 0.01–0.11 —— 用同一个 scale 会让后者永远推不动维度。
+   */
+  scale: number;
   frequencyTier: 'HIGH' | 'MEDIUM' | 'LOW';
   designZh: string;
+  /** 锚点与半宽的选取依据（可审计；允许缺省，统一说明见 `STAT_ANCHOR_DESIGN_ZH`） */
+  anchorDesignZh?: string;
 };
+
+/**
+ * 🔴 **P0-A 的锚点/半宽总表（设计依据）**。
+ *
+ * ## 为什么不能用统一的 0.5
+ *
+ * HUD 统计的人群分布在**0.5 的同一侧**：VPIP 中心 ≈0.28、PFR ≈0.20、
+ * WTSD ≈0.27、3Bet ≈0.07。以 0.5 为中性点会把「常态」误判成「偏紧」，
+ * 并把「极松」压缩到几乎不可见 —— 这是**结构性**错误，不是参数没调好。
+ *
+ * ## ±1 对应的语义边界（每个统计都写清楚）
+ *
+ * | 统计 | 锚点 | 半宽 | −1（极端紧/低） | +1（极端松/高） |
+ * |---|---|---|---|---|
+ * | VPIP | 0.28 | 0.18 | 0.10 | 0.46 |
+ * | PFR | 0.20 | 0.15 | 0.05 | 0.35 |
+ * | ThreeBet | 0.07 | 0.06 | 0.01 | 0.13 |
+ * | WTSD | 0.27 | 0.15 | 0.12 | 0.42 |
+ * | FoldToFlopCBet | 0.45 | 0.22 | 0.23 | 0.67 |
+ * | FoldToTurnCBet | 0.45 | 0.22 | 0.23 | 0.67 |
+ * | FoldToRiverBet | 0.45 | 0.22 | 0.23 | 0.67 |
+ * | FlopCheckRaise | 0.09 | 0.06 | 0.03 | 0.15 |
+ * | TurnCheckRaise | 0.08 | 0.06 | 0.02 | 0.14 |
+ * | RiverCheckRaise | 0.06 | 0.05 | 0.01 | 0.11 |
+ *
+ * ⚠️ `FoldTo*CBet` 的锚点 **0.45 不是本轮新挑的数**：它已经是本项目
+ * `traitPriorOf` 里写明的「面对持续下注的弃牌率人群中心约 45%」。
+ * 本表只是把它从「分街先验」推广成「维度映射的统一锚点」，保证两条通道同源。
+ */
+export const STAT_ANCHOR_DESIGN_ZH =
+  '锚点 = 该统计在现金局 HUD 语义下的中性参考点（不是总体人口均值）；' +
+  '半宽 = 锚点到「极端」的距离（±1 截断）。逐统计设定，禁止统一。';
+
+/**
+ * 🔴 **标签先验的伪机会数**（P0-B）。
+ *
+ * 标签是**主观断言**（`ARCHETYPE_CONFIDENCE = 0.35`），不是观测。
+ * 融合权重 `w = evidenceMass / (evidenceMass + K_PROFILE_LABEL)` 的语义是：
+ *
+ * ```text
+ * 该轴累积到 500 次真机会  ⇒  标签与实测等权（w = 0.5）
+ * 少于 500 次              ⇒  标签为主
+ * 远多于 500 次            ⇒  实测为主
+ * ```
+ *
+ * 500 的依据：HUD 实践里 500 手是「可以开始相信统计」的常用门槛
+ * （3Bet / FoldToCBet 这类中低频统计通常要求 1000 手以上）——
+ * 也就是说「一个手选标签 ≈ 500 手实测的证据量」，而不是为了让某个测试通过。
+ */
+export const K_PROFILE_LABEL = 500;
+
+/**
+ * 🔴 **轴内朝中性的收缩质量**（旧名 `priorMass`）。
+ *
+ * ⚠️ 它收缩的目标是**中立 0.5**，不是标签 —— 因为「标签」这一层的融合
+ * 完全由 `K_PROFILE_LABEL` 承担。两者分工：
+ *
+ * | 层 | 作用 | 收缩目标 |
+ * |---|---|---|
+ * | 本常量（轴内） | 单轴证据不足时不让偏离直接饱和 | 中立 0.5 |
+ * | `K_PROFILE_LABEL`（融合） | 标签 prior 与实测谁说了算 | 标签维度 |
+ *
+ * 这样「标签 prior」在整个维度链上**只进入一次**（融合层），
+ * 不会在轴内收缩里再进一次。
+ */
+export const OBSERVED_AXIS_SHRINK_MASS = 1;
 
 /**
  * 🔴 **K 与机会频率表**（V3 的核心参数表）。
@@ -195,6 +283,7 @@ export type StatEvidenceSpec = {
 export const STAT_EVIDENCE_SPECS: Readonly<Record<ObservedStatKey, StatEvidenceSpec>> = Object.freeze({
   vpip: Object.freeze({
     priorWeight: 75, priorRate: 0.5, opportunityRate: 1.0,
+    neutralAnchor: 0.28, scale: 0.18,
     frequencyTier: 'HIGH' as const,
     designZh:
       '每手都有一次入池机会 ⇒ **高频统计**，K=75（任务书 §五 高频档 50–100，取中值）：' +
@@ -202,11 +291,13 @@ export const STAT_EVIDENCE_SPECS: Readonly<Record<ObservedStatKey, StatEvidenceS
   }),
   pfr: Object.freeze({
     priorWeight: 75, priorRate: 0.5, opportunityRate: 1.0,
+    neutralAnchor: 0.20, scale: 0.15,
     frequencyTier: 'HIGH' as const,
     designZh: '每手都有一次主动加注机会 ⇒ 高频统计，K=75（与 VPIP 同档）',
   }),
   threeBet: Object.freeze({
     priorWeight: 150, priorRate: 0.5, opportunityRate: 0.25,
+    neutralAnchor: 0.07, scale: 0.06,
     frequencyTier: 'MEDIUM' as const,
     designZh:
       '只有前面有人开池时才面对 3Bet 决策（≈每 4 手 1 次）⇒ **中频统计**，' +
@@ -214,21 +305,25 @@ export const STAT_EVIDENCE_SPECS: Readonly<Record<ObservedStatKey, StatEvidenceS
   }),
   wtsd: Object.freeze({
     priorWeight: 150, priorRate: 0.5, opportunityRate: 0.30,
+    neutralAnchor: 0.27, scale: 0.15,
     frequencyTier: 'MEDIUM' as const,
     designZh: '只有走到摊牌才算（≈每 3 手 1 次）⇒ 中频统计，K=150 ⇒ 需 ≈500 手',
   }),
   foldToFlopCBet: Object.freeze({
     priorWeight: 150, priorRate: 0.5, opportunityRate: 0.35,
+    neutralAnchor: 0.45, scale: 0.22,
     frequencyTier: 'MEDIUM' as const,
     designZh: '需要「他翻前进池 + 对手翻牌下注」⇒ 中频统计，K=150 ⇒ 需 ≈430 手',
   }),
   foldToTurnCBet: Object.freeze({
     priorWeight: 150, priorRate: 0.5, opportunityRate: 0.18,
+    neutralAnchor: 0.45, scale: 0.22,
     frequencyTier: 'MEDIUM' as const,
     designZh: '还要先有翻牌 cbet ⇒ 中频统计，K=150 ⇒ 需 ≈830 手',
   }),
   foldToRiverBet: Object.freeze({
     priorWeight: 200, priorRate: 0.5, opportunityRate: 0.10,
+    neutralAnchor: 0.45, scale: 0.22,
     frequencyTier: 'LOW' as const,
     designZh:
       '需要「翻前进池 + 三街都有下注」⇒ 约 10 手 1 次。**低频统计**，' +
@@ -237,16 +332,19 @@ export const STAT_EVIDENCE_SPECS: Readonly<Record<ObservedStatKey, StatEvidenceS
   }),
   flopCheckRaise: Object.freeze({
     priorWeight: 200, priorRate: 0.5, opportunityRate: 0.15,
+    neutralAnchor: 0.09, scale: 0.06,
     frequencyTier: 'LOW' as const,
     designZh: '需要「他先过牌且对手下注」⇒ 低频统计，K=200 ⇒ 需 ≈1300 手',
   }),
   turnCheckRaise: Object.freeze({
     priorWeight: 200, priorRate: 0.5, opportunityRate: 0.15,
+    neutralAnchor: 0.08, scale: 0.06,
     frequencyTier: 'LOW' as const,
     designZh: '同翻牌，且要有转牌 ⇒ 低频统计，K=200',
   }),
   riverCheckRaise: Object.freeze({
     priorWeight: 200, priorRate: 0.5, opportunityRate: 0.15,
+    neutralAnchor: 0.06, scale: 0.05,
     frequencyTier: 'LOW' as const,
     designZh: '同翻牌，且要有河牌 ⇒ 低频统计，K=200',
   }),
@@ -799,6 +897,26 @@ const clamp01 = (v: number): number => (Number.isFinite(v) ? Math.max(0, Math.mi
 /** 把 0..1 的比率归一到 −1..+1 的「偏离中心」量（0.5 ⇒ 0） */
 const centerOf = (v: number): number => Math.max(-1, Math.min(1, (clamp01(v) - 0.5) * 2));
 
+/**
+ * 🔴 **P0-A：逐统计的归一化偏离** ∈ [−1, +1]。
+ *
+ * ```text
+ * normalizedDeviation = clamp((rate − neutralAnchor) / scale, −1, +1)
+ * ```
+ *
+ * ⚠️ **不要**用 `centerOf(rate)`（即 `(rate − 0.5) × 2`）—— 那是本轮修掉的根因：
+ * HUD 统计的人群中心全在 0.5 的同一侧，用 0.5 当中性点会把「常态」判成「偏紧」，
+ * 并把「极松」压缩到不可见。锚点与半宽逐统计设定，见 `STAT_EVIDENCE_SPECS`。
+ *
+ * ⚠️ `centerOf` 仍然保留，但**只**用于「已经是 0..1 且 0.5 真的是中立」的量
+ * （分街条目、画像维度）—— 那些量的 0.5 中立是定义，不是估计。
+ */
+export function statDeviationOf(stat: ObservedStatKey, rate: number): number {
+  const spec = STAT_EVIDENCE_SPECS[stat];
+  if (!Number.isFinite(rate) || !Number.isFinite(spec.scale) || !(spec.scale > 0)) return 0;
+  return Math.max(-1, Math.min(1, (rate - spec.neutralAnchor) / spec.scale));
+}
+
 /** 一条统计的完整解析记录（报告与 trace 都读它） */
 export type StatResolutionTrace = {
   stat: ObservedStatKey;
@@ -819,6 +937,11 @@ export type StatResolutionTrace = {
   /** 该条目收缩后的生效比率（没有分街条目则为 null） */
   streetTraitEffectiveRate: number | null;
   noteZh: string;
+  /**
+   * 🔴 **P0-A**：归一化的可审计说明（锚点 / 半宽 / 偏离 / 证据质量）。
+   * 未观测（`observedRate === null`）时缺省。
+   */
+  anchorZh?: string;
 };
 
 export type ResolvedDimensions = {
@@ -863,9 +986,24 @@ export type ResolvedPlayerProfile = {
   baseArchetype: QuickProfile | null;
   /** ② 实际被接受、参与计算的连续统计（非法字段已剔除） */
   observedStats: PlayerObservedStats;
-  /** ③ 解析结果 */
+  /** ③ 解析结果（**三个维度字段必须分清**，见各自的说明） */
   resolved: {
+    /**
+     * ① **只有实测说话**的维度（既有字段，语义未变）。
+     * 无实测 ⇒ 精确 0.5。**不要**拿它当「这个玩家是什么样」——
+     * 它没有标签信息，也不该被下游直接消费（下游请用 `resolvedDimensions`）。
+     */
     dimensions: ResolvedDimensions;
+    /** ① 的显式别名（同一份冻结对象） */
+    observedOnlyDimensions: ResolvedDimensions;
+    /** ③ **标签 prior ⊕ 实测**融合后的最终维度——下游响应层消费的就是它 */
+    resolvedDimensions: ResolvedDimensions;
+    /** 融合所用的标签基准（`baseArchetype` 为 `null`/`UNKNOWN` ⇒ 全 0.5） */
+    baseDimensions: ResolvedDimensions;
+    /** 逐轴证据质量（`Σ |极性| × 原始机会数`）；0 ⇒ 该轴无证据 ⇒ 保留标签 */
+    evidenceMass: Readonly<Record<keyof ResolvedDimensions, number>>;
+    /** 逐轴融合权重（实测占比）；无标签 ⇒ 1，无证据 ⇒ 0 */
+    blendWeight: Readonly<Record<keyof ResolvedDimensions, number>>;
     /** 解析出的分街因子 */
     street: StreetProfile;
   };
@@ -994,6 +1132,49 @@ export function calibratedBetScaleOf(input: {
 }
 
 /**
+ * 🔴 **UNIFIED RESOLVED PROFILE：开火倾向的唯一来源**。
+ *
+ * ```text
+ * betScale = shape(resolvedDimensions)
+ *          = 1 + 0.30·center(aggression) + 0.25·center(bluffTendency) − 0.30·center(passivity)
+ * ```
+ *
+ * ## 与 `calibratedBetScaleOf` 的关系（为什么必须去掉标签校准项）
+ *
+ * 旧实现给的是 `shape(observedOnly) + [shape(标签) − 1]`：那个**标签校准项**存在的
+ * 唯一理由是「observed-only 那一层不含标签信息，需要把标签补回来」。
+ *
+ * 现在输入换成 `resolvedDimensions = (1−w)·base + w·observedOnly`，标签**已经在里面**了。
+ * 若再保留校准项，同一个标签就进入两次：
+ *
+ * ```text
+ * 标签 prior ──► resolvedDimensions ──► shape ──► betScale     ← 第一次
+ * 标签 prior ──► calibration 项 ──────► +       ──► betScale     ← 第二次（重复计票）
+ * ```
+ *
+ * 因此这里**只保留 shape**，标签通过融合层进入且只进入一次。
+ *
+ * ## 无统计时的逐位兼容（`observedStats = null` / 0 手）
+ *
+ * `w = 0 ⇒ resolvedDimensions ≡ baseDimensions`，于是
+ * `shape(resolved) ≡ shape(标签)` —— 而旧式在同样输入下是
+ * `shape(0.5,0.5,0.5) + [shape(标签) − 1] = 1 + shape(标签) − 1 = shape(标签)`。
+ * **两者逐位相同**，所以本次统一对「无实测」路径是**零行为变化**（有测试锁定）。
+ */
+export function betScaleOfUnifiedDimensions(dimensions: {
+  aggression: number;
+  bluffTendency: number;
+  passivity: number;
+}): number {
+  const c = (v: number): number => {
+    const x = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5;
+    return (x - 0.5) * 2;
+  };
+  return 1 + 0.3 * c(dimensions.aggression) + 0.25 * c(dimensions.bluffTendency) -
+    0.3 * c(dimensions.passivity);
+}
+
+/**
  * 解析「标签 Prior + 实测统计」为可用于决策链的画像（§四 / §六）。
  *
  * ## 收缩从哪来
@@ -1080,6 +1261,23 @@ export function resolvePlayerProfile(input: {
     passivity: { num: 0, den: 0 },
   };
   /**
+   * 🔴 **P0-B：每个轴的证据质量**（`Σ |极性| × 原始机会数`）。
+   *
+   * ⚠️ 单位是**机会数**，不是手数：`VPIP` 每手一次机会，`WTSD` 每 3 手一次 ——
+   * 拿手数当证据量会让「摊牌类」证据被高估三倍。
+   * 真实机会数（`opportunities` 覆盖）优先，近似值由 `handbook × 频率` 得到。
+   *
+   * 它与 `acc[dim].den`（可信度之和）**分工不同**：
+   * - `den` 是**轴内**各统计的相对权重（越可信的统计说话越响）；
+   * - `mass` 是**轴整体**对标签 prior 的证据量（决定标签还占多少权重）。
+   */
+  const mass: Record<'tightness' | 'aggression' | 'bluffTendency' | 'passivity', number> = {
+    tightness: 0,
+    aggression: 0,
+    bluffTendency: 0,
+    passivity: 0,
+  };
+  /**
    * 🔴 **标签先验的证据质量**（权重 1 = 与「1 次满证据的观测」等价）。
    *
    * ## 为什么分母里必须有它（否则维度会**饱和**）
@@ -1108,7 +1306,22 @@ export function resolvePlayerProfile(input: {
    * ④ **严格单调**：同一 center 下 conf 越大，|res| 越大，直至逼近 center。
    * ⇒ 「样本越大，实测纠正越强」（§十二 / P8b）由一个**结构性质**保证。
    */
-  const priorMass = 1;
+  /**
+   * 🔴 **P0-B 修正**：这个质量收缩的目标是**中立 0.5**，不是标签。
+   *
+   * 修复前它叫 `priorMass` 并被注释成「标签先验的证据质量」，但当时标签维度
+   * **根本没有参与**维度落地（有实测就被整体覆盖）—— 所以它实际上一直在做
+   * 「把实测偏离朝中性拉」这一件事，而标签那部分信息被丢掉了。
+   *
+   * 现在职责切干净：
+   * | 层 | 承担什么 | 收缩目标 |
+   * |---|---|---|
+   * | 本常量（轴内） | 单轴证据不足时不饱和 | 中立 0.5 |
+   * | `K_PROFILE_LABEL`（融合层） | 标签 prior 与实测谁说了算 | 标签维度 |
+   *
+   * ⇒ 标签 prior 在整个维度链上**只进入一次**（融合层），不会重复计票。
+   */
+  const axisShrinkMass = OBSERVED_AXIS_SHRINK_MASS;
   /** 分街条目的生效值（未观测到则为 0.5 = 中立） */
   const streetTraitValue: Record<StreetTraitKey, number> = {
     foldToFlopBet: 0.5,
@@ -1186,12 +1399,26 @@ export function resolvePlayerProfile(input: {
      * 这正是 §十一 要求的「无统计 = V2 逐位一致」。
      */
     const polarity = STAT_DIMENSION_POLARITY[stat];
-    const observedCenter = ev.observedRate === null ? 0 : centerOf(ev.observedRate);
+    /*
+     * 🔴 **P0-A：逐统计的归一化偏离**（本轮修复的根因 1）。
+     *
+     * 修复前：`centerOf(rate) = (rate − 0.5) × 2` —— 所有统计共用锚点 0.5。
+     * 实测后果（TEST 12）：VPIP 52%（极松）只得到 +0.04 的偏离、几乎不可见，
+     * 而 VPIP 18% 得到 −0.64；WTSD 43%（极黏）的偏离是**负的**、把 passivity 往下推。
+     *
+     * 现在：`(rate − neutralAnchor) / scale`，锚点与半宽**逐统计**设定
+     * （见 `STAT_EVIDENCE_SPECS` 与 `STAT_ANCHOR_DESIGN_ZH`）。
+     *
+     * ⚠️ 偏离必须用**实测原始比率**（`observedRate`），不能用 `effectiveRate`：
+     * 后者含先验，会与融合层的标签 prior 重复计票。
+     */
+    const observedDeviation = ev.observedRate === null ? 0 : statDeviationOf(stat, ev.observedRate);
     for (const dim of ['tightness', 'aggression', 'bluffTendency', 'passivity'] as const) {
       const p = polarity[dim];
       if (p === 0) continue; // 极性为 0 ⇒ 这条统计**不碰**这个维度（§七 的硬约束）
-      acc[dim].num += p * observedCenter * ev.confidence;
+      acc[dim].num += p * observedDeviation * ev.confidence;
       acc[dim].den += Math.abs(p) * ev.confidence;
+      mass[dim] += Math.abs(p) * ev.opportunities;
     }
 
     // ---- 分街条目：同样的收缩，但存成「倾向强度」0..1 ----
@@ -1256,23 +1483,91 @@ export function resolvePlayerProfile(input: {
           ] as const
         )
           .filter(([, p]) => p !== 0)
-          .map(([d, p]) => `${d} ${p > 0 ? '+' : ''}${(p * observedCenter * ev.confidence).toFixed(4)}`)
+          .map(([d, p]) => `${d} ${p > 0 ? '+' : ''}${(p * observedDeviation * ev.confidence).toFixed(4)}`)
           .join('、') || '（该统计不影响任何维度）',
+      /*
+       * 🔴 **P0-A 可审计**：把归一化用的锚点/半宽/偏离也写进 trace。
+       * 不写的话，「为什么这条统计推了这么多」只能靠反推公式 —— 那正是
+       * 本轮修复前无法从界面回答的问题。
+       */
+      anchorZh:
+        `归一化：(${ev.observedRate === null ? '—' : ev.observedRate.toFixed(4)} − ` +
+        `锚点 ${STAT_EVIDENCE_SPECS[stat].neutralAnchor}) / 半宽 ${STAT_EVIDENCE_SPECS[stat].scale} ` +
+        `⇒ 偏离 ${observedDeviation.toFixed(4)}；证据质量 ${ev.opportunities} 机会`,
     });
   }
 
-  // ---- 维度落地：0.5 + (加权平均偏离)/2 ----
-  const resolvedOf = (dim: 'tightness' | 'aggression' | 'bluffTendency' | 'passivity'): number => {
+  /* ============================================================
+   * 维度落地：三层（P0-A 偏离 → P0-B 融合 → P0-C 无证据保标签）
+   * ============================================================
+   *
+   * ```text
+   * ① observed-only（只有实测说话）
+   *      observedDim = clamp01(0.5 + (Σ p·dev·conf / (AXIS_SHRINK + Σ|p|·conf)) / 2)
+   *      无该轴证据 ⇒ 精确 0.5（下游恒等；旧测试 P1b/P8b 锁定这一层）
+   *
+   * ② 证据质量（逐轴）
+   *      evidenceMass = Σ |p| · opportunities          ← 原始机会数，不是手数
+   *
+   * ③ 融合（标签 prior ←→ 实测）
+   *      w        = evidenceMass / (evidenceMass + K_PROFILE_LABEL)   （无标签 ⇒ w = 1）
+   *      resolved = evidenceMass > 0 ? (1−w)·base + w·observedDim : base
+   * ```
+   */
+  type Axis = keyof ResolvedDimensions;
+
+  const observedDimOf = (dim: Axis): number => {
     const { num, den } = acc[dim];
     if (!(den > 0)) return 0.5; // 没有任何该轴证据 ⇒ 精确 0.5 ⇒ 下游恒等
-    return clamp01(0.5 + (num / (priorMass + den)) / 2);
+    return clamp01(0.5 + (num / (axisShrinkMass + den)) / 2);
   };
-  const dims: ResolvedDimensions = {
-    tightness: resolvedOf('tightness'),
-    aggression: resolvedOf('aggression'),
-    bluffTendency: resolvedOf('bluffTendency'),
-    passivity: resolvedOf('passivity'),
+  const observedDimensions: ResolvedDimensions = {
+    tightness: observedDimOf('tightness'),
+    aggression: observedDimOf('aggression'),
+    bluffTendency: observedDimOf('bluffTendency'),
+    passivity: observedDimOf('passivity'),
   };
+
+  /*
+   * 标签先验（base）。`null` / `UNKNOWN`（后者在表里就是 `null`）⇒ 没有原型证据：
+   * 此时 base 取中立 0.5 且 **w = 1**（没有先验要保），小样本由轴内收缩保护。
+   */
+  const baseSpec =
+    input.baseArchetype === null ? null : (ARCHETYPE_DIMENSIONS[input.baseArchetype] ?? null);
+  const baseDimOf = (dim: Axis): number => (baseSpec === null ? 0.5 : baseSpec[dim]);
+  const baseDimensions: ResolvedDimensions = {
+    tightness: baseDimOf('tightness'),
+    aggression: baseDimOf('aggression'),
+    bluffTendency: baseDimOf('bluffTendency'),
+    passivity: baseDimOf('passivity'),
+  };
+
+  const weightOf = (dim: Axis): number => {
+    const m = mass[dim];
+    if (!(m > 0)) return 0; // 无证据 ⇒ 不融合（直接保留 base）
+    if (baseSpec === null) return 1; // 无标签 ⇒ 实测说了算
+    return m / (m + K_PROFILE_LABEL);
+  };
+  const fusedOf = (dim: Axis): number => {
+    const m = mass[dim];
+    if (!(m > 0)) return baseDimOf(dim); // 🔴 P0-C：无证据的轴保留 base，**绝不重置成 0.5**
+    const w = weightOf(dim);
+    return clamp01((1 - w) * baseDimOf(dim) + w * observedDimensions[dim]);
+  };
+  const blendWeight: Record<Axis, number> = {
+    tightness: weightOf('tightness'),
+    aggression: weightOf('aggression'),
+    bluffTendency: weightOf('bluffTendency'),
+    passivity: weightOf('passivity'),
+  };
+  const resolvedDimensions: ResolvedDimensions = {
+    tightness: fusedOf('tightness'),
+    aggression: fusedOf('aggression'),
+    bluffTendency: fusedOf('bluffTendency'),
+    passivity: fusedOf('passivity'),
+  };
+  /** 分街通道用的仍是「只有实测」的那一层（本轮**刻意不改**分街通道，见文件头说明） */
+  const dims: ResolvedDimensions = observedDimensions;
 
   // ---- 分街因子 ----
   const factorsOf = (street: Street): StreetFactors => {
@@ -1326,10 +1621,17 @@ export function resolvePlayerProfile(input: {
        * 于是「MANIAC 实测 0.25」反而**高于**他自己的先验 ⇒ 推出「他更少开枪」，
        * 与画像完全相反。
        */
-      betScale: calibratedBetScaleOf({
-        baseArchetype: input.baseArchetype,
-        dimensions: dims,
-      }),
+      /*
+       * 🔴 **UNIFIED RESOLVED PROFILE（本轮修复）**：开火倾向与响应模型必须用**同一套**
+       * 全局维度。修复前这里传的是 `dims`（= observed-only），而响应模型用的是
+       * `resolvedDimensions` ⇒ 同一个玩家在两个模块里可能是两种人（PROBE 3 已证明：
+       * NIT 标签 + 20 手 MANIAC 实测时，响应侧按 tightness 0.86「极紧」、
+       * 开火侧按 0.41「偏松」计算）。
+       *
+       * `calibratedBetScaleOf`（含标签校准项）**保留但不再用于生产路径**：
+       * 它的校准项是为「输入不含标签」设计的，换到 resolved 后会造成标签重复计票。
+       */
+      betScale: betScaleOfUnifiedDimensions({ ...resolvedDimensions }),
     });
   };
 
@@ -1350,7 +1652,35 @@ export function resolvePlayerProfile(input: {
   return Object.freeze({
     baseArchetype: input.baseArchetype,
     observedStats: stats,
-    resolved: Object.freeze({ dimensions: Object.freeze(dims), street }),
+    resolved: Object.freeze({
+      /**
+       * ① **只有实测说话**的维度（既有字段，**语义未变**）：
+       * 无实测 ⇒ 精确 0.5 ⇒ 下游恒等。旧测试 `P1b` / `P8b` 锁定的就是这一层。
+       */
+      dimensions: Object.freeze(observedDimensions),
+      /** ① 的**显式别名**（两个字段语义必须分清，见 TEST VECTOR D） */
+      observedOnlyDimensions: Object.freeze(observedDimensions),
+      /**
+       * ③ **标签 prior 与实测融合后**的最终维度 —— **下游响应层用这个**。
+       *
+       * `resolved = (1−w)·baseDimensions + w·observedOnlyDimensions`（逐轴，
+       * `w = evidenceMass/(evidenceMass + K_PROFILE_LABEL)`）；
+       * 该轴无证据时逐位等于 `baseDimensions`（不是 0.5）。
+       */
+      resolvedDimensions: Object.freeze(resolvedDimensions),
+      /** 融合用的**标签基准**（无标签/UNKNOWN ⇒ 全 0.5） */
+      baseDimensions: Object.freeze(baseDimensions),
+      /** 逐轴**证据质量**（`Σ |极性| × 原始机会数`） */
+      evidenceMass: Object.freeze({
+        tightness: mass.tightness,
+        aggression: mass.aggression,
+        bluffTendency: mass.bluffTendency,
+        passivity: mass.passivity,
+      }),
+      /** 逐轴**融合权重**（实测占多少；无标签时恒为 1，无证据时恒为 0） */
+      blendWeight: Object.freeze(blendWeight),
+      street,
+    }),
     issues: normalized.issues,
     trace: Object.freeze(trace),
     observedStatCount,
@@ -1360,10 +1690,21 @@ export function resolvePlayerProfile(input: {
     noteZh:
       `标签「${input.baseArchetype ?? '无'}」（**Prior**）` +
       `＋实测统计 ${observedStatCount}/${ALL_OBSERVED_STAT_KEYS.length} 项（${stats.handsObserved} 手）` +
-      ` ⇒ 解析后维度 tightness ${dims.tightness.toFixed(3)} / aggression ${dims.aggression.toFixed(3)}` +
-      ` / bluffTendency ${dims.bluffTendency.toFixed(3)} / passivity ${dims.passivity.toFixed(3)}` +
+      ` ⇒ 实测维度 tightness ${observedDimensions.tightness.toFixed(3)}` +
+      ` / aggression ${observedDimensions.aggression.toFixed(3)}` +
+      ` / bluffTendency ${observedDimensions.bluffTendency.toFixed(3)}` +
+      ` / passivity ${observedDimensions.passivity.toFixed(3)}` +
+      ` ⇒ **融合后** tightness ${resolvedDimensions.tightness.toFixed(3)}` +
+      ` / aggression ${resolvedDimensions.aggression.toFixed(3)}` +
+      ` / bluffTendency ${resolvedDimensions.bluffTendency.toFixed(3)}` +
+      ` / passivity ${resolvedDimensions.passivity.toFixed(3)}` +
+      `（融合权重 ${blendWeight.tightness.toFixed(3)}/${blendWeight.aggression.toFixed(3)}` +
+      `/${blendWeight.bluffTendency.toFixed(3)}/${blendWeight.passivity.toFixed(3)}；` +
+      `标签伪机会数 K=${K_PROFILE_LABEL}）` +
       `｜可信度档 ${confidenceTierZh}` +
-      (observedStatCount === 0 ? '｜⚠️ 无实测 ⇒ 与 V2 archetype-only **逐位一致**' : '') +
+      (observedStatCount === 0
+        ? '｜⚠️ 无实测 ⇒ 融合结果**逐位等于标签维度**，与 V2 archetype-only 行为一致'
+        : '') +
       (streetTraitDenied.size === 0
         ? ''
         : `｜🔴 节点语义门：${context ?? '未判定'} ⇒ ` +

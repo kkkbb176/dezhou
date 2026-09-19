@@ -180,14 +180,42 @@ test('BR-1：面对已下注节点，CALL EV 必须用**下注范围**权益（�
 });
 
 test('BR-2：到达范围权益与下注范围权益必须**分开保存**（§八）', () => {
+  /*
+   * 🔴 **契约变更（RIVER BET RANGE V2，已记录，非放宽）**
+   *
+   * 修复前这里断言 `heroEquityVsBetRange <= heroEquity`，理由是
+   * 「下注范围是到达范围的偏价值子集」。那个断言隐含一个**错误前提**：
+   * `math.heroEquity` 被当成到达范围权益 —— 而它其实取自一份**已经含
+   * 本次下注似然**的范围（＝后验）。于是 `heroEquityVsBetRange` 是
+   * 「后验 × P(BET|手牌)」，同一条动作被计了两次（实测把本节点压到 22.55%）。
+   *
+   * 修复后到达范围有了**自己的量**：`postflop.betRangeArrival`
+   * （由同一条范围更新链在本次下注**之前**捕获，零额外计算）。
+   * 正确的比较是「下注范围 vs **到达范围**」，不是「下注范围 vs 后验」。
+   */
   for (const [name, profile, stats] of FOUR) {
-    const m = build(test09Input(profile, stats)).math;
-    assert.notEqual(m.heroEquity, null, `${name}：到达范围权益必须存在`);
+    const c = build(test09Input(profile, stats));
+    const m = c.math;
+    assert.notEqual(m.heroEquity, null, `${name}：整体范围权益必须存在`);
     assert.notEqual(m.heroEquityVsBetRange, null, `${name}：下注范围权益必须存在`);
+
+    const arrival = c.postflopFacts?.betRangeArrival ?? null;
+    assert.notEqual(arrival, null, `${name}：必须给出真正的到达范围（RIVER BET RANGE V2）`);
+    assert.notEqual(
+      arrival!.heroEquityVsArrivalRange,
+      null,
+      `${name}：到达范围权益必须存在`,
+    );
     assert.ok(
-      m.heroEquityVsBetRange! <= m.heroEquity! + 1e-12,
-      `${name}：下注范围是到达范围的偏价值子集 ⇒ 权益不得更高：` +
-        `${(m.heroEquityVsBetRange! * 100).toFixed(2)}% vs ${(m.heroEquity! * 100).toFixed(2)}%`,
+      m.heroEquityVsBetRange! <= arrival!.heroEquityVsArrivalRange! + 1e-12,
+      `${name}：下注范围是更偏价值的条件范围 ⇒ 权益不得高于**到达范围**：` +
+        `${(m.heroEquityVsBetRange! * 100).toFixed(2)}% vs 到达 ${(arrival!.heroEquityVsArrivalRange! * 100).toFixed(2)}%`,
+    );
+    // 三个量必须互不相同：口径一旦被合并，界面就再也分不清它们
+    assert.notEqual(
+      arrival!.heroEquityVsArrivalRange,
+      m.heroEquityVsBetRange,
+      `${name}：到达范围权益与下注范围权益必须是两个不同的量`,
     );
   }
 });

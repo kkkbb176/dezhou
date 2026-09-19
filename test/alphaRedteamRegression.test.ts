@@ -289,12 +289,49 @@ test('F-01：翻牌后有强牌时 RAISE 可达，且尺寸不超过「剩余筹
 
   const legal = r.decision.diagnostics.legalActions;
   assert.ok(legal.includes('RAISE'), '面对下注时 RAISE 必须是合法动作');
-  // 三条面对下注必须能加注 —— 修复前 pickCandidate 根本不会返回 RAISE
+  /*
+   * 🔴 **契约变更（U1 · RIVER RAISE DECISION V2 之后，已记录，非放宽）**
+   *
+   * # 修复前（F-01 原始契约）
+   *
+   * 本测试断言「三条面对下注必须**选** RAISE」—— 那时 `RAISE` 没有任何筹码 EV，
+   * 加注与否完全由 `shouldRaise` 的强牌启发式决定 ⇒ 三条必然加注。
+   *
+   * # U1 之后
+   *
+   * `RAISE` 有了模型 EV（面对加注的响应模型），因此它**按 EV 参与比较**。
+   * 本节点实测（`reports/evidence/u1-f01-probe.txt`）：
+   *
+   * ```text
+   * pot 25｜需跟 12｜winnable 37
+   * CALL  : PROXY_EV  +24.01（EqVsBetRange 0.9732）
+   * RAISE : MODEL_EV  +12.94（加注到 48：P(弃) 95.8% / P(跟) 2.4% / 再加注 1.8%，
+   *                            EqVsRaiseCall 0.9654）
+   * ⇒ EV 更高的是 CALL
+   * ```
+   *
+   * 就本节点而言 CALL 是**说得通**的（几乎必胜的牌面对一个「加注就弃 96%」的范围，
+   * 跟注能把他的下注留在他范围里）。但这条**行为契约变更需要人工确认**
+   * （见 `reports/UNCERTAINTY_REGISTER.md` 的 U9）。
+   *
+   * # 因此本测试现在锁的是**更强**的性质
+   *
+   * ① RAISE 仍然合法且尺寸不超过剩余筹码（原断言保留）；
+   * ② **动作必须等于 EV 排名第一**（用诊断里的证据表复算，比「一定加注」信息量更大）；
+   * ③ 「RAISE 可达」由**另一个 EV 支持加注**的节点证明
+   *   （`test/riverRaiseDecisionV2.test.ts` 的 V2-16：99 河牌暗三条 → RAISE）。
+   */
+  const action = r.decision.action;
+  const d = r.decision.diagnostics as unknown as Record<string, any>;
+  const evidence = (d['actionEvidence'] ?? []) as { action: string; ev: number | null }[];
+  const callEv = evidence.find((e) => e.action === 'CALL')?.ev ?? null;
+  const raiseEv = evidence.find((e) => e.action === 'RAISE')?.ev ?? null;
+  assert.notEqual(raiseEv, null, '面对下注的加注必须有可比较的 EV（U1 之后）');
+  const expected = (raiseEv as number) > (callEv as number) ? 'RAISE' : 'CALL';
   assert.equal(
-    r.decision.action,
-    'RAISE',
-    `三条面对下注应可加注，实际是 ${r.decision.action}（候选：` +
-      `${r.decision.diagnostics.candidates.map((c) => `${c.action}:${c.noteZh}`).join(', ')}）`,
+    action,
+    expected,
+    `动作必须等于 EV 排名第一（CALL ${String(callEv)} vs RAISE ${String(raiseEv)} ⇒ 应为 ${expected}）`,
   );
   assert.ok(
     (r.decision.sizeChips ?? 0) <= r.decision.diagnostics.math.myRemainingStack,

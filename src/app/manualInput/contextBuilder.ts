@@ -48,12 +48,14 @@ import {
   allBoardCards,
   realizedOpponentIds,
   yetToActIds,
+  /** 🔴 U1 P0：本街已投入必须从状态读，不许用「单次下注」假设推 */
+  committedThisStreet,
   type ActionRecord,
   type GameState,
   type PlayerState,
 } from '../../domain/poker/gameState.ts';
 import { previewCommit } from '../../domain/poker/pots.ts';
-import { isUnopenedPot } from '../../domain/poker/engine.ts';
+import { isUnopenedPot, applyAction } from '../../domain/poker/engine.ts';
 import { effectiveStackBetween } from '../../domain/poker/odds.ts';
 import { evaluateCards, type EvaluatedHand } from '../../domain/poker/handEval.ts';
 import { boardRelativeTierOf } from '../../domain/poker/boardRelativeStrength.ts';
@@ -183,6 +185,7 @@ import {
   type ActionContextValue,
 } from '../../domain/postflop/actionContext.ts';
 import { buildBettingRangeFacts } from './bettingRange.ts';
+import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
 import {
   boardTextureLabelOf,
   riverComboClassOf,
@@ -842,6 +845,15 @@ type RangeBuild = {
   profileAppliedToRange?: boolean;
   /** 画像似然真正被施加的动作数（0 = 该通道未生效） */
   profileAppliedActions?: number;
+  /**
+   * 🔴 **RIVER BET RANGE V2**：`state.actions` 里「当前这一次下注」**之前**的范围
+   * —— 也就是**真正的到达范围**。
+   *
+   * `range`（默认返回）在「他正在下注」的节点上已经包含这次下注的似然，
+   * 因此它不能当作到达范围用（拿它再乘一次 `P(BET|手牌)` 就是重复计费）。
+   * `null` = 没有捕获（不是「他在下注」的节点，或求解器范围路径下的退化情形）。
+   */
+  rangeBeforeAction?: Range | null;
 };
 
 /** 建范围阶段就能拿到的画像证据（权益部分由调用方补齐） */
@@ -1136,8 +1148,39 @@ function applyLikelihoodUpdates(
    * 其余动作（翻前/翻牌/转牌、跟注、过牌）**完全不变**。
    */
   behaviorProfile?: PlayerBehaviorProfile,
-): { range: Range; trace: RangeUpdateTraceEntry[]; providerCalls: number; profileLikelihoodActions: number } {
+  /**
+   * 🔴 **RIVER BET RANGE V2 —— 捕获「当前正在被建模的那一次动作」之前的范围**。
+   *
+   * ## 为什么需要它（重复计费）
+   *
+   * 本函数把**每一个**进攻动作当似然乘进范围 —— 包括**当前这一次下注**。
+   * 于是函数返回的范围已经是 `P(手牌 | 他已经下注)`。
+   * 而 `bettingRange.ts` 的下注范围又要乘一次 `P(BET | 手牌)` ⇒ 似然被**平方**。
+   *
+   * 传了本参数（= `state.actions` 里那一条记录的**下标**）后，
+   * 函数会在处理到它之前把当时的状态**原样捕获**下来（引用赋值，零额外计算），
+   * 作为 `rangeBeforeAction` 返回 —— 那就是**真正的到达范围**：
+   *
+   * ```text
+   * 到达范围      = 本链在「当前下注」这一步之前的状态
+   * 下注范围      = 到达范围 × P(BET | 公共强度带)      ← 当前下注只在这里计一次
+   * 范围(默认返回) = 到达范围 × P(当前下注 | 手牌)        ← 原有语义，逐位不变
+   * ```
+   *
+   * ⚠️ **它只跳过一条记录**，不是「关闭全部历史行动过滤」：
+   * 翻牌跟注、转牌跟注、以及更早的进攻动作**照旧施加似然**。
+   */
+  captureBeforeActionIndex?: number,
+): {
+  range: Range;
+  trace: RangeUpdateTraceEntry[];
+  providerCalls: number;
+  profileLikelihoodActions: number;
+  /** 见 `captureBeforeActionIndex`；未捕获时为 `null` */
+  rangeBeforeAction: Range | null;
+} {
   let current = range;
+  let rangeBeforeAction: Range | null = null;
   const trace: RangeUpdateTraceEntry[] = [];
   let providerCalls = 0;
   /**
@@ -1164,7 +1207,15 @@ function applyLikelihoodUpdates(
 
   let actionIndex = 0;
   let skippedBaseAction = false;
-  for (const record of state.actions) {
+  for (const [recordIndex, record] of state.actions.entries()) {
+    /*
+     * 🔴 到达范围的捕获点：**在这一条动作被施加似然之前**。
+     * 位置刻意放在最前面 —— 无论下面走哪条分支（基础动作跳过 / 似然回落 / 正常施加），
+     * 捕获到的都是「这条动作发生之前」的那份范围。
+     */
+    if (captureBeforeActionIndex !== undefined && recordIndex === captureBeforeActionIndex) {
+      rangeBeforeAction = current;
+    }
     if (record.playerId !== opponent.id) continue;
     const rangeAction = toRangeAction(record.type);
     if (rangeAction === null || rangeAction === 'FOLD') continue;
@@ -1464,7 +1515,7 @@ function applyLikelihoodUpdates(
     });
   }
 
-  return { range: current, trace, providerCalls, profileLikelihoodActions };
+  return { range: current, trace, providerCalls, profileLikelihoodActions, rangeBeforeAction };
 }
 
 function buildRangeSnapshot(
@@ -1488,13 +1539,20 @@ function buildRangeSnapshot(
    * 且严格可选 —— 不传时 `applyLikelihoodUpdates` 走原路径，逐位不变。
    */
   behaviorProfile?: PlayerBehaviorProfile | null,
+  /**
+   * 🔴 **RIVER BET RANGE V2**：`state.actions` 里「当前这一次下注」的下标。
+   *
+   * 传了之后会额外产出 `rangeBeforeAction` —— **真正的到达范围**
+   *（该动作发生**之前**的范围）。只有「正在下注的那一家」才需要传。
+   */
+  captureBeforeActionIndex?: number,
 ): RangeBuild {
   const warnings: string[] = [];
   const aggression = firstPreflopActionOf(state, opponent.id);
 
   const base = buildBaseRange(state, opponent, aggression, deadCards, solverOverride, limpProfile);
   if (!base.ok) {
-    return { snapshot: null, range: null, warnings: [base.reason], tendency: null };
+    return { snapshot: null, range: null, warnings: [base.reason], tendency: null, rangeBeforeAction: null };
   }
 
   /*
@@ -1518,7 +1576,17 @@ function buildRangeSnapshot(
    */
   const updated =
     solverOverride !== undefined
-      ? { range: base.range, trace: [] as RangeUpdateTraceEntry[], providerCalls: 0, profileLikelihoodActions: 0 }
+      ? {
+          range: base.range,
+          trace: [] as RangeUpdateTraceEntry[],
+          providerCalls: 0,
+          profileLikelihoodActions: 0,
+          /*
+           * 求解器范围**不施加任何似然** ⇒ 它本身就是到达范围，
+           * 因此「当前动作之前的范围」与它就是同一份（引用相同，零额外计算）。
+           */
+          rangeBeforeAction: base.range as Range | null,
+        }
       : applyLikelihoodUpdates(
           base.range,
           state,
@@ -1526,6 +1594,7 @@ function buildRangeSnapshot(
           aggression,
           tendency?.provider,
           behaviorProfile ?? undefined,
+          captureBeforeActionIndex,
         );
   const range = updated.range;
 
@@ -1578,6 +1647,7 @@ function buildRangeSnapshot(
     range,
     warnings,
     tendency: tendencyCore,
+    rangeBeforeAction: updated.rangeBeforeAction,
     /**
      * 画像是否**通过任一通道真的改变了这个对手的范围**（V2.1 去重闸门修复）。
      *
@@ -1840,6 +1910,8 @@ function buildBetDecisionFacts(input: {
         tendencies,
         sizes: legalSizes,
         heroRemaining: input.heroRemaining,
+        /* 🔴 P1-4：对手剩余筹码 —— 「他跟这一注就全下 ⇒ 他不能再加注」这条判据要用它 */
+        villainRemaining: input.villainRemaining,
       });
   if (responseModel === null) return null;
 
@@ -1922,6 +1994,8 @@ function buildBetDecisionFacts(input: {
         tendencies: responseTendenciesOf(o.dimensions, o.confidence),
         sizes: legalSizes,
         heroRemaining: input.heroRemaining,
+        /* 🔴 P1-4：对手剩余筹码 —— 「他跟这一注就全下 ⇒ 他不能再加注」这条判据要用它 */
+        villainRemaining: input.villainRemaining,
       });
       return { opponent: o, model, seed: input.seed + 31 * (index + 1) };
     });
@@ -3345,6 +3419,44 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   const deadCards: Card[] = [...(hero.holeCards ?? []), ...allBoardCards(state)];
 
   /*
+   * ---- 3·0. RIVER BET RANGE V2：定位「当前正在被建模的那一次下注」----
+   *
+   * ## 为什么必须有这一步
+   *
+   * `applyLikelihoodUpdates` 会把**每一个**进攻动作当似然乘进范围 ——
+   * 包括**当前这一次下注**。于是返回的 `range` 已经是
+   * `P(手牌 | 他已经下注)`；而 `bettingRange.ts` 又要乘一次 `P(BET | 手牌)`
+   * ⇒ **同一条动作的似然被计了两次**（实测把下注范围权益从 7.6% 压到 0.54%）。
+   *
+   * ## 单一、可追踪的路径
+   *
+   * ```text
+   * ① 到达范围    = 本链在「当前下注」之前的状态          ← 本函数捕获（零额外计算）
+   * ② 下注范围    = ① × P(BET | 公共强度带, 尺寸, 牌面, 画像)   ← 当前下注只在这里计一次
+   * ③ range（默认）= ① × P(当前下注 | 手牌)               ← 原有语义，供整体范围口径使用
+   * ```
+   *
+   * ⚠️ 只跳过**这一条**记录：翻牌跟注、转牌跟注与更早的进攻动作照旧施加似然。
+   * 判据是「本街最后一个进攻动作」——也就是 `state.currentBet` 的来源那一条。
+   */
+  const currentBetRecord = (():
+    { index: number; actorId: string; position: PlayerState['position'] } | null => {
+    for (let i = state.actions.length - 1; i >= 0; i -= 1) {
+      const record = state.actions[i]!;
+      if (record.street !== state.street) continue;
+      if (
+        record.type === ActionType.BET ||
+        record.type === ActionType.RAISE ||
+        record.type === ActionType.RERAISE ||
+        record.type === ActionType.ALL_IN
+      ) {
+        return { index: i, actorId: record.playerId, position: record.position };
+      }
+    }
+    return null;
+  })();
+
+  /*
    * ---- 3a. 玩家画像（**必须在建范围之前**）----
    *
    * 🔴 P0 架构修复：修复前画像在第 6 步才算，**结构上不可能**进入范围 ——
@@ -3426,6 +3538,13 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         limpProfileFor(opponent.id),
         // 画像只对**它描述的那一家**注入（给别的座位套画像就是编造数据）
         opponent.id === villainId ? (behaviorProfile ?? null) : null,
+        /*
+         * 🔴 **只有「正在下注的那一家」需要捕获到达范围**：
+         * 其余对手没有「当前这一次下注」可言，他们的范围语义逐位不变。
+         */
+        currentBetRecord !== null && currentBetRecord.actorId === opponent.id
+          ? currentBetRecord.index
+          : undefined,
       ),
     })),
   );
@@ -3446,8 +3565,11 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
           primaryOpponent.id === villainId ? playerBuilt.tendency : null,
           limpProfileFor(primaryOpponent.id),
           primaryOpponent.id === villainId ? (behaviorProfile ?? null) : null,
+          currentBetRecord !== null && currentBetRecord.actorId === primaryOpponent.id
+            ? currentBetRecord.index
+            : undefined,
         )
-      : { snapshot: null, range: null, warnings: [] as string[], tendency: null });
+      : { snapshot: null, range: null, warnings: [] as string[], tendency: null, rangeBeforeAction: null });
   const rangeBuild = primaryBuild;
 
   /* ---- 4. 权益（**多人口径**）---- */
@@ -3543,7 +3665,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         ),
   );
 
-  /* ---- 4c. BETTING RANGE（TEST 09 P0-1）---- */
+  /* ---- 4c. BETTING RANGE（TEST 09 P0-1；RIVER BET RANGE V2 修正）---- */
   /*
    * 🔴 面对 Villain **已经下注**的节点，`CALL EV` 必须用
    * 「Hero vs 他的**下注范围**」的权益，而不是「vs 他的**到达范围**」。
@@ -3552,10 +3674,21 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
    * 拿它们摊牌等于假设他会用这些牌主动打光全部筹码 —— 他的下注范围
    * 远比到达范围**偏价值**，所以真实权益**更低**，`CALL EV` 被系统性高估。
    *
-   * 这里在 `math` 之前算好，供 `buildMathSnapshot` 的 `callEV` 使用；
-   * `math.heroEquity`（到达范围）**保持原义不变**，另有
-   * `math.heroEquityVsBetRange` 单独承载新口径（§八：不共用同一个字段）。
+   * ## 🔴 RIVER BET RANGE V2：原料必须是**真正的到达范围**
+   *
+   * `primaryBuild.range` 已经含**当前这一次下注**的似然（见 3·0 的说明），
+   * 拿它再乘 `P(BET | 手牌)` 会把同一条动作计两次费。
+   * 因此这里改用 `primaryBuild.rangeBeforeAction` —— 同一次范围更新链里
+   * 「当前下注之前」的那份状态（**零额外计算**，只是引用捕获）：
+   *
+   * ```text
+   * 到达范围 → × P(BET | 公共强度带, 尺寸, 牌面, 画像) → 下注范围   ← 本模块
+   * ```
+   *
+   * 捕获拿不到（不是「他在下注」的节点，或求解器范围路径）时**如实回落到
+   * 默认范围并写警告**，绝不静默换口径。
    */
+  const betRangeArrivalRange = primaryBuild.rangeBeforeAction ?? null;
   const bettingRangeFacts = mark('bettingRange', () => {
     const bettorPosition = lastAggressorOfStreet(state.actions, state.street);
     const primaryPosition = primaryOpponent === null ? null : primaryOpponent.position;
@@ -3565,8 +3698,19 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      * Hero 自己下注时，该量是「Hero 的下注范围」——不是本模块的对象。
      */
     if (bettorPosition !== primaryPosition) return null;
-    if (primaryBuild.range === null || hero.holeCards === null || hero.holeCards.length !== 2) {
+    const arrivalRange = betRangeArrivalRange ?? primaryBuild.range;
+    if (arrivalRange === null || hero.holeCards === null || hero.holeCards.length !== 2) {
       return null;
+    }
+    if (betRangeArrivalRange === null) {
+      /*
+       * 兜底路径：拿不到「当前下注之前」的状态 ⇒ 到达范围里已经含这次下注，
+       * 乘权重会让它计两次。**必须可见**，不允许静默降级。
+       */
+      warnings.push(
+        '下注范围：未能捕获「当前下注之前」的到达范围，已回落到完整范围 ' +
+          '（该范围已含本次下注的似然 ⇒ 权重可能被重复施加）。',
+      );
     }
     const betChips = state.currentBet;
     if (!(betChips > 0)) return null;
@@ -3580,7 +3724,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
       v3StreetInput,
     );
     return buildBettingRangeFacts({
-      arrivalEntries: primaryBuild.range.entries.map((e) => ({
+      arrivalEntries: arrivalRange.entries.map((e) => ({
         cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
         probability: e.probability,
       })),
@@ -3602,6 +3746,340 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
           hero.holeCards ?? [],
           allBoardCards(state),
           [bettingRangeFacts.entries],
+          (input.equitySeed ?? 20260913) + 1301,
+        ).value;
+
+  /* ---- 4d. RAISE RESPONSE（U1：补上加注 EV）---- */
+  /*
+   * 🔴 **补上「面对加注的响应」**（`reports/UNCERTAINTY_REGISTER.md` 的 U1）。
+   *
+   * 在它之前 `RAISE` 在全项目里没有任何筹码 EV：`EqVsRaiseContinueRange = NOT_IMPLEMENTED`，
+   * 「加注是否比跟注好」无法被计算 —— 只能靠启发式，而启发式在河牌把一对牌推成全下。
+   *
+   * ## 算的是哪一个尺寸
+   *
+   * 与决策层**同一个选择规则**：`desiredTo = pot + 2×callCost`，
+   * 在 `buildSizeGrid(legal, pot, 'RAISE')` 里取最接近的候选（共用 `closestSizeTo`）。
+   * 决策层只有在「它选中的尺寸就是这个尺寸」时才允许使用该 EV（同 `isoUsable` 的纪律）。
+   *
+   * ## 零点与下界
+   *
+   * 零点 = 弃牌（≡ 0），与 `callEV` 同一比较零点。
+   * 再加注分支没有模型（产品无再加注树）⇒ 按「Hero 放弃本次增量」计入 ⇒ 得到**下界**，
+   * 在 `evKind = MODEL_EV_WITH_LOWER_BOUND_RERAISE_BRANCH` 里如实标注。
+   */
+  const raiseResponseFacts = mark('raiseResponse', (): NonNullable<PostflopFacts['raiseResponse']> | null => {
+    /*
+     * 🔴🔴 **U1 P0 修复 · 多人底池必须显式拦截**（放在最前面：无论后面因为什么回落，
+     * 这条「为什么没有加注 EV」的原因都必须说出去）。
+     *
+     * U1 的响应模型只针对**一个**对手（`primaryOpponent`）的下注范围建模：
+     * 它没有建模「身后还有别人可能跟注/再加注」。两个以上活跃对手时
+     * 按单挑口径算 RAISE EV 是**错的**（会系统性高估加注），
+     * 因此这里**明确不产出**加注 EV，并把原因写进 warnings ——
+     * 而不是悄悄按单挑算一个数字。决策层随后会把所有加注金额
+     * 如实列进「未评估动作」（`RAISE_EV_NOT_IMPLEMENTED`）。
+     */
+    const activeOpponents = state.players.filter((p) => p.id !== hero.id && !p.folded);
+    if (activeOpponents.length !== 1) {
+      warnings.push(
+        `加注 EV 不适用：本节点有 ${activeOpponents.length} 个活跃对手，` +
+          '而「面对加注的响应模型」只按**单挑**口径建模（未建模身后玩家的跟注/再加注）' +
+          '⇒ 所有加注金额一律计入「未评估动作」，不参与 EV 比较。',
+      );
+      return null;
+    }
+    if (bettingRangeFacts === null) return null;
+    if (hero.holeCards === null || hero.holeCards.length !== 2) return null;
+    const opponent = activeOpponents[0]!;
+    const villainStreetCommitted = committedThisStreet(state, opponent.id);
+    const heroStreetCommitted = committedThisStreet(state, hero.id);
+    const currentPot = computePot(state);
+    /** Hero 还需补多少才跟平（= 引擎的 `requiredCallAmount`） */
+    const heroCallCost = Math.max(0, state.currentBet - heroStreetCommitted);
+    if (!(state.currentBet > 0)) return null;
+    if (!(currentPot > 0)) return null;
+    /*
+     * 🔴 **与决策层完全同一个尺寸选择**（U1 P0 修复 · D2）：
+     *
+     * 决策层：`buildSizeGrid(legal, math.pot, 'RAISE')` + `desiredTo = math.pot + 2×math.callCost`。
+     * 修复前本处用 `potBeforeBet` 与 `betChips = currentBet` —— Hero 本街已有投入时
+     * （`callCost = currentBet − heroStreetCommitted`）两层目标尺寸会相差 `2×本街已投`，
+     * 于是尺寸对不上、`raiseModelUsable = false`：加注 EV **被静默关闭**。
+     * 现在两处使用同一个底池基准与同一个目标式。
+     */
+    const grid = buildSizeGrid(legal, currentPot, 'RAISE');
+    if (grid.length === 0) return null;
+    const desiredTo = currentPot + 2 * heroCallCost;
+    const chosen = closestSizeTo(grid, desiredTo, (o) => o.toAmount);
+    if (chosen === null) return null;
+    const raiseTo = chosen.toAmount;
+    /*
+     * ---- 资金记账（唯一事实来源）----
+     *
+     * heroAdd     = 我这次加注真正新增的筹码（不重复扣我本街已投的部分）
+     * villainAdd  = 对手跟平还差多少，**按他实际能投的封顶**（短筹码/全下）
+     * 终池        = 双方都投入后**我能争夺到**的底池
+     *
+     * ⚠️ 为什么不能直接用 `previewCommit(state, hero, heroAdd)`：
+     * 它把「我投入 heroAdd」记进去时**对手还没跟注**，于是我未被跟注的部分
+     * 会被整块算成退回（实测 HAND A 会得到 `winnable = 134`、`heroContestedAdd < 0`）。
+     * 这里按「双方都投入」的直接口径算：
+     *
+     * ```text
+     * 他跟平后的本街总额 = villainStreetCommitted + villainAdd
+     * 我真正留在池中      = min(heroAdd, 他跟平后的本街总额 − 我本街已投)
+     * 终点底池            = currentPot + 我留在池中的 + 他补的
+     * ```
+     *
+     * 三种情形都对：
+     * · 双方都跟得满 ⇒ 终池 = currentPot + heroAdd + villainAdd（使用者给的恒等式）；
+     * · 他筹码不足   ⇒ 只算他跟得起的部分，我的超额**退回**（不计入投入）；
+     * · 我本街已投>0 ⇒ 不重复扣那部分（`heroAdd = raiseTo − 我本街已投`）。
+     */
+    const heroAdd = Math.max(0, raiseTo - heroStreetCommitted);
+    if (!(heroAdd > 0)) return null;
+    const villainAddRaw = Math.max(0, raiseTo - villainStreetCommitted);
+    const villainAdd = Math.min(villainAddRaw, Math.max(0, opponent.remainingStack));
+    if (!(villainAdd > 0)) return null;
+    /*
+     * 🔴 **P1-2a：他跟平即投光** ⇒ 他**不可能**再有再加注分支。
+     *
+     * 判据必须看**他投完之后还剩多少**（`remainingStack − villainAdd` 是否为 0），
+     * 而**不是**看「封顶有没有生效」：
+     *
+     * | 情形 | `villainAddRaw` vs 剩余 | 封顶生效？ | 他跟完还剩 | 应该算全下吗 |
+     * |---|---|---|---|---|
+     * | 他补得起 | raw < 剩余 | 否 | > 0 | ❌ 不是 |
+     * | **恰好用光** | **raw == 剩余** | **否（相等不触发 min）** | **0** | ✅ **是**（边界！） |
+     * | 补不起 | raw > 剩余 | 是 | 0 | ✅ 是 |
+     *
+     * ⚠️ 只用「`villainAdd < villainAddRaw`」会把**中间那一行**漏掉 ——
+     * 本仓库的边界场景 G 正是这一行（它当时仍错误地给出了 17.69% 的再加注分支）。
+     */
+    const villainIsAllInByCall = opponent.remainingStack <= villainAdd + 1e-9;
+    const villainStreetTotalAfterCall = villainStreetCommitted + villainAdd;
+    const heroContestedAdd = Math.max(
+      0,
+      Math.min(heroAdd, villainStreetTotalAfterCall - heroStreetCommitted),
+    );
+    if (!(heroContestedAdd > 0)) return null;
+    const finalPot = currentPot + heroContestedAdd + villainAdd;
+    const ownDimensions =
+      playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions;
+    const tendencies = responseTendenciesOf(
+      ownDimensions,
+      playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
+      v3StreetInput,
+    );
+    const built = buildRaiseResponse({
+      betRangeEntries: bettingRangeFacts.entries,
+      board: allBoardCards(state),
+      currentPot,
+      heroAdd,
+      villainAdd,
+      heroContestedAdd,
+      finalPot,
+      street: streetOfNow,
+      tendencies,
+      heroIsAllIn: raiseTo >= legal.allInToAmount - 1e-9,
+      /* 🔴 P1-2a：他跟平即投光 ⇒ 不得生成再加注分支（判据只看**他的**筹码） */
+      villainIsAllInByCall,
+    });
+    if (built === null) return null;
+    const eqVsCall = rangeEquityOf(
+      hero.holeCards,
+      allBoardCards(state),
+      built.callContinueEntries,
+      (input.equitySeed ?? 20260913) + 1601,
+    );
+    /* ============================================================
+     * 🔴 **P1-2b：被再加注后的 Hero 决策（FOLD / CALL 两选一）**
+     * ============================================================
+     *
+     * ## 零点统一（这一条最关键）
+     *
+     * 三个分支**必须**都以**首次加注前的决策节点**为零点：
+     *
+     * ```text
+     * foldBranchEV = −heroContestedAdd                       （放弃本次加注投入）
+     * callBranchEV = EqVsReraise × 跟注后终池 − heroContestedAdd − 我需再投
+     * reraiseBranchEV = max(foldBranchEV, callBranchEV)
+     * ```
+     *
+     * ⚠️ 绝不能把「后续节点的局部 EV」直接与前两项比较 —— 那会混用起点
+     *（U1 的 P0 就是这一类口径错误）。
+     *
+     * ## 再加注尺寸：**从真实行动状态推导**，不用固定倍数
+     *
+     * `minReRaiseTo = raiseTo + (raiseTo − villainStreetCommitted)`（引擎的最小加注规则）；
+     * 他买不起完整再加注时只能**全下（under-raise）** —— 那条法律上仍有效；
+     * 连全下都超不过我的总额 ⇒ 他根本不能加注（`rr` 已由 P1-2a 归零）。
+     */
+    const reRaiseFacts = (() => {
+      if (built.reRaiseLikelihood <= 0 || built.reRaiseEntries.length === 0) return null;
+      const minReRaiseTo = raiseTo + (raiseTo - villainStreetCommitted);
+      const villainMaxTo = villainStreetTotalAfterCall + Math.max(0, opponent.remainingStack - villainAdd);
+      const reRaiseTo = Math.min(minReRaiseTo, villainMaxTo);
+      if (!(reRaiseTo > raiseTo + 1e-9)) return null;
+      /** 他这次再加注是否把他的筹码全部投入（⇒ Hero 没有再加注的余地） */
+      const villainReRaiseIsAllIn = reRaiseTo >= villainMaxTo - 1e-9;
+      const heroRemainingAfterRaise = Math.max(0, legal.myRemainingStack - heroAdd);
+      const additionalCall = Math.min(reRaiseTo - raiseTo, heroRemainingAfterRaise);
+      if (!(additionalCall > 0)) return null;
+      /*
+       * 用**引擎自己的**动作与分层底池算后续资金：
+       * Hero 加注 → 他再加注 → Hero 跟注 ⇒ 我能争夺到的量（与 CALL EV 同一口径）。
+       */
+      const afterRaise = applyAction(state, { playerId: hero.id, type: 'RAISE', amount: raiseTo } as never);
+      if (!afterRaise.ok) return null;
+      const afterReRaise = applyAction(afterRaise.state, {
+        playerId: opponent.id, type: 'RAISE', amount: reRaiseTo,
+      } as never);
+      if (!afterReRaise.ok) return null;
+      const finalPotAfterCall = previewCommit(afterReRaise.state, hero.id, additionalCall).winnable;
+      if (!(finalPotAfterCall > 0)) return null;
+      return { minReRaiseTo, villainMaxTo, reRaiseTo, villainReRaiseIsAllIn, additionalCall, finalPotAfterCall };
+    })();
+    const eqVsReraise: { value: number | null } = reRaiseFacts === null
+      ? { value: null }
+      : rangeEquityOf(hero.holeCards, allBoardCards(state), built.reRaiseEntries, (input.equitySeed ?? 20260913) + 2601);
+    /*
+     * 分支值：拿得到再加注范围与资金 ⇒ 用 `max(弃牌, 跟注)`；
+     * 拿不到 ⇒ **退回下界** `−heroContestedAdd` 并如实标注（绝不编造跟注 EV）。
+     */
+    const reraiseBranchEV = reRaiseFacts !== null && eqVsReraise.value !== null
+      ? Math.max(
+          -heroContestedAdd,
+          eqVsReraise.value * reRaiseFacts.finalPotAfterCall - heroContestedAdd - reRaiseFacts.additionalCall,
+        )
+      : -heroContestedAdd;
+    const reraiseBranchKind: 'FOLD' | 'CALL' | 'LOWER_BOUND_NOT_IMPLEMENTED' =
+      reRaiseFacts === null || eqVsReraise.value === null
+        ? 'LOWER_BOUND_NOT_IMPLEMENTED'
+        : reraiseBranchEV > -heroContestedAdd + 1e-9 ? 'CALL' : 'FOLD';
+    const raiseEV =
+      eqVsCall.value === null
+        ? null
+        : raiseEVOf({
+            foldLikelihood: built.foldLikelihood,
+            callLikelihood: built.callLikelihood,
+            reRaiseLikelihood: built.reRaiseLikelihood,
+            currentPot,
+            heroContestedAdd,
+            finalPot,
+            equityVsRaiseCall: eqVsCall.value,
+            reraiseBranchEV,
+          });
+    return Object.freeze({
+      sizeChips: raiseTo,
+      sizeBB: raiseTo / state.config.bigBlind,
+      raiseIncrement: villainAdd,
+      /* 🔴 U1 P0：完整资金口径随事实包一起带出去（决策层/诊断/测试都读它） */
+      cashflowContract: CASHFLOW_CONTRACT,
+      currentPot,
+      heroStreetCommitted,
+      villainStreetCommitted,
+      heroAdd,
+      villainAdd,
+      villainAddRaw,
+      /** 🔴 P1-2a：他跟平即投光（真 ⇒ 模型不会给出再加注分支） */
+      villainIsAllInByCall,
+      heroContestedAdd,
+      finalPot,
+      uncalledReturn: Math.max(0, heroAdd - heroContestedAdd),
+      /* 🔴 P1-2b：被再加注分支（零点与其它分支一致） */
+      reraiseBranchEV,
+      reraiseBranchKind,
+      /** 弃牌分支（= −留在池中的投入）与跟注分支，供独立复算与审计 */
+      reraiseFoldBranchEV: -heroContestedAdd,
+      reraiseCallBranchEV: reRaiseFacts !== null && eqVsReraise.value !== null
+        ? eqVsReraise.value * reRaiseFacts.finalPotAfterCall - heroContestedAdd - reRaiseFacts.additionalCall
+        : null,
+      heroEquityVsReraiseRange: eqVsReraise.value,
+      reraiseBranchUnsupportedZh: reraiseBranchKind === 'LOWER_BOUND_NOT_IMPLEMENTED'
+        ? (built.reRaiseLikelihood <= 0
+            ? null
+            : '再加注分支不可计算（缺再加注范围或权益）⇒ 该分支按**下界**（损失本次投入）计入')
+        : null,
+      ...(reRaiseFacts === null
+        ? {
+            reRaiseCombos: built.reRaiseCombos,
+            /* `null` = **不适用**（本节点根本没有再加注分支）—— 与「不支持（false）」是两件事 */
+            heroFourBetSupported: null as boolean | null,
+          }
+        : {
+            reRaiseCombos: built.reRaiseCombos,
+            reRaiseTo: reRaiseFacts.reRaiseTo,
+            reRaiseMinLegalTo: reRaiseFacts.minReRaiseTo,
+            villainReRaiseIsAllIn: reRaiseFacts.villainReRaiseIsAllIn,
+            heroAdditionalCallVsReRaise: reRaiseFacts.additionalCall,
+            finalPotAfterCallVsReRaise: reRaiseFacts.finalPotAfterCall,
+            /* 他的再加注若不是全下 ⇒ Hero 还有再加注（4-bet）选项 —— **本模型不支持** */
+            heroFourBetSupported: reRaiseFacts.villainReRaiseIsAllIn,
+          }),
+      foldLikelihood: built.foldLikelihood,
+      callLikelihood: built.callLikelihood,
+      reRaiseLikelihood: built.reRaiseLikelihood,
+      heroEquityVsRaiseCallRange: eqVsCall.value,
+      equityMethod: eqVsCall.method,
+      equityIterations: eqVsCall.iterations,
+      raiseEV,
+      evKind: 'MODEL_EV_WITH_LOWER_BOUND_RERAISE_BRANCH' as const,
+      reachableCombos: built.reachableCombos,
+      callCombos: built.callCombos,
+      model: built.model,
+      assumptionsZh: Object.freeze([
+        '面对加注的响应是**结构性先验**（公共强度带 + 听牌 + 价格 + 画像），未经统计校准',
+        '零点 = 弃牌 ≡ 0（与 CALL EV 同一口径：底池含对手已下注的筹码、投入只算我自己新增的）',
+        '对手弃牌 ⇒ 我赢下完整底池 currentPot；他跟注 ⇒ 终池 finalPot（引擎分层口径，含退回修正）',
+        '再加注分支没有模型 ⇒ 按「Hero 放弃本次投入」计入 = **下界**；' +
+          '⚠️ `heroIsAllIn`（我不能再加注）与 `villainIsAllInByCall`（他跟平即投光、他不能再加注）是**两个独立判据**，' +
+          '任一为真都不产出再加注分支',
+        '再加注分支没有模型 ⇒ 按「Hero 放弃本次投入」计入 = **下界**',
+        '未计抽水（本项目无 Rake Engine）',
+      ]),
+      noteZh:
+        built.noteZh +
+        `｜加注到 ${raiseTo}（我方新增 ${heroAdd}${heroAdd === heroContestedAdd ? '' : `，其中被跟注 ${heroContestedAdd}、退回 ${heroAdd - heroContestedAdd}`}` +
+        `，对手补 ${villainAdd}${villainIsAllInByCall ? '（**他跟平即全下** ⇒ 不会再有再加注分支）' : ''}，终池 ${finalPot}）⇒ ` +
+        (raiseEV === null
+          ? 'RAISE EV 不可算（跟注桶权益不可得）'
+          : `RAISE EV = ${built.foldLikelihood.toFixed(4)}×${currentPot} + ` +
+            `${built.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + ` +
+            `${built.reRaiseLikelihood.toFixed(4)}×(−${heroContestedAdd}) = **${raiseEV.toFixed(4)}**` +
+            '（⚠️ 再加注分支无模型 ⇒ **下界**）'),
+    });
+  });
+
+  /*
+   * 🔴 **到达范围自己的权益**（RIVER BET RANGE V2 · 数据一致性）。
+   *
+   * 修复前 `math.heroEquity` 被界面/审计读成 `EqVsArrivalRange`，
+   * 但它其实是「链上含当前下注」的那份范围的权益 —— 名实不符。
+   * 现在到达范围有了**明确的对象**（`betRangeArrivalRange`）与**它自己的权益**，
+   * 两者再也不会被混为一谈：
+   *
+   * | 量 | 回答 |
+   * |---|---|
+   * | `betRangeArrival.heroEquityVsArrivalRange` | 他**到达**这个节点时我领先多少 |
+   * | `math.heroEquityVsBetRange` | 他**选择下注**时我领先多少（CALL EV 用它） |
+   * | `math.heroEquity` | 对「含本街全部动作」的整体范围的权益（决策层既有口径） |
+   *
+   * 用与下注范围**同一个种子偏移**（`+1301`）计算，两个条件权益可直接比较。
+   */
+  const heroEquityVsArrivalRange =
+    betRangeArrivalRange === null || hero.holeCards === null || hero.holeCards.length !== 2
+      ? null
+      : rangeEquityOfMany(
+          hero.holeCards,
+          allBoardCards(state),
+          [
+            betRangeArrivalRange.entries.map((e) => ({
+              cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
+              probability: e.probability,
+            })),
+          ],
           (input.equitySeed ?? 20260913) + 1301,
         ).value;
 
@@ -3842,6 +4320,10 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
            * - `opponentRangeFacts` 回答「他走到这个节点**拥有**什么」
            * - `bettingRangeFacts` 回答「他在这里实际**选择下注**的是哪些牌」
            *
+           * ⚠️ RIVER BET RANGE V2：`opponentRangeFacts` 取自 `primaryBuild.range`
+           * （**含**本街全部动作，含当前下注），因此它**不是**到达范围；
+           * 真正的到达范围见下面的 `betRangeArrival`（§数据一致性）。
+           *
            * `null` 表示当前不是「他在下注」的节点（或算不出来）——不是空范围。
            */
           bettingRangeFacts:
@@ -3849,14 +4331,115 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
               ? null
               : {
                   classMasses: Object.freeze({ ...bettingRangeFacts.classMasses }),
+                  bandMasses: Object.freeze({
+                    arrival: Object.freeze({ ...bettingRangeFacts.bandMasses.arrival }),
+                    bet: Object.freeze({ ...bettingRangeFacts.bandMasses.bet }),
+                  }),
+                  bandRates: Object.freeze({ ...bettingRangeFacts.bandRates }),
+                  model: Object.freeze({
+                    ...bettingRangeFacts.model,
+                    factors: Object.freeze({ ...bettingRangeFacts.model.factors }),
+                  }),
                   arrivalMass: bettingRangeFacts.arrivalMass,
                   betMass: bettingRangeFacts.betMass,
                   betShareOfArrival: bettingRangeFacts.betShareOfArrival,
                   entryCount: bettingRangeFacts.entries.length,
+                  effectiveComboCount: bettingRangeFacts.effectiveComboCount,
+                  posteriorMassCombos90: bettingRangeFacts.posteriorMassCombos90,
                   noteZh: bettingRangeFacts.noteZh,
                 },
           betRangeSizing: bettingRangeFacts?.sizing ?? null,
           heroEquityVsBetRange,
+          /*
+           * 🔴 **U1：面对加注的响应 + 加注 EV**（`reports/UNCERTAINTY_REGISTER.md`）。
+           *
+           * `null` = 本节点没有加注候选 / 算不出来（不是「加注 EV = 0」）。
+           * 决策层只有在它选中的加注尺寸与 `sizeChips` 一致时才允许使用该 EV。
+           */
+          raiseResponse:
+            raiseResponseFacts === null
+              ? null
+              : {
+                  sizeChips: raiseResponseFacts.sizeChips,
+                  sizeBB: raiseResponseFacts.sizeBB,
+                  raiseIncrement: raiseResponseFacts.raiseIncrement,
+                  /* 🔴 U1 P0：完整资金口径必须随诊断一起可见（决策层据此授予比较资格） */
+                  cashflowContract: raiseResponseFacts.cashflowContract,
+                  currentPot: raiseResponseFacts.currentPot,
+                  heroStreetCommitted: raiseResponseFacts.heroStreetCommitted,
+                  villainStreetCommitted: raiseResponseFacts.villainStreetCommitted,
+                  heroAdd: raiseResponseFacts.heroAdd,
+                  villainAdd: raiseResponseFacts.villainAdd,
+                  villainAddRaw: raiseResponseFacts.villainAddRaw,
+                  villainIsAllInByCall: raiseResponseFacts.villainIsAllInByCall,
+                  heroContestedAdd: raiseResponseFacts.heroContestedAdd,
+                  /* 🔴 P1-2b：被再加注分支（Hero 的 FOLD / CALL 两选一） */
+                  reraiseBranchEV: raiseResponseFacts.reraiseBranchEV,
+                  reraiseBranchKind: raiseResponseFacts.reraiseBranchKind,
+                  reraiseFoldBranchEV: raiseResponseFacts.reraiseFoldBranchEV,
+                  reraiseCallBranchEV: raiseResponseFacts.reraiseCallBranchEV,
+                  heroEquityVsReraiseRange: raiseResponseFacts.heroEquityVsReraiseRange,
+                  reraiseBranchUnsupportedZh: raiseResponseFacts.reraiseBranchUnsupportedZh,
+                  /* 桶大小与 4-bet 支持与否**恒上报**（rr = 0 时桶为空、不支持反加） */
+                  reRaiseCombos: raiseResponseFacts.reRaiseCombos,
+                  heroFourBetSupported: raiseResponseFacts.heroFourBetSupported,
+                  ...('reRaiseTo' in raiseResponseFacts
+                    ? {
+                        reRaiseTo: raiseResponseFacts.reRaiseTo,
+                        reRaiseMinLegalTo: raiseResponseFacts.reRaiseMinLegalTo,
+                        villainReRaiseIsAllIn: raiseResponseFacts.villainReRaiseIsAllIn,
+                        heroAdditionalCallVsReRaise: raiseResponseFacts.heroAdditionalCallVsReRaise,
+                        finalPotAfterCallVsReRaise: raiseResponseFacts.finalPotAfterCallVsReRaise,
+                      }
+                    : {}),
+                  finalPot: raiseResponseFacts.finalPot,
+                  uncalledReturn: raiseResponseFacts.uncalledReturn,
+                  foldLikelihood: raiseResponseFacts.foldLikelihood,
+                  callLikelihood: raiseResponseFacts.callLikelihood,
+                  reRaiseLikelihood: raiseResponseFacts.reRaiseLikelihood,
+                  heroEquityVsRaiseCallRange: raiseResponseFacts.heroEquityVsRaiseCallRange,
+                  equityMethod: raiseResponseFacts.equityMethod,
+                  equityIterations: raiseResponseFacts.equityIterations,
+                  raiseEV: raiseResponseFacts.raiseEV,
+                  evKind: raiseResponseFacts.evKind,
+                  reachableCombos: raiseResponseFacts.reachableCombos,
+                  callCombos: raiseResponseFacts.callCombos,
+                  assumptionsZh: raiseResponseFacts.assumptionsZh,
+                  model: Object.freeze({
+                    ...raiseResponseFacts.model,
+                    strengthOfBand: Object.freeze({ ...raiseResponseFacts.model.strengthOfBand }),
+                  }),
+                  noteZh: raiseResponseFacts.noteZh,
+                },
+          /*
+           * 🔴 **RIVER BET RANGE V2：真正的「河牌下注前到达范围」**。
+           *
+           * 它是同一次范围更新链在**当前下注之前**的状态（引用捕获，零额外计算），
+           * 因此验证方式是可证伪的：**只改当前下注的尺寸，它必须逐位不变**。
+           *
+           * `null` = 没有捕获（不是「他在下注」的节点）。
+           */
+          betRangeArrival:
+            betRangeArrivalRange === null
+              ? null
+              : {
+                  heroEquityVsArrivalRange,
+                  supportCount: betRangeArrivalRange.metrics.supportSize,
+                  arrivalMass: bettingRangeFacts?.arrivalMass ?? null,
+                  /** 到达范围的**公共强度带**质量（与下注范围同一把尺子） */
+                  bandMasses: bettingRangeFacts === null
+                    ? null
+                    : Object.freeze({ ...bettingRangeFacts.bandMasses.arrival }),
+                  excludedActionZh:
+                    currentBetRecord === null
+                      ? null
+                      : `本街最后一次进攻动作（下标 ${currentBetRecord.index}，` +
+                        `${POSITION_ZH[currentBetRecord.position]}）—— 它只在**下注范围**里计一次`,
+                  noteZh:
+                    '到达范围 = 本手范围更新链在「当前下注」这一步**之前**的状态：' +
+                    '翻前/翻牌/转牌的跟注与更早的进攻动作都已施加似然，' +
+                    '唯独当前这一次下注**没有**（它由下注权重计一次）。',
+                },
           /*
            * 🔴 **下注决策事实包**（BET DECISION ENGINE PHASE 1）。
            *
@@ -3917,8 +4500,13 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
             profileConfidence: playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
             /* 🔴 PLAYER PROFILE V3：把分街系数与实测维度交给响应层（无统计时逐位不变） */
             v3Street: v3StreetInput,
+            /*
+             * 🔴 **P0-B 修正**：交给响应层的是**融合后**的维度（标签 prior ⊕ 实测），
+             * 不再是「只有实测」的那一层 —— 后者在修复前会**整体覆盖**标签理解，
+             * 于是「同一份实测 + CS 标签」与「+ NIT 标签」得到逐位相同的人物画像。
+             */
             ...(resolvedV3.observedStatCount > 0
-              ? { v3Dimensions: resolvedV3.resolved.dimensions }
+              ? { v3Dimensions: resolvedV3.resolved.resolvedDimensions }
               : {}),
             seed: input.equitySeed ?? 20260913,
             // 「当前剩余」而不是带入筹码；上限取场上**最短**筹码（多人池的有效筹码）
@@ -4040,7 +4628,23 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
        */
       actionContext: resolvedV3.actionContext,
       deniedStreetTraits: Object.freeze([...resolvedV3.deniedStreetTraits]),
-      dimensions: Object.freeze({ ...resolvedV3.resolved.dimensions }),
+      /*
+       * 🔴 **P0-B：三个维度字段必须分清**（`dimensions` 保持既有语义 = 只有实测）。
+       *
+       * | 字段 | 含义 |
+       * |---|---|
+       * | `dimensions` | ① 只有实测说话（无实测 ⇒ 0.5）—— 既有字段，语义未变 |
+       * | `observedDimensions` | ① 的显式别名 |
+       * | `resolvedDimensions` | ③ 标签 ⊕ 实测融合（**下游响应层消费的就是它**） |
+       * | `baseDimensions` | 融合基准 = 标签维度 |
+       * | `evidenceMass` / `blendWeight` | 逐轴证据量与融合权重（可审计） |
+       */
+      dimensions: Object.freeze({ ...resolvedV3.resolved.observedOnlyDimensions }),
+      observedDimensions: Object.freeze({ ...resolvedV3.resolved.observedOnlyDimensions }),
+      resolvedDimensions: Object.freeze({ ...resolvedV3.resolved.resolvedDimensions }),
+      baseDimensions: Object.freeze({ ...resolvedV3.resolved.baseDimensions }),
+      evidenceMass: Object.freeze({ ...resolvedV3.resolved.evidenceMass }),
+      blendWeight: Object.freeze({ ...resolvedV3.resolved.blendWeight }),
       street: Object.freeze({
         PREFLOP: Object.freeze({ ...resolvedV3.resolved.street.PREFLOP }),
         FLOP: Object.freeze({ ...resolvedV3.resolved.street.FLOP }),

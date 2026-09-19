@@ -352,6 +352,8 @@ test('TEST 4：紧手/过弃画像必须提高弃牌概率（至少在大注上�
       tendencies,
       villainDraw: 'NO_DRAW',
       heroIsAllIn: false,
+      /* P1-4：本用例只测档位边界 ⇒ 明确声明「他跟这一注不会全下」 */
+      villainIsAllInByCall: false,
     }).bucket;
   assert.equal(boundary(neutralResponseTendencies(), 3), 'CALL', '中性倾向下档 3 应当继续');
   assert.equal(boundary(tightTendencies, 3), 'FOLD', '极紧倾向下同一手牌必须改为弃牌');
@@ -860,6 +862,8 @@ test('T3：Hero 全下后，比 Hero 强的牌仍在跟注范围里（不会因�
       tendencies: bd.tendencies,
       villainDraw: 'NO_DRAW',
       heroIsAllIn,
+      /* P1-4：本用例只测 **Hero** 全下这条判据 ⇒ 明确声明对手不会因跟注全下 */
+      villainIsAllInByCall: false,
     });
   const openWeights = probeCombo(false).weights;
   const clampedWeights = probeCombo(true).weights;

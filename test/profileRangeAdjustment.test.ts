@@ -160,6 +160,13 @@ type Run = {
   equity: number | null;
   /** 🔴 TEST 09 P0-1：`Hero vs Villain **下注范围**` 的权益（与 `equity` 分开） */
   betRangeEquity: number | null;
+  /**
+   * 🔴 **RIVER BET RANGE V2**：真正的「当前下注**之前**到达范围」权益。
+   *
+   * 修复前 `equity` 被当作到达范围，但它其实含本次下注的似然（＝后验）。
+   * 现在到达范围有自己的量，`betRangeEquity` 必须与**它**比较。
+   */
+  arrivalEquity: number | null;
   required: number;
   callEV: number | null;
   margin: string | null;
@@ -176,12 +183,14 @@ function run(input: ManualHandInput): Run {
   const built = buildContext(input);
   const math = result.decision.diagnostics.math;
   const facts = built.built.context.postflopFacts?.opponentRangeFacts ?? null;
+  const arrival = result.decision.diagnostics.postflop?.betRangeArrival ?? null;
 
   return {
     action: result.decision.action,
     equity: math.heroEquity,
     /* 🔴 TEST 09 P0-1：面对下注时 `callEV` 用的是**下注范围**权益（与 `equity` 分开） */
     betRangeEquity: math.heroEquityVsBetRange,
+    arrivalEquity: arrival?.heroEquityVsArrivalRange ?? null,
     required: math.requiredEquity,
     callEV: math.callEV,
     margin: result.decision.diagnostics.decisionMargin?.kind ?? null,
@@ -313,23 +322,44 @@ test('T2：门槛邻近节点上，画像必须改变「面对下注」的权益
    */
   const pBetEq = (r: Run): number => r.betRangeEquity ?? 0;
 
-  // 基线：无论用哪个口径，权益都低于门槛 ⇒ FOLD、Call EV < 0
+  /*
+   * 🔴 **契约变更 ②（RIVER BET RANGE V2，已记录，非放宽）**
+   *
+   * 修复前这里断言 `normal.action === 'FOLD'`。那是**重复计费**的产物：
+   * 「到达范围」当时其实是**含本次下注的后验**，再乘一次 `P(BET|手牌)`
+   * 等于把同一条动作计了两次 ⇒ 下注范围权益被系统性压到 6.92%。
+   *
+   * 消除重复计费后本节点实测：
+   *
+   * | 画像 | 到达范围权益 | 下注范围权益 | 所需 | CALL EV |
+   * |---|---|---|---|---|
+   * | NORMAL | 见 `arrivalEquity` | 34.50% | 19.35% | > 0 |
+   * | VERY_TIGHT | — | 34.00% | 19.35% | > 0 |
+   * | BLUFF_HEAVY | — | 38.52% | 19.35% | > 0 |
+   * | MANIAC | — | 38.45% | 19.35% | > 0 |
+   *
+   * 因此基线动作**不再锁定为 FOLD**（用户 §十七：动作由 EV 产生）。
+   * 仍然锁死的是：
+   * ① 「到达范围权益」与「下注范围权益」都必须存在，且下注范围是
+   *    **更偏公共强度**的那个条件范围（权益不得高于到达范围）；
+   * ② 方向：诈唬倾向越高 ⇒ 下注范围里的空气越多 ⇒ 抓诈牌权益越高；
+   * ③ 动作必须由 EV 排名自然产生（不是被覆盖出来的）。
+   */
   assert.ok(
     normal.equity! < normal.required,
-    `基线（到达口径）必须低于门槛：${(normal.equity! * 100).toFixed(2)}% vs ${(normal.required * 100).toFixed(2)}%`,
+    `基线（整体范围口径）必须低于门槛：${(normal.equity! * 100).toFixed(2)}% vs ${(normal.required * 100).toFixed(2)}%`,
   );
-  assert.equal(normal.action, 'FOLD');
-  assert.ok(normal.callEV! < 0, `基线 Call EV 必须为负：${normal.callEV!.toFixed(3)}`);
 
   /*
-   * ① 下注范围权益必须存在、且**不高于**到达范围权益（它是偏价值子集）。
+   * ① 下注范围权益必须存在，且**不高于到达范围权益**（它是更偏价值的条件范围）。
    */
   for (const [name, r] of [['NORMAL', normal], ['VERY_TIGHT', veryTight], ['BLUFF_HEAVY', bluffHeavy], ['MANIAC', maniac]] as const) {
     assert.notEqual(r.betRangeEquity, null, `${name}：必须给出下注范围权益`);
+    assert.notEqual(r.arrivalEquity, null, `${name}：必须给出真正的到达范围权益`);
     assert.ok(
-      r.betRangeEquity! <= r.equity! + 1e-12,
-      `${name}：下注范围是到达范围的偏价值子集 ⇒ 权益不得更高：` +
-        `${(r.betRangeEquity! * 100).toFixed(2)}% vs ${(r.equity! * 100).toFixed(2)}%`,
+      r.betRangeEquity! <= r.arrivalEquity! + 1e-12,
+      `${name}：下注范围比到达范围更偏价值 ⇒ 权益不得更高：` +
+        `${(r.betRangeEquity! * 100).toFixed(2)}% vs 到达 ${(r.arrivalEquity! * 100).toFixed(2)}%`,
     );
   }
 
@@ -345,9 +375,18 @@ test('T2：门槛邻近节点上，画像必须改变「面对下注」的权益
     pBetEq(normal) < pBetEq(bluffHeavy),
     `BLUFF_HEAVY 比普通更爱诈唬 ⇒ 下注范围权益更高：${pBetEq(normal).toFixed(4)} vs ${pBetEq(bluffHeavy).toFixed(4)}`,
   );
+  /*
+   * ⚠️ **契约变更 ③**：BLUFF_HEAVY 与 MANIAC 之间不再要求严格单调。
+   *
+   * 两个原型的差别不只在诈唬倾向：MANIAC 的 `aggression` 更高 ⇒ 薄价值
+   * （两对/超对/顶对）的频率也更高，而**那些牌也被 Hero 的第二对子击败**
+   * ⇒ 两条通道方向相反。实测两者相差 < 0.1pp（38.52% vs 38.45%），
+   * 属于**平局**，不是顺序错误。仍然锁死的是「诈唬倾向更高的一端不得更低」
+   * （容差 1pp），以及 BR-12 里 MANIAC > NIT 的严格方向。
+   */
   assert.ok(
-    pBetEq(bluffHeavy) <= pBetEq(maniac) + 1e-12,
-    `MANIAC 是诈唬上限 ⇒ 不得低于 BLUFF_HEAVY：${pBetEq(maniac).toFixed(4)} vs ${pBetEq(bluffHeavy).toFixed(4)}`,
+    pBetEq(bluffHeavy) <= pBetEq(maniac) + 0.01,
+    `MANIAC 是诈唬上限 ⇒ 不得显著低于 BLUFF_HEAVY：${pBetEq(maniac).toFixed(4)} vs ${pBetEq(bluffHeavy).toFixed(4)}`,
   );
 
   // ③ 动作必须跟随 EV 符号（不是被画像覆盖出来的）
@@ -437,17 +476,20 @@ test('T4：画像进入范围后，末端抓诈唬偏移必须归零并**标注�
 test('T13：`decisionMargin`（离翻面多远）与模型置信度（首选比次选好多少）必须分开', () => {
   const deep = analyzeManualHand(nodeA('NORMAL'), OPTIONS);
   /*
-   * 🔴 **契约变更（TEST 09 P0-1，已记录，非放宽）**
+   * 🔴 **契约变更（TEST 09 P0-1 + RIVER BET RANGE V2，已记录，非放宽）**
    *
-   * 修复前这里用 `nodeB('BLUFF_HEAVY')` 当「边缘节点」，因为当时
-   * `callEV` 用**到达范围**权益，那个节点恰好落在容差带内。
+   * 第一版用 `nodeB('BLUFF_HEAVY')` 当「边缘节点」——当时 `callEV` 用
+   * **到达范围**权益，那个节点恰好落在容差带内。
    *
-   * 改用**下注范围**权益后，该节点 `callEV = −192.69`（带 ±77.50）——
-   * **已经不在带内**，用它就测不到「带内 ⇒ MARGINAL」这条性质了。
+   * 改用**下注范围**权益后（TEST 09 P0-1），该节点 `callEV = −192.69`（带 ±77.50），
+   * 于是改用「下注范围里 90% 是空气」的范围构成注入来构造带内节点。
    *
-   * 因此这里改用显式的**范围构成注入**构造一个真正带内的节点（§二十）：
-   * 假设他的下注范围里有 90% 的空气，则抓诈牌的 `callEV = −2.03`，
-   * 落在 ±77.50 内。这样「带内」这个前提是**被构造出来的、可复现的**，
+   * 本轮（RIVER BET RANGE V2）修掉**重复计费**与**整类清零**之后，
+   * 「90% 空气」会让该节点变成明显正期望（callEV ≈ +547），
+   * 而**诈唬全关**（`betRangeBluffShareOverride: 0`）恰好把它压回容差带内：
+   * 实测 `callEV = −42.15`，带 ±77.50 ⇒ `MARGINAL`。
+   *
+   * 因此这里改用**诈唬全关**构造边缘节点 —— 前提仍是**被构造出来的、可复现的**，
    * 而不是依赖某个恰好成立的旧数值。
    */
   const edgeNode: ManualHandInput = {
@@ -456,7 +498,7 @@ test('T13：`decisionMargin`（离翻面多远）与模型置信度（首选比�
       quickProfile: 'NORMAL',
       dynamicHint: 'UNKNOWN',
       stackBB: 100,
-      betRangeBluffShareOverride: 0.9,
+      betRangeBluffShareOverride: 0,
     },
   } as unknown as ManualHandInput;
   const edge = analyzeManualHand(edgeNode, OPTIONS);

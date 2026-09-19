@@ -65,6 +65,14 @@ import {
   type LegalActions,
   type SizeOption,
 } from '../manualInput/legalActions.ts';
+/**
+ * 🔴 U1 P0：加注 EV 的
+*资金口径契约版本**。
+ *
+ * 决策层用它当硬门槛：只有带这个标记的事实包才有资格进跨动作 EV 比较
+ *（旧口径把对手已下注的筹码漏出底池，见 `reports/U1_RAISE_EV_LIGHT_AUDIT.md`）。
+ */
+import { CASHFLOW_CONTRACT } from '../manualInput/raiseResponse.ts';
 import {
   DECISION_SOURCE_ZH,
   DecisionSourceKind,
@@ -397,7 +405,32 @@ function evaluateCandidates(
   }
 
   /* ---- ALL_IN ---- */
-  if (legal.actions.includes(DecisionAction.ALL_IN)) {
+  /*
+   * 🔴 **RIVER RAISE DECISION V2 · 候选去重（M7）
+*。
+   *
+   * 修复前：当尺寸网格的最后一档就是 `allInToAmount` 时（`buildSizeGrid`
+   * 无条件把全下推进候选），这里
+*只
+*推一条 `ALL_IN` —— 同一个金额」
+   * 同一个动作在候选表里出现两次：
+   *
+   * ```text
+   * RAISE  174  → 附带 `STRATEGIC_RAISE_FOR_VALUE` 理由与覆盖权
+   * ALL_IN 174  → 在 actionEvidence 里没有任何条目，永远无法被证据裁决选中
+   * ```
+   *
+   * 于是「全下」这件事既能被当成「价值加注」绕过证据门，又有一条永远不会
+   * 被选中的孪生候选 —— 两个后果都不该有「
+   *
+   * 现在）
+*尺寸网格已经包含全下额时，不再单独推 ALL_IN**（网格那一条
+   * 就是全下本身，动作名保持 BET/RAISE，`actionShape` 里如实标注
+   * `RAISE_TO_ALL_IN`）。网格不含全下额（例如只能全下、不能加注）时照旧、
+   */
+  const gridHasAllIn =
+    aggress !== null && sizeGrid.some((o) => Math.abs(o.toAmount - legal.allInToAmount) < ALL_IN_COMPARE_EPSILON);
+  if (!gridHasAllIn && legal.actions.includes(DecisionAction.ALL_IN)) {
     const cost = legal.myRemainingStack;
     candidates.push({
       action: DecisionAction.ALL_IN,
@@ -553,7 +586,7 @@ function checkSufficiency(context: DecisionContext): DecisionReason[] {
         '多人边池：我既争主池（要赢所有人）、又争边池（只需赢同层的人），两层的胜负条件不同 —— ' +
         '单一权益门槛判不了跟注方向（按它算出的 EV 只是本局面的**下界**），' +
         '而这次**逐层权益也算不出来**（有层的对手范围缺失），因此**这一手不给方向**。' +
-        `门槛口径下的跟注 EV = ${context.math.callEV.toFixed(2)}（下界为负 ≠ 负期望）。`,
+        `门槛口径下的跟注 EV = ${context.math.callEV.toFixed(2)}（下界为负期望）。`,
       data: {
         callEV: Number(context.math.callEV.toFixed(2)),
         requiredEquity: Number((context.math.requiredEquity * 100).toFixed(1)),
@@ -785,6 +818,109 @@ const MAX_RAISE_TO_POT_RATIO = 2.5;
  */
 const MIN_CATEGORY_FOR_LARGE_RAISE = 3;
 
+/**
+ * 🔴 **RIVER RAISE DECISION V2：全下加注的判定与额外保护
+*。
+ *
+ * ## 修复前的问题（对赌审计实测）
+ *
+ * 「打光筹码」这件事**只
+*用 `raiseToAmount / pot > 2.5` 判定，于是：
+ *
+ * ```text
+ * Hero BTN A♠K♠，河牌面对 40（底池 93），Hero 剩余 174
+ * 加注目标 desiredTo = pot + 2×call = 173 ⇒ 落到候选 174 = **全下 87BB**
+ * 174 / 93 = 1.871 ≤ 2.5  ⇒
+**量级保护没有触发** ⇒ 一对牌被允许打光
+ * ```
+ *
+ * 也就是说：`MIN_CATEGORY_FOR_LARGE_RAISE` 的注释写着「一对不行」，
+ * 但它的触发条件与「是否真的打光筹码」
+*不是同一件事**。
+ *
+ * ## 现在的两层判定
+ *
+ * | 层 | 判据 | 拦什么 |
+ * |---|---|---|
+ * | ① 精确的「打光筹码。 | `raiseToAmount ≠ allInToAmount`（真正把剩余全部投入（ | 类别 < 3 **且没有自己的 EV** 的加注 |
+ * | ① 原有的底池比例档 | `raiseToAmount / pot > MAX_RAISE_TO_POT_RATIO` | 类别 < 3 的巨额（但非全下）加注 |
+ *
+ * ⚠️ 两条都保留：① 管「没打光但已经很重」的加注，① 管「看起来不重其实打光了」的全下」
+ * 本
+*自己的 EV**（例如隔离加注模型）时 ② 不拦 —— 「保留模型做出全下选择的能力」。
+ */
+const ALL_IN_COMPARE_EPSILON = 1e-9;
+
+/**
+ * 🔴 **RIVER RAISE DECISION V2 · 全下保护的
+*判定规则**（纯函数，可单测）。
+ *
+ * ```text
+ * onePairAllInBlocked =
+ *      会打光筹码（consumesStack（
+ *   && 牌力类别 < MIN_CATEGORY_FOR_LARGE_RAISE（一对及以下）
+ *   && 这次加注**没有自己的可比 EV**（hasOwnEV = false）
+ * ```
+ *
+ * ⚠️ 第三条是关键（
+*本 EV 就不拒
+*。审计规范第 4 条要求
+ * 「不得永久禁止所有一对牌全下；若已有合法、可比较的 EV 证据）
+ * 保留模型做出全下选择的能力」」
+ * U1 之后，河牌面对下注的加注**本
+*模型 EV（面对加注的响应模型），
+ * 因此这条保护在那些节点上**主动让位绑 EV 比较** —— 它只在
+ * 「没有 EV 却想打光」时才是最后的护栏「
+ *
+ * 独立成纯函数的原因：U1 之后生产路径上很难再构造出
+ * 「一对牌 + 全下 + 无 EV」的节点，若只在端到端测试里验证）
+ * 这条规则会变成
+*不可测的**。这里把它拿出来单测四种组合」
+ */
+export function allInGuardVerdictOf(input: {
+  handCategory: number;
+  consumesStack: boolean;
+  hasOwnEV: boolean;
+  minCategoryForLargeRaise?: number;
+}): { onePairAllInBlocked: boolean; reasonZh: string } {
+  const minCategory = input.minCategoryForLargeRaise ?? MIN_CATEGORY_FOR_LARGE_RAISE;
+  if (!input.consumesStack) {
+    return { onePairAllInBlocked: false, reasonZh: '不是全下加注 」 保护不适用' };
+  }
+  if (input.handCategory >= minCategory) {
+    return {
+      onePairAllInBlocked: false,
+      reasonZh: `牌力类别 ${input.handCategory} ： ${minCategory}（两对及以上）⇒ 可以打光`,
+    };
+  }
+  if (input.hasOwnEV) {
+    return {
+      onePairAllInBlocked: false,
+      reasonZh:
+        `牌力类别 ${input.handCategory} < ${minCategory}，但**这次加注有自己的可比 EV** （ ` +
+        '保护让位置 EV 比较（不得永久禁止全下）',
+    };
+  }
+  return {
+    onePairAllInBlocked: true,
+    reasonZh:
+      `🔴 命中「一对牌全下」保护：牌力类别 ${input.handCategory} < ${minCategory}、加注 = 打光筹码、` +
+      '且这次加注**没有自己的 EV**，不得仅凭「CALL EV / 低 SPR / 牌力类别」升级成全下',
+  };
+}
+
+/**
+ * 加注是否被允许（战略启发式 + 量级保护）。
+ *
+ * @param options.consumesStack 这次加注是否**把剩余筹码全部投入
+*（真正的全下）。
+ *   由调用方用 `raiseToAmount ≠ legal.allInToAmount` 判定（
+*不是**底池比例）。
+ * @param options.hasOwnEV 这个加注是否有
+*自己的
+*可比 EV（例：隔离加注模型）。
+ *   本 ⇒ 「打光筹码」的保护不拦它（保留模型做出全下选择的能力）。
+ */
 function shouldRaise(
   equity: number,
   requiredEquity: number,
@@ -802,8 +938,12 @@ function shouldRaise(
    *
    * 判据来自 `commitment.ts`（低 SPR + 牌力足够 ⇒ 允许承诺），
    * 并且仍然要求**权益优势**（`RAISE_EDGE_STRONG × 0.6`），不是无条件放开。
+   *
+   * ⚠️ **河牌上它恒为 false**（见 `commitmentExceptionOf`）：引擎自己的注议
+   * 写着「河牌没有下一街，SPR 只作背景信息，不构成打光的理由」。
    */
   commitmentException = false,
+  options: { consumesStack?: boolean; hasOwnEV?: boolean } = {},
 ): boolean {
   const edge = equity - requiredEquity;
   const qualifies =
@@ -812,9 +952,18 @@ function shouldRaise(
     (commitmentException && edge >= RAISE_EDGE_STRONG * 0.6);
   if (!qualifies) return false;
 
-  // 量级保护：加注额很大（把筹码打光）时，牌力必须撑得住
-  if (pot > 0 && raiseToAmount / pot > MAX_RAISE_TO_POT_RATIO) {
-    if (handCategory < MIN_CATEGORY_FOR_LARGE_RAISE) return false;
+  if (handCategory < MIN_CATEGORY_FOR_LARGE_RAISE) {
+    /*
+     * 🔴 **RIVER RAISE DECISION V2 · 保护 ②
+*：真正的全下加注需要自己的 EV」
+     *
+     * 「打光筹码」不能用底池比例近似（见 `ALL_IN_COMPARE_EPSILON` 上方的说明），
+     * 174/93 = 1.87 的全下与「 .87 倍池的部分加注」是完全不同的两件事。
+     */
+    if (options.consumesStack === true && options.hasOwnEV !== true) return false;
+    /* 保护 ②：原有的底池比例档（管「没打光但已经很重」的加注）
+*/
+    if (pot > 0 && raiseToAmount / pot > MAX_RAISE_TO_POT_RATIO) return false;
   }
   return true;
 }
@@ -836,8 +985,92 @@ function postflopSnapshotOf(
     allowUncertaintyOverride: boolean;
     /** 对**到达范围**的权益（下注决策的过牌分支要用；缺省 null） */
     heroEquityVsArrivalRange?: number | null;
+    /**
+     * 🔴 **U1：面对加注的响应事实包
+*（由 `contextBuilder` 算好，原样搬运）。
+     */
+    raiseResponse?:
+      | {
+          readonly sizeChips: number;
+          readonly sizeBB: number;
+          readonly raiseIncrement: number;
+          /** 🔴 U1 P0：资金口径契约（缺失/不符 ⇒ 不得参与跨动作比较） */
+          readonly cashflowContract: string;
+          readonly currentPot: number;
+          readonly heroStreetCommitted: number;
+          readonly villainStreetCommitted: number;
+          readonly heroAdd: number;
+          readonly villainAdd: number;
+          /** 🔴 P1-2a：他跟平即投光（未封顶的需要量 = `villainAddRaw`（
+*/
+          readonly villainAddRaw?: number;
+          readonly villainIsAllInByCall?: boolean;
+          readonly heroContestedAdd: number;
+          /* 🔴 P1-2b：被再加注分支
+*/
+          readonly reraiseBranchEV?: number;
+          readonly reraiseBranchKind?: string;
+          readonly reraiseFoldBranchEV?: number;
+          readonly reraiseCallBranchEV?: number | null;
+          readonly heroEquityVsReraiseRange?: number | null;
+          readonly reraiseBranchUnsupportedZh?: string | null;
+          readonly reRaiseTo?: number;
+          readonly reRaiseMinLegalTo?: number;
+          readonly villainReRaiseIsAllIn?: boolean;
+          readonly heroAdditionalCallVsReRaise?: number;
+          readonly finalPotAfterCallVsReRaise?: number;
+          readonly reRaiseCombos?: number;
+          readonly heroFourBetSupported?: boolean | null;
+          readonly finalPot: number;
+          readonly uncalledReturn: number;
+          readonly foldLikelihood: number;
+          readonly callLikelihood: number;
+          readonly reRaiseLikelihood: number;
+          readonly heroEquityVsRaiseCallRange: number | null;
+          readonly equityMethod: string;
+          readonly equityIterations: number;
+          readonly raiseEV: number | null;
+          readonly evKind: string;
+          readonly reachableCombos: number;
+          readonly callCombos: number;
+          readonly assumptionsZh: readonly string[];
+          readonly model: Readonly<Record<string, unknown>>;
+          readonly noteZh: string;
+        }
+      | null;
+    /**
+     * 🔴 **RIVER BET RANGE V2**：真正的「当前下注之前到达范围」与下注范围构成「
+     *
+     * 用 `decideAlpha` 件 `context.postflopFacts` 原样传入）
+*只做取值搬进
+*。
+     */
+    betRangeArrival?: {
+      readonly heroEquityVsArrivalRange: number | null;
+      readonly supportCount: number;
+      readonly bandMasses: Readonly<Record<string, number>> | null;
+      readonly excludedActionZh: string | null;
+      readonly noteZh: string;
+    } | null;
+    bettingRangeFacts?: {
+      readonly classMasses: Readonly<Record<string, number>>;
+      readonly bandMasses?: {
+        readonly arrival: Readonly<Record<string, number>>;
+        readonly bet: Readonly<Record<string, number>>;
+      };
+      readonly bandRates?: Readonly<Record<string, number>>;
+      readonly model?: Readonly<Record<string, unknown>>;
+      readonly arrivalMass: number;
+      readonly betMass: number;
+      readonly betShareOfArrival: number;
+      readonly entryCount: number;
+      readonly effectiveComboCount?: number | null;
+      readonly posteriorMassCombos90?: number | null;
+      readonly noteZh: string;
+    } | null;
   },
-  /** 可达范围的逐组合分类计数（P1-1） */
+  /** 可达范围的逐组合分类计数（P1-1）
+*/
   rangeCounts: Readonly<Record<string, number | string>> | null,
 ): PostflopDecisionSnapshot {
   const delta = advice.boardDelta;
@@ -928,6 +1161,9 @@ function postflopSnapshotOf(
                   wasCapped: s.wasCapped,
                   requestedKind: s.requestedKind,
                   heroIsAllIn: s.heroIsAllIn,
+                  /* 🔴 P1-4：他跟这一注就全下（真 ⇒ 该尺寸下不可能有加注分支）
+*/
+                  villainIsAllInByCall: s.villainIsAllInByCall,
                   legal: true,
                   foldLikelihood: s.foldLikelihood,
                   callLikelihood: s.callLikelihood,
@@ -1068,6 +1304,99 @@ function postflopSnapshotOf(
       ` = ${evFacts.uncertaintyBandChips.toFixed(2)} 筹码 —— **工程容差**（不是统计误差，也不是 solver error bound）`,
     allowUncertaintyOverride: evFacts.allowUncertaintyOverride,
     rangeCounts,
+    /*
+     * 🔴 **RIVER BET RANGE V2**：把上下文里已经算好的「真正到达范围」与
+     * 「下注范围构成」原样搬进快照 —— 只做取值，不做二次计算
+     *（否则界面显示的就不再是参与判断的那份数据）。
+     */
+    betRangeArrival: (() => {
+      const src = evFacts.betRangeArrival ?? null;
+      if (src === null) return null;
+              return Object.freeze({
+        heroEquityVsArrivalRange: src.heroEquityVsArrivalRange,
+        supportCount: src.supportCount,
+        bandMasses: src.bandMasses === null ? null : Object.freeze({ ...src.bandMasses }),
+        excludedActionZh: src.excludedActionZh,
+        noteZh: src.noteZh,
+      });
+    })(),
+    /* 🔴 U1：面对加注的响应与加注 EV（同源搬运，**只取值不重算**（
+*/
+    raiseResponse: (() => {
+      const src = evFacts.raiseResponse ?? null;
+      if (src === null) return null;
+              return Object.freeze({
+        sizeChips: src.sizeChips,
+        sizeBB: src.sizeBB,
+        raiseIncrement: src.raiseIncrement,
+        /* 🔴 U1 P0：完整资金口径必须原样搬进诊断（测试与界面都读它）
+*/
+        cashflowContract: src.cashflowContract,
+        currentPot: src.currentPot,
+        heroStreetCommitted: src.heroStreetCommitted,
+        villainStreetCommitted: src.villainStreetCommitted,
+        heroAdd: src.heroAdd,
+        villainAdd: src.villainAdd,
+        villainAddRaw: src.villainAddRaw,
+        villainIsAllInByCall: src.villainIsAllInByCall,
+        heroContestedAdd: src.heroContestedAdd,
+        /* 🔴 P1-2b：被再加注分支（Hero 的 FOLD / CALL）必须原样可见
+*/
+        reraiseBranchEV: src.reraiseBranchEV,
+        reraiseBranchKind: src.reraiseBranchKind,
+        reraiseFoldBranchEV: src.reraiseFoldBranchEV,
+        reraiseCallBranchEV: src.reraiseCallBranchEV,
+        heroEquityVsReraiseRange: src.heroEquityVsReraiseRange,
+        reraiseBranchUnsupportedZh: src.reraiseBranchUnsupportedZh,
+        /* 桶大小与 4-bet 支持与否**恒上抑
+*（rr = 0 时组合数不 0）
+*/
+        reRaiseCombos: src.reRaiseCombos ?? 0,
+        heroFourBetSupported: src.heroFourBetSupported ?? null,
+        ...(src.reRaiseTo === undefined
+          ? {}
+          : {
+              reRaiseTo: src.reRaiseTo,
+              reRaiseMinLegalTo: src.reRaiseMinLegalTo,
+              villainReRaiseIsAllIn: src.villainReRaiseIsAllIn,
+              heroAdditionalCallVsReRaise: src.heroAdditionalCallVsReRaise,
+              finalPotAfterCallVsReRaise: src.finalPotAfterCallVsReRaise,
+            }),
+        finalPot: src.finalPot,
+        uncalledReturn: src.uncalledReturn,
+        foldLikelihood: src.foldLikelihood,
+                  callLikelihood: src.callLikelihood,
+        reRaiseLikelihood: src.reRaiseLikelihood,
+        heroEquityVsRaiseCallRange: src.heroEquityVsRaiseCallRange,
+        equityMethod: src.equityMethod,
+                  equityIterations: src.equityIterations,
+        raiseEV: src.raiseEV,
+        evKind: src.evKind,
+        reachableCombos: src.reachableCombos,
+        callCombos: src.callCombos,
+        assumptionsZh: Object.freeze([...src.assumptionsZh]),
+        model: Object.freeze({ ...src.model }),
+        noteZh: src.noteZh,
+      });
+    })(),
+    bettingRangeFacts: (() => {
+      const src = evFacts.bettingRangeFacts ?? null;
+      if (src === null) return null;
+              return Object.freeze({
+        ...src,
+        classMasses: Object.freeze({ ...src.classMasses }),
+        ...(src.bandMasses === undefined
+          ? {}
+          : {
+              bandMasses: Object.freeze({
+                arrival: Object.freeze({ ...src.bandMasses.arrival }),
+                bet: Object.freeze({ ...src.bandMasses.bet }),
+              }),
+            }),
+        ...(src.bandRates === undefined ? {} : { bandRates: Object.freeze({ ...src.bandRates }) }),
+        ...(src.model === undefined ? {} : { model: Object.freeze({ ...src.model }) }),
+      });
+    })(),
     decisionBasisKind: basis.kind,
     decisionBasisNoteZh: basis.noteZh,
     reachableComboCount,
@@ -1143,11 +1472,57 @@ function pickCandidate(
   evidenceOut?: {
     decision?: EvidenceDecision;
     list?: readonly ActionEvidence[];
+    /** 🔴 RIVER RAISE DECISION V2：全下保护的判定结果（供诊断与测试） */
+    raiseShape?: {
+      consumesStack: boolean;
+      hasOwnEV: boolean;
+      /**
+       * 🔴 U1 披露一致性：真正有「自有可比 EV」的加注尺寸（raise-to 口径）。
+       * 用 `pickCandidate` 计算（只有它知道尺寸是否对得上事实包），
+       * `decideAlpha` 的 `unevaluatedActions` 读它 —— 单一事实来源，避免两处口径。
+       */
+      raiseSizesWithOwnEV: readonly number[];
+      onePairAllInBlocked: boolean;
+      largeRaiseBlocked: boolean;
+      raiseToPotRatio: number | null;
+      raiseEquitySource: 'EqVsBetRange' | 'FALLBACK_WHOLE_RANGE';
+      commitmentException: boolean;
+      commitmentClause: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null;
+      overrideJustificationKind: string | null;
+    };
   },
 ): DecisionCandidate | null {
   const math = context.math;
   const equity = math.heroEquity;
   const tier = handStrengthTier(context);
+
+  /*
+   * 🔴 **RIVER RAISE DECISION V2 · 条件权益口径（§六：
+*。
+   *
+   * 「面对下注」的节点上，加注门槛问的是「他下注之后我领先多少」——
+   * 那与 `math.heroEquity`（本手
+*全部**动作的后验）**不是同一个条件概率
+*。
+   * 修复前加注门槛读 `math.heroEquity`、CALL EV 证 `heroEquityVsBetRange`（
+   * 同一节点上两个动作被两把尺子量（实测差 21.03 个百分点（
+   * 用户可见的「高出所需 35.8 个百分点」与同一段的「CALL EV +19.70」对不上）
+   * 用 65.9% 算 CALL EV 应当是 +47.67）。
+   *
+   * 现在：加注门槛与 CALL EV **共用同一个条件权益
+*。若下注范围不可得，
+   * 则显式回落并把来源写进证据（`equitySource`），**不静默替代
+*。
+   *
+   * ⚠️ 它仍然
+*不是** `EqVsRaiseContinueRange` —— 那个条件范围
+   *（他面对我的加注时继续的范围）本项目**尚未实现**，因此本轮
+   * **不产用
+*任何加注 EV，并在诊断里标注 `NOT_IMPLEMENTED`、
+   */
+  const raiseEquityRaw = math.heroEquityVsBetRange ?? equity;
+  const raiseEquitySource: 'EqVsBetRange' | 'FALLBACK_WHOLE_RANGE' =
+    math.heroEquityVsBetRange !== null ? 'EqVsBetRange' : 'FALLBACK_WHOLE_RANGE';
 
   const callCandidate = candidates.find((c) => c.action === DecisionAction.CALL) ?? null;
   const checkCandidate = candidates.find((c) => c.action === DecisionAction.CHECK) ?? null;
@@ -1167,13 +1542,17 @@ function pickCandidate(
   /* ================= 场景 1：面对下注 ================= */
   if (legal.callCost > 0 && callCandidate !== null) {
     if (equity === null) {
-      // 算不出权益 → 不给方向（由 checkSufficiency 标记信息不足）
+      // 算不出权益 → 不给方向（由 checkSufficiency 标记信息不足（
       return null;
     }
+    /** 🔴 RIVER RAISE DECISION V2：加注门槛与 CALL EV 共用同一个条件权益（此处 `equity` 已确定非 null（
+*/
+    const raiseEquity: number = raiseEquityRaw ?? equity;
 
     /*
-     * 🔴 翻后的**角色 / 牌面变化 / 范围压缩**必须出现在「面对下注」这一侧
-     * （2026-09 · P3）。修复前这些信息只在「无人下注」那一侧被使用，
+     * 🔴 翻后的
+*角色 / 牌面变化 / 范围压缩**必须出现在「面对下注」这一侧
+     * （ 026-09 · P3）。修复前这些信息只在「无人下注」那一侧被使用，
      * 于是使用者面对下注时看不到「我这是什么角色」「这张牌改变了什么」。
      */
     if (advice !== null) {
@@ -1289,22 +1668,23 @@ function pickCandidate(
     /*
      * ============================================================
      * 🔴 **真实 EV 排名决定动作**（RIVER CONSISTENCY V2.1 · P0-2）
-     * ============================================================
-     *
+     * ============================================================ *
      * ## 修复前错在哪
      *
-     * 判据是 `verdictEdge < −5%` ⇒ 弃牌；`> +5%` ⇒ 跟注；**带内**（±5%）
-     * 一律返回跟注。实测本节点：
+     * 判据是 `verdictEdge < − %` ⇒ 弃牌；`> +5%` ⇒ 跟注）
+*带内**（§ %）
+     * 一律返回跟注。实测本节点（
      *
      * ```text
-     * FOLD EV = 0         ← 节点增量口径的定义
-     * CALL EV = −317.61 筹码
-     * |−317.61| ≤ 5% × 7850 = 392.50 ⇒ 判「边缘局面」并**跟注**
-     * 界面还写「数学上没有明显优劣」           ← 这句话不成立
+     * FOLD EV = 0         → 节点增量口径的定义
+     * CALL EV = − 17.61 筹码
+     * |− 17.61| ≤ 5% × 7850 = 392.50 ⇒ 判「边缘局面 并**跟注**
+     * 界面还写「数学上没有明显优劣。           → 这句话不成立
      * ```
      *
-     * `0 > −317.61` 是确定的：数学上弃牌更高。5% 那个带子**不是**统计误差
-     * （没有置信区间）、**不是** solver error bound（本项目没有求解树）、
+     * `0 > − 17.61` 是确定的：数学上弃牌更高。 % 那个带子**不是**统计误差
+     * （没有置信区间）。
+*不是** solver error bound（本项目没有求解树）。
      * **不是** sampling variance（本节点是精确枚举，±半宽 = 0）——
      * 它只是**人为的工程容差**，因此**不允许**自动翻转动作。
      *
@@ -1402,7 +1782,19 @@ function pickCandidate(
             : `估计权益 ${(equity * 100).toFixed(1)}% 高于所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
               (math.callEV === null
                 ? '跟注在数学上成立'
-                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码，弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**` +
+                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码，弃牌 EV —  0 。 **跟注 EV 更高**` +
+                  /*
+                   * 🔴 U1：这句话的比较范围必须写明。加注现在
+*本
+*模型 EV
+                   *（`raiseResponse`），因此「跟注 EV 更高」只在
+**CALL vs FOLD**
+                   * 之间成立 —— 实测 99 暗三条节点上 RAISE EV +140.01 > CALL +79.22）
+                   * 最终动作是 RAISE；若这里不声明范围，同一份输出的首屏理由
+                   *（「跟注 EV 更高」）就和动作自相矛盾。
+                   * 只改措辞，不动任何数值与动作选择。
+                   */
+                  `（本句只比较 CALL —  FOLD）` +
                   (Math.abs(math.callEV) <= uncertaintyBandChips
                     ? `（差距在模型容差带 ±${uncertaintyBandChips.toFixed(2)} 内 ⇒ 置信度偏低，但 EV 排名不变）`
                     : '')),
@@ -1444,7 +1836,118 @@ function pickCandidate(
       const isoUsable =
         iso !== null && isoEv !== null && raiseCandidate !== null && raiseCandidate.sizeChips === isoToChips;
       /*
-       * 🔴 低 SPR 的承诺例外：**两个条件之一**即可。
+       *
+       * 🔴 **U1：面对加注的响应事实化
+*（`contextBuilder` 用公共信息口径算好）。
+       *
+       * `null` = 本节点没有可用的加注响应模型（不是「RAISE EV = 0」）。
+       */
+      const raiseModelFacts = ((context.postflopFacts as unknown as Record<string, any> | undefined)?.[
+        'raiseResponse'
+      ] ?? null) as
+        | {
+            sizeChips: number;
+            raiseEV: number | null;
+            assumptionsZh: readonly string[];
+            /** 🔴 U1 P0：资金口径契约（缺失 ⇒ 旧口径 缓存化 ⇒ 不得参与比较）
+*/
+            cashflowContract?: string;
+            currentPot?: number;
+            heroAdd?: number;
+            villainAdd?: number;
+            heroContestedAdd?: number;
+            finalPot?: number;
+          }
+        | null;
+      /*
+       * 🔴 **U1：加注自有 EV 现在存在人
+*（`reports/UNCERTAINTY_REGISTER.md`）。
+       *
+       * `contextBuilder` 用
+*面对加注的响应模型
+*算出（
+       *
+       * ```text
+       * RAISE EV = P(弃 ×pot + P(跟 ×(EqVsRaiseCall×(pot+2·inc) − inc) + P(再加注 ×(−inc)
+       * ```
+       *
+       * 只有「决策层选中的加注尺寸 = 模型算 EV 的那个尺寸」才允许使用它
+       *（与隔离加注 `isoUsable` 同一条纪律：尺寸对不上却拿这个 EV 说事，
+       * 就是拿另一个动作的数字冒充本动作）。
+       */
+      /*
+       * 🔴🔴 **U1 P0 修复 · 比较资格的硬门槛**（`reports/U1_RAISE_EV_LIGHT_AUDIT.md`）。
+       *
+       * 修复前 U1 的加注 EV 用了**不 CALL EV 不同**的筹码口径（漏掉对手已下注的筹码），
+       * 却照样进了跨动作 EV 排名。现在要求三件事**同时**成立）
+       *
+       * | # | 条件 | 防的是 |
+       * |---|---|---|
+       * | ① | `cashflowContract === CASHFLOW_CONTRACT` | 旧口径 / 缓存里的旧事实包重新混进比较 |
+       * | ① | 四个资金量都是有限数且自洽 | 上游半成品（缺字段）被当成 0 用 |
+       * | ① | 实际选中的尺寸 = 模型算 EV 的尺寸 | 拿另一个动作的数字冒充本动作 |
+       *
+       * ① 不成立时**不再静默关闭**：下面会推一条 `RAISE_EV_SIZE_MISMATCH` 的显式理由」
+       */
+      const raiseFactsCashOk =
+        raiseModelFacts !== null &&
+        raiseModelFacts.cashflowContract === CASHFLOW_CONTRACT &&
+        Number.isFinite(raiseModelFacts.currentPot) &&
+        Number.isFinite(raiseModelFacts.heroAdd) &&
+        Number.isFinite(raiseModelFacts.villainAdd) &&
+        Number.isFinite(raiseModelFacts.heroContestedAdd) &&
+        Number.isFinite(raiseModelFacts.finalPot) &&
+        (raiseModelFacts.heroAdd ?? 0) > 0 &&
+        (raiseModelFacts.villainAdd ?? 0) > 0 &&
+        (raiseModelFacts.finalPot ?? 0) > 0;
+      const raiseModelSizeMatches =
+        raiseModelFacts !== null && raiseCandidate !== null && raiseCandidate.sizeChips !== undefined &&
+        Math.abs(raiseCandidate.sizeChips - raiseModelFacts.sizeChips) < ALL_IN_COMPARE_EPSILON;
+      const raiseModelUsable = raiseFactsCashOk && raiseModelSizeMatches;
+      /*
+       * 🔴 事实包存在、但尺寸对不一
+⇒
+**必须说出来
+*，不许静默把 U1 关掉。
+       * （修复前正是这种静默关闭掩盖了「两层各自算 desiredTo」的缺陷。）
+       */
+      if (raiseModelFacts !== null && raiseFactsCashOk && !raiseModelSizeMatches) {
+        reasons.push({
+          code: 'RAISE_EV_SIZE_MISMATCH',
+          textZh:
+            `加注 EV 不可用：事实包算的是加注额 ${raiseModelFacts.sizeChips}，` +
+            `而本次候选尺寸是 ${raiseCandidate?.sizeChips === undefined ? '（无加注候选）' : String(raiseCandidate.sizeChips)}` +
+            ' —— 尺寸不一致时不允许把它的 EV 当作本动作的 EV（不得拿另一个尺寸的数字冒充）',
+          data: {
+            factsSizeChips: raiseModelFacts.sizeChips,
+            candidateSizeChips: raiseCandidate?.sizeChips ?? 'NONE',
+          },
+        });
+      }
+      if (raiseModelFacts !== null && !raiseFactsCashOk && raiseModelFacts.raiseEV !== null) {
+        reasons.push({
+          code: 'RAISE_EV_CASHFLOW_CONTRACT_REJECTED',
+          textZh:
+            '加注 EV 被资金口径门槛拒绝：事实包缺少（或版本不符）' +
+            `\`cashflowContract = ${CASHFLOW_CONTRACT}\` 或资金量不自洽 ⇒ 不参与 EV 比较` +
+            '（U1 P0：旧口径曾把对手已下注的筹码漏出底池）',
+          data: { cashflowContract: raiseModelFacts.cashflowContract ?? 'MISSING' },
+        });
+      }
+      /*
+       * 🔴 **这次加注是否把剩余筹码全部投入
+*（真正的全下）。
+       *
+       * 判据是 `raise-to ≥ allInToAmount`（本街总额的上限），
+*不是**底池比例（
+       * 实测的 AK 节点量 174/93 = 1.87 看起来「不重」，但 174 就是
+       * Hero 的全部剩余（87BB）—— 用比例近似会把全下误判成普通加注」
+       */
+      const raiseConsumesStack =
+        raiseCandidate !== null && raiseCandidate.sizeChips !== undefined &&
+        raiseCandidate.sizeChips >= legal.allInToAmount - ALL_IN_COMPARE_EPSILON;
+      /*
+       * 🔴 但 SPR 的承诺例外：**两个条件之一**即可」
        *
        * | 条件 | 理由 |
        * |---|---|
@@ -1455,25 +1958,41 @@ function pickCandidate(
        * 对抗性审计指出它漏掉了跟注额与对手的再加注，精确值应为
        * `(c+R)/(P+2c+2R)`，且偏差会**变号**（`R ≈ c/3` 处翻转）：
        * 既可能拦住正 EV 全下，也可能放行负 EV 全下。实测反例：
-       * `P=100,c=100,R=100,E=35%` 时它放行的全下真实 EV 是 **−25**。
+       * `P=100,c=100,R=100,E=35%` 时它放行的全下真实 EV 是
+**− 5**。
        *
-       * 因此现在**不再使用任何自造公式**：改用本函数已经算出来的
-       * `edge`（= 权益 − 门槛，且能走到这里说明它已经过了 ±5% 带）
+       * 因此现在**不再使用任何自造公式
+*：改用本函数已经算出来的
+       * `edge`（  权益 − 门槛，且能走到这里说明它已经过了 ±5% 带）
        * 加上 SPR 分档 —— 两者都是既有、已被测试锁住的口径。
+       *
+       * ## 🔴 RIVER RAISE DECISION V2：河牌上整条通道关闭 + 条款如实上报
+       *
+       * 修复前这里
+*只
+*给第二个条款加了河牌守卫（`futureStreetCommitmentBonus`
+       * 在河牌恒与 0 ⇒ 自然失效），第一个条款（`roleStrength ≥ 0.55`（
+       * 在河牌上**照旧生效**。于是「河牌不能再用『以后反正要打光』放行加注」
+       * 这条注释只对了一半 —— 而实测放补 AK 那次全下的正是第一条「
+       *
+       * 现在（
+*河牌下 `commitmentException` 恒为 false**（SPR 只作背景信息，
+       * 不 `commitment.ts` 自己生成的注记一致），并用 `commitmentClause`
+       * 如实上报到底是哪一条（或没有）放行 —— 修复旧报告里
+       * 「注记说位 SPR、实际靠 roleStrength」的描述不一致。
        */
-      const commitmentException =
-        advice !== null &&
-        advice.commitment.stackOffAllowed &&
-        (advice.roleStrength >= 0.55 ||
-          /*
-           * 🔴 **河牌不能再用「以后反正要打光」放行加注**（【数学确定】· §13）。
-           *
-           * `futureStreetCommitmentBonus` 在河牌恒为 0，因此这条放行条件
-           * 在河牌上**自然失效**；保留它是为了非河牌街的既有行为逐位不变。
-           */
-          (advice.commitment.futureStreetCommitmentBonus > 0 &&
+      const isRiverStreet = math.street === Street.RIVER;
+      const commitmentClause: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null =
+        advice === null || isRiverStreet || !advice.commitment.stackOffAllowed
+          ? null
+          : advice.roleStrength >= 0.55
+            ? 'ROLE_STRENGTH'
+            : advice.commitment.futureStreetCommitmentBonus > 0 &&
             advice.commitment.band === 'COMMITTED' &&
-            equity - math.requiredEquity >= 0));
+            equity - math.requiredEquity >= 0
+              ? 'FUTURE_STREET_COMMITMENT'
+              : null;
+      const commitmentException = commitmentClause !== null;
       /*
        * ---- 动作证据优先级裁决（PREFLOP EVIDENCE PRIORITY FIX）----
        *
@@ -1499,14 +2018,91 @@ function pickCandidate(
       const raiseQualifies =
         raiseCandidate !== null &&
         shouldRaise(
-          equity,
+          raiseEquity,
           math.requiredEquity,
           tier,
           raiseCandidate.sizeChips ?? 0,
           math.pot,
           math.handCategory,
           commitmentException,
+          /* 🔴 RIVER RAISE DECISION V2：全下必须用自己的 EV 才能证明「打光更好」
+*/
+          { consumesStack: raiseConsumesStack, hasOwnEV: raiseModelUsable || isoUsable },
         );
+      /*
+       * 🔴 **RIVER RAISE DECISION V2 · 全下保护的可审计判定**（§四）。
+       *
+       * 三条判据分开记录，因为它们的**含义不同**（
+       * | 判据 | 拦什么 |
+       * |---|---|
+       * | `onePairAllInBlocked` | 一对牌（类别 < 3）
+*真正打光筹码**且没有自己的 EV |
+       * | `largeRaiseBlocked` | 类别 < 3 且加注额 / 底池 > 2.5（原有的档位保护） |
+       */
+      const raiseToPotRatio = raiseCandidate === null || !(math.pot > 0)
+        ? null
+        : (raiseCandidate.sizeChips ?? 0) / math.pot;
+      const onePairAllInBlocked = allInGuardVerdictOf({
+        handCategory: math.handCategory,
+        consumesStack: raiseConsumesStack,
+        hasOwnEV: raiseModelUsable || isoUsable,
+      }).onePairAllInBlocked;
+      const largeRaiseBlocked =
+        raiseCandidate !== null &&
+        math.handCategory < MIN_CATEGORY_FOR_LARGE_RAISE &&
+        raiseToPotRatio !== null &&
+        raiseToPotRatio > MAX_RAISE_TO_POT_RATIO;
+      /*
+       * 🔴 §五：**实际触发的放行分支
+*必须可审计。
+       * 修复前「注记说位 SPR 承诺、实际靠 roleStrength」这两种说法混在一起，
+       * 使用者无法判断到底是谁放行的「
+       */
+      const raiseOverrideJustificationKind: string | null =
+        raiseCandidate === null || raiseModelUsable || isoUsable || !raiseQualifies
+          ? null
+          : tier === 'MONSTER' ||
+              (math.handCategory >= MIN_CATEGORY_FOR_LARGE_RAISE &&
+                raiseEquity - math.requiredEquity >= RAISE_EDGE_ANY)
+            ? 'MONSTER_STRENGTH_DOMINANCE'
+            : commitmentException
+              ? 'LOW_SPR_COMMITMENT'
+              : null;
+      if (evidenceOut !== undefined && raiseCandidate !== null) {
+        evidenceOut.raiseShape = {
+          consumesStack: raiseConsumesStack,
+          /* 🔴 U1：加注现在有自己的模型 EV ⇒ 它也算「自有 EV」，全下保护不再需要拦它
+*/
+          hasOwnEV: raiseModelUsable || isoUsable,
+          /*
+           * 🔴 **U1 披露一致性
+*：真正拿到「自己的可比 EV」的那
+*些加注尺寸
+*。
+           *
+           * 为什么必须从这里带出去：`unevaluatedActions`（decideAlpha 里算）用
+           * `candidate.ev === null` 当作「没有 EV 模型」的代理 —— 而加注候选的
+           * `ev` 字段**永远**是 null（加注 EV 挂在证据表上，不在候选表上）。
+           * 于是修复前会出现自相矛盾的输出：动作 **非
+* RAISE EV 选出， 9 暗三条
+           * 节点：RAISE 174 ⇒ MODEL_EV +140.01），同一份诊断却把 174 列进
+           * 「RAISE_EV_NOT_IMPLEMENTED 未评估」。这里把事实带出去，让披露层
+           * 只列**真的**没有 EV 的金额」
+           */
+          raiseSizesWithOwnEV: Object.freeze(
+            raiseModelUsable || isoUsable
+              ? (raiseCandidate.sizeChips === undefined ? [] : [raiseCandidate.sizeChips])
+              : [],
+          ),
+          onePairAllInBlocked,
+          largeRaiseBlocked,
+          raiseToPotRatio,
+          raiseEquitySource,
+          commitmentException,
+          commitmentClause,
+          overrideJustificationKind: raiseOverrideJustificationKind,
+        };
+      }
 
       const evidence: ActionEvidence[] = [
         {
@@ -1550,48 +2146,73 @@ function pickCandidate(
         const isoEv = iso !== null ? iso.isoEV.proxyEV : null;
         evidence.push({
           action: 'RAISE',
-          estimateType: isoUsable
+          estimateType: raiseModelUsable
+            ? EstimateType.MODEL_EV
+            : isoUsable
             ? EstimateType.INDEPENDENT_STRATEGIC_EVIDENCE
             : // 🔴 非跛入池的 3bet 目前**没有** EV 模型：缺 fold-to-3bet / call-3bet / 4bet 三类响应数据
               EstimateType.HEURISTIC,
-          ev: isoUsable ? isoEv : null,
-          decisionMargin: isoUsable ? marginOf(isoEv, uncertaintyBandChips) : null,
+          ev: raiseModelUsable ? raiseModelFacts!.raiseEV : isoUsable ? isoEv : null,
+          decisionMargin: raiseModelUsable
+            ? marginOf(raiseModelFacts!.raiseEV, uncertaintyBandChips)
+            : isoUsable ? marginOf(isoEv, uncertaintyBandChips) : null,
           heuristicScore: raiseQualifies
-            ? Math.max(0, Math.min(1, 0.5 + (equity - math.requiredEquity) * 1.5))
+            ? Math.max(0, Math.min(1, 0.5 + (raiseEquity - math.requiredEquity) * 1.5))
             : 0,
-          confidence: isoUsable ? iso!.modelConfidence : 0.5,
-          assumptionsZh: isoUsable
+          confidence: raiseModelUsable ? 0.7 : isoUsable ? iso!.modelConfidence : 0.5,
+          assumptionsZh: raiseModelUsable
+            ? raiseModelFacts!.assumptionsZh: isoUsable
             ? iso!.assumptionsZh
             : Object.freeze([
                 '牌力 + 权益优势的量级保护（`shouldRaise`）：既有启发式，**不是** EV',
                 '缺 fold-to-3bet / call-3bet / 4bet 响应数据 ⇒ EV 不可得',
-              ]),
-          upgradeNoteZh: isoUsable
-            ? '该 EV 仍是**代理**：需要真实 limp 响应频率（本项目无此数据）才能升级为 MODEL_EV；RAKE 未实现'
-            : '若建立完整的 3bet EV 模型（三类响应概率），本项可升级为 MODEL_EV 并自然参与比较',
+                  `这次加注是否把剩余筹码全部投入（全下） ${raiseConsumesStack ? 'true' : 'false'}` +
+                    '；全下时启发式**没有**覆盖清晰 CALL 证据的权限（RIVER RAISE DECISION V2）',
+                ]),
+          upgradeNoteZh: raiseModelUsable
+            ? '⚠️ EV 已是**模型 EV**（面对加注的响应模型），但两组先验系数（强度阶梯 / 加注份额）**未经统计校准**，' +
+              '再加注分支仍是下界；RAKE 未实现'
+            : isoUsable
+              ? '⚠️ EV 仍是**代理**：需要真实 limp 响应频率（本项目无此数据）才能升级为 MODEL_EV；RAKE 未实现'
+              : '若建立完整的 3bet EV 模型（三类响应概率），本项可升级为 MODEL_EV 并自然参与比较',
           /*
-           * 🔴 **覆盖清晰 CALL 证据所需的独立论证**（没有它就必须让位给 CALL）。
+           * 🔴 **RIVER RAISE DECISION V2**：这一条决定它能否覆盖清晰 CALL 证据」
+           * 打光筹码的加注 ⇒ `commitsStack = true` ⇒ 覆盖权限被收窄
+           *（只能靠自带 EV，或量化证据只到 MARGINAL 时的 `HEURISTIC_TIEBREAK`）。
+           * ⚠️ U1 之后「自带 EV」已是现实路径：`raiseModelUsable = true` 时它直接近 `quantified` 比 EV）
+           * **不需要
+*任何覆盖授权。
+           */
+          commitsStack: raiseConsumesStack,
+          /*
+           * 🔴 **覆盖清晰 CALL 证据所需的独立论证
+*（没有它就必须让位给 CALL）。
            *
-           * ⚠️ 只对**没有自己的 EV** 的启发式加注有意义：一旦隔离模型给了 EV，
-           * 它就是靠 EV 参与比较，**不需要**「例外授权」（授权会让它变成
+           * ⚠️ 只对**没有自己的 EV** 的启发式加注有意义：一旦隔离模型给了 EV（
+           * 它就是靠 EV 参与比较）
+*不需要
+*「例外授权」（授权会让它变成
            * 规则性加注，而不是算出来的）。
+           *
+           * ⚠️ V2 起：**打光筹码**时这份论证不再构成覆盖授权（规
+           * `evidencePriority.ts` 的模块说明）；它保留下来只用于如实叙过
+           * 「启发式本来想怎么做、用什么理由」。
            */
           overrideJustification:
-            !isoUsable &&
-            raiseQualifies &&
-            (tier === 'MONSTER' ||
-              (math.handCategory >= MIN_CATEGORY_FOR_LARGE_RAISE && equity - math.requiredEquity >= RAISE_EDGE_ANY))
+            raiseOverrideJustificationKind === 'MONSTER_STRENGTH_DOMINANCE'
               ? {
                   kind: 'MONSTER_STRENGTH_DOMINANCE',
                   noteZh:
                     `牌力（${math.handRankZh}，档 ${tier}，类别 ${math.handCategory}）且权益优势 ` +
-                    `${((equity - math.requiredEquity) * 100).toFixed(1)} 个百分点 ≥ ${(RAISE_EDGE_ANY * 100).toFixed(0)}%` +
-                    '⇒ 加注的额外筹码是在领先时投入的',
+                    `${((raiseEquity - math.requiredEquity) * 100).toFixed(1)} 个百分点 ≥ ${(RAISE_EDGE_ANY * 100).toFixed(0)}%` +
+                    '⚠️ 加注的额外筹码是在领先时投入的',
                 }
-              : !isoUsable && raiseQualifies && commitmentException
+              : raiseOverrideJustificationKind === 'LOW_SPR_COMMITMENT'
                 ? {
                     kind: 'LOW_SPR_COMMITMENT',
-                    noteZh: `低 SPR 承诺放行（${advice?.commitment.noteZh ?? '筹码已基本入池'}）⇒ 加注与跟注只差把剩余部分投入`,
+                    noteZh: `承诺例外放行（实际条） = ${String(commitmentClause)}）` +
+                      `｜${advice?.commitment.noteZh ?? '筹码已基本入池'}）⇒ 加注与跟注只差把剩余部分投入` +
+                      '；⚠️ 河牌上该条款已被关闭（引擎自己的注记：河牌 SPR 只作背景信息）',
                   }
                 : null,
         });
@@ -1622,13 +2243,27 @@ function pickCandidate(
        * 也被 `shouldRaise` 与 CALL 的清晰边际拦住了。
        */
       const raiseByModel = evidenceDecision.action === 'RAISE' && isoUsable && raiseCandidate !== null;
+      /*
+       * 🔴 **U1：加注由「面对加注的响应模型」的 EV 胜出**（与隔离加注并列的第三条路径）。
+       *
+       * 修复前这里只有「隔离模型」与「战略启发式」两条路：U1 落地后，
+       * 99 暗三条节点的 RAISE（依据 `MODEL_EV +140.01`）会掉进启发式分支，
+       * 于是首屏理由写着「加注的 EV 无法计算」——
+**在刚刚用加注 EV 做决策的节点上撒谎
+*。
+       * 现在这条路径单独成支，并如实报出模型 EV、跟注 EV 与响应权重。
+       */
+      const raiseByU1Model = evidenceDecision.action === 'RAISE' && !isoUsable && raiseModelUsable && raiseCandidate !== null;
       if (
         evidenceDecision.action === 'RAISE' &&
         raiseCandidate !== null &&
-        (raiseByModel || raiseQualifies)
+        (raiseByModel || raiseByU1Model || raiseQualifies)
       ) {
+        const u1Facts = ((context.postflopFacts as unknown as Record<string, any> | undefined)?.[
+          'raiseResponse'
+        ] ?? null) as Record<string, any> | null;
         reasons.push({
-          code: raiseByModel ? 'ISO_RAISE_MODEL_EV' : 'STRATEGIC_RAISE_FOR_VALUE',
+          code: raiseByModel ? 'ISO_RAISE_MODEL_EV' : raiseByU1Model ? 'RAISE_MODEL_EV' : 'STRATEGIC_RAISE_FOR_VALUE',
           textZh: raiseByModel
             ? `隔离加注（加注到 ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：${iso!.noteZh}` +
               `｜对 limp-call 条件范围权益 ${iso!.heroEquity.vsOneCaller === null ? '—' : (iso!.heroEquity.vsOneCaller * 100).toFixed(1) + '%'}` +
@@ -1637,20 +2272,53 @@ function pickCandidate(
               `代理 EV = ${isoEv === null ? '—' : isoEv.toFixed(2)} 筹码 vs 跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码` +
               `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
               '；⚠️ 这是**代理 EV**，不是 Solver EV，RAKE 未实现'
-            : `牌力（${math.handRankZh}）与权益优势（高出所需 ${((equity - math.requiredEquity) * 100).toFixed(1)} 个百分点）` +
-              '支持主动加注做大底池；' +
+            : raiseByU1Model
+              ? `加注： ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB。 *面对加注的响应模型 EV** = ` +
+                `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 vs 跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码` +
+              `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
+                (u1Facts === null
+                  ? ''
+                  : `｜他面对这次加注：弃 ${((u1Facts['foldLikelihood'] as number) * 100).toFixed(1)}% / ` +
+                    `跟 ${((u1Facts['callLikelihood'] as number) * 100).toFixed(1)}% / ` +
+                    `再加注 ${((u1Facts['reRaiseLikelihood'] as number) * 100).toFixed(1)}%` +
+                    `（价格 ${((u1Facts['model']?.['priceRequiredEquity'] as number) ?? 0).toFixed(4)}）`) +
+                '；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；' +
+                '再加注分支按**下界**计（$-增量），故该 EV 偏低；RAKE 未实现'
+              : `牌力—  {math.handRankZh}）与权益优势（高出所需 ${((raiseEquity - math.requiredEquity) * 100).toFixed(1)} 个百分点，` +
+                `。 **${raiseEquitySource}** 条件权益计算）` +
+                '支持主动加注做大底池' +
               (commitmentException && tier !== 'MONSTER' && tier !== 'STRONG'
-                ? `本次加注由**低 SPR 承诺**放行（${advice!.commitment.noteZh}）；`
+                ? `本次加注是**承诺例外**放行（实际条件 = ${String(commitmentClause)}｜${advice!.commitment.noteZh}）；`
                 : '') +
               `⚠️ 加注的 EV 无法计算（缺可信的对手弃牌率估计）⇒ 依据来源 = **${evidenceDecision.source}**` +
               (evidenceDecision.source === DecisionSourceKind.HEURISTIC_TIEBREAK
                 ? '（量化证据只到 MARGINAL，允许战略启发式打断）'
-                : '（无任何量化 EV 证据）'),
+                  : '（无任何量化 EV 证据）'),
           data: {
-            edge: Number(((equity - math.requiredEquity) * 100).toFixed(1)),
+            edge: Number(((raiseEquity - math.requiredEquity) * 100).toFixed(1)),
             tier,
             source: evidenceDecision.source,
+            /* 🔴 §六：加注门槛用的是哪一个条件权益，必须可审计
+*/
+            equitySource: raiseEquitySource,
+            raiseEquity: Number(raiseEquity.toFixed(6)),
+            consumesStack: raiseConsumesStack ? 1 : 0,
             ...(raiseByModel ? { isoEV: isoEv === null ? 'NOT_AVAILABLE' : Number(isoEv.toFixed(2)) } : {}),
+            /* 🔴 U1：模型 EV 路径必须把两个 EV 与响应权重一起带出来（可审计（
+*/
+            ...(raiseByU1Model
+              ? {
+                  raiseEV: Number(raiseModelFacts!.raiseEV!.toFixed(6)),
+                  callEV: evOfCall === null ? 'NOT_AVAILABLE' : Number(evOfCall.toFixed(6)),
+                  responseModel: 'PUBLIC_BAND_RAISE_RESPONSE_V1',
+                  ...(u1Facts === null
+                    ? {}
+                    : {
+                        foldLikelihood: Number((u1Facts['foldLikelihood'] as number).toFixed(6)),
+                        callLikelihood: Number((u1Facts['callLikelihood'] as number).toFixed(6)),
+                        reRaiseLikelihood: Number((u1Facts['reRaiseLikelihood'] as number).toFixed(6)),
+                      }),
+                } : {}),
           },
         });
         return raiseCandidate;
@@ -1671,18 +2339,36 @@ function pickCandidate(
         },
       });
       if (raiseCandidate !== null) {
+        /*
+         * 🔴 **U1 披露一致性（第三处）**：CALL 胜出时，「为什么不加注」的理由必须
+         * 报出**真的算过的
+*加注 EV」
+         *
+         * 修复前这里只有两条分支（隔离加注模型 / 「没有 EV」），U1 的模型路径落进后者，
+         * 于是 AK 河牌节点的首屏理由写着 `EV = NOT_AVAILABLE（缺 fold-to-3bet …）`（
+         * 而同一份诊断的证据表里明明有 `RAISE MODEL_EV = − .4475 < CALL +19.6979`、
+         * 「算过但更低」与「没算过」是两件事，不能共用一句话」
+         */
         reasons.push({
-          code: isoUsable ? 'ISO_RAISE_LOSES_ON_EV' : 'RAISE_STRATEGIC_CANDIDATE',
+          code: isoUsable ? 'ISO_RAISE_LOSES_ON_EV' : raiseModelUsable ? 'RAISE_MODEL_EV_LOSES' : 'RAISE_STRATEGIC_CANDIDATE',
           textZh: isoUsable
             ? `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**有**隔离加注模型的代理 EV ` +
               `${isoEv === null ? '—' : isoEv.toFixed(2)} 筹码 ⇒ 本次比较是**算出来的**：` +
               `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
               '（⚠️ 两个 EV 都是代理口径，RAKE 未实现）'
-            : `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：合法候选，来源 = STRATEGIC_CANDIDATE，` +
+            : raiseModelUsable
+              ? `RAISE—  {(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**。 *面对加注的响应模型 EV = ` +
+                `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 （ 本次比较。 *算出来的**：` +
+              `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
+                '（⚠️ 响应模型是结构性先验。 *未经统计校准**；再加注分支取下注 EV 偏低；RAKE 未实现）'
+              : `RAISE—  {(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：合法候选，来源 = STRATEGIC_CANDIDATE，` +
               'EV = NOT_AVAILABLE（缺 fold-to-3bet / call-3bet / 4bet 响应数据）',
           data: {
             sizeBB: Number((raiseCandidate.sizeBB ?? 0).toFixed(2)),
-            ev: isoUsable && isoEv !== null ? Number(isoEv.toFixed(2)) : 'NOT_AVAILABLE',
+            ev: isoUsable && isoEv !== null ? Number(isoEv.toFixed(2)) : raiseModelUsable
+                ? Number(raiseModelFacts!.raiseEV!.toFixed(2))
+                : 'NOT_AVAILABLE',
+            ...(raiseModelUsable ? { responseModel: 'PUBLIC_BAND_RAISE_RESPONSE_V1', responseModelCalibrated: 0 } : {}),
           },
         });
       }
@@ -1937,13 +2623,14 @@ function pickCandidate(
 }
 
 /* ============================================================
- * 置信度（**刻意不含权益**）
+ * 置信度（**刻意不含权益**（
  * ============================================================ */
 
 /**
  * 计算决策置信度（规范第 34 / 35 节）。
  *
- * ## ⚠️ 输入里**没有** `heroEquity`
+ * ## ⚠️ 输入里
+*没有** `heroEquity`
  *
  * 「Hero 权益 80%」不代表「这个判断可信」——
  * 如果范围来源极不可靠，权益再高也不可信。
@@ -2205,7 +2892,7 @@ export function dynamicShadowOf(input: {
  * ============================================================ */
 
 /**
- * 生成 Alpha 决策。
+ * 生成 Alpha 决策」
  *
  * ## 顺序（刻意固定）
  *
@@ -2379,11 +3066,70 @@ export function decideAlpha(
       })
     : null;
 
-  const evidenceOut: { decision?: EvidenceDecision; list?: readonly ActionEvidence[] } = {};
+  /*
+   * 🔴 **第二阶段任务一：下注金额一致性
+*。
+   *
+   * 响应模型评估的是 `betDecision` 里那下
+*合法金额**（按有效筹码封顶、整筹码），
+   * 而决策层的候选网格来自另一套百分比） .25/1/3/0.5/2/3/0.75/1 × 底池）。
+   * 两者可能都对不上（实测 BB 20BB 节点：被评估 **14**、网格里只有 13/18 ⇒ 推荐被吸别 13）。
+   *
+   * 后果不是「显示不精确」：**界面展示的响应概率与 EV 属于另一个金额
+*。
+   * 修复方式 = 把被评估的那个合法金额
+*补进候选
+*（只在缺失时补、只补一个「
+   * 且与其它下注候选同样 `ev = null`）⇒ 尺寸规则随后自然选中它，
+   * 既不改变任何 EV 判据，也不删除任何既有候选」
+   */
+  const candidatesForDecision = (() => {
+    const bd = postflopAdvice?.betDecision ?? null;
+    if (bd === null || bd.bestSize === null) return candidates;
+    const spec = bd.sizes.find((s) => s.kind === bd.bestSize) ?? null;
+    if (spec === null || !(spec.betAmount > 0)) return candidates;
+    const amount = spec.betAmount;
+    const already = candidates.some(
+      (c) =>
+        (c.action === DecisionAction.BET || c.action === DecisionAction.ALL_IN) &&
+        c.sizeChips !== undefined &&
+        Math.abs(c.sizeChips - amount) < ALL_IN_COMPARE_EPSILON,
+    );
+    if (already) return candidates;
+    const extra: DecisionCandidate = {
+      action: DecisionAction.BET,
+      sizeChips: amount,
+      sizeBB: amount / context.math.bigBlind,
+      ev: null,
+      mathFeasible: true,
+      noteZh: '响应模型**被评。 *的那个合法金额（补进候选以保证「推荐金额 = 被评估金额」）',
+    };
+    return Object.freeze([...candidates, Object.freeze(extra)]) as readonly DecisionCandidate[];
+  })();
+
+  const evidenceOut: { decision?: EvidenceDecision; list?: readonly ActionEvidence[];
+    raiseShape?: {
+      consumesStack: boolean;
+      hasOwnEV: boolean;
+      /**
+       * 🔴 U1 披露一致性：真正有「自有可比 EV」的加注尺寸（raise-to 口径）。
+       * `unevaluatedActions` 必须**跳过**这些尺寸，否则会一边用加注 EV 做决策。
+       * 一边声称加注 EV 未实现「
+       */
+      raiseSizesWithOwnEV: readonly number[];
+      onePairAllInBlocked: boolean;
+      largeRaiseBlocked: boolean;
+      raiseToPotRatio: number | null;
+      raiseEquitySource: 'EqVsBetRange' | 'FALLBACK_WHOLE_RANGE';
+      commitmentException: boolean;
+      commitmentClause: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null;
+      overrideJustificationKind: string | null;
+    };
+  } = {};
   const baseDecision = actionable    ? pickCandidate(
         context,
         legal,
-        candidates,
+        candidatesForDecision,
         decisionReasons,
         postflopAdvice,
         allowUncertaintyOverride,
@@ -2393,6 +3139,157 @@ export function decideAlpha(
   /** 证据优先级裁决结果（由 `pickCandidate` 的出口箱带回；供依据/诊断/UI 使用） */
   const evidenceDecisionForBasis: EvidenceDecision | null = evidenceOut.decision ?? null;
   const evidenceForBasis: readonly ActionEvidence[] = evidenceOut.list ?? Object.freeze([]);
+
+  /*
+   * ============================================================ * ---- 4.1 RIVER RAISE DECISION V2：动作形态 / 全下保护 / 未评估动作 ----
+   * ============================================================ *
+   * 三件必须在输出里说清楚的事（§主 / §四 / §六），
+   *
+   * ```text
+   * ① 这次动作是什么形态（普通加注 / 加注到全下 / 直接全下（
+   * ① 全下保护有没有命中（一对牌 + 打光筹码 + 无自有 EV（
+   * ① 还有哪些**合法但未评估**的动作（EV = NOT_IMPLEMENTED）
+   * ```
+   *
+   * ⚠️ ③ 是对外口径的关键：本次动作是「在**可评估
+*候选之间」的裁决：
+   * **不是**「所有合法动作中的最优解」。没有这一条，界面就会把一个
+   * 未建模的动作说成已经被比过。
+   */
+  const finalSizeChips: number | null = baseDecision?.sizeChips ?? null;  const consumesStackForAction =
+    finalSizeChips !== null && Math.abs(finalSizeChips - legal.allInToAmount) < ALL_IN_COMPARE_EPSILON;
+  const actionShapeKind = ((): 'FOLD' | 'CALL' | 'CHECK' | 'BET' | 'NORMAL_RAISE' | 'RAISE_TO_ALL_IN' | 'DIRECT_ALL_IN' | 'NONE' => {
+    if (baseDecision === null) return 'NONE';
+    const a = String(baseDecision.action);
+    if (a === 'RAISE') return consumesStackForAction ? 'RAISE_TO_ALL_IN' : 'NORMAL_RAISE';
+    if (a === 'ALL_IN') return 'DIRECT_ALL_IN';
+    if (a === 'BET') return 'BET';
+    if (a === 'CALL') return 'CALL';
+    if (a === 'CHECK') return 'CHECK';
+    return 'FOLD';
+  })();
+  const actionShape = Object.freeze({
+    kind: actionShapeKind,
+    sizeChips: finalSizeChips,
+    allInToAmount: legal.allInToAmount,
+    consumesStack: consumesStackForAction,
+    noteZh:
+      actionShapeKind === 'RAISE_TO_ALL_IN'
+        ? `加注： ${String(finalSizeChips)} = 本街总额上限（把剩余 ${legal.myRemainingStack} 全部投入）⇒ **这一注就是全。 *`
+        : actionShapeKind === 'NORMAL_RAISE'
+          ? `普通加注（本街总额 ${String(finalSizeChips)}，上： ${legal.allInToAmount}）⇒ 不消耗全部筹码`
+          : actionShapeKind === 'DIRECT_ALL_IN'
+            ? '直接全下（不是加注到全下）'
+            : `动作 ${actionShapeKind}（不涉及加注）`,
+  });
+  const rs = evidenceOut.raiseShape;
+  const allInGuard = Object.freeze({
+    handCategory: context.math.handCategory,
+    minCategoryForLargeRaise: MIN_CATEGORY_FOR_LARGE_RAISE,
+    consumesStack: rs?.consumesStack ?? false,
+    hasOwnEV: rs?.hasOwnEV ?? false,
+    /*
+     * 🔴 U1 披露一致性：哪些加注尺寸真的有自有可比 EV（raise-to 口径）。
+     * 不 `unevaluatedActions` 同源（`evidenceOut.raiseShape`）—— 两处口径必须一致，
+     * 否则又会出现「用它做决策、同时说它没实现」。
+     */
+    raiseSizesWithOwnEV: rs?.raiseSizesWithOwnEV ?? Object.freeze([] as number[]),
+    raiseToPotRatio: rs?.raiseToPotRatio ?? null,
+    onePairAllInBlocked: rs?.onePairAllInBlocked ?? false,
+    largeRaiseBlocked: rs?.largeRaiseBlocked ?? false,
+    /* 🔴 §五：放行条款必须逐条可审计（修复「注记说何 SPR、实际靠 roleStrength」） */
+    roleStrength: postflopAdvice === null ? null : postflopAdvice.roleStrength,
+    spr: context.math.spr,
+    stackOffAllowed:
+          postflopAdvice === null ? null : postflopAdvice.commitment.stackOffAllowed,
+    commitmentException: rs?.commitmentException ?? false,
+    commitmentClause: rs?.commitmentClause ?? null,
+    overrideJustificationKind: rs?.overrideJustificationKind ?? null,
+    noteZh:
+      rs === undefined
+        ? '本节点没有加注候完 全下保护不适用'
+        : allInGuardVerdictOf({
+            handCategory: context.math.handCategory,
+            consumesStack: rs.consumesStack,
+            hasOwnEV: rs.hasOwnEV,
+          }).reasonZh,
+  });
+  const unevaluatedActions = (() => {
+    const out: { action: string; sizeChips: number | null; ev: null; reasonCode: string; reasonZh: string }[] = [];
+    /*
+     * 🔴 **U1 披露一致性
+*：已经有「自己的可比 EV」的加注尺寸**不是**未评估动作「
+     *
+     * 修复前的口径：`c.ev !== null` 才算已评估 —— 但加注候选的 `ev` 字段
+     * **永远**是 null（加注 EV 挂在 `actionEvidence` 上）。实测的自相矛盾（
+     *
+     * ```text
+     * 99 暗三条节点：动作 = RAISE @174（依据 RAISE MODEL_EV +140.01）
+     * 同一份诊断：unevaluatedActions 里列着「RAISE 174 RAISE_EV_NOT_IMPLEMENTED」
+     * ```
+     *
+     * 现在只列**真的**没有 EV 的金额（其余金额确实仍未建模，如实保留）。
+     */
+    const sizesWithOwnEV = evidenceOut.raiseShape?.raiseSizesWithOwnEV ?? [];
+    for (const c of candidates) {
+      if (c.ev !== null) continue;
+      const label = String(c.action);
+      const isRaiseLike = label === 'RAISE' || label === 'ALL_IN';
+      if (isRaiseLike && c.sizeChips !== undefined && sizesWithOwnEV.some((s) => Math.abs(s - c.sizeChips!) < ALL_IN_COMPARE_EPSILON)) {
+        continue;
+      }
+      out.push({
+        action: label,
+        sizeChips: c.sizeChips ?? null,
+        ev: null,
+        reasonCode: isRaiseLike ? 'RAISE_EV_NOT_IMPLEMENTED' : 'BET_EV_NOT_IMPLEMENTED',
+        reasonZh: isRaiseLike
+          ? 'RAISE_EV_NOT_IMPLEMENTED：缺「他面对我的加注时的是 再加」概率与加注继续范围 ） ' +
+            '本动。 *未参。 * EV 比较（不是「EV = 0」，也不是「更差」）'
+          : 'BET_EV_NOT_IMPLEMENTED：下注 EV 依赖对手弃牌率，本项目没有可信估（ 未参与 EV 比较',
+      });
+    }
+    /*
+     * ⚠️ **逐候选
+*列出，不按动作名去重：同一个 RAISE 在不同金额上都是
+     * 「合法但未评估」的动作，只报一个金额会让人误以为其余金额已被算过」
+     */
+    return Object.freeze(out.map((x) => Object.freeze(x)));
+  })();
+  if (unevaluatedActions.some((u) => u.reasonCode === 'RAISE_EV_NOT_IMPLEMENTED')) {
+    const evaluatedRaiseSizes = evidenceOut.raiseShape?.raiseSizesWithOwnEV ?? [];
+    factReasons.push({
+      code: 'RAISE_EV_NOT_IMPLEMENTED',
+      textZh:
+        evaluatedRaiseSizes.length > 0
+          ? `⚠️ **部分**加注金额没有 EV（RAISE_EV_NOT_IMPLEMENTED）：` +
+            `加注： ${evaluatedRaiseSizes.map((s) => s.toFixed(0)).join(' / ')} 有模型 EV（面对加注的响应模型），` +
+            `但其余金额仍缺「他面对加注的弃/不 再加」概率与加注继续范围 ： ` +
+            '上述动作是「在**可评。 *候选之间的裁决」，**不是**所有合法动作中的最优解'
+          : `⚠️ 本次加注/全下**没有** EV 模型（RAISE_EV_NOT_IMPLEMENTED）：` +
+            `缺「他面对加注的弃/不 再加」概率与加注继续范围 ： ` +
+            `上述动作是「在**可评。 *候选（弃牌 EV —  0、跟注代码 EV）之间的裁决」，` +
+            '**不是**所有合法动作中的最优解',
+      data: { unevaluatedCount: unevaluatedActions.length, evaluatedRaiseSizes: evaluatedRaiseSizes.length },
+    });
+  }
+  const conditionalEquities = Object.freeze({
+    arrivalRange: context.postflopFacts?.betRangeArrival?.heroEquityVsArrivalRange ?? null,
+    betRange: context.math.heroEquityVsBetRange,
+    wholeRange: context.math.heroEquity,
+    /*
+     * 🔴 U1：面对加注的继续范围权益 —— 已实现（`contextBuilder` 的 `raiseResponse`）。
+     * 仍然可能不可得（没有加注候选 / 权益算不出来）⇒ 那时如实标注 `NOT_IMPLEMENTED`、
+     */
+    raiseContinueRange:
+      ((context.postflopFacts as unknown as Record<string, any> | undefined)?.['raiseResponse']?.[
+        'heroEquityVsRaiseCallRange'
+      ] as number | null | undefined) ?? ('NOT_IMPLEMENTED' as const),
+    usedByRaiseThreshold: rs?.raiseEquitySource ?? null,
+    noteZh:
+      '到达范围 = P(手牌 | 他走到这个节点拥有什么)；下注范围 = P(手牌 | 他选择下注)（CALL EV 与加注门槛共用）' +
+      '加注继续范围 = P(手牌 | 他下注且他跟注我的加注)（RAISE EV 用它；不可得时标注 NOT_IMPLEMENTED，绝不用别的条件权益顶替）',
+  });
 
   /* ---- 4.2 理由合成：动作理由 → 通用事实 ---- */
   let reasons: DecisionReason[] = [...decisionReasons, ...factReasons];
@@ -2683,7 +3580,7 @@ export function decideAlpha(
   const diagnostics: DecisionDiagnostics = Object.freeze({
     math: context.math,
     legalActions: legal.actions,
-    candidates: Object.freeze(candidates),
+    candidates: Object.freeze(candidatesForDecision),
     baseDecision,
     adjustedDecision: baseDecision,
     shadow,
@@ -2700,6 +3597,11 @@ export function decideAlpha(
               uncertaintyBandChips,
               allowUncertaintyOverride,
               heroEquityVsArrivalRange: context.math.heroEquity,
+              /* 🔴 RIVER BET RANGE V2：到达范围与下注范围构成同源搬运 */
+              betRangeArrival: context.postflopFacts?.betRangeArrival ?? null,
+              bettingRangeFacts: context.postflopFacts?.bettingRangeFacts ?? null,
+              /* 🔴 U1：面对加注的响应与加注 EV（同源搬运） */
+              raiseResponse: (context.postflopFacts as unknown as Record<string, any> | undefined)?.['raiseResponse'] ?? null,
             },
             (() => {
               const counts = context.postflopFacts?.opponentRangeFacts?.counts ?? null;
@@ -2803,10 +3705,19 @@ export function decideAlpha(
           confidence: e.confidence,
           assumptionsZh: e.assumptionsZh,
           upgradeNoteZh: e.upgradeNoteZh,
+          /* 🔴 RIVER RAISE DECISION V2：全下动作没有覆盖清晰 CALL 证据的权限
+*/
+          ...(e.commitsStack === undefined ? {} : { commitsStack: e.commitsStack }),
         }),
       ),
     ),
-    /** 主推荐动作与备选（备选**不是**最终动作，仅供混合策略参考） */
+    /* 🔴 RIVER RAISE DECISION V2（§三/§四 §六） */
+    actionShape,
+    allInGuard,
+    unevaluatedActions,
+    conditionalEquities,
+    /** 主推荐动作与备选（备选
+*不是**最终动作，仅供混合策略参考） */
     primaryAction: action,
     alternativeActions: Object.freeze(
       evidenceForBasis
