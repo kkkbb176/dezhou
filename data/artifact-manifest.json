@@ -409,6 +409,13 @@
       "impact": "玩家身份路由变化（座位 id `seat_<位置>` / 持久 `playerId` / 显示名三者的解析与优先级）→ **画像 provider、行为画像、跛入原型与下注/响应权重被注入到哪一家身上发生变化** （注入落空时范围权重、权益、CALL/Raise EV 与最终建议全部跟着变；同名不同人的隔离、换座位与换玩家的正确性都由它决定）"
     },
     {
+      "path": "src/app/manualInput/facingBetProfile.ts",
+      "category": "DECISION",
+      "sha256": "cc07a41dd1089d0b3535a9ca394c6fd47efab530edae6a3625bad6bce6fafa1e",
+      "bytes": 11206,
+      "impact": "「面对下注」有效人物画像的构造（标签贡献 0.35×(1−w) + 实测贡献 w×center(observed)）→ **面对下注时的下注范围权重与面对加注的响应概率发生变化**（进而影响 EqVsBetRange、CALL/Raise EV 与最终建议）；无实测证据时逐位退回旧标签实现"
+    },
+    {
       "path": "src/app/manualInput/reconstruct.ts",
       "category": "DECISION",
       "sha256": "b4391348bb9fed3249934037dc0b3925a1930b23bd58da553e0ed2080dec660a",
@@ -432,8 +439,8 @@
     {
       "path": "src/app/manualInput/contextBuilder.ts",
       "category": "DECISION",
-      "sha256": "87fbf10efc01098439591c9026c51a31de5e3213d9125ae4f28fb57ef2c6ed14",
-      "bytes": 222378,
+      "sha256": "3d2ca2ce72d675ea183a4d9411150bddab48a1b18673a9b54a6b8c7f7020a5ac",
+      "bytes": 230219,
       "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
     },
     {
@@ -446,8 +453,8 @@
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "36a3474d048d667202ce2713687367bb272dfbdd57d4bc0fe27f2d1febdcb1a1",
-      "bytes": 176793,
+      "sha256": "3f11164c1ce414063cffe500679c1ebbb406094426810703d83355a51614ac4c",
+      "bytes": 183185,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
@@ -481,8 +488,8 @@
     {
       "path": "src/viewmodels/decisionViewModel.ts",
       "category": "DECISION",
-      "sha256": "2b1afbd00571118efeb8d539c2aa9645fcc0507ff30f533e36b783770ee08f88",
-      "bytes": 57573,
+      "sha256": "68bc0a7f5bbd2ab9fe1e47211dd1f84039771b2401c0530f4c1c713172353faa",
+      "bytes": 59498,
       "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
     },
     {
@@ -761,8 +768,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "aa1ff6f0f3b73341999e349d42142ad3d5e6a790e7993f26d4a42213cee95d63",
-      "bytes": 125043,
+      "sha256": "b13cf0642b5114c9ed1238475f9bca17159808393a90fe8573b0e8ff9b93bc1c",
+      "bytes": 133253,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -831,8 +838,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "bb14d910f7d75aef0754995835c7728dde2672e758bd256a080dc7070d714c2a",
-      "bytes": 54963,
+      "sha256": "18cbd3a0609cbe52edf63119ebc74307c878b13486eed54745a4b267d03251ba",
+      "bytes": 57184,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -1114,6 +1121,20 @@
       "sha256": "54348b84b931558c0980ee28cf3072f6de506cde29045425149f2ab8e4c20ead",
       "bytes": 11478,
       "impact": "**CALL / 全下跟注金额契约（G）**的永久回归变化 → **「`CALL` 的金额 = 本次实际投入且被夹到剩余筹码」「全下跟注必须标成 isAllIn 并写明全下」「不得同时显示两个等价按钮」「跟不完整时没有加注权」这些保证的强度发生变化**；含「每一个可执行按钮都必须被后端接受」的契约扫描与「传未夹的差额必须被拒绝」的反证"
+    },
+    {
+      "path": "reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md",
+      "category": "REPORT",
+      "sha256": "9d92c874d01a0662dbcd1ebab8101437399e7e66ce891a1d26969bb7db18295f",
+      "bytes": 22860,
+      "impact": "**面对下注画像通道 M1 的自审结论**变化 → 「下注范围层标签重标定（1.0 → 0.35）」「RAISE EV 归因三路分解（P1 +0.2817 / P2a +0.1454 / P2b +0.9925）」「哪些证据形态能打开通道」这些判定与待裁决项（U-F1 / U-F3 / U1 / U2 / U-F6）发生变化；本文件同时是「上轮验收块归因需修正」这一结论的唯一书面依据"
+    },
+    {
+      "path": "reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md",
+      "category": "REPORT",
+      "sha256": "24d23c77de6908f5e30461b792ed7f71d8db9741642c785b38de980609c685b6",
+      "bytes": 16106,
+      "impact": "**下注范围层标签重标定修复**的结论变化 → 「`betMass`/`CALL EV`/`RAISE EV` 相对纯标签的位移」「P1 +0.2817 / P2a +0.1454 / P2b 0」这一分解、「逐轴隔离（仅 VPIP ⇒ 该层不动）」与「首观测位移 0.9%」这些判定发生变化；本文件同时固定「修复只影响下注范围层、未触碰响应层」的证据（`M1_FREEZE_BAND` 受控实验）"
     },
     {
       "path": "test/hotfix001ActionDedup.test.ts",

@@ -71,6 +71,7 @@ import { PlayerMetric } from '../../domain/player/player.types.ts';
 import {
   readPlayer,
   type PlayerRead,
+  type PlayerDimensions,
   type ProfileAdjustment,
 } from '../../domain/player/playerClassifier.ts';
 import { createProfile, PROFILE_VERSION } from '../../domain/player/playerProfile.ts';
@@ -190,6 +191,7 @@ import {
   resolvePlayerIdentity,
   type PlayerIdentityResolution,
 } from './playerIdentity.ts';
+import { facingBetProfileOf, type FacingBetProfile } from './facingBetProfile.ts';
 import {
   boardTextureLabelOf,
   riverComboClassOf,
@@ -2233,7 +2235,7 @@ function buildBetDecisionFacts(input: {
         noteZh:
           `${opponents.length} 家联合树（每家一份独立响应模型）；` +
           'EV 逐分支加权，**不使用** primary opponent 的单一响应；' +
-          `${JOINT_INDEPENDENCE_NOTE}；加注分支为下界（RAISE_RESPONSE = HEURISTIC）`,
+          `${JOINT_INDEPENDENCE_NOTE}；加注分支按**摊牌终止近似**计入（未模拟后续街行动，不构成对真实牌局 EV 的严格下界）`,
         perOpponentResponse: Object.freeze(facts.flatMap((f) => f.perOpponentResponse)),
       }),
       /** 逐尺寸的完整多人 EV 对象（供 `sizes[].multiway` 与决策层覆盖 betEV） */
@@ -3623,14 +3625,103 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   /**
    * 某一家的响应倾向：**画像是他的**才算数，否则退回中立倾向
    *（中立 = `dimensions: null` + 置信度 0 + 不分街，等于「没有画像」）。
+   *
+   * ## 🔴 PLAYER PROFILE V3 · M1 方案 D：实测统计真正进入面对下注层
+   *
+   * 修复前这里喂的是**标签维度**，而实测四轴的唯一消费者是「Hero 主动下注/过牌」分支
+   * （`v3Dimensions` → `buildBetDecisionFacts`），该分支在**面对下注**节点被
+   * `postflopAdvisor.ts:576` 整块判空 ⇒ 实测统计对本节点**零影响**
+   *（实测：`EqVsBetRange` / 响应概率 / CALL·RAISE EV 在 VPIP/PFR/3Bet/WTSD 变化下逐位相同）。
+   *
+   * 现在改为消费 `facingBetProfileOf` 产出的**有效维度**：
+   *
+   * ```text
+   * 实测贡献 = w_axis × center(observed)                 ← 只乘一次（不再乘标签上限）
+   * 标签贡献 = 0.35 × (1 − w_axis) × center(base)         ← 标签上限保持不变，不被放大
+   * ```
+   *
+   * ⚠️ **作用域**：本函数被且仅被两处调用 —— 下注范围（`currentBetRecord.actorId`）
+   * 与面对加注的响应（`opponent.id`），两处都先经 `profileAppliesTo` 判等座位
+   * ⇒ 有效维度**只**用于「画像描述的那一家本人正在下注/响应」时。
+   * 到达范围（`buildRangeSnapshot` 的 tendency provider）与 Hero 主动下注分支
+   * **本轮未改**（U3/U4 未授权）。
    */
+  /**
+   * 🔴 **面对下注的两个消费者必须「分开取证」**（自审 F1 ⇒ 选项 A）。
+   *
+   * | 消费者 | 读什么 | 应当吃哪份维度 |
+   * |---|---|---|
+   * | 响应层 `buildRaiseResponse` | 刻度（`callScale/...`，已按 `confidence` 缩放） | 「已折 0.35」的有效维度，`confidence = 1` |
+   * | 下注范围层 `betProbabilityByBand` | **只读 `effectiveDimensions`，不读 `confidence`** | V3 **融合维度**（标签 `(1−w)`、实测 `w`，**不折 0.35**） |
+   *
+   * 依据（`bettingRange.ts:390` + `betResponse.ts:432-437`：维度原样透传）：
+   * 若两层共用同一份「已折 0.35」的维度，下注范围层的标签强度会从 `×1.0` 掉到 `×0.35`，
+   * 在**第一个观测**处跳变（实测 `betMass` −38.1%），并波及**无观测通道**的 `bluffTendency`；
+   * 该层还会经 `betRangeEntries` 回流进加注响应的桶划分（上一轮验收块的 `RAISE EV`
+   * 有 69.9% 来自这条路）。
+   *
+   * 融合维度在**零证据**处逐位等于标签维度（`w = 0 ⇒ (1−w)·标签 = 标签`），
+   * 因此修复后：无证据 ⇒ 与修复前一致；有证据 ⇒ 标签按 `(1−w)` 衰减、实测按 `w` 进入。
+   */
+  const facingInputsForSeat = (
+    seatId: string | null | undefined,
+  ): { readonly profile: FacingBetProfile; readonly labelDimensions: PlayerDimensions } | null => {
+    if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) return null;
+    const labelDimensions = playerBuilt.tendency.dimension.dimensions;
+    return {
+      profile: facingBetProfileOf({
+        baseDimensions: resolvedV3.resolved.baseDimensions,
+        observedDimensions: resolvedV3.resolved.observedOnlyDimensions,
+        blendWeight: resolvedV3.resolved.blendWeight,
+        /* 既有手选标签的结构性置信系数（不自造新常数） */
+        labelConfidence: playerBuilt.confidence,
+        labelDimensions,
+      }),
+      labelDimensions,
+    };
+  };
+
+  /** 响应层：标签 `0.35×(1−w)` + 实测 `w`（各进一次），下游以 `confidence = 1` 消费 */
   const tendenciesForSeat = (seatId: string | null | undefined) => {
-    if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) {
-      return responseTendenciesOf(null, 0, null);
+    const inputs = facingInputsForSeat(seatId);
+    if (inputs === null) return responseTendenciesOf(null, 0, null);
+    return inputs.profile.hasObservedEvidence
+      ? responseTendenciesOf(inputs.profile.dimensions, inputs.profile.confidence, v3StreetInput)
+      /* 无轴证据 ⇒ 逐位走旧实现（标签维度 + 原标签置信系数） */
+      : responseTendenciesOf(inputs.labelDimensions, playerBuilt.confidence, v3StreetInput);
+  };
+
+  /**
+   * 下注范围层：**该层不读 `confidence`** ⇒ 必须喂「不折 0.35」的维度。
+   * 有轴证据 ⇒ V3 融合维度；无轴证据 ⇒ 原标签维度（逐位等于修复前）。
+   */
+  const betRangeTendenciesForSeat = (seatId: string | null | undefined) => {
+    const inputs = facingInputsForSeat(seatId);
+    if (inputs === null) return responseTendenciesOf(null, 0, null);
+    if (!inputs.profile.hasObservedEvidence) {
+      return responseTendenciesOf(inputs.labelDimensions, playerBuilt.confidence, v3StreetInput);
     }
+    /*
+     * 维度载体沿用标签维度对象（它带 `confidence/sampleSize/tier`），只覆盖四个轴 ——
+     * 与 `buildBetDecisionFacts`（本文件 §1894-1903）的既有纪律一致：
+     * 把 V3 融合维度**覆盖**进去，而不是再叠一层。
+     *
+     * ⚠️ 载体里的 `confidence` 不参与本层任何计算（该层只读四个轴）。
+     */
+    const fused = {
+      ...inputs.labelDimensions,
+      tightness: resolvedV3.resolved.resolvedDimensions.tightness,
+      aggression: resolvedV3.resolved.resolvedDimensions.aggression,
+      bluffTendency: resolvedV3.resolved.resolvedDimensions.bluffTendency,
+      passivity: resolvedV3.resolved.resolvedDimensions.passivity,
+    };
     return responseTendenciesOf(
-      playerBuilt.tendency.dimension.dimensions,
-      playerBuilt.confidence,
+      fused,
+      /*
+       * ⚠️ `1` 的含义是「维度按原样使用」，**不是**「实测全权重」：
+       * 标签份额已由融合维度的 `(1−w)` 承担，该层又不读 confidence ⇒ 不能再折一次 0.35。
+       */
+      1,
       v3StreetInput,
     );
   };
@@ -3835,8 +3926,11 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      * 带速率去给 UTG 的下注范围加权就是「用甲的性格给乙做决策」——
      * 与 `opponent.id === villainId` 那条判据是同一类缺陷，只是发生在
      * 响应层。所以这里显式判等：**不匹配 ⇒ 中立倾向**（等于没有画像）。
+     *
+     * 🔴 自审 F1：本层（下注范围）**不读 confidence** ⇒ 走「不折 0.35」的取证函数，
+     * 与响应层分开（`betRangeTendenciesForSeat` 见上）。
      */
-    const tendencies = tendenciesForSeat(currentBetRecord?.actorId ?? null);
+    const tendencies = betRangeTendenciesForSeat(currentBetRecord?.actorId ?? null);
     return buildBettingRangeFacts({
       arrivalEntries: arrivalRange.entries.map((e) => ({
         cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
@@ -4113,7 +4207,8 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
       reraiseBranchUnsupportedZh: reraiseBranchKind === 'LOWER_BOUND_NOT_IMPLEMENTED'
         ? (built.reRaiseLikelihood <= 0
             ? null
-            : '再加注分支不可计算（缺再加注范围或权益）⇒ 该分支按**下界**（损失本次投入）计入')
+            : '再加注分支不可计算（缺再加注范围或权益）⇒ 该分支按「放弃本次投入」计入' +
+          '（**建模假设下的保守值**，不是对真实牌局 EV 的严格保证）')
         : null,
       ...(reRaiseFacts === null
         ? {
@@ -4146,10 +4241,25 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         '面对加注的响应是**结构性先验**（公共强度带 + 听牌 + 价格 + 画像），未经统计校准',
         '零点 = 弃牌 ≡ 0（与 CALL EV 同一口径：底池含对手已下注的筹码、投入只算我自己新增的）',
         '对手弃牌 ⇒ 我赢下完整底池 currentPot；他跟注 ⇒ 终池 finalPot（引擎分层口径，含退回修正）',
-        '再加注分支没有模型 ⇒ 按「Hero 放弃本次投入」计入 = **下界**；' +
-          '⚠️ `heroIsAllIn`（我不能再加注）与 `villainIsAllInByCall`（他跟平即投光、他不能再加注）是**两个独立判据**，' +
+        /*
+         * 🔴 **TEST 17 · 未来街终止近似必须写明**（此前只写了「下界」，没有说清
+         * 这个值是怎么来的、适用范围到哪）。
+         *
+         * 事实：再加注分支的值 = `EqVsReraiseRange × 跟注后终池 − 累计投入`。
+         * 权益本身**已经枚举了未来的公共牌**（河牌 44 张精确枚举），
+         * 但整个分支**没有模拟后续街的下注 / 过牌 / 弃牌行动** ⇒
+         * 它是「打到摊牌、后续街不再行动」这一**建模假设**下的近似值。
+         */
+        '再加注分支按**摊牌终止近似**计算：条件范围权益**已枚举未来公共牌**（例如转牌节点枚举 44 张河牌），' +
+          '但**未模拟**后续街的下注 / 过牌 / 弃牌行动 —— 后续街仍有筹码时，真实收益与该近似值会有偏差',
+        '⚠️ 上一条是**已记录的建模假设**，不构成对真实牌局 EV 的严格下界保证：' +
+          '所谓「下界」只在「后续街不再行动」这一假设下成立',
+        '再加注分支不可计算时（缺再加注范围或权益）⇒ 按「Hero 放弃本次投入」计入；' +
+          '该口径是**建模假设下的保守值**，同样**不是**对真实牌局 EV 的严格保证',
+        '⚠️ 他的再加注若不是全下，Hero 仍有 **4-bet** 选项，而本项目**未实现 4-bet 模型** ⇒ ' +
+          '该分支未包含 4-bet 带来的收益（`heroFourBetSupported` 恒为 false）',
+        '`heroIsAllIn`（我不能再加注）与 `villainIsAllInByCall`（他跟平即投光、他不能再加注）是**两个独立判据**，' +
           '任一为真都不产出再加注分支',
-        '再加注分支没有模型 ⇒ 按「Hero 放弃本次投入」计入 = **下界**',
         '未计抽水（本项目无 Rake Engine）',
       ]),
       noteZh:
@@ -4160,8 +4270,15 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
           ? 'RAISE EV 不可算（跟注桶权益不可得）'
           : `RAISE EV = ${built.foldLikelihood.toFixed(4)}×${currentPot} + ` +
             `${built.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + ` +
-            `${built.reRaiseLikelihood.toFixed(4)}×(−${heroContestedAdd}) = **${raiseEV.toFixed(4)}**` +
-            '（⚠️ 再加注分支无模型 ⇒ **下界**）'),
+            /*
+             * 🔴 **TEST 17**：原先这里写死 `×(−${heroContestedAdd})`，而 `raiseEVOf` 实际用的是
+             * **再加注分支的值**（`reraiseBranchEV` = `max(弃牌, 跟注)`）⇒ 打印出来的公式
+             * 复算不出打印出来的 EV（TEST 17 实测 −67.7322 vs 写死的 −80）。
+             * 现在按**实际参与计算的分支值**打印，并标明该分支是摊牌终止近似（它不是严格下界）。
+             */
+            `${built.reRaiseLikelihood.toFixed(4)}×(${reraiseBranchEV.toFixed(4)}` +
+            `${reraiseBranchKind === 'LOWER_BOUND_NOT_IMPLEMENTED' ? '=下界' : `=${reraiseBranchKind}分支`}) = **${raiseEV.toFixed(4)}**` +
+            '（⚠️ 再加注分支按**摊牌终止近似**计入：未模拟后续街的下注/过牌/弃牌 ⇒ 不构成对真实收益的严格下界，详见 assumptionsZh）'),
     });
   });
 

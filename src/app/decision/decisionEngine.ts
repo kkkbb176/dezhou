@@ -270,6 +270,54 @@ function handStrengthTier(context: DecisionContext): 'WEAK' | 'MEDIUM' | 'STRONG
 }
 
 /**
+ * 🔴 **TEST 17 · CALL EV 的权益口径（展示层）** —— 只做标注，不改任何数值。
+ *
+ * 生产口径（`contextBuilder.ts` 的 `equityForCallEV`）：
+ * 面对下注且算得出他的**下注范围**时
+ * `callEV = EqVsBetRange × winnable − callCost`；否则回落到「整体范围（到达范围）权益」。
+ *
+ * ⚠️ `math.heroEquity` **不是**前者的输入：同一节点实测 **68.22% vs 73.51%**，
+ * 用 68.22% 复算会得到 27.07 而不是 30.72（TEST 17 审计确认的歧义）。
+ * 因此凡是要在**同一句里**报「权益」与「跟注 EV」的地方，都必须报
+ * **本次 EV 实际使用的那一份**，并把另一份显式标成「仅参考」。
+ *
+ * 本函数是**纯标注**：不参与任何判定、不改变任何 EV 或动作。
+ */
+function callEvEquityOf(math: {
+  readonly heroEquity: number | null;
+  readonly heroEquityVsBetRange: number | null;
+}): {
+  /** 本次 CALL EV 实际使用的权益（`null` = 都算不出来） */
+  readonly usedValue: number | null;
+  readonly usedLabelZh: string;
+  readonly usedSource: 'EqVsBetRange' | 'FALLBACK_WHOLE_RANGE';
+  /** 整体范围（到达范围）权益 —— 只在 `EqVsBetRange` 可用时才值得作为「仅参考」并列 */
+  readonly arrivalRangeValue: number | null;
+  readonly referenceNoteZh: string;
+} {
+  const betRange = math.heroEquityVsBetRange;
+  if (betRange !== null) {
+    return {
+      usedValue: betRange,
+      usedLabelZh: '对手下注范围权益',
+      usedSource: 'EqVsBetRange',
+      arrivalRangeValue: math.heroEquity,
+      referenceNoteZh:
+        math.heroEquity === null
+          ? ''
+          : `；整体范围权益 ${(math.heroEquity * 100).toFixed(1)}%（**仅参考**，不是本次 CALL EV 的计算输入）`,
+    };
+  }
+  return {
+    usedValue: math.heroEquity,
+    usedLabelZh: '整体范围权益（回落口径：本节点没有可用的下注范围）',
+    usedSource: 'FALLBACK_WHOLE_RANGE',
+    arrivalRangeValue: null,
+    referenceNoteZh: '',
+  };
+}
+
+/**
  * 评估全部合法动作。
  *
  * ## 为什么每个动作都要算 EV，而不是只算候选
@@ -367,7 +415,21 @@ function evaluateCandidates(
       noteZh:
         equity === null
           ? '需要先能算出权益才能判断跟注是否划算'
-          : `跟注所需权益 ${(required * 100).toFixed(1)}%，当前估计权益 ${(equity * 100).toFixed(1)}%`,
+          /*
+           * 🔴 **TEST 17 · 权益来源必须可复算**：本句同时出现「权益」与「跟注 EV」，
+           * 因此必须报 `callEV` 实际使用的那一份（`EqVsBetRange` 优先），
+           * 另一份显式标成「仅参考」——修复前这里只报 `math.heroEquity`，
+           * 使用者用它复算会得到与 `EV` 不一致的数（68.22% vs 73.51%）。
+           */
+          : (() => {
+              const callEvEquity = callEvEquityOf(math);
+              return (
+                `跟注所需权益 ${(required * 100).toFixed(1)}%，` +
+                `**${callEvEquity.usedLabelZh} ${((callEvEquity.usedValue ?? 0) * 100).toFixed(1)}%**` +
+                `（本次跟注 EV 的权益输入，来源 ${callEvEquity.usedSource}）` +
+                callEvEquity.referenceNoteZh
+              );
+            })(),
     });
 
     reasons.push({
@@ -376,9 +438,19 @@ function evaluateCandidates(
       data: { requiredEquity: Number((required * 100).toFixed(1)), potOdds: Number((math.potOdds * 100).toFixed(1)) },
     });
     if (equity !== null) {
+      /*
+       * 🔴 **TEST 17 · 口径澄清**：本句报的是**整体范围（到达范围）权益**。
+       * 面对下注时跟注 EV 用的是**对手下注范围权益**（见跟注理由与候选注记），
+       * 两者实测可差 5 个百分点以上（68.22% vs 73.51%）⇒ 必须写明是哪一份，
+       * 否则使用者会把这一行误当成 CALL EV 的计算输入。
+       */
+      const estimatedEquityLabelZh =
+        math.heroEquityVsBetRange === null
+          ? '对当前对手范围（整体 / 到达范围）估计权益约'
+          : '对当前对手范围（**整体 / 到达范围**；**不是**本次跟注 EV 的输入，后者用「对手下注范围权益」）估计权益约';
       reasons.push({
         code: 'MATH_ESTIMATED_EQUITY',
-        textZh: `对当前对手范围估计权益约 ${(equity * 100).toFixed(1)}%`,
+        textZh: `${estimatedEquityLabelZh} ${(equity * 100).toFixed(1)}%`,
         data: { heroEquity: Number((equity * 100).toFixed(1)) },
       });
     }
@@ -1743,6 +1815,8 @@ function pickCandidate(
     // 数学明显不划算（真实 EV 为负）→ 弃牌。**不允许被策略层翻转**（规范第 27 节）
     if (verdictEdge !== null && ((evEdge !== null && evEdge < -MATH_EV_EPSILON) || verdictEdge < -MARGINAL_EV_GAP_RATIO)) {
       const withinTolerance = evEdge !== null && Math.abs(evEdge) <= uncertaintyBandChips;
+      /* 🔴 TEST 17：本句同时报「权益」与「跟注 EV」⇒ 两者必须同源（纯标注，不改数值） */
+      const callEvEquity = callEvEquityOf(math);
       reasons.push({
         code: 'MATH_FOLD_DOMINANT',
         textZh:
@@ -1753,17 +1827,33 @@ function pickCandidate(
                 ? `；差距在**模型容差带** ±${uncertaintyBandChips.toFixed(2)} 筹码内（工程容差，不是统计误差），` +
                   '但容差**不改变 EV 排名**，也不自动翻转动作'
                 : '')
-            : `估计权益 ${(equity * 100).toFixed(1)}% 低于所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
+            : `${callEvEquity.usedLabelZh} ${((callEvEquity.usedValue ?? 0) * 100).toFixed(1)}% ` +
+              `低于跟注所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
               (math.callEV === null
                 ? '跟注在数学上是负期望'
-                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码，弃牌 EV ≡ 0 ⇒ **弃牌 EV 更高**` +
+                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码（该 EV 的权益输入 = ${callEvEquity.usedLabelZh}），` +
+                  `弃牌 EV ≡ 0 ⇒ **弃牌 EV 更高**` +
                   (withinTolerance
                     ? `（差距在模型容差带 ±${uncertaintyBandChips.toFixed(2)} 内 —— 那是工程容差，不改变 EV 排名）`
-                    : '')),
+                    : '')) +
+              callEvEquity.referenceNoteZh,
         data:
           exactLayeredEV !== null
             ? { layeredEV: Number(exactLayeredEV.toFixed(2)) }
-            : { edge: Number((edge * 100).toFixed(1)), ...(math.callEV === null ? {} : { callEV: Number(math.callEV.toFixed(2)) }) },
+            : {
+                /*
+                 * 🔴 **TEST 17 · 声明的口径必须与数值自洽**（与加注理由同一纪律，
+                 * 见 `riverRaiseDecisionV2.test.ts` 的 V2-4）：本句报的 `edge`
+                 * 必须由「本次 CALL EV 实际使用的权益」算出，并同时声明来源。
+                 * ⚠️ 判据内部用的 `edge`（整体范围口径）**未被改动** —— 这里只是显示口径。
+                 */
+                edge: Number((((callEvEquity.usedValue ?? 0) - math.requiredEquity) * 100).toFixed(1)),
+                equitySource: callEvEquity.usedSource,
+                callEvEquity: Number((callEvEquity.usedValue ?? 0).toFixed(6)),
+                equityLabelZh: callEvEquity.usedLabelZh,
+                ...(math.heroEquity === null ? {} : { arrivalRangeEquity: Number(math.heroEquity.toFixed(6)) }),
+                ...(math.callEV === null ? {} : { callEV: Number(math.callEV.toFixed(2)) }),
+              },
       });
       return foldCandidate;
     }
@@ -1773,36 +1863,43 @@ function pickCandidate(
       (evEdge !== null && evEdge > MATH_EV_EPSILON) ||
       (evEdge === null && verdictEdge !== null && verdictEdge > MARGINAL_EV_GAP_RATIO);
     if (callSupported) {
+      /* 🔴 TEST 17：本句同时报「权益」与「跟注 EV」⇒ 两者必须同源（纯标注，不改数值） */
+      const callEvEquity = callEvEquityOf(math);
       reasons.push({
         code: 'MATH_CALL_SUPPORTED',
         textZh:
           exactLayeredEV !== null
             ? `按**逐层**胜率算，跟注 EV = ${exactLayeredEV.toFixed(2)} 筹码（${math.layeredEV!.layerCount} 层分别计），` +
               `弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（真实 EV 排名：CALL > FOLD）`
-            : `估计权益 ${(equity * 100).toFixed(1)}% 高于所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
+            : `${callEvEquity.usedLabelZh} ${((callEvEquity.usedValue ?? 0) * 100).toFixed(1)}% ` +
+              `高于跟注所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
               (math.callEV === null
                 ? '跟注在数学上成立'
-                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码，弃牌 EV —  0 。 **跟注 EV 更高**` +
+                : `跟注 EV = ${math.callEV.toFixed(2)} 筹码（该 EV 的权益输入 = ${callEvEquity.usedLabelZh}），` +
+                  `弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**` +
                   /*
-                   * 🔴 U1：这句话的比较范围必须写明。加注现在
-*本
-*模型 EV
-                   *（`raiseResponse`），因此「跟注 EV 更高」只在
-**CALL vs FOLD**
-                   * 之间成立 —— 实测 99 暗三条节点上 RAISE EV +140.01 > CALL +79.22）
+                   * 🔴 U1：这句话的比较范围必须写明。加注现在**有**模型 EV
+                   *（`raiseResponse`），因此「跟注 EV 更高」只在 **CALL vs FOLD**
+                   * 之间成立 —— 实测 99 暗三条节点上 RAISE EV +140.01 > CALL +79.22，
                    * 最终动作是 RAISE；若这里不声明范围，同一份输出的首屏理由
                    *（「跟注 EV 更高」）就和动作自相矛盾。
                    * 只改措辞，不动任何数值与动作选择。
                    */
-                  `（本句只比较 CALL —  FOLD）` +
+                  `（本句只比较 CALL vs FOLD）` +
                   (Math.abs(math.callEV) <= uncertaintyBandChips
                     ? `（差距在模型容差带 ±${uncertaintyBandChips.toFixed(2)} 内 ⇒ 置信度偏低，但 EV 排名不变）`
-                    : '')),
+                    : '')) +
+              callEvEquity.referenceNoteZh,
         data:
           exactLayeredEV !== null
             ? { layeredEV: Number(exactLayeredEV.toFixed(2)) }
             : {
-                edge: Number((edge * 100).toFixed(1)),
+                /* 🔴 TEST 17：口径自洽 —— `edge` 由本次 CALL EV 的同一份权益算出 */
+                edge: Number((((callEvEquity.usedValue ?? 0) - math.requiredEquity) * 100).toFixed(1)),
+                equitySource: callEvEquity.usedSource,
+                callEvEquity: Number((callEvEquity.usedValue ?? 0).toFixed(6)),
+                equityLabelZh: callEvEquity.usedLabelZh,
+                ...(math.heroEquity === null ? {} : { arrivalRangeEquity: Number(math.heroEquity.toFixed(6)) }),
                 ...(math.callEV === null ? {} : { callEV: Number(math.callEV.toFixed(2)) }),
               },
       });
@@ -2171,7 +2268,7 @@ function pickCandidate(
                 ]),
           upgradeNoteZh: raiseModelUsable
             ? '⚠️ EV 已是**模型 EV**（面对加注的响应模型），但两组先验系数（强度阶梯 / 加注份额）**未经统计校准**，' +
-              '再加注分支仍是下界；RAKE 未实现'
+              '再加注分支按**摊牌终止近似**计入（未模拟后续街行动 ⇒ 该 EV 偏低，且**不构成**对真实牌局 EV 的严格下界）；RAKE 未实现'
             : isoUsable
               ? '⚠️ EV 仍是**代理**：需要真实 limp 响应频率（本项目无此数据）才能升级为 MODEL_EV；RAKE 未实现'
               : '若建立完整的 3bet EV 模型（三类响应概率），本项可升级为 MODEL_EV 并自然参与比较',
@@ -2273,7 +2370,7 @@ function pickCandidate(
               `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
               '；⚠️ 这是**代理 EV**，不是 Solver EV，RAKE 未实现'
             : raiseByU1Model
-              ? `加注： ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB。 *面对加注的响应模型 EV** = ` +
+              ? `加注： ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB。**面对加注的响应模型 EV** = ` +
                 `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 vs 跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码` +
               `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
                 (u1Facts === null
@@ -2283,9 +2380,10 @@ function pickCandidate(
                     `再加注 ${((u1Facts['reRaiseLikelihood'] as number) * 100).toFixed(1)}%` +
                     `（价格 ${((u1Facts['model']?.['priceRequiredEquity'] as number) ?? 0).toFixed(4)}）`) +
                 '；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；' +
-                '再加注分支按**下界**计（$-增量），故该 EV 偏低；RAKE 未实现'
-              : `牌力—  {math.handRankZh}）与权益优势（高出所需 ${((raiseEquity - math.requiredEquity) * 100).toFixed(1)} 个百分点，` +
-                `。 **${raiseEquitySource}** 条件权益计算）` +
+                '再加注分支按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌 ⇒ 该 EV 偏低，' +
+                '且**不构成**对真实牌局 EV 的严格下界，见 assumptionsZh）；RAKE 未实现'
+              : `牌力（${math.handRankZh}）与权益优势（高出跟注所需 ${((raiseEquity - math.requiredEquity) * 100).toFixed(1)} 个百分点，` +
+                `按 **${raiseEquitySource}** 条件权益计算）` +
                 '支持主动加注做大底池' +
               (commitmentException && tier !== 'MONSTER' && tier !== 'STRONG'
                 ? `本次加注是**承诺例外**放行（实际条件 = ${String(commitmentClause)}｜${advice!.commitment.noteZh}）；`
@@ -2357,11 +2455,12 @@ function pickCandidate(
               `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
               '（⚠️ 两个 EV 都是代理口径，RAKE 未实现）'
             : raiseModelUsable
-              ? `RAISE—  {(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**。 *面对加注的响应模型 EV = ` +
-                `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 （ 本次比较。 *算出来的**：` +
+              ? `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**面对加注的响应模型 EV = ` +
+                `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 ⇒ 本次比较是**算出来的**：` +
               `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
-                '（⚠️ 响应模型是结构性先验。 *未经统计校准**；再加注分支取下注 EV 偏低；RAKE 未实现）'
-              : `RAISE—  {(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：合法候选，来源 = STRATEGIC_CANDIDATE，` +
+                '（⚠️ 响应模型是结构性先验、**未经统计校准**；再加注分支按**摊牌终止近似**计入 ⇒ 该 EV 偏低，' +
+                '且**不构成**对真实牌局 EV 的严格下界；RAKE 未实现）'
+              : `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：合法候选，来源 = STRATEGIC_CANDIDATE，` +
               'EV = NOT_AVAILABLE（缺 fold-to-3bet / call-3bet / 4bet 响应数据）',
           data: {
             sizeBB: Number((raiseCandidate.sizeBB ?? 0).toFixed(2)),
@@ -2413,15 +2512,20 @@ function pickCandidate(
      * 只是这个结论不是由「单一权益门槛」推出来的，所以如实说明。
      */
     if (layeredEquity) {
+      /* 🔴 TEST 17：同一句里出现「权益」与「跟注 EV」⇒ 必须写明 EV 用的是哪一份（纯标注） */
+      const callEvEquity = callEvEquityOf(math);
       reasons.push({
         code: 'SIDE_POT_LAYERED_EQUITY',
         textZh:
           `多人边池：我既争主池（要赢所有人）、又争边池（只需赢同层的人），` +
           '两层的胜负条件不同 ⇒ 单一权益门槛**不适用**；' +
-          `但门槛口径的跟注 EV（${(math.callEV ?? 0).toFixed(2)}，本局面的**下界**）已经不为负，` +
+          `但门槛口径的跟注 EV（${(math.callEV ?? 0).toFixed(2)}，本局面的**下界**，权益输入 = ${callEvEquity.usedLabelZh}）已经不为负，` +
           '跟注可证明不亏。请人工确认边池里的对手范围。',
         data: {
-          edge: Number((edge * 100).toFixed(1)),
+          edge: Number((((callEvEquity.usedValue ?? 0) - math.requiredEquity) * 100).toFixed(1)),
+          equitySource: callEvEquity.usedSource,
+          callEvEquity: Number((callEvEquity.usedValue ?? 0).toFixed(6)),
+          equityLabelZh: callEvEquity.usedLabelZh,
           heroEquity: Number((equity * 100).toFixed(1)),
           requiredEquity: Number((math.requiredEquity * 100).toFixed(1)),
         },
@@ -3102,7 +3206,7 @@ export function decideAlpha(
       sizeBB: amount / context.math.bigBlind,
       ev: null,
       mathFeasible: true,
-      noteZh: '响应模型**被评。 *的那个合法金额（补进候选以保证「推荐金额 = 被评估金额」）',
+      noteZh: '响应模型**被评估**的那个合法金额（补进候选以保证「推荐金额 = 被评估金额」）',
     };
     return Object.freeze([...candidates, Object.freeze(extra)]) as readonly DecisionCandidate[];
   })();
@@ -3175,7 +3279,7 @@ export function decideAlpha(
     consumesStack: consumesStackForAction,
     noteZh:
       actionShapeKind === 'RAISE_TO_ALL_IN'
-        ? `加注： ${String(finalSizeChips)} = 本街总额上限（把剩余 ${legal.myRemainingStack} 全部投入）⇒ **这一注就是全。 *`
+        ? `加注： ${String(finalSizeChips)} = 本街总额上限（把剩余 ${legal.myRemainingStack} 全部投入）⇒ **这一注就是全下**`
         : actionShapeKind === 'NORMAL_RAISE'
           ? `普通加注（本街总额 ${String(finalSizeChips)}，上： ${legal.allInToAmount}）⇒ 不消耗全部筹码`
           : actionShapeKind === 'DIRECT_ALL_IN'
@@ -3244,9 +3348,9 @@ export function decideAlpha(
         ev: null,
         reasonCode: isRaiseLike ? 'RAISE_EV_NOT_IMPLEMENTED' : 'BET_EV_NOT_IMPLEMENTED',
         reasonZh: isRaiseLike
-          ? 'RAISE_EV_NOT_IMPLEMENTED：缺「他面对我的加注时的是 再加」概率与加注继续范围 ） ' +
-            '本动。 *未参。 * EV 比较（不是「EV = 0」，也不是「更差」）'
-          : 'BET_EV_NOT_IMPLEMENTED：下注 EV 依赖对手弃牌率，本项目没有可信估（ 未参与 EV 比较',
+          ? 'RAISE_EV_NOT_IMPLEMENTED：该金额缺「他面对这次加注的响应概率与加注继续范围」⇒ ' +
+            '本动作未参与 EV 比较（不是「EV = 0」，也不是「更差」）'
+          : 'BET_EV_NOT_IMPLEMENTED：下注 EV 依赖对手弃牌率，本项目没有可信估计 ⇒ 本动作未参与 EV 比较',
       });
     }
     /*
@@ -3264,11 +3368,11 @@ export function decideAlpha(
         evaluatedRaiseSizes.length > 0
           ? `⚠️ **部分**加注金额没有 EV（RAISE_EV_NOT_IMPLEMENTED）：` +
             `加注： ${evaluatedRaiseSizes.map((s) => s.toFixed(0)).join(' / ')} 有模型 EV（面对加注的响应模型），` +
-            `但其余金额仍缺「他面对加注的弃/不 再加」概率与加注继续范围 ： ` +
-            '上述动作是「在**可评。 *候选之间的裁决」，**不是**所有合法动作中的最优解'
+            `但其余金额仍缺「他面对这次加注的响应概率与加注继续范围」⇒ ` +
+            '上述动作是「在**可评估**候选之间的裁决」，**不是**所有合法动作中的最优解'
           : `⚠️ 本次加注/全下**没有** EV 模型（RAISE_EV_NOT_IMPLEMENTED）：` +
-            `缺「他面对加注的弃/不 再加」概率与加注继续范围 ： ` +
-            `上述动作是「在**可评。 *候选（弃牌 EV —  0、跟注代码 EV）之间的裁决」，` +
+            `缺「他面对这次加注的响应概率与加注继续范围」⇒ ` +
+            `上述动作是「在**可评估**候选（弃牌 EV ≡ 0、跟注 EV）之间的裁决」，` +
             '**不是**所有合法动作中的最优解',
       data: { unevaluatedCount: unevaluatedActions.length, evaluatedRaiseSizes: evaluatedRaiseSizes.length },
     });

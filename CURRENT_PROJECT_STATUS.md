@@ -416,12 +416,12 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 
 | 项 | 值 |
 |---|---|
-| 源代码 | 117 个文件 / 58554 行（含新增 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
-| 测试代码 | **84 个文件 / 44116 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,982 项 / 137 套件 / 101 个测试文件**（PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
+| 测试代码 | **102 个文件 / 48741 行**（口径：`test/**/*.test.ts`，2026-09-19 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
+| 测试 | **2,028 项 / 137 套件 / 103 个测试文件**（**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
-| 产物 hash 绑定 | **159 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**，数字以生成器输出为准） |
-| Git 状态（V2.1 审计后） | ⚠️ **不是干净基线**：`HEAD = c3391ef`，**26 个已修改**（其中 5 个是本轮修的缺陷）+ 大量未跟踪文件（既有工作一律保留）。可复现清单与逐个 sha256 见 `reports/evidence/v21-repro-state.txt` |
+| 产物 hash 绑定 | **162 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**TEST 17 展示轮只刷新既有产物哈希，未新增登记项（新增测试文件 `test/test17DisplayDisclosure.test.ts` 按既有惯例不登记）**，数字以生成器输出为准） |
+| Git 状态（TEST 17 展示与披露修复后） | ⚠️ **不是干净基线**：`HEAD = 2b3fbaa`（=`recovery: preserve player identity routing v1`，已推送 `origin/main`），**7 个已修改**（`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`、`src/app/manualInput/contextBuilder.ts`、`src/app/decision/decisionEngine.ts`、`src/viewmodels/decisionViewModel.ts`、`src/infra/artifactDefinitions.ts`、`test/playerIdentityRouting.test.ts`）+ 未跟踪的 M1 / TEST 17 相关源文件、测试、报告与证据（一律保留）。**所有改动均未提交、未推送**（未获授权）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-test17-20260919-214542`（654 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
 | 历史基线回归 | 535 → … → **1,677** → **1,690** → **1,691** → **1,704** → **1,712**，无一次放宽断言（三次契约变更均已在报告里逐条说明：TEST 6 升级为「权益按画像方向移动 + 去重可见」；下注决策模型 13 项验收；**T9 的「三桶组合数之和」在混频下改为「并集 = 可达集合 + 质量守恒」**—— 旧断言在混频下是错的） |
@@ -1500,6 +1500,77 @@ K 按**统计频次**分三档（这是本轮的核心设计，不能统一）�
 真实逐手机会数需从 `PlayerProfile.metrics[m].opportunities` 取；
 ② §十六 的「自动重分类建议」本轮**未实现**（标签原样保留）；
 ③ UI 展示本轮未做（trace 已在 `context.profileV3` 里可用）。
+
+### 10.0.17 PLAYER PROFILE V3 · FACING BET CHANNEL M1 + 自审 + 修复（2026-09，**未提交**）
+
+**要解决的问题**（审计结论）：实测统计（VPIP/PFR/3Bet/WTSD）此前**到不了面对下注决策**——
+面对下注的两个消费者（响应刻度 `buildRaiseResponse`、他的下注范围 `betProbabilityByBand`）
+只拿到手选标签；`resolvedDimensions` 的唯一消费者 `buildBetDecisionFacts` 在
+`postflopAdvisor.ts:576` 被 `if (facingBet || betDecisionFacts === null) return null` 丢弃。
+
+**实现（方案 D 字面）**：新增 `src/app/manualInput/facingBetProfile.ts`（已登记，清单 159 → **160**）；
+`tendenciesForSeat`（**响应层**）在**有轴证据**时改喂「标签 ×0.35×(1−w) + 实测 ×w」
+（`confidence = 1`），**无轴证据时逐位走旧实现**。
+EV / 筹码口径 / 合法动作 / 冻结节权益（U1、P0、P1-2a/2b、P1-4）与一切冻结参数未动。
+
+**自审发现（`reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md`）**：
+
+1. **🟠 高危口径缺陷**：`betProbabilityByBand` **不读 `confidence`**
+   （`bettingRange.ts:390`，`betResponse.ts:432-437` 维度原样透传）⇒ 折进 0.35 后，
+   该层标签强度从 `1.0` 变成 `0.35×(1−w)`，**第一个观测即跳变**（`betMass` −38.1%），
+   且对**无观测通道**的 `bluffTendency` 同样施压；该层又经
+   `contextBuilder.ts → buildRaiseResponse` 回流进「弃/跟/再加注」桶划分。
+2. **🟠 归因修正**：上轮 `RAISE EV +1.4197` 的分量 = P1 响应刻度 **+0.2817（19.8%）** +
+   P2a 下注范围（融合维度）**+0.1454（10.2%）** + P2b 下注范围（标签被折 0.35）**+0.9925（69.9%）**；
+   `CALL EV` 与 `betMass` 的变化 **100% 来自下注范围层**（P2b 占 90.4% / 81.1%）。
+   上轮「由实测统计驱动」的表述**不成立**。
+3. **🟠 覆盖面缺口（未修）**：「无标签 + 无动态提示 + 只有实测统计」时通道**完全关闭**
+   （`playerBuilt.tendency === null` 提前返回中立；与完全无画像逐位相同）。
+4. **🟡 潜伏隐患**：`playerBuilt.confidence` 非纯标签置信度（observation-only 时为 `NO_DATA_NEUTRAL`）；
+   `baseDimensions` 与手选标签维度的逐位等价是「传两份维度」的前提，已加测试固定。
+5. **⚪ 既有未修**：面对下注层（实测 ×1.0·w）与 Hero 主动下注层（融合 ×0.35）强度差 **2.86×**。
+
+**✅ 修复（已授权执行，`reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md`）**：
+`contextBuilder.ts` 把两个消费者**分开取证** —— 响应层 `tendenciesForSeat` 保持 M1 语义不变；
+下注范围层改用新增的 `betRangeTendenciesForSeat`，喂 V3 **融合维度** `resolvedDimensions`
+（标签 `(1−w)`、实测 `w`、**不折 0.35**），无轴证据时仍吃原标签维度。
+
+| 量（TEST 16，MANIAC+800 手） | 纯标签 | 修复前 | **修复后** |
+|---|---|---|---|
+| `betMass` | 0.472404449170 | 0.325557982074（−38.1% 跳变） | **0.444597607765** |
+| `CALL EV` | 72.940211164 | 72.933737730 | **72.939592245** |
+| `RAISE EV` | 146.064821986 | 147.484509709 | **146.491968643** |
+| 最终动作 | RAISE @ 120 | RAISE @ 120 | **RAISE @ 120（未变）** |
+
+- **EV 分解（受控实验 `M1_FREEZE_BAND`）**：P1 **+0.281740**（修复前后逐位不变 ⇒ 修复只动了下注范围层）
+  + P2a **+0.145407**（保留：实测应当产生的影响）+ P2b **+0.992541 → 0**（缺陷归零）。
+- **连续性**：0 → 1 手位移 0.000275（总位移的 **0.9%**；修复前一步吃掉 5776%），且 0/1/20/800/5000 手**单调**。
+- **新性质（逐轴隔离）**：V3 融合是逐轴的、而该层不消费 `tightness` ⇒ **只给 VPIP 时该层与纯标签逐位相同**（修复前会掉 −38.1%）——与该层无关的证据不再泄漏进该层。
+- **未改**：`bettingRange.ts` / `betResponse.ts` / `raiseResponse.ts` / `observedStats.ts` /
+  `decisionEngine.ts` / `postflopAdvisor.ts` / `playerIdentity.ts` 与一切冻结参数。
+
+**待裁决（仍未处理）**：U-F3（是否开放「只有实测统计」形态）、U1（逐统计锚点饱和，已用墨菲 M-7 钉住）、
+U2（`streetBetScale` 的 `confidence`）、U-F6（跨分支统一）、以及**是否提交/推送**。
+
+**新增测试**：`test/profileFacingBetChannel.test.ts` 17 → 21 → **35 项**
+（§五 A-1~A-4 修复语义与反证；§六 墨菲 M-1~M-10 对抗测试；附录 1–4 接口语义/归因/覆盖缺口）。
+
+### 10.0.18 TEST 17 · 决策展示与模型假设最小修复（2026-09，**未提交**）
+
+**范围（严格限定为「解释已算出的决策」，不重算任何决策）**：只修 TEST 17 审计确认的三个**用户可见**问题。
+检查点（开工前）：`%TEMP%\dezhou-checkpoint-test17-20260919-214542`（654 文件 + sha256 清单，逐位 0 差异）。
+
+| # | 问题 | 修复位置 |
+|---|---|---|
+| 1 | CALL EV 的权益来源没有标注（`math.heroEquity` 68.22% 被读成 EV 的输入，实际输入是 `EqVsBetRange` 73.51%） | `decisionEngine.ts` 新增纯标注函数 `callEvEquityOf`；改**候选注记**、`MATH_CALL_SUPPORTED`、`MATH_FOLD_DOMINANT`（镜像）、`MATH_ESTIMATED_EQUITY`（澄清）、`SIDE_POT_LAYERED_EQUITY`（同类歧义）；`decisionViewModel.ts` 拆成「对手下注范围权益（本次跟注 EV 与加注门槛的输入）」与「整体范围权益（仅参考）」两行，并把权益输入写进「跟注 EV」行 |
+| 2 | 中文决策说明损坏（恢复提交 `5ef4f2f` 引入，≥11 处用户可见） | `decisionEngine.ts` 逐条精确修复：`1785 / 1797 / 2276 / 2287-2288 / 2360-2364 / 3105 / 3178 / 3247-3249 / 3267-3271`（保留全部原因码、动作码、条件与数据字段） |
+| 3 | 再加注分支的未来街终止近似未披露 + 假设清单重复 | `contextBuilder.ts` 的 `assumptionsZh` 去重（6 → **9 条**，0 重复）并新增：摊牌终止近似（已枚举未来公共牌、**未模拟**后续街行动）、「不是严格下界」的限定、4-bet 未实现的单独说明；`noteZh` 的 RAISE EV 公式改为打印**实际参与计算的分支值**（原先写死 `×(−heroContestedAdd)`，复算不出打印的 EV） |
+
+**验收数值（逐位不变）**：`CALL EV = 30.719693642502683`；`RAISE 80 EV = 36.75849453937832`；
+P1-2b `FOLD = −80`、`CALL = −67.732181090706945`（分支 `CALL`）；最终动作 `RAISE @ 80` 未变。
+
+**未改**：`computeEquity` / CALL EV 公式 / 条件范围生成 / 再加注分支选择与 EV 公式 / 一切策略参数与阈值。
+**新增测试**：`test/test17DisplayDisclosure.test.ts`（**11 项**，D-1~D-8）。
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 

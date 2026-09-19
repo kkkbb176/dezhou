@@ -154,6 +154,30 @@ function mathOf(input: ManualHandInput): Record<string, any> {
   return dg['math'] as Record<string, any>;
 }
 
+/**
+ * 决策的**作用面**读数：用于「变化只出现在面对下注的画像通道上」这类断言
+ *（动作 / 整体权益 / 下注范围权益 / 加注 EV）。
+ */
+function runFingerprintOf(input: ManualHandInput): {
+  action: string;
+  heroEquity: number;
+  eqVsBetRange: number;
+  raiseEV: number | null;
+} {
+  const r = analyzeManualHand(input, OPTIONS);
+  assert.equal(r.ok, true);
+  if (!r.ok) throw new Error('unreachable');
+  const d = r.decision as unknown as Record<string, any>;
+  const dg = d['diagnostics'] as Record<string, any>;
+  const facts = ((dg['postflop'] ?? {})['raiseResponse'] ?? null) as Record<string, any> | null;
+  return {
+    action: `${String(d['action'])}${d['sizeChips'] === undefined ? '' : ` @ ${String(d['sizeChips'])}`}`,
+    heroEquity: (dg['math'] as Record<string, any>)['heroEquity'] as number,
+    eqVsBetRange: (dg['math'] as Record<string, any>)['heroEquityVsBetRange'] as number,
+    raiseEV: facts === null ? null : (facts['raiseEV'] as number | null),
+  };
+}
+
 /** 生产链上的身份解析结果（`buildDecisionContext` 回传，只读诊断） */
 function identityOf(input: ManualHandInput) {
   const parsed = parseManualInput(input);
@@ -360,19 +384,52 @@ test('A/B：牌桌路径（标准座位 id）与手工输入路径（已保存�
   assert.equal(selection.entry.playerId, persistentId);
   assert.equal(selection.matchedBy, 'DISPLAY_NAME');
 
-  const fromManual = test16Input({
+  const manualOf = (withStats: boolean): ManualHandInput => test16Input({
     seatId: bbSeatId,
     persistentPlayerId: selection.entry.playerId,
     displayName: '阿豪',
     quickProfile: 'MANIAC',
     dynamicHint: 'UNKNOWN',
     stackBB: 100,
-    observedStats: AHAO_STATS,
+    ...(withStats ? { observedStats: AHAO_STATS } : {}),
   });
 
+  /*
+   * 🔴 **PLAYER PROFILE V3 · M1 之后的重新界定**（原断言在此处不再成立，必须说明原因）：
+   *
+   * 原断言是「A（牌桌路径）与 B（手工输入路径）**逐位等价**」——
+   * 它当时之所以成立，是因为**实测统计在面对下注节点完全没有通道**
+   * （审计：`reports/evidence/profile-downstream-audit.txt`）。
+   * 本轮的 M1 修复**故意**打通了那条通道，而：
+   *
+   * | 路径 | 携带的画像 |
+   * |---|---|
+   * | 牌桌路径 | 只有 `quickProfile` 标签（`TablePlayer` 不存实测统计） |
+   * | 手工输入路径 | 标签 **+ 阿豪 800 手四项实测统计** |
+   *
+   * ⇒ 「同一身份」在两条路径上**本来就不是同一份画像**，因此逐位相等不再是对的期望。
+   * 现在分两条断言，各自守住它真正要守的东西：
+   *
+   * 1. **身份路由等价**：两条路径在**同一份画像内容**（都只给标签）下必须逐位等价；
+   * 2. **M1 通道生效**：B 多出的实测统计必须**只**通过面对下注的画像通道改变数字
+   *    （下注范围权益 / 响应概率 / EV），而**不得**改变动作、尺寸与分类。
+   */
   const a = fingerprintOf(fromTable);
-  const b = fingerprintOf(fromManual);
-  assert.equal(b, a, 'A（牌桌）与 B（手工输入）在同一身份下必须逐位等价');
+  assert.equal(
+    fingerprintOf(manualOf(false)),
+    a,
+    '同一身份 + 同一画像内容（只给标签）⇒ 两条路径必须逐位等价',
+  );
+
+  const b = fingerprintOf(manualOf(true));
+  assert.notEqual(b, a, '手工路径多出的实测统计必须改变数字（M1 通道生效）');
+  /* M1 通道的作用面：只动面对下注的量，不动动作/尺寸/分类 */
+  const runA = runFingerprintOf(fromTable);
+  const runB = runFingerprintOf(manualOf(true));
+  assert.equal(runB.action, runA.action, '实测统计不得改变最终动作（本节点：都是 RAISE @ 120）');
+  assert.notEqual(runB.eqVsBetRange, runA.eqVsBetRange, 'EqVsBetRange 必须随实测统计变化（下注范围权重）');
+  assert.notEqual(runB.raiseEV, runA.raiseEV, 'RAISE EV 必须随实测统计变化（响应概率）');
+  assert.equal(runB.heroEquity, runA.heroEquity, '整体权益不变（到达范围本轮未接入实测，U3/U4 未授权）');
 });
 
 test('B：身份注入必须真的发生 —— 修复前 `opponent.id === villainId` 恒为 false', () => {

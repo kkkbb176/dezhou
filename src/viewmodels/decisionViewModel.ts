@@ -281,7 +281,33 @@ export function toDecisionViewModel(
           ? '⚠️ 不适用：我既争主池又争边池（需按层分别算胜负条件）'
           : '单层门槛（权益 ≥ 所需权益 ⇔ 跟注不亏）',
       ),
-      row('估计权益', math.heroEquity === null ? '—（无法计算）' : percentZh(math.heroEquity, 1)),
+      /*
+       * 🔴 **TEST 17 · 两份条件权益必须分开展示，并各自写明用途**。
+       *
+       * - `math.heroEquityVsBetRange` = **对手下注范围**权益 ⇒ 面对下注时
+       *   **跟注 EV 与加注门槛**用的就是它（测试节点的实测值 **73.51%**）；
+       * - `math.heroEquity` = **整体（到达）范围**权益 ⇒ 只回答「我领先他的整体范围吗」
+       *   （同节点实测 **68.22%**）。
+       *
+       * 两者在同一节点可差 5 个百分点以上；用整体范围权益去复算跟注 EV 会得到
+       * 27.07 而不是 30.72 —— 修复前界面只显示「估计权益 68.2%」紧挨「跟注 EV 30.72」，
+       * 使用者无法复算、也无法判断哪一份才是 EV 的输入。
+       */
+      row(
+        '对手下注范围权益',
+        math.heroEquityVsBetRange === null
+          ? '—（本节点没有可用的下注范围 ⇒ 跟注 EV 与加注门槛回落用整体范围权益）'
+          : `${percentZh(math.heroEquityVsBetRange, 2)}｜**本次跟注 EV（与加注门槛）的权益输入**`,
+      ),
+      row(
+        '整体范围权益（仅参考）',
+        math.heroEquity === null
+          ? '—（无法计算）'
+          : `${percentZh(math.heroEquity, 2)}｜` +
+            (math.heroEquityVsBetRange === null
+              ? '本次跟注 EV 的**回落**输入（本节点没有下注范围）'
+              : '**不是**本次跟注 EV 的输入（那是「对手下注范围权益」）'),
+      ),
       row(
         '权益来源',
         math.equitySource === null
@@ -311,6 +337,13 @@ export function toDecisionViewModel(
           ? '—（无法计算）'
           : `${math.callEV.toFixed(2)} ${t('common.chips')}` +
             '｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）' +
+            /*
+             * 🔴 **TEST 17**：EV 的权益输入必须写在行内，否则使用者会拿上面那行
+             * 「整体范围权益」去复算（实测 68.22% ⇒ 27.07 ≠ 30.72）。
+             */
+            (math.heroEquityVsBetRange === null
+              ? '｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）'
+              : `｜权益输入：**对手下注范围权益 ${percentZh(math.heroEquityVsBetRange, 2)}**`) +
             (math.layeredEV?.exact === true
               ? `｜按**逐层**胜率算（${math.layeredEV.layerCount} 层分别计算）`
               : '｜按单一门槛口径算'),

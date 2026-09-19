@@ -375,6 +375,14 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '同名不同人的隔离、换座位与换玩家的正确性都由它决定）',
   },
   {
+    path: 'src/app/manualInput/facingBetProfile.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '「面对下注」有效人物画像的构造（标签贡献 0.35×(1−w) + 实测贡献 w×center(observed)）→ ' +
+      '**面对下注时的下注范围权重与面对加注的响应概率发生变化**（进而影响 EqVsBetRange、' +
+      'CALL/Raise EV 与最终建议）；无实测证据时逐位退回旧标签实现',
+  },
+  {
     path: 'src/app/manualInput/reconstruct.ts',
     category: ManifestCategory.DECISION,
     impact:
@@ -1134,6 +1142,34 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '**「`CALL` 的金额 = 本次实际投入且被夹到剩余筹码」「全下跟注必须标成 isAllIn 并写明全下」' +
       '「不得同时显示两个等价按钮」「跟不完整时没有加注权」这些保证的强度发生变化**；' +
       '含「每一个可执行按钮都必须被后端接受」的契约扫描与「传未夹的差额必须被拒绝」的反证',
+  },
+  {
+    /*
+     * 🔴 M1 自审报告补登记：它记录的是**未提交改动**的审查结论与待裁决清单
+     * （含一条会影响既有验收数字的 🟠 发现：验收块归因错误）。
+     * 该结论若被后续轮次引用而文件本身悄悄变化，会出现「引用的是旧结论」这一类静默漂移。
+     */
+    path: 'reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**面对下注画像通道 M1 的自审结论**变化 → 「下注范围层标签重标定（1.0 → 0.35）」' +
+      '「RAISE EV 归因三路分解（P1 +0.2817 / P2a +0.1454 / P2b +0.9925）」' +
+      '「哪些证据形态能打开通道」这些判定与待裁决项（U-F1 / U-F3 / U1 / U2 / U-F6）发生变化；' +
+      '本文件同时是「上轮验收块归因需修正」这一结论的唯一书面依据',
+  },
+  {
+    /*
+     * 🔴 M1 修复报告补登记：它记录了「下注范围层吃错维度」这一缺陷的修复
+     * 与**修复前后的 EV 分解**（P2b +0.9925 → 0）—— 该结论是后续一切
+     * 「面对下注 EV 变化」讨论的基准，文件本身漂移会让基准失效。
+     */
+    path: 'reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**下注范围层标签重标定修复**的结论变化 → 「`betMass`/`CALL EV`/`RAISE EV` 相对纯标签的位移」' +
+      '「P1 +0.2817 / P2a +0.1454 / P2b 0」这一分解、「逐轴隔离（仅 VPIP ⇒ 该层不动）」' +
+      '与「首观测位移 0.9%」这些判定发生变化；' +
+      '本文件同时固定「修复只影响下注范围层、未触碰响应层」的证据（`M1_FREEZE_BAND` 受控实验）',
   },
   {
     path: 'test/hotfix001ActionDedup.test.ts',
