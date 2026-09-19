@@ -202,7 +202,44 @@ export const QUICK_PROFILE_CONFIDENCE = 0.35;
 export const DYNAMIC_HINT_CONFIDENCE = 0.3;
 
 export type ManualVillain = {
+  /**
+   * 🔴 **引擎口径 id**（`seat_<位置>`，见 `reconstruct.playerIdOfPosition`）。
+   *
+   * ## 语义（PLAYER IDENTITY ROUTING V1 修正）
+   *
+   * 它回答的是「**哪一个座位**」，用于：
+   * 行动记录匹配（`buildDynamicSnapshot` 按 `record.playerId` 过滤）、
+   * 以及历史调用方传「对手是谁」的兼容写法。
+   *
+   * ⚠️ 它**不是**玩家持久身份。持久身份请用 `persistentPlayerId`。
+   * 传入名字（如「阿豪」）不会报错，但会被如实记为
+   * 「既不是座位 id、也不是持久 id」，并按 §身份路由的规则处理
+   *（唯一对手 ⇒ 路由到该对手；多家对手 ⇒ 显式 `AMBIGUOUS`，不猜）。
+   */
   playerId?: string;
+  /**
+   * 🔴 **玩家持久身份**（PLAYER IDENTITY ROUTING V1）。
+   *
+   * 关联**历史画像 / 实测统计 / 复盘**的唯一键。玩家换座位后它**不变**。
+   * 与 `seatId` 一起给时最明确：`persistentPlayerId` 说「是谁」，
+   * `seatId` 说「他这会儿坐在哪」。
+   */
+  persistentPlayerId?: string | null;
+  /**
+   * 🔴 **当前座位身份**（PLAYER IDENTITY ROUTING V1）。
+   *
+   * 显式声明「这份画像属于哪个座位」。它是路由优先级最高的一档，
+   * 也是「同一玩家换座位」与「同一座位换玩家」都正确的关键。
+   */
+  seatId?: string | null;
+  /**
+   * 🔴 **显示名**（可重复、可缺省）。
+   *
+   * ⚠️ **只用于显示**：同名可能是两个不同的人，因此它**永不参与绑定**，
+   * 也不会影响任何数学结果。需要「姓名 → 持久 id」时用
+   * `resolveRosterSelection`（多候选时返回「待选择」，不猜）。
+   */
+  displayName?: string | null;
   quickProfile?: QuickProfile;
   dynamicHint?: DynamicHint;
   /** 该对手的起始筹码（BB）；不填则与 `effectiveStackBB` 相同 */
@@ -782,6 +819,29 @@ export function parseManualInput(input: ManualHandInput): ParseResult {
           `可选：${dynamicHintSet.join(' / ')}`,
         field: villainList.length > 1 ? `villains[${index}].dynamicHint` : 'villain.dynamicHint',
       });
+    }
+    /*
+     * 🔴 **PLAYER IDENTITY ROUTING V1：身份三字段必须逐条校验**（Fail-Closed）。
+     *
+     * 它们决定「画像挂到哪一家身上」，写错一个的类型（例如把对象/数字塞进来）
+     * 如果不拦住，解析层会把它当字符串用，路由结果就会落进
+     * 「未绑定/不注入」那条路 —— 而使用者以为画像已经生效。
+     * 这与上面 quickProfile / dynamicHint 是同一条纪律：
+     * **未知或非法取值一律阻断，不静默**。
+     */
+    for (const [key, value] of [
+      ['persistentPlayerId', villain.persistentPlayerId],
+      ['seatId', villain.seatId],
+      ['displayName', villain.displayName],
+    ] as const) {
+      if (value === undefined || value === null) continue;
+      if (typeof value !== 'string') {
+        issues.push({
+          code: 'INVALID_NUMBER',
+          message: `${where}玩家身份字段「${key}」必须是字符串（实际 ${typeof value}）。`,
+          field: villainList.length > 1 ? `villains[${index}].${key}` : `villain.${key}`,
+        });
+      }
     }
   }
 

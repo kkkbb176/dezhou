@@ -1041,6 +1041,25 @@ export function analyzeManualHand(
         ? { villainPlayerId: parsed.value.villain.playerId }
         : {}),
       /*
+       * 🔴 **PLAYER IDENTITY ROUTING V1**：三个身份字段原样转发。
+       *
+       * | 字段 | 语义 |
+       * |---|---|
+       * | `villainPersistentPlayerId` | 玩家**持久身份**（关联历史画像 / 实测统计） |
+       * | `villainSeatId` | 画像目标**座位**（显式绑定，优先级最高） |
+       * | `villainDisplayName` | **显示名**（只显示，永不参与绑定） |
+       */
+      ...(parsed.value.villain.persistentPlayerId !== undefined &&
+      parsed.value.villain.persistentPlayerId !== null
+        ? { villainPersistentPlayerId: parsed.value.villain.persistentPlayerId }
+        : {}),
+      ...(parsed.value.villain.seatId !== undefined && parsed.value.villain.seatId !== null
+        ? { villainSeatId: parsed.value.villain.seatId }
+        : {}),
+      ...(parsed.value.villain.displayName !== undefined && parsed.value.villain.displayName !== null
+        ? { villainDisplayName: parsed.value.villain.displayName }
+        : {}),
+      /*
        * 🔴 **行为画像**（PLAYER PROFILE QUANTIFICATION V1 · §十二）。
        *
        * 严格可选：不传时 `contextBuilder` 走既有路径，**逐位不变**。
@@ -1339,6 +1358,18 @@ export function hashManualInput(input: ManualHandInput): string {
           v.quickProfile ?? null,
           v.dynamicHint ?? null,
           v.stackBB ?? null,
+          /*
+           * 🔴 **PLAYER IDENTITY ROUTING V1**：身份三字段必须进哈希。
+           *
+           * 它们决定「画像挂到哪一家身上」——
+           * 同一手牌、同一行动，只把 `persistentPlayerId` 从 `player_001`
+           * 换成 `player_002`（同名不同人），对手范围与 EV 就会变。
+           * 不写进哈希就追不到「为什么昨天 CALL、今天 FOLD」，
+           * 而且会把两个不同玩家记成同一条记录（铁律 F-10 同一类缺陷）。
+           */
+          v.persistentPlayerId ?? null,
+          v.seatId ?? null,
+          v.displayName ?? null,
         ];
 
   // 字段顺序**刻意固定**（不依赖对象字面量的书写顺序，但依赖这里的行序）：

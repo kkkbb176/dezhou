@@ -187,6 +187,10 @@ import {
 import { buildBettingRangeFacts } from './bettingRange.ts';
 import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
 import {
+  resolvePlayerIdentity,
+  type PlayerIdentityResolution,
+} from './playerIdentity.ts';
+import {
   boardTextureLabelOf,
   riverComboClassOf,
 } from '../../domain/postflop/riverProfileClassify.ts';
@@ -272,6 +276,17 @@ export type ContextBuildInput = {
   dynamicHint?: DynamicHint;
   /** 对手的稳定 id（用于关联真实画像；未提供时用位置 id） */
   villainPlayerId?: string;
+  /**
+   * 🔴 **PLAYER IDENTITY ROUTING V1：玩家持久身份**（关联历史画像 / 实测统计）。
+   *
+   * 与 `villainPlayerId`（引擎口径座位 id）**是两个概念**：
+   * 前者说「是谁」（换座位不变），后者说「这台机器上算哪个座位」。
+   */
+  villainPersistentPlayerId?: string;
+  /** 🔴 **PLAYER IDENTITY ROUTING V1：画像目标座位**（显式绑定，优先级最高） */
+  villainSeatId?: string;
+  /** 🔴 **PLAYER IDENTITY ROUTING V1：显示名**（**只显示，永不参与绑定**） */
+  villainDisplayName?: string;
   /**
    * 该对手的**真实画像**（可选）。
    *
@@ -366,6 +381,13 @@ export type ContextBuildResult = {
   context: DecisionContext;
   legal: LegalActions;
   warnings: readonly string[];
+  /**
+   * 🔴 **PLAYER IDENTITY ROUTING V1**：本手**实际生效**的玩家身份解析。
+   *
+   * 只读诊断（不参与任何判定）：回答「画像挂到了哪一家身上、按谁查、
+   * 有没有发生回退」。`seatId === null` 表示**没有任何画像被注入**。
+   */
+  playerIdentity: PlayerIdentityResolution;
 };
 
 /* ============================================================
@@ -3465,11 +3487,67 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
    * 于是 posterior ∝ prior × likelihood × profile × observation，
    * 权益 / 底池赔率 / Call EV / 动作排名**全部自动跟着变**。
    *
-   * ⚠️ 只对**画像描述的那个对手**（`villainId`）注入：给其他对手套一个
+   * ⚠️ 只对**画像描述的那个对手**（`profileSeatId`）注入：给其他对手套一个
    * 画像就是编造数据。
+   *
+   * ## 🔴 PLAYER IDENTITY ROUTING V1（TEST 16 缺陷修复）
+   *
+   * 修复前这里是**一个**字符串 `villainId = input.villainPlayerId ?? …`，
+   * 它同时被当作「引擎口径座位 id」（`opponent.id === villainId`）与
+   * 「画像稳定 id」。而调用方给的是**对手名字**（`"阿豪"`）时，
+   * 座位 id 是 `seat_BB` ⇒ 判据恒为 false ⇒ 画像 provider 与行为画像
+   * **整体没有注入范围链**，而且**不发任何警告**（实测 `profileRange = null`）。
+   *
+   * 现在拆成三个**各自单一职责**的量：
+   *
+   * | 量 | 含义 | 谁用 |
+   * |---|---|---|
+   * | `identity.seatId` | 画像目标**座位**（**唯一**的注入判据） | 范围链 / 行为画像 / 跛入原型 / 画像证据 |
+   * | `identity.persistentPlayerId` | 玩家**持久身份**（可为 null） | 诊断 / 未来按 id 取历史画像 |
+   * | `identity.snapshotPlayerId` | 玩家快照 / 行为画像上盖的 id（**引擎口径座位 id**，不是持久身份） | `PlayerSnapshot` / 既有诊断 |
+   *
+   * 另外**单独**保留引擎口径的行动者 id（`actorSeatId`）：动态层要按
+   * `record.playerId` 过滤本手事件，而行动记录里存的是**座位 id**
+   *（`reconstruct.playerIdOfPosition`）。修复前这两件事共用 `villainId`，
+   * 于是「给名字」不仅让画像落空，还会让**动态层滤不出任何事件**。
    */
-  const villainId =
-    input.villainPlayerId ?? realizedOpponents[0]?.id ?? opponents[0]?.id ?? 'villain';
+  const opponentSeatIds = opponents.map((p) => p.id);
+  const primaryOpponentSeatId = realizedOpponents[0]?.id ?? opponents[0]?.id ?? null;
+  const identity = resolvePlayerIdentity({
+    claim: {
+      playerId: input.villainPlayerId ?? null,
+      persistentPlayerId: input.villainPersistentPlayerId ?? null,
+      seatId: input.villainSeatId ?? null,
+      displayName: input.villainDisplayName ?? null,
+    },
+    opponentSeatIds,
+    primarySeatId: primaryOpponentSeatId,
+  });
+  /** 画像目标座位（`null` ⇒ 不注入任何画像） */
+  const profileSeatId = identity.seatId;
+  /**
+   * 盖在玩家快照 / 行为画像上的 id —— **引擎口径座位 id**。
+   *
+   * ⚠️ 与 `identity.persistentPlayerId`（玩家持久身份）**是两个概念**：
+   * 前者是「本手哪一家」（与 `RangeSnapshot.opponentId` 同口径，
+   * 决策层与既有测试都用它），后者是「是谁」（跨手不变）。
+   * 把座位 id 当成持久 id 是 §六.4 明令禁止的。
+   */
+  const snapshotPlayerId = identity.snapshotPlayerId.length > 0 ? identity.snapshotPlayerId : 'villain';
+  /**
+   * 🔴 **引擎口径的行动者 id**（本手事件匹配用）。
+   *
+   * 必须始终是**座位 id**：行动记录按 `playerIdOfPosition` 写入。
+   * 取不到对手时退回 `primary`（老代码的 `'villain'` 兜底语义）。
+   */
+  const actorSeatId = profileSeatId ?? primaryOpponentSeatId ?? 'villain';
+  /*
+   * 🔴 **回退必须可见**（§六.4）：身份没有按调用方的声明落到座位上时，
+   * 一律写进 warnings —— 修复前这条路是**静默**的。
+   */
+  if (identity.disclosureZh !== null && identity.status !== 'BOUND_TO_PRIMARY_OPPONENT') {
+    warnings.push(`🧭 ${identity.disclosureZh}`);
+  }
 
   /*
    * 🔴 **行为画像必须在生产路径上真的被构造出来**
@@ -3499,7 +3577,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     input.behaviorProfile ??
     (input.quickProfile !== undefined && input.quickProfile !== 'UNKNOWN'
       ? behaviorProfileOf({
-          playerId: villainId,
+          playerId: snapshotPlayerId,
           archetype: input.quickProfile as QuickProfile,
         })
       : undefined);
@@ -3512,18 +3590,50 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   const limpProfileFor = (
     playerId: string,
   ): { archetype: LimperArchetype; confidence: number } => ({
-    archetype: playerId === villainId ? profileArchetype : LimperArchetype.POPULATION,
-    confidence: playerId === villainId ? playerBuilt.confidence : 0,
+    archetype: playerId === profileSeatId ? profileArchetype : LimperArchetype.POPULATION,
+    confidence: playerId === profileSeatId ? playerBuilt.confidence : 0,
   });
   const playerBuilt = mark('player', () =>
     buildPlayerSnapshot(
-      villainId,
+      snapshotPlayerId,
       input.villainProfile,
       input.quickProfile,
       input.dynamicHint,
       (street) => boardAtStreetOf(state, street),
     ),
   );
+
+  /**
+   * 🔴 **PLAYER IDENTITY ROUTING V1：单一注入判据**。
+   *
+   * 回答「画像/行为画像/实测统计**允许**用在哪个座位上」——
+   * 只有 `playerBuilt` 描述的那一家（`profileSeatId`）才算数。
+   *
+   * ## 为什么不能只看「有没有画像」
+   *
+   * 调用方给的画像只描述**一个人**。范围链（provider / 行为画像 / 跛入原型）、
+   * 下注范围权重（`P(BET|公共强度带)`）与他面对加注的响应权重**都必须**
+   * 问同一句话：「要建模的这一家，是不是画像描述的那一家？」
+   * 不匹配却照用，就是「用甲的性格给乙做决策」——
+   * 与 TEST 16 的 `opponent.id === villainId` 是同一条纪律。
+   */
+  const profileAppliesTo = (seatId: string | null | undefined): boolean =>
+    profileSeatId !== null && seatId !== null && seatId !== undefined && seatId === profileSeatId;
+
+  /**
+   * 某一家的响应倾向：**画像是他的**才算数，否则退回中立倾向
+   *（中立 = `dimensions: null` + 置信度 0 + 不分街，等于「没有画像」）。
+   */
+  const tendenciesForSeat = (seatId: string | null | undefined) => {
+    if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) {
+      return responseTendenciesOf(null, 0, null);
+    }
+    return responseTendenciesOf(
+      playerBuilt.tendency.dimension.dimensions,
+      playerBuilt.confidence,
+      v3StreetInput,
+    );
+  };
 
 
   const allRangeBuilds = mark('range', () =>
@@ -3534,10 +3644,10 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         opponent,
         deadCards,
         input.solverRanges?.[opponent.id],
-        opponent.id === villainId ? playerBuilt.tendency : null,
+        opponent.id === profileSeatId ? playerBuilt.tendency : null,
         limpProfileFor(opponent.id),
         // 画像只对**它描述的那一家**注入（给别的座位套画像就是编造数据）
-        opponent.id === villainId ? (behaviorProfile ?? null) : null,
+        opponent.id === profileSeatId ? (behaviorProfile ?? null) : null,
         /*
          * 🔴 **只有「正在下注的那一家」需要捕获到达范围**：
          * 其余对手没有「当前这一次下注」可言，他们的范围语义逐位不变。
@@ -3562,9 +3672,9 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
           primaryOpponent,
           deadCards,
           undefined,
-          primaryOpponent.id === villainId ? playerBuilt.tendency : null,
+          primaryOpponent.id === profileSeatId ? playerBuilt.tendency : null,
           limpProfileFor(primaryOpponent.id),
-          primaryOpponent.id === villainId ? (behaviorProfile ?? null) : null,
+          primaryOpponent.id === profileSeatId ? (behaviorProfile ?? null) : null,
           currentBetRecord !== null && currentBetRecord.actorId === primaryOpponent.id
             ? currentBetRecord.index
             : undefined,
@@ -3716,13 +3826,17 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     if (!(betChips > 0)) return null;
     const potBeforeBet = Math.max(0, computePot(state) - betChips);
     if (!(potBeforeBet > 0)) return null;
-    const ownDimensions =
-      playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions;
-    const tendencies = responseTendenciesOf(
-      ownDimensions,
-      playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
-      v3StreetInput,
-    );
+    /*
+     * 🔴 **PLAYER IDENTITY ROUTING V1：画像只对「它描述的那一家」生效**。
+     *
+     * 下注范围权重 `P(BET | 公共强度带)` 由倾向（画像维度）驱动，
+     * 而下注的人是 `currentBetRecord.actorId`。若画像指向的是**别人**
+     *（调用方把 CO 标成 MANIAC，而这里下注的是 UTG），拿 MANIAC 的
+     * 带速率去给 UTG 的下注范围加权就是「用甲的性格给乙做决策」——
+     * 与 `opponent.id === villainId` 那条判据是同一类缺陷，只是发生在
+     * 响应层。所以这里显式判等：**不匹配 ⇒ 中立倾向**（等于没有画像）。
+     */
+    const tendencies = tendenciesForSeat(currentBetRecord?.actorId ?? null);
     return buildBettingRangeFacts({
       arrivalEntries: arrivalRange.entries.map((e) => ({
         cardIndices: e.combo.cardIndices as unknown as readonly [number, number],
@@ -3865,13 +3979,12 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     );
     if (!(heroContestedAdd > 0)) return null;
     const finalPot = currentPot + heroContestedAdd + villainAdd;
-    const ownDimensions =
-      playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions;
-    const tendencies = responseTendenciesOf(
-      ownDimensions,
-      playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
-      v3StreetInput,
-    );
+    /*
+     * 🔴 **PLAYER IDENTITY ROUTING V1**：与他面对加注时的响应权重同理 ——
+     * 画像只有指向**这家对手**（`opponent.id`）时才允许驱动响应概率，
+     * 否则用中立倾向（等于没有画像），绝不把甲的倾向套到乙身上。
+     */
+    const tendencies = tendenciesForSeat(opponent.id);
     const built = buildRaiseResponse({
       betRangeEntries: bettingRangeFacts.entries,
       board: allBoardCards(state),
@@ -4126,15 +4239,21 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      * 在权益与 scorer 层**各计一次**（实测 `bluffCatchDelta` 由 0
      * 变成 +0.035，`deDuplicated` 由 true 变成 false）。
      *
-     * 现在按 `villainId` 定位「被画像描述的对手」；定位不到就退回首要对手
+     * 现在按 `profileSeatId`（PLAYER IDENTITY ROUTING V1 之前的 `villainId`）
+     * 定位「被画像描述的对手」；定位不到就退回首要对手
      *（此时两者本来就是同一家）。
+     *
+     * ⚠️ 身份没落到任何座位（`profileSeatId === null`，例如 SEAT_NOT_FOUND）
+     * 时**不得**把证据算到首要对手头上 —— 那时根本没有任何画像被注入，
+     * 退回首要对手会让「没有画像」看起来像「画像没起作用」。
      */
     const profiledOpponent =
-      (villainId !== null && villainId !== undefined
-        ? (realizedOpponents.find((o) => o.id === villainId)
-          ?? opponents.find((o) => o.id === villainId)
+      profileSeatId !== null
+        ? (realizedOpponents.find((o) => o.id === profileSeatId)
+          ?? opponents.find((o) => o.id === profileSeatId)
           ?? null)
-        : null) ?? primaryOpponent;
+        : null;
+    if (profiledOpponent === null) return null;
     const evidenceBuild =
       allRangeBuilds.find((entry) => entry.opponentId === profiledOpponent?.id)?.build ?? primaryBuild;
     const core = evidenceBuild.tendency ?? null;
@@ -4238,8 +4357,14 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   }
 
   /* ---- 8. 动态 ---- */
+  /*
+   * 🔴 **PLAYER IDENTITY ROUTING V1**：动态层按 `state.actions[].playerId` 过滤
+   * 本手事件，而行动记录里存的是**引擎口径座位 id**（`seat_<位置>`）。
+   * 因此这里必须用 `actorSeatId`，**不能**用画像的持久身份
+   *（修复前两者共用一个字符串 ⇒ 调用方给名字时动态层一个事件都滤不出来）。
+   */
   const dynamic = mark('dynamic', () =>
-    buildDynamicSnapshot(state, villainId, input.asOf, input.dynamicHint),
+    buildDynamicSnapshot(state, actorSeatId, input.asOf, input.dynamicHint),
   );
 
   /* ---- 9. 组装 ---- */
@@ -4460,7 +4585,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
                 opponent === null || opponent === undefined
                   ? undefined
                   : input.seatProfiles?.[opponent.position];
-              const isVillain = entry.opponentId === villainId;
+              const isVillain = profileSeatId !== null && entry.opponentId === profileSeatId;
               const ownDimensions =
                 seatProfile !== undefined && seatProfile !== 'UNKNOWN'
                   ? archetypeDimensionsOf(seatProfile as QuickProfile, QUICK_PROFILE_CONFIDENCE)
@@ -4549,8 +4674,8 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     const profileArchetype = quickProfileToLimperArchetype(input.quickProfile);
     const inputOf = (player: PlayerState): LimperInput => ({
       position: player.position,
-      archetype: player.id === villainId ? profileArchetype : LimperArchetype.POPULATION,
-      confidence: player.id === villainId ? playerBuilt.confidence : 0,
+      archetype: player.id === profileSeatId ? profileArchetype : LimperArchetype.POPULATION,
+      confidence: player.id === profileSeatId ? playerBuilt.confidence : 0,
     });
 
     return buildPreflopIsoFacts({
@@ -4665,7 +4790,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     timings: Object.freeze({ ...timings, total: elapsed }),
   });
 
-  return { context, legal, warnings: Object.freeze([...warnings]) };
+  return { context, legal, warnings: Object.freeze([...warnings]), playerIdentity: identity };
 }
 
 /** 保留导出以便诊断与测试 */

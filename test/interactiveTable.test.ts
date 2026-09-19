@@ -511,17 +511,35 @@ test('§69 CRITICAL：A 在 UTG 是跟注站、离开后 B 坐进来 —— 分�
     '换人后的理由构成必须与全新牌桌一致',
   );
 
-  // ⭐ 最强的一条：换人之后，**输入与全新牌桌逐字节相同** ——
-  //    A 的任何痕迹（画像、动态、playerId）都不得留在送进管线的数据里。
+  // ⭐ 最强的一条：换人之后，**除身份字段外**与全新牌桌逐字节相同 ——
+  //    A 的任何痕迹（画像、动态、持久 id、显示名）都不得留在送进管线的数据里。
+  //
+  // 🔴 **PLAYER IDENTITY ROUTING V1 修正**：修复前这里断言「整包逐字节相等」，
+  //    而那是**因为输入里根本不携带玩家身份**（只有座位 id）才成立的。
+  //    现在 `villain.persistentPlayerId` / `displayName` 必须进输入
+  //    （否则无法按人取画像、也无法把两个不同玩家区分开），
+  //    而 B 是新玩家 ⇒ 这两个字段**本来就应该不同**。
+  //    真正要守的性质没有变，而且这里守得更准：
+  //    ① 除身份字段外逐字段一致；② A 的持久 id 与显示名**不得出现**在输入里。
+  const oldUtgPlayerId = seatOfPosition(profiled, Position.UTG)!.playerId!;
+  const oldUtgName = profiled.playersById[oldUtgPlayerId]!.displayName;
+  const withoutIdentity = (input: ManualHandInput): string => {
+    const { persistentPlayerId: _p, displayName: _d, ...restVillain } = input.villain ?? {};
+    return JSON.stringify({ ...input, villain: restVillain });
+  };
   assert.equal(
-    p1.log.inputHash,
-    p0.log.inputHash,
-    '换人后的输入哈希必须与全新牌桌**完全相同**（A 的痕迹彻底清零）',
+    withoutIdentity(replacedInput),
+    withoutIdentity(pristineInput),
+    '除身份字段外，换人后的 ManualHandInput 必须与全新牌桌逐字段一致',
   );
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(replacedInput)),
-    JSON.parse(JSON.stringify(pristineInput)),
-    '换人后的 ManualHandInput 必须与全新牌桌逐字段一致',
+  const replacedJson = JSON.stringify(replacedInput);
+  assert.ok(
+    !replacedJson.includes(oldUtgPlayerId),
+    `A 的持久 playerId（${oldUtgPlayerId}）不得出现在送进管线的输入里`,
+  );
+  assert.ok(
+    !replacedJson.includes(oldUtgName),
+    `A 的显示名（${oldUtgName}）不得出现在送进管线的输入里`,
   );
 
   // (2) 反向对照：对手区块**确实**能被观测到差异 → 上面的「一致」不是假阳性

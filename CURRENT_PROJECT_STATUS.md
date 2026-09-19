@@ -418,9 +418,9 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 117 个文件 / 58554 行（含新增 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树；`GTOopen/` 下的外部求解器源码**不计入**本项目） |
 | 测试代码 | **84 个文件 / 44116 行**（另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **1,968 项 / 137 套件 / 100 个测试文件**（PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试 | **1,982 项 / 137 套件 / 101 个测试文件**（PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
-| 产物 hash 绑定 | **158 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**，数字以生成器输出为准） |
+| 产物 hash 绑定 | **159 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**，数字以生成器输出为准） |
 | Git 状态（V2.1 审计后） | ⚠️ **不是干净基线**：`HEAD = c3391ef`，**26 个已修改**（其中 5 个是本轮修的缺陷）+ 大量未跟踪文件（既有工作一律保留）。可复现清单与逐个 sha256 见 `reports/evidence/v21-repro-state.txt` |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |

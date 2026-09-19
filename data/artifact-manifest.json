@@ -397,9 +397,16 @@
     {
       "path": "src/app/manualInput/manualInput.ts",
       "category": "DECISION",
-      "sha256": "1dc13e769fed6a8a65025626af558d830657b8c2d49225fee25e0365c97cbdfe",
-      "bytes": 45332,
+      "sha256": "693becf8a8a3ec2945afe4024c5cf098522a5f1419b7fc8bfdf8ee9a1ca61075",
+      "bytes": 48189,
       "impact": "手动输入结构变化（字段 / 牌面格式 / 街道与公共牌约束）→ **输入解析与校验行为发生变化**（影响所有录入路径）"
+    },
+    {
+      "path": "src/app/manualInput/playerIdentity.ts",
+      "category": "DECISION",
+      "sha256": "fa248035ed2da6c19d2a4013c5e28422057706c7cb2d41728751f90ef08c4b3b",
+      "bytes": 15356,
+      "impact": "玩家身份路由变化（座位 id `seat_<位置>` / 持久 `playerId` / 显示名三者的解析与优先级）→ **画像 provider、行为画像、跛入原型与下注/响应权重被注入到哪一家身上发生变化** （注入落空时范围权重、权益、CALL/Raise EV 与最终建议全部跟着变；同名不同人的隔离、换座位与换玩家的正确性都由它决定）"
     },
     {
       "path": "src/app/manualInput/reconstruct.ts",
@@ -425,8 +432,8 @@
     {
       "path": "src/app/manualInput/contextBuilder.ts",
       "category": "DECISION",
-      "sha256": "c477e7be2552d40638e85a9cf13701350bfdb327126858996d2b6dab5d12e83d",
-      "bytes": 215218,
+      "sha256": "87fbf10efc01098439591c9026c51a31de5e3213d9125ae4f28fb57ef2c6ed14",
+      "bytes": 222378,
       "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
     },
     {
@@ -446,8 +453,8 @@
     {
       "path": "src/app/alphaPipeline.ts",
       "category": "DECISION",
-      "sha256": "eebdb3ae8e28a35eb9344c5c2e326367a1e26a7b00fd7d88ebb33c2475a6684e",
-      "bytes": 60614,
+      "sha256": "47ed63e3ce200b4b52c37e153bbac3f71b627e1d1ea2e961d1a4e0bb6e38ecd6",
+      "bytes": 62301,
       "impact": "端到端管线变化（阶段顺序 / 失败阶段划分 / 最终数学一致性检查 / 日志）→ **整条链的失败行为与输出结构发生变化**"
     },
     {
@@ -754,8 +761,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "307bd6b26fa8812dd7112382afc1341257041661dff08e54f596c2b8177cd043",
-      "bytes": 124880,
+      "sha256": "aa1ff6f0f3b73341999e349d42142ad3d5e6a790e7993f26d4a42213cee95d63",
+      "bytes": 125043,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -824,8 +831,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "8b083413180f2913f9a1dfd3eda4099d5fde0c7699bdea0c5f9ca944719b9d04",
-      "bytes": 54411,
+      "sha256": "bb14d910f7d75aef0754995835c7728dde2672e758bd256a080dc7070d714c2a",
+      "bytes": 54963,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -908,8 +915,8 @@
     {
       "path": "src/app/table/tableAdapter.ts",
       "category": "DECISION",
-      "sha256": "5277112870ad2597b9c462a493ed1bc501e2e78908b2ddac05eb355eeca648dd",
-      "bytes": 12631,
+      "sha256": "fa70b98d2d2b95eed9181e441636ca3d3b864692e0b2f60467965388df1b75c6",
+      "bytes": 14035,
       "impact": "牌桌状态 → `ManualHandInput` 的**唯一转换点**变化 → **「屏幕显示 = 实际提交 = 后端状态」三者一致**这一保证发生变化（首要对手的画像必须按 playerId 解析；引擎侧 id 必须用 `seat_<位置>` 口径，否则动态层的事件匹配会静默失效）"
     },
     {
@@ -943,8 +950,8 @@
     {
       "path": "test/interactiveTable.test.ts",
       "category": "DECISION",
-      "sha256": "02d932c0b122739f7d8220d73ffdf8d3cc837dd1bdbc92c8e0912abe97e2a34c",
-      "bytes": 48976,
+      "sha256": "e9dffd4bdf7254b1b4e2f8d9f6e26683890c6b41ab641815a3e3e5f1a39cda75",
+      "bytes": 50175,
       "impact": "座位生命周期与三条铁律的永久回归测试变化 → **「Fold ≠ Leave」「Seat ≠ Player」「当前手历史不可删」这三条保证的强度发生变化**；删掉任何一条断言都等于放弃对应的修复"
     },
     {

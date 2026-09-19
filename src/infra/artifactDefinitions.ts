@@ -366,6 +366,15 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '**输入解析与校验行为发生变化**（影响所有录入路径）',
   },
   {
+    path: 'src/app/manualInput/playerIdentity.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '玩家身份路由变化（座位 id `seat_<位置>` / 持久 `playerId` / 显示名三者的解析与优先级）→ ' +
+      '**画像 provider、行为画像、跛入原型与下注/响应权重被注入到哪一家身上发生变化** ' +
+      '（注入落空时范围权重、权益、CALL/Raise EV 与最终建议全部跟着变；' +
+      '同名不同人的隔离、换座位与换玩家的正确性都由它决定）',
+  },
+  {
     path: 'src/app/manualInput/reconstruct.ts',
     category: ManifestCategory.DECISION,
     impact:

@@ -232,7 +232,33 @@ export function tableStateToManualHandInput(state: PokerTableState): AdapterResu
   const villain: ManualVillain =
     primaryPlayer !== undefined && primary !== null
       ? {
+          /*
+           * 🔴 **引擎口径 id**（`seat_<位置>`）：**保持不变**。
+           *
+           * 它用于行动记录匹配（动态层按 `state.actions[].playerId` 过滤，
+           * 而记录里写的就是座位 id）。`test/interactiveTable.test.ts` 与
+           * `test/interactiveTableRedteam.test.ts` 把这条契约钉住了。
+           */
           playerId: playerIdOfPosition(primary),
+          /*
+           * 🔴 **PLAYER IDENTITY ROUTING V1**：把**玩家持久身份**也带出去。
+           *
+           * 修复前这里只有座位 id，于是「是谁」在适配器上就丢了 ——
+           * 下游只能拿座位 id 当画像键。现在三件事分开：
+           *
+           * ```text
+           * playerId            = seat_BB          ← 座位（引擎口径）
+           * persistentPlayerId  = p2               ← 玩家（换座位不变）
+           * displayName         = 阿豪              ← 只显示
+           * seatId              = seat_BB          ← 画像目标座位（显式，不靠猜）
+           * ```
+           *
+           * 坐在同一座位上的**另一个人**会得到另一个 `persistentPlayerId`
+           * ⇒ 画像天然隔离，不需要任何缓存清理逻辑。
+           */
+          persistentPlayerId: primaryPlayer.playerId,
+          seatId: playerIdOfPosition(primary),
+          displayName: primaryPlayer.displayName,
           quickProfile: primaryPlayer.quickProfile,
           dynamicHint: primaryPlayer.dynamicHint,
           ...(primarySeat?.stackBB !== undefined ? { stackBB: primarySeat.stackBB } : {}),
