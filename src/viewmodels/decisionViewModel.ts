@@ -199,13 +199,44 @@ export function toDecisionViewModel(
   // 用 `actionable` 分支会让「actionable=true 但 action=null」这种内部不一致
   // 静默走进 `actionZhOf(null)` 并抛异常 —— 现在它至少会被 `finalMathSanityCheck`
   // 先一步拦下并给出明确错误（红队 F-05）。
+  /*
+   * 🔴 **TEST 18 · 金额口径**：BET / RAISE / ALL_IN 的 `sizeChips` 是**本街累计**
+   *（尺寸网格的 `toAmount`；`allInToAmount = 本街已投入 + 剩余筹码`），
+   * CALL 的 `sizeChips` 是**本次新增投入**。下面的三行与 `sizeZh` 必须按此分档表达，
+   * 否则使用者会把「加注至 186」读成「还要再拿出 186」。
+   */
+  const actionShapeKind = (d.actionShape?.['kind'] ?? null) as string | null;
+  const isCumulativeAmountAction =
+    decision.action === 'BET' || decision.action === 'RAISE' || decision.action === 'ALL_IN';
+  const isAllInRaise = actionShapeKind === 'RAISE_TO_ALL_IN' || actionShapeKind === 'DIRECT_ALL_IN';
+  const streetCommittedChips = math.myCommittedThisStreet;
+  const incrementalChips =
+    decision.sizeChips === undefined
+      ? 0
+      : isCumulativeAmountAction
+        ? Math.max(0, decision.sizeChips - streetCommittedChips)
+        : decision.sizeChips;
+  const actionRowLabelZh =
+    decision.action === 'BET' ? '本次下注' : decision.action === 'CALL' ? '本次补入' : '本次再投入';
+  const totalRowLabelZh =
+    decision.action === 'BET'
+      ? '下注后的本街总额'
+      : decision.action === 'CALL'
+        ? '跟注后的本街总额'
+        : '加注后的本街总额';
+
   const actionZh =
     decision.action !== null
-      ? `${t('common.suggestion')}${actionZhOf(decision.action)}`
+      ? `${t('common.suggestion')}${isAllInRaise ? '全下' : actionZhOf(decision.action)}`
       : t('common.analysisBlocked');
   const sizeZh =
     decision.actionable && decision.sizeChips !== undefined
-      ? `${bbZh(decision.sizeChips, bb)}（${chipsZh(decision.sizeChips)} ${t('common.chips')}）`
+      ? isCumulativeAmountAction
+        ? /* 口径标注：**先给筹码数**（与题面/界面的「加注至 186 筹码」一致），再给 BB */
+          `${decision.action === 'BET' ? '下注' : '加注至'} ${chipsZh(decision.sizeChips)} ${t('common.chips')}` +
+          `（${bbZh(decision.sizeChips, bb)}，本街累计${isAllInRaise ? '；本注即全下' : ''}）` +
+          `｜本次再投入 ${chipsZh(incrementalChips)} ${t('common.chips')}（${bbZh(incrementalChips, bb)}）`
+        : `${bbZh(decision.sizeChips, bb)}（${chipsZh(decision.sizeChips)} ${t('common.chips')}）`
       : undefined;
 
   /* ---- 分类与置信度（来自 i18n 词条） ---- */
@@ -262,6 +293,35 @@ export function toDecisionViewModel(
           ]
         : []),
       row('跟注需要', `${chipsZh(math.callCost)} ${t('common.chips')}（${bbZh(math.callCost, bb)}）`),
+      /*
+       * 🔴 **TEST 18 · RAISE-TO AMOUNT CONSISTENCY**：金额口径三行。
+       *
+       * 引擎的 `sizeChips` 对 BET / RAISE / ALL_IN 是**本街累计（raise-to）**口径，
+       * 而「我的剩余筹码」是**增量**口径 —— 两者在「我本街已投入 + 加注」的节点
+       * 必然不同（TEST 18：已投入 20、加注至 186、剩余 166）。
+       *
+       * 修复前界面只显示「93.0BB（186 筹码）」紧挨「我的剩余筹码 166」，
+       * 使用者会把 186 读成「还要再拿出 186」——而实际再投入只有 166。
+       */
+      row(
+        '本街已投入',
+        `${chipsZh(math.myCommittedThisStreet)} ${t('common.chips')}（${bbZh(math.myCommittedThisStreet, bb)}）`,
+      ),
+      ...(decision.sizeChips === undefined
+        ? []
+        : [
+            row(
+              actionRowLabelZh,
+              `${chipsZh(incrementalChips)} ${t('common.chips')}（${bbZh(incrementalChips, bb)}）` +
+                (isCumulativeAmountAction ? '　← 真正要从筹码里再拿出的部分' : ''),
+            ),
+            row(
+              totalRowLabelZh,
+              `${chipsZh(decision.sizeChips)} ${t('common.chips')}（${bbZh(decision.sizeChips, bb)}）` +
+                (isCumulativeAmountAction ? '　← 含本街已投入' : '') +
+                (isAllInRaise ? '；**本注即全下**' : ''),
+            ),
+          ]),
       row(
         '我的剩余筹码',
         `${chipsZh(math.myRemainingStack)} ${t('common.chips')}（${bbZh(math.myRemainingStack, bb)}）`,

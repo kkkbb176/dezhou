@@ -1172,6 +1172,20 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '本文件同时固定「修复只影响下注范围层、未触碰响应层」的证据（`M1_FREEZE_BAND` 受控实验）',
   },
   {
+    /*
+     * 🔴 P1 审计报告补登记：它记录了「CALL EV 为正却弃牌」这一**已确认缺陷**的
+     * 首次分歧位置（decisionEngine.ts:1816 的标尺不一致）与最小修复范围；
+     * 该结论在修复落地前是唯一书面依据，文件漂移会让「修什么」失去基准。
+     */
+    path: 'reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**99 中对 CALL/FOLD 一致性审计**的结论变化 → 「硬判标尺（到达范围权益差）与 callEV（下注范围权益）不一致」' +
+      '「首次分歧位置 decisionEngine.ts:1816」「一致性告警本身正确」「影响面 15/75 局面」' +
+      '「最小修复 = 硬判标尺与 callEV 同源 + 文案 + 6 条失败测试」这些判定发生变化；' +
+      '本文件同时固定「缺陷在已推送基线 3899189 内、与 TEST 18 金额口径修复无关」这一边界结论',
+  },
+  {
     path: 'test/hotfix001ActionDedup.test.ts',
     category: ManifestCategory.DECISION,
     impact:

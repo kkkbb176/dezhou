@@ -418,10 +418,10 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
 | 测试代码 | **102 个文件 / 48741 行**（口径：`test/**/*.test.ts`，2026-09-19 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **2,028 项 / 137 套件 / 103 个测试文件**（**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试 | **2,040 项 / 137 套件 / 104 个测试文件**（**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
-| 产物 hash 绑定 | **162 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**TEST 17 展示轮只刷新既有产物哈希，未新增登记项（新增测试文件 `test/test17DisplayDisclosure.test.ts` 按既有惯例不登记）**，数字以生成器输出为准） |
-| Git 状态（TEST 17 展示与披露修复后） | ⚠️ **不是干净基线**：`HEAD = 2b3fbaa`（=`recovery: preserve player identity routing v1`，已推送 `origin/main`），**7 个已修改**（`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`、`src/app/manualInput/contextBuilder.ts`、`src/app/decision/decisionEngine.ts`、`src/viewmodels/decisionViewModel.ts`、`src/infra/artifactDefinitions.ts`、`test/playerIdentityRouting.test.ts`）+ 未跟踪的 M1 / TEST 17 相关源文件、测试、报告与证据（一律保留）。**所有改动均未提交、未推送**（未获授权）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-test17-20260919-214542`（654 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
+| 产物 hash 绑定 | **163 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**P1 审计补登记 `reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md` → 163**；TEST 18 展示轮只刷新既有产物哈希，未新增登记项，数字以生成器输出为准） |
+| Git 状态（TEST 18 RAISE-TO 修复后） | ⚠️ **不是干净基线**：`HEAD = 3899189`（= 已推送 `origin/main` 的 M1 + TEST 17 备份提交），**8 个已修改**（`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`、`src/app/alphaPipeline.ts`、`src/viewmodels/decisionViewModel.ts`、`test/alphaRedteamRegression.test.ts`；另有 `src/app/manualInput/contextBuilder.ts`、`src/app/decision/decisionEngine.ts`、`src/infra/artifactDefinitions.ts`、`test/playerIdentityRouting.test.ts` 为**已提交**状态下的既有改动）+ 未跟踪的 M1 / TEST 17 / TEST 18 相关源文件、测试、报告与证据（一律保留）。**TEST 18 改动尚未提交、尚未推送**（未获授权）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-test18-20260919-221459`（664 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
 | 历史基线回归 | 535 → … → **1,677** → **1,690** → **1,691** → **1,704** → **1,712**，无一次放宽断言（三次契约变更均已在报告里逐条说明：TEST 6 升级为「权益按画像方向移动 + 去重可见」；下注决策模型 13 项验收；**T9 的「三桶组合数之和」在混频下改为「并集 = 可达集合 + 质量守恒」**—— 旧断言在混频下是错的） |
@@ -1571,6 +1571,58 @@ P1-2b `FOLD = −80`、`CALL = −67.732181090706945`（分支 `CALL`）；最�
 
 **未改**：`computeEquity` / CALL EV 公式 / 条件范围生成 / 再加注分支选择与 EV 公式 / 一切策略参数与阈值。
 **新增测试**：`test/test17DisplayDisclosure.test.ts`（**11 项**，D-1~D-8）。
+
+### 10.0.19 TEST 18 · RAISE-TO AMOUNT CONSISTENCY P1（加注金额口径一致性，2026-09，**未提交**）
+
+**触发**：TEST 18 只读审计（转牌面对加注：本街已投入 20、剩余 166、合法全下累计 186）发现
+`finalMathSanityCheck` 把**本街累计**金额与**剩余筹码**直接比大小，于是把**合法全下**误报成
+「⚠️ 建议尺寸 186 超过剩余筹码 166 —— 已被最终数学检查拦截（不应发生，请报告）」。
+
+**动作金额语义（§四，逐条核对实现 —— 不是假定所有动作同口径）**：
+
+| 动作 | `sizeChips` 来源 | 口径 | 合法上限 |
+|---|---|---|---|
+| `FOLD` / `CHECK` | 无 | — | — |
+| `CALL` | `legal.callCost` | **本次新增投入**（增量） | `myRemainingStack` |
+| `BET` | 尺寸网格 `toAmount` | **本街累计**（首次下注 ⇒ 与增量恒等） | `allInToAmount` |
+| `RAISE`（含加注到全下） | 尺寸网格 `toAmount` | **本街累计（raise-to）** | `allInToAmount` |
+| `ALL_IN` | `legal.allInToAmount` | **本街累计** | `allInToAmount` |
+
+**修复（2 个生产文件）**：
+1. `src/app/alphaPipeline.ts`：`finalMathSanityCheck` 按动作分档选上限
+   （BET/RAISE/ALL_IN → `legal.allInToAmount`；CALL → `legal.myRemainingStack`），
+   参数新增 `allInToAmount`，浮点容差 `SIZE_SANITY_EPSILON = 1e-6`（远小于 0.02 筹码的最小粒度）；
+   告警文案改为点明「本次动作的合法上限 N（本街累计口径 = 本街已投入 + 剩余筹码）」。
+   **不做**最小加注额判据（短筹码 under-raise 全下在规则上合法；最小额由 `buildSizeGrid` 保证）。
+2. `src/viewmodels/decisionViewModel.ts`：动作行改为「建议：全下」（`RAISE_TO_ALL_IN`/`DIRECT_ALL_IN`），
+   尺寸行写明「加注至 186 筹码（93.0BB，本街累计；本注即全下）｜本次再投入 166 筹码（83.0BB）」，
+   数学明细新增**金额口径三行**「本街已投入 / 本次再投入 / 加注后的本街总额」（BET 为「本次下注 / 下注后的本街总额」，
+   CALL 为「本次补入 / 跟注后的本街总额」）。
+
+**验收数值（逐位不变）**：`CALL EV = 75.18122987205047`；`RAISE 186 EV = 93.97844769482654`；
+动作 `RAISE 186`；`heroAdd 166`；`villainAdd 106`；`finalPot 401`；`FOLD EV ≡ 0`。
+**原有测试改动**：仅 `test/alphaRedteamRegression.test.ts` 的 `legal` 夹具**补上新字段** `allInToAmount`（断言未动）。
+
+### 10.0.20 P1 · 99 中对 CALL/FOLD 一致性定向审计（2026-09，**只读，未修**）
+
+**现象**：Hero 持 9♥9♣（转牌面对 BB 10BB 领打）时 `CALL EV = +2.71` 筹码，最终动作却是 **FOLD**，
+并输出 `DECISION_CONSISTENCY_ERROR [ACTION_CONTRADICTS_CHIP_EV]`。
+
+**结论（`reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md`）**：**确认缺陷**，属**决策层判据标尺不一致**：
+
+- `callEV` 用**对手下注范围权益**（32.906%，`contextBuilder.ts:585`）；
+- 而 FOLD 硬判的第二条件 `verdictEdge < -MARGINAL_EV_GAP_RATIO`（`decisionEngine.ts:1816`）
+  用的是**整体/到达范围权益差**（`edge = 21.546% − 28.986% = −7.44pp`，`:1496` → `:1738`）；
+- 代码在 `:1729` 声明的恒等式「单层时 `edge = callEV / winnable`」在本节点被打破 **11.36 个百分点**
+  （`callEV/winnable = +3.92%` vs `edge = −7.44%`）⇒ **正值 CALL EV 被另一把尺子判成「数学明显不划算」**；
+- 与加注门槛那处已修的口径缺陷（`:1507` 改成 `raiseEquityRaw = heroEquityVsBetRange ?? equity`）同类，**CALL/FOLD 硬判未同步**。
+
+**边界**：缺陷位于**已推送基线 `3899189`** 内（用 `git archive HEAD` 导出的原样代码树逐位复现），
+与未提交的 TEST 18 金额口径修复**无关**；TEST 17 的展示修复只是把它**暴露**成可见的自相矛盾文案。
+**一致性告警是正确的**（依据分类器本身返回 `CHIP_EV`，其说明写着「CALL 更高」）。
+**影响面**：扫描 75 局面中 **15 例**命中（全部为「中对 / 边缘摊牌价值」牌面），方向单向（只会弃掉本该跟的牌）。
+**待授权**：最小修复 = 硬判标尺与 `callEV` 同源（保留 layeredEdge / layeredEquity 优先级与全部阈值）+
+带内文案改说「无差别带内取代价最小方向」+ 新增 6 条失败测试（P1-1…P1-6）+ 全量 verify 与指定回归。
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 

@@ -460,8 +460,8 @@
     {
       "path": "src/app/alphaPipeline.ts",
       "category": "DECISION",
-      "sha256": "47ed63e3ce200b4b52c37e153bbac3f71b627e1d1ea2e961d1a4e0bb6e38ecd6",
-      "bytes": 62301,
+      "sha256": "24701ea6f94f377e0223c25bdbc182ae94beda48dc1ba82d92c7f7cb2df8908d",
+      "bytes": 66091,
       "impact": "端到端管线变化（阶段顺序 / 失败阶段划分 / 最终数学一致性检查 / 日志）→ **整条链的失败行为与输出结构发生变化**"
     },
     {
@@ -488,8 +488,8 @@
     {
       "path": "src/viewmodels/decisionViewModel.ts",
       "category": "DECISION",
-      "sha256": "68bc0a7f5bbd2ab9fe1e47211dd1f84039771b2401c0530f4c1c713172353faa",
-      "bytes": 59498,
+      "sha256": "958db730871439c524cfb4e388b66289980ecea3345c71b527d4e4e33c9147ac",
+      "bytes": 62763,
       "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
     },
     {
@@ -768,8 +768,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "b13cf0642b5114c9ed1238475f9bca17159808393a90fe8573b0e8ff9b93bc1c",
-      "bytes": 133253,
+      "sha256": "30117d0559adf5757174ba8c6b239dd97ce13246e62adcb1778ae8478e6ccc2b",
+      "bytes": 138087,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -838,8 +838,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "18cbd3a0609cbe52edf63119ebc74307c878b13486eed54745a4b267d03251ba",
-      "bytes": 57184,
+      "sha256": "5ab856e84a20ef1c86695d147c0e0b108351122afdf4cb97726bdd0f35a15e95",
+      "bytes": 58154,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -866,8 +866,8 @@
     {
       "path": "test/alphaRedteamRegression.test.ts",
       "category": "DECISION",
-      "sha256": "7292aae6ac00daf034b1694704ff5ea9a736154453be25838784a4ca7029e1fa",
-      "bytes": 55594,
+      "sha256": "3cceb5a1f63667c28b77925854d8e9f1c651968077c1749fc089e717f117b24f",
+      "bytes": 55939,
       "impact": "红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；本文件删掉任何一条断言都等于放弃对应的修复"
     },
     {
@@ -1135,6 +1135,13 @@
       "sha256": "24d23c77de6908f5e30461b792ed7f71d8db9741642c785b38de980609c685b6",
       "bytes": 16106,
       "impact": "**下注范围层标签重标定修复**的结论变化 → 「`betMass`/`CALL EV`/`RAISE EV` 相对纯标签的位移」「P1 +0.2817 / P2a +0.1454 / P2b 0」这一分解、「逐轴隔离（仅 VPIP ⇒ 该层不动）」与「首观测位移 0.9%」这些判定发生变化；本文件同时固定「修复只影响下注范围层、未触碰响应层」的证据（`M1_FREEZE_BAND` 受控实验）"
+    },
+    {
+      "path": "reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md",
+      "category": "REPORT",
+      "sha256": "a9752b162dd0079220d195fd4812bfd02757121a0c42e1def68db511944c4030",
+      "bytes": 16737,
+      "impact": "**99 中对 CALL/FOLD 一致性审计**的结论变化 → 「硬判标尺（到达范围权益差）与 callEV（下注范围权益）不一致」「首次分歧位置 decisionEngine.ts:1816」「一致性告警本身正确」「影响面 15/75 局面」「最小修复 = 硬判标尺与 callEV 同源 + 文案 + 6 条失败测试」这些判定发生变化；本文件同时固定「缺陷在已推送基线 3899189 内、与 TEST 18 金额口径修复无关」这一边界结论"
     },
     {
       "path": "test/hotfix001ActionDedup.test.ts",

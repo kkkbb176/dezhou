@@ -531,7 +531,12 @@ test('F-04：分类为「明确决策」时置信度不得低于中档（≥0.45
 
 test('F-04：管线最终检查会**抛错**拦截「明确 + 低置信度」的自相矛盾输出', async () => {
   const { finalMathSanityCheck } = await import('../src/app/alphaPipeline.ts');
-  const legal = { actions: ['FOLD', 'CALL'], myRemainingStack: 10_000, callCost: 100 };
+  /*
+   * 🔴 TEST 18：`legal` 现在必须带上 `allInToAmount` —— 因为尺寸上限判据按**动作口径**
+   * 分档（BET/RAISE/ALL_IN 是本街累计口径，上限 = `allInToAmount`；CALL 是增量口径）。
+   * 本夹具是「本街已投入 0」的局面 ⇒ 两个口径恒等（10_000）。
+   */
+  const legal = { actions: ['FOLD', 'CALL'], myRemainingStack: 10_000, callCost: 100, allInToAmount: 10_000 };
   // 构造一个「明确决策 + 置信度 0.15」的决策对象
   const fake = {
     action: 'FOLD',

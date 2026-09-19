@@ -35,6 +35,7 @@ import { Street } from '../domain/types.ts';
 import type { StrategyKnowledge } from '../domain/knowledge/knowledge.types.ts';
 import { GameEnvironment } from '../domain/range/gameEnvironment.ts';
 import type { AlphaDecision } from '../domain/decision/decision.types.ts';
+import { DecisionAction } from '../domain/decision/decision.types.ts';
 import type { DecisionViewModel } from '../viewmodels/decisionViewModel.ts';
 import { toDecisionViewModel, withFinalTimings } from '../viewmodels/decisionViewModel.ts';
 
@@ -1203,6 +1204,17 @@ export function analyzeManualHand(
  * ============================================================ */
 
 /**
+ * 尺寸上限判据的浮点容差（筹码）。
+ *
+ * 为什么需要：`sizeChips` 来自尺寸网格的 `toAmount`（可能经过
+ * `closestSizeTo` 的取整/插值），而 `allInToAmount` 由
+ * `本街已投入 + 剩余筹码` 直接相加得到 —— 理论上相等，浮点上可能差几个 ULP。
+ * 1e-6 筹码远小于任何真实的筹码粒度（本项目最小筹码单位为 0.01BB = 0.02 筹码），
+ * 因此它不会放过任何真实超限，也不会把合法的全下判成非法。
+ */
+const SIZE_SANITY_EPSILON = 1e-6;
+
+/**
  * 二次数学验证（规范第 44 节）。
  *
  * 目的：防止「Exploit 调整之后推荐了一个明显负 EV 的动作」。
@@ -1211,7 +1223,7 @@ export function analyzeManualHand(
  *
  * 1. 输出的动作必须在合法动作集合内（**硬错误**，抛异常）；
  *    `action === null`（信息不足）单独判定，不得与 `actionable` 矛盾
- * 2. 建议的尺寸必须在 `[0, 剩余筹码]` 内，且不导致筹码为负
+ * 2. 建议的尺寸必须**按该动作自己的金额口径**校验（见下面的语义表）
  * 3. 跟注建议的 EV 不得为负 —— 若为负，说明策略层翻转了数学结论
  * 4. 分类为「明确决策」时置信度不得低于中档（**硬错误**，红队 F-04）
  *
@@ -1222,10 +1234,50 @@ export function analyzeManualHand(
  * 第 1、4 项是硬错误：它们不是「数学上临界」，而是**内部自相矛盾**
  *（输出了不允许的动作 / 声称明确却没有可信度支撑）。
  * 这类矛盾一旦被送到界面上，使用者看到的就是一个自信的错误结论。
+ *
+ * ---
+ *
+ * 🔴 **TEST 18 · RAISE-TO AMOUNT CONSISTENCY P1：尺寸判据必须分动作口径**
+ *
+ * `sizeChips` 的口径**按动作不同**（下表逐条核对过实现，不是猜的）：
+ *
+ * | 动作 | `sizeChips` 来源 | 口径 | 合法上限 |
+ * |---|---|---|---|
+ * | `FOLD` / `CHECK` | 无（`undefined`） | — | — |
+ * | `CALL` | `legal.callCost` | **本次新增投入**（增量） | `legal.myRemainingStack` |
+ * | `BET` | `buildSizeGrid` 的 `toAmount` | **本街累计**（首次下注 ⇒ 与增量恒等） | `legal.allInToAmount` |
+ * | `RAISE`（含加注到全下） | `buildSizeGrid` 的 `toAmount` | **本街累计（raise-to）** | `legal.allInToAmount` |
+ * | `ALL_IN` | `legal.allInToAmount` | **本街累计** | `legal.allInToAmount` |
+ *
+ * 修复前**一律**拿 `sizeChips` 与 `myRemainingStack`（增量口径）比大小，于是在
+ * 「我本街已投入 + 加注到超过剩余筹码」的节点把**合法全下**误报成
+ * 「建议尺寸 186 超过剩余筹码 166 —— 已被最终数学检查拦截（不应发生，请报告）」
+ *（TEST 18：本街已投入 20、剩余 166、合法全下累计 186）。
+ *
+ * 两条上限**代数等价**（`allInToAmount = 本街已投入 + myRemainingStack`，
+ * 见 `legalActions.ts` 的恒等式），因此累计口径判据：
+ * ① 不会漏掉任何真正超过全下上限的金额；② 只会把误报去掉，不会放宽真正的拦截。
+ *
+ * ⚠️ **本检查不做最小加注额校验**（那是 `buildSizeGrid` / `legalizeBetSizes` 的职责，
+ * 且「短筹码全下加注低于最小加注额」在规则上**合法**）：在这里加最小额判据会把
+ * 合法的 under-raise 全下判成非法。筹码退回、短筹码封顶同样由
+ * `legalActions` / `previewCommit` 提供的事实决定，本检查只读它们的结论。
  */
 export function finalMathSanityCheck(
   decision: AlphaDecision,
-  legal: { actions: readonly string[]; myRemainingStack: number; callCost: number },
+  legal: {
+    actions: readonly string[];
+    myRemainingStack: number;
+    callCost: number;
+    /**
+     * 🔴 **TEST 18**：合法全下的**本街累计**金额（`legalActions.ts`：
+     * `allInToAmount = 本街已投入 + myRemainingStack`）。
+     *
+     * RAISE / ALL_IN / BET 的 `sizeChips` 都是「本街累计（raise-to）」口径，
+     * 因此它们的上限判据必须用这个字段，而不是增量口径的 `myRemainingStack`。
+     */
+    allInToAmount: number;
+  },
 ): string[] {
   const problems: string[] = [];
   const math = decision.diagnostics.math;
@@ -1247,13 +1299,26 @@ export function finalMathSanityCheck(
     );
   }
 
-  // ---- 2. 尺寸合法性 ----
+  // ---- 2. 尺寸合法性（**分动作口径**：见本函数头部的语义表） ----
   if (decision.sizeChips !== undefined) {
+    /*
+     * 累计口径（本街 raise-to）的动作：BET / RAISE / ALL_IN —— 它们吃尺寸网格的
+     * `toAmount`（`buildSizeGrid` 的 `maxTo = legal.allInToAmount`）或直接是
+     * `allInToAmount`。CALL 是**增量**口径（`legal.callCost`），保持原判据。
+     */
+    const isCumulativeAmount =
+      decision.action === DecisionAction.BET ||
+      decision.action === DecisionAction.RAISE ||
+      decision.action === DecisionAction.ALL_IN;
+    const bound = isCumulativeAmount ? legal.allInToAmount : legal.myRemainingStack;
+    const boundZh = isCumulativeAmount
+      ? `本次动作的合法上限 ${legal.allInToAmount}（本街累计口径 = 本街已投入 + 剩余筹码）`
+      : `剩余筹码 ${legal.myRemainingStack}`;
     if (!Number.isFinite(decision.sizeChips) || decision.sizeChips < 0) {
       problems.push(`⚠️ 建议尺寸非法（${decision.sizeChips}）—— 已被最终数学检查拦截`);
-    } else if (decision.sizeChips > legal.myRemainingStack) {
+    } else if (decision.sizeChips > bound + SIZE_SANITY_EPSILON) {
       problems.push(
-        `⚠️ 建议尺寸 ${decision.sizeChips} 超过剩余筹码 ${legal.myRemainingStack} —— ` +
+        `⚠️ 建议尺寸 ${decision.sizeChips} 超过${boundZh} —— ` +
           '已被最终数学检查拦截（不应发生，请报告）',
       );
     }
