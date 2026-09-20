@@ -268,6 +268,27 @@ export type ConsistencyInput = {
   futureStreetCommitmentBonus: number | null;
   /** 偏好分（面对下注时是 CALL/RAISE/FOLD；无人下注时是 CHECK/BET_*） */
   preferenceScores: readonly { action: string; score: number }[];
+  /**
+   * 🔴 **RIVER DECISION CONSISTENCY：最终动作的「实际家族」**（可选，默认按名字推断）。
+   *
+   * 同一个**实际动作**在本项目里有**两套命名**：
+   *
+   * | 出现位置 | 命名 | 例子 |
+   * |---|---|---|
+   * | 候选尺寸表 / 偏好分表（`betDecision.sizes[].kind`） | 尺寸档位 | `BET_SMALL`、`ALL_IN` |
+   * | 最终动作（`AlphaDecision.action`） | 动作类型 | `BET`、`ALL_IN` |
+   *
+   * 当**下注额等于 Hero 全部剩余筹码**时，`BET`（金额 = 剩余全部）与 `ALL_IN` 是
+   * **同一个实际动作**（同样的投入、同样的底池、同样的对手响应）—— 但按名字比较会得到
+   * `BET ≠ ALL_IN`，于是误报 `ACTION_CONTRADICTS_PREFERENCE`（实测：河牌 55BB 剩余、
+   * 下注 55BB、最高偏好分 ALL_IN 0.62 vs BET 0.60）。
+   *
+   * 因此调用方（决策引擎）在**判定动作形态**后，把「实际家族」显式传进来：
+   * 打光筹码的 `BET` ⇒ `'ALL_IN'`；否则传 `null`（按名下推断，判据逐位不变）。
+   *
+   * ⚠️ 它**只影响家族比较**，不改变动作字符串、金额、底池或任何 EV。
+   */
+  actionEffectiveFamily?: string | null;
   /** 已经产出的警告文本（用于检查「EV 为负 + 另一体系动作」的自相矛盾） */
   warningsZh: readonly string[];
   /**
@@ -402,7 +423,7 @@ export function validateDecisionConsistency(input: ConsistencyInput): Consistenc
     for (const s of input.preferenceScores) {
       best.set(familyOf(s.action), Math.max(best.get(familyOf(s.action)) ?? 0, s.score));
     }
-    const family = familyOf(input.action);
+    const family = input.actionEffectiveFamily ?? familyOf(input.action);
     const topEntry = [...best.entries()].sort((a, b) => b[1] - a[1])[0]!;
     if (topEntry[0] !== family) {
       push(

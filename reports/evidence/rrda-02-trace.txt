@@ -1,0 +1,64 @@
+﻿================================================================================================================
+ 一、加注金额的语义 / 有效筹码 / 合法性
+================================================================================================================
+  Hero  ：剩余 174｜本街已投入 0｜底牌 2 张
+  Villain：剩余 134｜本街已投入 40（含本次下注 40）
+  state.currentBet = 40｜pot = 93｜我的剩余 = 174
+
+  合法动作（`deriveLegalActions`）：
+    {"canCheck":false,"canBet":false,"canRaise":true,"callCost":40,"minRaiseToAmount":80,"allInToAmount":174,"minBet":2,"myRemainingStack":174}
+    actions = ["FOLD","CALL","RAISE","ALL_IN"]
+    ⇒ 合法加注区间 = [80, 174]（raise-to 口径）
+      174 ∈ 该区间 ⇒ **合法**；且 174 = allInToAmount ⇒ **就是全下**
+
+  「RAISE 174」的语义核对：
+    · 这是 **raise-to**（本街总额目标），不是增量 ⇒ 增量 = 174 − 40 = 134
+    · Hero 本街已投入 0 ⇒ 需要从剩余里拿出 174，剩余 174 ⇒ **正好是全下**
+    · 全下后 Hero 剩余 = 0
+    · 加注后底池（若 Villain 跟注）= 93 + 134 + 134 = 361
+    · Villain 需要再投入 134 才能跟注，他身后还有 134 ⇒ **可以跟注**
+    · 有效筹码 effectiveStack = 134（= min(我的剩余 − 跟注额, 对手剩余) 口径）
+    · RAISE 174 与 ALL_IN 174 是**同一个动作**：候选表里同时存在两条（RAISE「全下」与 ALL_IN）
+
+  「价值加注」的目标尺寸公式：desiredTo = pot + 2×callCost = 93 + 2×40 = 173
+    ⇒ 落到最近的合法候选 = 174（全下）⇒ 本节点「价值加注」的默认尺寸就是**把 87BB 全部推入**
+    量级保护 MAX_RAISE_TO_POT_RATIO = 2.5：174 / 93 = 1.871 ≤ 2.5 ⇒ **保护未触发**
+    牌力保护 MIN_CATEGORY_FOR_LARGE_RAISE = 3（两对及以上）：Hero handCategory = 2 ⇒ 只有触发上面那条才会被拦
+
+================================================================================================================
+ 二、证据裁决链（MATH_CALL_SUPPORTED → STRATEGIC_RAISE_FOR_VALUE）
+================================================================================================================
+  decisionSource.kind         = STRATEGIC_HEURISTIC（战略启发式（无任何量化证据））
+  decisionSource.estimateType = HEURISTIC
+  decisionSource.evidenceScope= CALL_CLEAR_CALL_OVER_FOLD_OVERRIDDEN
+  decisionSource.priority     = 2｜canOverrideEvidence = true
+  decisionSource.overrideAttempt = RAISE_HEURISTIC
+  decisionSource.overrideBlocked = null
+
+  裁决说明（逐条）：
+    · CALL：PROXY_EV EV 19.70 筹码，边际 CLEAR_CALL_OVER_FOLD
+    · 但 RAISE 带有**独立论证**：LOW_SPR_COMMITMENT —— 低 SPR 承诺放行（SPR 1.44（筹码已基本入池）—— 河牌**没有下一街**，SPR 只作背景信息：本次跟注/加注必须由当前节点的赔率与牌力决定，不构成「以后反正要打光所以现在该跟」的理由）⇒ 加注与跟注只差把剩余部分投入
+    · ⇒ 允许战略启发式覆盖（来源 STRATEGIC_HEURISTIC
+    · 不是 EV 优胜，不得如此呈现）
+
+  decisionMargin = {"kind":"CLEAR_CALL_OVER_FOLD","evChips":19.697942509917368,"bandChips":6.65,"scope":"VS_FOLD_ONLY"}
+    noteZh = 真实跟注 EV = 19.70 筹码 vs 工程容差带 ±6.65 （= 0.05 × 可争夺量 133.00）⇒ CLEAR_CALL_OVER_FOLD。⚠️ 作用域 VS_FOLD_ONLY：本次比较**只有跟注 vs 弃牌**，对加注/全下**没有**发言权。⚠️ 容差带是**工程容差**，不是统计误差，也不自动翻转动作。
+
+  最终动作 = RAISE｜sizeChips = 174.00
+  STRATEGIC_RAISE_FOR_VALUE 全文：
+    牌力（顶对 K，A踢脚）与权益优势（高出所需 35.8 个百分点）支持主动加注做大底池；本次加注由**低 SPR 承诺**放行（SPR 1.44（筹码已基本入池）—— 河牌**没有下一街**，SPR 只作背景信息：本次跟注/加注必须由当前节点的赔率与牌力决定，不构成「以后反正要打光所以现在该跟」的理由）；⚠️ 加注的 EV 无法计算（缺可信的对手弃牌率估计）⇒ 依据来源 = **STRATEGIC_HEURISTIC**（无任何量化 EV 证据）
+    data = {"edge":35.8,"tier":"MEDIUM","source":"STRATEGIC_HEURISTIC"}
+
+  postflop.commitment = {"band":"COMMITTED","bandZh":"筹码已基本入池","spr":1.4408602150537635,"commitmentScore":0.8290000000000001,"stackOffAllowed":true,"sizingCap":2.5}
+  postflop.valueAssessment = {"verdict":"MARGINAL","worseHandsCanCall":true,"worseCallDensity":0.44283458866079844,"betterHandsContinue":false,"betterContinueDensity":0.24591028392071795,"raiseRisk":0.2770939655767137,"weakerShare":0.6142524975095427,"strongerShare":0.29594644851972923,"estimatedBetEVScore":0.1435628892589798,"estimatedCheckEVScore":0.15742659098748896,"raisePressureIndex":0.2770939655767137,"betterHandPressu
+
+  加注是否有 EV：
+    FOLD     estimateType=EXACT        ev=0.0000
+        - 弃牌 EV ≡ 0 是节点增量口径的**定义**（已投入筹码是沉没成本）
+    CALL     estimateType=PROXY_EV     ev=19.6979
+        - 由「估计权益 × 可争夺量 − 跟注额」推导的**代理 EV**（未建模对手弃牌率）
+        - 未计抽水（本项目无 Rake Engine）
+    RAISE    estimateType=HEURISTIC    ev=null
+        - 牌力 + 权益优势的量级保护（`shouldRaise`）：既有启发式，**不是** EV
+        - 缺 fold-to-3bet / call-3bet / 4bet 响应数据 ⇒ EV 不可得
+        ↑ 若建立完整的 3bet EV 模型（三类响应概率），本项可升级为 MODEL_EV 并自然参与比较

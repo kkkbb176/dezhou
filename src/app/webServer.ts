@@ -58,6 +58,8 @@ import {
   tableMetadata,
   type TableApiDeps,
 } from './table/tableApi.ts';
+/* 🔴 PLAYER PROFILE EXPLOIT V1：服务器入口显式开启玩家历史持久化（默认 `data/`） */
+import { defaultHistoryDir } from './table/playerHistory.ts';
 import { tableStateToManualHandInput } from './table/tableAdapter.ts';
 import {
   gtoCatalog,
@@ -270,6 +272,13 @@ export async function startAlphaServer(options: ServerOptions = {}): Promise<Alp
       return `t${tableSeq.n}`;
     },
     guard: new RevisionGuard(),
+    /*
+     * 🔴 **PLAYER PROFILE EXPLOIT V1**：真正的服务器入口**显式开启**玩家历史持久化。
+     *
+     * 只有这里（以及显式传入该依赖的调用方）会读写 `data/player-history.jsonl`；
+     * 单测与嵌入式调用默认**不碰**任何用户数据。
+     */
+    historyDir: defaultHistoryDir(),
   };
 
   // ---- 启动自检（Fail-Closed）----

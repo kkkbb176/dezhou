@@ -324,6 +324,11 @@ export type ContextBuildInput = {
    */
   observedStats?: PlayerObservedStats | null;
   /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1**：实测统计的中文披露（样本量 / 每项有效机会数 /
+   * 哪几项真的接入）。来源于真实历史存储，**只用于如实展示**，不参与计算。
+   */
+  observedStatsNoteZh?: string | null;
+  /**
    * 🔴 **下注范围构成注入点**（TEST 09 §二十：合成向量测试）。
    *
    * 给了就把它当作「无摊牌价值的牌下注的概率」，**不再**由画像推导，
@@ -2909,6 +2914,57 @@ function buildPlayerSnapshot(
  * 环境快照
  * ============================================================ */
 
+/**
+ * 🔴 **PLAYER PROFILE EXPLOIT V1 · 披露修复**（授权 §六）。
+ *
+ * ## 修的是什么
+ *
+ * 真实历史走 `villain.observedStats`（扁平静态统计）→ **响应层**；
+ * 而玩家快照的 `handsObserved` 来自另一条路径（手日志 `PlayerProfile`）。
+ * 于是出现可复现的披露矛盾：**模型用了实测证据，界面却显示「实测手数 0 /
+ * 没有实测数据」**。
+ *
+ * ## 怎么修（不伪装、不虚构）
+ *
+ * 1. **不**把静态统计倒推成手日志（那等于虚构玩家历史）；
+ * 2. 把**真实来源**如实附上：累计手数、**本次真正进入模型**的统计项、
+ *    以及「哪些项没有输入通道」；
+ * 3. 逐项区分「累计手数 / 有效机会数（由历史层给出）/ 实际参与本次计算的项」；
+ * 4. **不改任何数值**（`confidence` / `adjustment` / 决策数学一律不动）——
+ *    这是纯披露字段，只让界面说真话。
+ */
+function withMeasuredDisclosure(
+  snapshot: PlayerSnapshot,
+  observed: PlayerObservedStats | null | undefined,
+  providedNoteZh: string | null,
+): PlayerSnapshot {
+  if (observed === null || observed === undefined) return snapshot;
+  const hands =
+    typeof observed.handsObserved === 'number' && observed.handsObserved > 0
+      ? observed.handsObserved
+      : 0;
+  const used: string[] = [];
+  if (typeof observed.foldToRiverBet === 'number') used.push('foldToRiverBet（河牌面对下注弃牌率）');
+  if (typeof observed.riverCheckRaise === 'number') used.push('riverCheckRaise（河牌过牌-加注率）');
+  if (hands === 0 && used.length === 0) return snapshot;
+
+  const base =
+    providedNoteZh !== null && providedNoteZh.length > 0
+      ? providedNoteZh
+      : `实测历史 ${hands} 手；本次进入模型：${used.length === 0 ? '无' : used.join('、')}`;
+  return Object.freeze({
+    ...snapshot,
+    measuredStats: Object.freeze({
+      handsObserved: hands,
+      usedStatKeys: Object.freeze(used),
+      noteZh:
+        base +
+        '。（其余统计项没有输入通道 ⇒ **不作为**本次决策依据；实测统计进入的是**响应层**，' +
+        '不改变对手范围）',
+    }),
+  });
+}
+
 function buildEnvironmentSnapshot(
   environment: GameEnvironment,
   street: Street,
@@ -4858,7 +4914,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         .map((entry) => entry.build.snapshot)
         .filter((s): s is RangeSnapshot => s !== null),
     ),
-    player: playerBuilt.snapshot,
+    player: withMeasuredDisclosure(playerBuilt.snapshot, observedForPrimary, input.observedStatsNoteZh ?? null),
     /* 🔴 PLAYER PROFILE V3 的 Profile Trace（诊断 / 审计模式可见） */
     profileV3: Object.freeze({
       baseArchetype: (input.quickProfile ?? null) as string | null,

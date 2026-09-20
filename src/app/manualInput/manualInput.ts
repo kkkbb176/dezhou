@@ -282,6 +282,12 @@ export type ManualVillain = {
    */
   observedStats?: PlayerObservedStats | null;
   /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1**：实测统计的中文披露（样本量 / 每项有效机会数 /
+   * 哪几项真的接入了模型）。由牌桌历史层（`playerHistory.statsNoteZh`）生成，
+   * 只用于**如实展示**，不参与任何计算。
+   */
+  observedStatsNoteZh?: string | null;
+  /**
    * 🔴 **TEST 09 §二十：下注范围构成注入点（仅供测试 / 审计）**。
    *
    * 给了就把它当作「他拿**无摊牌价值**的牌下注的概率」，**不再**由画像推导。

@@ -367,7 +367,16 @@ export function applyTableOp(state: PokerTableState, op: TableOp): TableOpOutcom
     case 'RESET_HAND':
       return resetHand(state);
     case 'ADD_PLAYER':
-      return addPlayer(state, op.seatId);
+      /*
+       * 🔴 **PLAYER PROFILE EXPLOIT V1**：把可选身份透传给 `addPlayer`。
+       *
+       * 不传 ⇒ 与修复前**逐位一致**（自动 `p{n}` + 「玩家N」）；
+       * 传 `playerId` ⇒ 让这位已保存的玩家入座（其历史统计由 `playerHistory` 注入）。
+       */
+      return addPlayer(state, op.seatId, {
+        ...(op.playerId === undefined ? {} : { playerId: op.playerId }),
+        ...(op.displayName === undefined ? {} : { displayName: op.displayName }),
+      });
     case 'FILL_EMPTY_SEATS':
       return fillEmptySeats(state);
     case 'CLEAR_SEAT':

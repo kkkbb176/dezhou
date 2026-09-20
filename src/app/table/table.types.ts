@@ -178,6 +178,18 @@ export type TablePlayer = {
   dynamicHint: DynamicHint;
   /** 该玩家在本次牌桌里坐过的手数（仅显示与追溯，不参与决策） */
   handsPlayed: number;
+  /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1：该玩家的实测统计**（来自真实历史记录）。
+   *
+   * 只在**真的读到历史**且**存在有效观测机会**时才出现；由
+   * `playerHistory.applyUserOpWithHistory` 在（重新）落座时挂上，
+   * 再由 `tableAdapter` 注入 `ManualVillain.observedStats` ⇒ 进入现有响应模型。
+   *
+   * ⚠️ 机会数为 0 的统计**不会**出现在这里（未观察到 ≠ 0%）。
+   */
+  observedStats?: import('../../domain/player/observedStats.ts').PlayerObservedStats;
+  /** 实测统计的中文披露（样本量 / 机会数 / 哪几项真的接入了模型） */
+  observedStatsNoteZh?: string;
   /** 是否为 Hero（Hero 也是 Player，只是座位视觉固定） */
   isHero: boolean;
 };
@@ -326,7 +338,18 @@ export type TableOp =
   | { kind: 'NEW_TABLE' }
   | { kind: 'NEXT_HAND' }
   | { kind: 'RESET_HAND' }
-  | { kind: 'ADD_PLAYER'; seatId: string }
+  /**
+   * 加入玩家。
+   *
+   * 🔴 **PLAYER PROFILE EXPLOIT V1**：可选显式身份 ——
+   * 传 `playerId` 就是「让**这位已保存的玩家**入座」（重新上桌 / 换座位），
+   * 其历史统计由 `playerHistory` 按 `playerId` 读取后注入；
+   * 不传则与既有行为**逐位一致**（自动 `p{n}` + 「玩家N」）。
+   *
+   * ⚠️ `displayName` **只用于显示与查找**，同名**绝不**自动合并历史；
+   * 重名时由调用方用 `playerHistory.findPlayersByName` 取候选再显式选择。
+   */
+  | { kind: 'ADD_PLAYER'; seatId: string; playerId?: string; displayName?: string }
   /**
    * 🔴 **一键补齐空位**（2026-09）：在每一个空座位各加入一名新玩家。
    *

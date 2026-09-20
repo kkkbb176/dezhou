@@ -1080,6 +1080,11 @@ export function analyzeManualHand(
       parsed.value.villain?.observedStats !== null
         ? { observedStats: parsed.value.villain.observedStats }
         : {}),
+      /* 🔴 PLAYER PROFILE EXPLOIT V1：实测统计的披露文本（只展示，不参与计算） */
+      ...(typeof parsed.value.villain?.observedStatsNoteZh === 'string' &&
+      parsed.value.villain.observedStatsNoteZh.length > 0
+        ? { observedStatsNoteZh: parsed.value.villain.observedStatsNoteZh }
+        : {}),
       /* 🔴 TEST 09 §二十：下注范围构成注入点（仅供测试 / 审计，生产不传） */
       ...(parsed.value.villain?.betRangeBluffShareOverride !== undefined
         ? { betRangeBluffShareOverride: parsed.value.villain.betRangeBluffShareOverride }

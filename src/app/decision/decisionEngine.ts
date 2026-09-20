@@ -3664,6 +3664,15 @@ export function decideAlpha(
         actionable,
         legalActions: legal.actions,
         sizeChips: finalCandidate?.sizeChips ?? null,
+        /*
+         * 🔴 **RIVER DECISION CONSISTENCY**：最终动作的「实际家族」。
+         *
+         * 打光筹码的 `BET` 与候选表里的 `ALL_IN` 是**同一个实际动作**
+         * （`sizeChips === allInToAmount`，判据只有一处：上面的 `consumesStackForAction`），
+         * 若按名字比较必然误报 `ACTION_CONTRADICTS_PREFERENCE`。
+         * 非打光筹码时传 `null` ⇒ 校验退回按名字推断的原有判据（不放宽）。
+         */
+        actionEffectiveFamily: consumesStackForAction ? 'ALL_IN' : null,
         pot: context.math.pot,
         callCost: context.math.callCost,
         requiredEquity: context.math.requiredEquity,

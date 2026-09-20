@@ -206,9 +206,20 @@ export function toDecisionViewModel(
    * 否则使用者会把「加注至 186」读成「还要再拿出 186」。
    */
   const actionShapeKind = (d.actionShape?.['kind'] ?? null) as string | null;
+  /*
+   * 🔴 **RIVER DECISION CONSISTENCY**：下注额等于全部剩余筹码时，这一注**就是全下**。
+   *
+   * 引擎的 `actionShape.consumesStack` 已经如实判定（判据：`|sizeChips − allInToAmount| < ε`），
+   * 但动作类型仍是 `BET`（金额口径不变：BET 的 `sizeChips` 是本街累计）。
+   * 界面若只按动作类型写「下注 55BB」，使用者读到的就不是全下 —— 与内部候选表
+   * （`ALL_IN` 最高分）看起来自相矛盾。这里按同一个事实补上「全下」语义，
+   * **不改金额、不改动作类型、不改任何 EV**。
+   */
+  const betConsumesStack = decision.action === 'BET' && d.actionShape?.['consumesStack'] === true;
   const isCumulativeAmountAction =
     decision.action === 'BET' || decision.action === 'RAISE' || decision.action === 'ALL_IN';
-  const isAllInRaise = actionShapeKind === 'RAISE_TO_ALL_IN' || actionShapeKind === 'DIRECT_ALL_IN';
+  const isAllInRaise =
+    actionShapeKind === 'RAISE_TO_ALL_IN' || actionShapeKind === 'DIRECT_ALL_IN' || betConsumesStack;
   const streetCommittedChips = math.myCommittedThisStreet;
   const incrementalChips =
     decision.sizeChips === undefined
@@ -699,7 +710,31 @@ export function toDecisionViewModel(
         ? Object.freeze([row('对手画像', '—')])
         : Object.freeze([
             row('标签', d.player.labelZh),
-            row('实测手数', String(d.player.handsObserved)),
+            /*
+             * 🔴 **PLAYER PROFILE EXPLOIT V1 · 披露修复**。
+             *
+             * 修复前这一行只读 `d.player.handsObserved`（来自手日志 `PlayerProfile`），
+             * 而真实历史走的是 `observedStats` 通道 ⇒ 模型**用了**实测证据，
+             * 界面却显示「实测手数 0」。现在优先显示实测披露里的真实手数，
+             * 并逐项说明**哪几项统计真的进入了本次决策**、哪些没有通道。
+             */
+            row(
+              '实测手数',
+              d.player.measuredStats === undefined
+                ? String(d.player.handsObserved)
+                : String(d.player.measuredStats.handsObserved),
+            ),
+            ...(d.player.measuredStats === undefined
+              ? []
+              : [
+                  row('实测统计来源', d.player.measuredStats.noteZh),
+                  row(
+                    '本次进入模型',
+                    d.player.measuredStats.usedStatKeys.length === 0
+                      ? '无（该玩家尚无模型支持的统计项）'
+                      : d.player.measuredStats.usedStatKeys.join('、'),
+                  ),
+                ]),
             row('可信度', d.player.confidence.toFixed(2)),
             row('是否中性化（样本不足）', boolZh(d.player.neutralized)),
             row('说明', d.player.note),

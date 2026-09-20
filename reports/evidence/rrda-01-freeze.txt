@@ -1,0 +1,62 @@
+﻿================================================================================================================
+ 一、冻结 AK 节点（Hero BTN A♠K♠｜K♦9♣4♥6♠2♦｜下注前底池 53｜BB 下注 40）
+================================================================================================================
+  最终动作 = RAISE｜sizeChips = 174.00｜sizeBB = 87.00
+  置信度 = 0.3｜band = MEDIUM_LOW｜classification = MARGINAL
+
+  【筹码与赔率】
+    pot = 93.00｜callCost = 40.00｜winnable = 133.00
+    我的剩余 myRemainingStack = 174.00｜有效筹码 effectiveStack = 134.00｜SPR = 1.441
+    本街已投入 myCommittedThisStreet = 0.00｜requiredEquity = 0.300752
+    跟注后我的剩余 = 134.00
+
+  【三个条件权益】
+    math.heroEquity（链条整体范围，含本街全部动作）      = 0.659153
+    EqVsArrivalRange（postflop.betRangeArrival）        = 0.755247
+    EqVsBetRange（math.heroEquityVsBetRange）           = 0.448857
+    heroEquityVsRaiseCallRange                          = NOT_IMPLEMENTED（无该字段）
+
+  【合法动作】（raise-to 语义：sizeChips 是本街总额目标，不是增量）
+    动作        金额        增量        说明
+undefined       null        —           
+undefined       null        —           
+undefined       null        —           
+undefined       null        —           
+    minRaiseTo = undefined｜maxRaiseTo = undefined｜canRaise = true
+
+================================================================================================================
+ 二、决策证据表（diagnostics.actionEvidence）
+================================================================================================================
+动作      证据类型                      EV            决策边际                启发式分    置信度
+FOLD      EXACT                         0.0000        MARGINAL                0.0000      1.00
+CALL      PROXY_EV                      19.6979       CLEAR_CALL_OVER_FOLD    0.0000      0.95
+RAISE     HEURISTIC                     null          —                       1.0000      0.50
+
+  证据裁决（diagnostics.evidenceDecision）：
+    chosen = undefined｜source = undefined｜scope = undefined
+    overrideAttempt = undefined｜overrideBlocked = undefined
+    noteZh = undefined
+
+  决策边际（diagnostics.decisionMargin）：
+    kind = CLEAR_CALL_OVER_FOLD｜evChips = 19.6979｜bandChips = 6.6500
+    noteZh = 真实跟注 EV = 19.70 筹码 vs 工程容差带 ±6.65 （= 0.05 × 可争夺量 133.00）⇒ CLEAR_CALL_OVER_FOLD。⚠️ 作用域 VS_FOLD_ONLY：本次比较**只有跟注 vs 弃牌**，对加注/全下**没有**发言权。⚠️ 容差带是**工程容差**，不是统计误差，也不自动翻转动作。
+
+  候选动作与 EV（diagnostics.candidates）：
+    · FOLD         size=undefined ev=0.0000         mathFeasible=true 放弃本手牌，不再投入筹码
+    · CALL         size=40.00    ev=19.6979        mathFeasible=true 跟注所需权益 30.1%，当前估计权益 65.9%
+    · RAISE        size=80.00    ev=null           mathFeasible=true 2 倍（需对手弃牌或我们领先才能盈利）
+    · RAISE        size=100.00   ev=null           mathFeasible=true 2.5 倍（需对手弃牌或我们领先才能盈利）
+    · RAISE        size=120.00   ev=null           mathFeasible=true 3 倍（需对手弃牌或我们领先才能盈利）
+    · RAISE        size=160.00   ev=null           mathFeasible=true 4 倍（需对手弃牌或我们领先才能盈利）
+    · RAISE        size=174.00   ev=null           mathFeasible=true 全下（需对手弃牌或我们领先才能盈利）
+    · ALL_IN       size=174.00   ev=null           mathFeasible=true 投入全部剩余筹码（87.0BB）
+
+  最终理由：
+    · [POSTFLOP_ROLE] 相对牌力角色「中等价值」（强度 0.62）；对手范围压缩：强度下限 0.99、坚果密度 0.85、空气密度 0.17
+    · [BOARD_DELTA] 牌面变化（DYNAMIC）：新完成 2 个顺子牌类；新完成 1 个三条牌类；新完成 8 个两对牌类；同花听结构变化；白板度 0.56；对手范围适配度 0.66
+    · [SPR_COMMITMENT] SPR 1.44（筹码已基本入池）—— 河牌**没有下一街**，SPR 只作背景信息：本次跟注/加注必须由当前节点的赔率与牌力决定，不构成「以后反正要打光所以现在该跟」的理由
+    · [MATH_CALL_SUPPORTED] 估计权益 65.9% 高于所需 30.1%：跟注 EV = 19.70 筹码，弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**
+    · [STRATEGIC_RAISE_FOR_VALUE] 牌力（顶对 K，A踢脚）与权益优势（高出所需 35.8 个百分点）支持主动加注做大底池；本次加注由**低 SPR 承诺**放行（SPR 1.44（筹码已基本入池）—— 河牌**没有下一街**，SPR 只作背景信息：本次跟注/加注必须由当前节点的赔率与牌力决定，不构成「以后反正要打光所以现在该跟」的理由）；⚠️ 加注的 EV 无法计算（缺可信的对手弃牌率估计）⇒ 依据来源 = **STRATEGIC
+    · [MATH_REQUIRED_EQUITY] 当前底池赔率需要 30.1% 权益
+
+  betDecision 事实包（面对下注时是否为 null）：

@@ -1,0 +1,92 @@
+========================================================================================================================
+ 第三部分补充 / 第五部分补充：画像 × HUD 实测统计
+========================================================================================================================
+
+--- NORMAL ／ 无统计 ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.5,"aggression":0.5,"bluffTendency":0.5,"passivity":0.5,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.5,"aggression":0.5,"bluffTendency":0.5,"passivity":0.5}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 1.0000｜deniedStreetTraits = null
+  未夹取公式值：strong=0.4500 thin=0.2500 **showdown=0.1000**（<0 ⇒ 夹到 0）bluffRate=0.2250
+  P(BET|类) = STRONG 0.4478｜THIN 0.2390｜**SHOWDOWN 0.0824**｜AIR 0.2081
+  Bet Range：support=469 组合｜价值 62.25%｜诈唬 0.80%｜摊牌 36.95%｜下注占比 15.66%
+  math: heroEquity=0.662115905 heroEquityVsBetRange=0.353122265 pot=93 callCost=40 requiredEquity=0.3008 callEV=6.965261
+  引擎 action = RAISE（174）
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- CALLING_STATION ／ 无统计 ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 0.6250｜deniedStreetTraits = null
+  未夹取公式值：strong=0.2550 thin=0.0400 **showdown=-0.1250**（<0 ⇒ 夹到 0）bluffRate=0.0892
+  P(BET|类) = STRONG 0.2442｜THIN 0.0197｜**SHOWDOWN 0.0000**｜AIR 0.0639
+  Bet Range：support=236 组合｜价值 99.46%｜诈唬 0.54%｜摊牌 0.00%｜下注占比 3.74%
+  math: heroEquity=0.659153024 heroEquityVsBetRange=0.005433447 pot=93 callCost=40 requiredEquity=0.3008 callEV=-39.277352
+  引擎 action = FOLD
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- MANIAC ／ 无统计 ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.15,"aggression":0.92,"bluffTendency":0.9,"passivity":0.35,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.15,"aggression":0.92,"bluffTendency":0.9,"passivity":0.35}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 1.5420｜deniedStreetTraits = null
+  未夹取公式值：strong=0.9020 thin=0.7420 **showdown=0.4060**（<0 ⇒ 夹到 0）bluffRate=0.8118
+  P(BET|类) = STRONG 0.9197｜THIN 0.7527｜**SHOWDOWN 0.4019**｜AIR 0.8310
+  Bet Range：support=469 组合｜价值 45.11%｜诈唬 1.97%｜摊牌 52.92%｜下注占比 53.06%
+  math: heroEquity=0.664237863 heroEquityVsBetRange=0.513311848 pot=93 callCost=40 requiredEquity=0.3008 callEV=28.270476
+  引擎 action = RAISE（174）
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- VERY_TIGHT ／ 无统计（=NIT 语义） ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.88,"aggression":0.45,"bluffTendency":0.15,"passivity":0.45,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.88,"aggression":0.45,"bluffTendency":0.15,"passivity":0.45}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 0.8250｜deniedStreetTraits = null
+  未夹取公式值：strong=0.2450 thin=0.0100 **showdown=0.0000**（<0 ⇒ 夹到 0）bluffRate=0.0368
+  P(BET|类) = STRONG 0.2338｜THIN 0.0000｜**SHOWDOWN 0.0000**｜AIR 0.0082
+  Bet Range：support=217 组合｜价值 99.88%｜诈唬 0.12%｜摊牌 0.00%｜下注占比 3.09%
+  math: heroEquity=0.661971363 heroEquityVsBetRange=0.001166809 pot=93 callCost=40 requiredEquity=0.3008 callEV=-39.844814
+  引擎 action = FOLD
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- CALLING_STATION ／ +MANIAC 型统计（vpip60/pfr45/wtsd35/foldToRiverBet18%） ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.24715521165225307,"aggression":0.7046052631578947,"bluffTendency":0.35,"passivity":0.71203007518797}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 0.9205｜deniedStreetTraits = null
+  未夹取公式值：strong=0.2550 thin=0.0400 **showdown=-0.1250**（<0 ⇒ 夹到 0）bluffRate=0.0892
+  P(BET|类) = STRONG 0.2442｜THIN 0.0197｜**SHOWDOWN 0.0000**｜AIR 0.0639
+  Bet Range：support=236 组合｜价值 99.46%｜诈唬 0.54%｜摊牌 0.00%｜下注占比 3.74%
+  math: heroEquity=0.659153024 heroEquityVsBetRange=0.005433447 pot=93 callCost=40 requiredEquity=0.3008 callEV=-39.277352
+  引擎 action = FOLD
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- CALLING_STATION ／ +NIT 型统计（vpip15/pfr12/wtsd22/foldToRiverBet75%） ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.5926967509807747,"aggression":0.32984022556390974,"bluffTendency":0.35,"passivity":0.62406015037594}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 0.7485｜deniedStreetTraits = null
+  未夹取公式值：strong=0.2550 thin=0.0400 **showdown=-0.1250**（<0 ⇒ 夹到 0）bluffRate=0.0892
+  P(BET|类) = STRONG 0.2442｜THIN 0.0197｜**SHOWDOWN 0.0000**｜AIR 0.0639
+  Bet Range：support=236 组合｜价值 99.46%｜诈唬 0.54%｜摊牌 0.00%｜下注占比 3.74%
+  math: heroEquity=0.659153024 heroEquityVsBetRange=0.005433447 pot=93 callCost=40 requiredEquity=0.3008 callEV=-39.277352
+  引擎 action = FOLD
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- NORMAL ／ +MANIAC 型统计 ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.5,"aggression":0.5,"bluffTendency":0.5,"passivity":0.5,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.29449248975876197,"aggression":0.7467105263157895,"bluffTendency":0.5,"passivity":0.5541353383458647}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 1.1155｜deniedStreetTraits = null
+  未夹取公式值：strong=0.4500 thin=0.2500 **showdown=0.1000**（<0 ⇒ 夹到 0）bluffRate=0.2250
+  P(BET|类) = STRONG 0.4478｜THIN 0.2390｜**SHOWDOWN 0.0824**｜AIR 0.2081
+  Bet Range：support=469 组合｜价值 62.25%｜诈唬 0.80%｜摊牌 36.95%｜下注占比 15.66%
+  math: heroEquity=0.662115905 heroEquityVsBetRange=0.353122265 pot=93 callCost=40 requiredEquity=0.3008 callEV=6.965261
+  引擎 action = RAISE（174）
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+
+--- NORMAL ／ +NIT 型统计 ---
+  维度（tendency.dimension.dimensions，进 P(BET|类别) 的就是这一组）= {"tightness":0.5,"aggression":0.5,"bluffTendency":0.5,"passivity":0.5,"confidence":0.35,"sampleSize":0,"tier":"PRELIMINARY"}
+  resolvedV3.resolvedDimensions = {"tightness":0.6400340290872835,"aggression":0.3719454887218045,"bluffTendency":0.5,"passivity":0.4661654135338346}
+  actionContext = FACING_DONK｜V3 street[RIVER].betScale = 0.9435｜deniedStreetTraits = null
+  未夹取公式值：strong=0.4500 thin=0.2500 **showdown=0.1000**（<0 ⇒ 夹到 0）bluffRate=0.2250
+  P(BET|类) = STRONG 0.4478｜THIN 0.2390｜**SHOWDOWN 0.0824**｜AIR 0.2081
+  Bet Range：support=469 组合｜价值 62.25%｜诈唬 0.80%｜摊牌 36.95%｜下注占比 15.66%
+  math: heroEquity=0.662115905 heroEquityVsBetRange=0.353122265 pot=93 callCost=40 requiredEquity=0.3008 callEV=6.965261
+  引擎 action = RAISE（174）
+  RIVER/BET 更新轨迹注记 = 统一动作似然 V2（中性校准层 × 几何平均画像调整；同一条动作上抑制 adjustmentProvider）：RIVER/BB/SRP/TURN_BET_CALL/LARGE/DRY；条目数 0–2；钳位 0/990（无饱和）
+

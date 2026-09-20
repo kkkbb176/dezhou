@@ -261,7 +261,19 @@ function isEmptySeat(seat: TableSeat): boolean {
  * 发进牌局了，中途加人不可能进入当前手；与其显示「将在下一手加入」
  * 这种半吊子状态，不如明确拒绝并要求先结束本手。
  */
-export function addPlayer(state: PokerTableState, seatId: string): TableOpOutcome {
+export function addPlayer(
+  state: PokerTableState,
+  seatId: string,
+  /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1**：显式身份（可选）。
+   *
+   * - 传 `playerId` ⇒ 让**这位已保存的玩家**入座：若牌桌上已有他的记录，
+   *   **复用**该 `TablePlayer`（`handsPlayed` 等随他走）；否则按其 id 新建。
+   * - `displayName` 只用于显示，**同名不合并**（身份只认 `playerId`）。
+   * - 不传 ⇒ 与既有行为逐位一致（自动 `p{n}` + 「玩家N」）。
+   */
+  identity?: { playerId?: string; displayName?: string },
+): TableOpOutcome {
   const seat = seatById(state, seatId);
   if (seat === undefined) return fail([issue('SEAT_NOT_FOUND', `找不到座位 ${seatId}`)]);
   if (seat.playerId !== null && seat.status !== SeatStatus.EMPTY) {
@@ -282,7 +294,23 @@ export function addPlayer(state: PokerTableState, seatId: string): TableOpOutcom
     ]);
   }
 
-  const fresh = nextPlayer(state);
+  const requestedId = identity?.playerId?.trim();
+  const existing =
+    requestedId !== undefined && requestedId.length > 0 ? state.playersById[requestedId] : undefined;
+  const requestedName = identity?.displayName?.trim();
+
+  const fresh =
+    requestedId !== undefined && requestedId.length > 0
+      ? {
+          playerId: requestedId,
+          displayName:
+            requestedName !== undefined && requestedName.length > 0
+              ? requestedName
+              : (existing?.displayName ?? requestedId),
+          /** 显式身份**不消耗**自动编号（否则连续入座会跳号） */
+          nextNumber: state.nextPlayerNumber,
+        }
+      : nextPlayer(state);
 
   return ok(
     patch(state, {
@@ -291,7 +319,13 @@ export function addPlayer(state: PokerTableState, seatId: string): TableOpOutcom
       ),
       playersById: Object.freeze({
         ...state.playersById,
-        [fresh.playerId]: freshPlayer(fresh.playerId, fresh.displayName),
+        [fresh.playerId]:
+          existing !== undefined
+            ? Object.freeze({
+                ...existing,
+                displayName: requestedName !== undefined && requestedName.length > 0 ? requestedName : existing.displayName,
+              })
+            : freshPlayer(fresh.playerId, fresh.displayName),
       }),
       nextPlayerNumber: fresh.nextNumber,
       notices: Object.freeze([]),

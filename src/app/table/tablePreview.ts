@@ -47,7 +47,7 @@ import {
   reconstructGameState,
 } from '../manualInput/reconstruct.ts';
 import { buildSizeGrid, deriveLegalActions, type LegalActions } from '../manualInput/legalActions.ts';
-import { tableStateToManualHandInput } from './tableAdapter.ts';
+import { declaredStreetOfBoard, tableStateToManualHandInput } from './tableAdapter.ts';
 import {
   angleOfVisualIndex,
   effectiveButtonSeatId,
@@ -747,6 +747,53 @@ export function buildTablePreview(state: PokerTableState): TablePreview {
   });
   const analyzeBlockers: string[] = readiness.groups.flatMap((g) => [...g.items]);
 
+  /*
+   * 🔴 **STREET STATE CONSISTENCY V2 · 预览一致性闸门**（`reports/STREET_STATE_CONSISTENCY_AUDIT_V1.md` §7.2 规则 D）
+   *
+   * 缺陷：公共牌已录到河牌、而**轮到 Hero 的转牌行动尚未录入**时，预览仍报
+   * `ready=true / READY`，而决策管线随即 `HISTORY_DOES_NOT_REACH_STREET`（RECONSTRUCT）
+   * ⇒ 正是「界面说可以分析、点了却信息不足」。
+   *
+   * ## 只做「不声称就绪」，**不拦录牌**（V2 §一/§三）
+   *
+   * - **不**在 `SET_BOARD_CARD` 上加闸门 ⇒ 「先录公共牌、后补录行动」（含 Hero 本人历史行动）
+   *   的能力完整保留，`§D-4/§E-3/§E-4/AUTO-3` 等既有契约不受影响。
+   * - 引擎的权威街道由行动重放决定（`engineState.street`）：录牌**不推进**阶段，
+   *   因此不存在「提前进入河牌」；本闸门只让预览**如实说出**冲突。
+   *
+   * ## 触发条件（全部满足；少一条都不提示）
+   *
+   * ① 已录公共牌所属的街 **晚于** 引擎当前街；② **轮到 Hero 本人**行动（不是过期缓存：用重放后的
+   * `currentActorPosition`）；③ 当前街**已有行动**且**尚未结算**；④ 本手未结束。
+   */
+  const boardStreetOrder: readonly Street[] = [Street.PREFLOP, Street.FLOP, Street.TURN, Street.RIVER];
+  const declaredBoardStreet = declaredStreetOfBoard(state.board.length);
+  const heroPendingNow =
+    currentActorPosition !== null && currentActorPosition === state.heroPosition && !handComplete;
+  const boardAheadOfActions =
+    declaredBoardStreet !== null &&
+    boardStreetOrder.indexOf(declaredBoardStreet) > boardStreetOrder.indexOf(engineState.street) &&
+    heroPendingNow &&
+    engineState.actions.some((a) => a.street === engineState.street) &&
+    !engineState.bettingRoundComplete;
+  if (boardAheadOfActions) {
+    analyzeBlockers.push(
+      `⚠️ ${STREET_ZH[declaredBoardStreet!]}已录入，但${STREET_ZH[engineState.street]}行动尚未完成` +
+        `（轮到「${POSITION_ZH[state.heroPosition]}」的跟注 / 加注 / 弃牌 / 过牌还没录入）。` +
+        `请先补录该街的必要行动，完成后再进行${STREET_ZH[declaredBoardStreet!]}分析；` +
+        `或撤销第 ${state.board.length} 张公共牌。` +
+        '（本工具不会替你补写行动，也不会自动结算下注轮）',
+    );
+  }
+  const decisionFinal: DecisionReadiness = boardAheadOfActions
+    ? Object.freeze({
+        ...readiness,
+        ready: false,
+        state: AutoAnalyzeState.ERROR,
+        reasonCode: DecisionReasonCode.STATE_INVALID,
+      })
+    : readiness;
+
   /**
    * 🔴 **多人池不再劝退**（本轮修复）。
    *
@@ -811,7 +858,7 @@ export function buildTablePreview(state: PokerTableState): TablePreview {
      * 由容量反推出与引擎不同的盲注或角色。
      */
     handTopology: topology,
-    decision: readiness,
+    decision: decisionFinal,
     remainingStacksBB: Object.freeze(remainingStacksBB),
     effectiveStackBB: toBB(effectiveStackChips),
     canAnalyze: analyzeBlockers.length === 0 && analyzedOk(state),

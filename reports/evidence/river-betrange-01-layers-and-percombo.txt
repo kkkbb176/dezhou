@@ -1,0 +1,397 @@
+======================================================================================================================
+ 第一部分  真实范围来源（逐层，全部由产品代码算出）
+======================================================================================================================
+
+Hero AsKs｜Board Kd 9c 4h 6s 2d｜Hero 成手：顶对 K，A踢脚｜tier=2
+全牌 1326 组合 → 扣除与 Hero 底牌／公共牌重叠者后 990 组合（被阻断 336 个）
+
+层                                                  组合数(正权)  总权重      相对Hero权益  价值类质量 / 摊牌 / 诈唬
+① 翻前范围（BB 跟注 BTN 开池后）                    469/469       1.0000      91.99%        7.14% / 47.10% / 45.76%
+                                                    更新轨迹：
+② 翻牌跟注后范围（BB call 2.5BB on K94）            469/469       1.0000      82.56%        14.79% / 69.97% / 15.24%
+                                                    更新轨迹：FLOP/CHECK → FLOP/CALL
+③ 转牌跟注后范围（BB call 7.5BB on K946）           469/469       1.0000      75.52%        20.38% / 77.34% / 2.28%
+                                                    更新轨迹：FLOP/CHECK → FLOP/CALL → TURN/CHECK → TURN/CALL
+④ 河牌 BET 似然施加后（＝引擎的 math.heroEquity 口径）469/469       1.0000      65.92%        29.59% / 70.09% / 0.32%
+                                                    更新轨迹：FLOP/CHECK → FLOP/CALL → TURN/CHECK → TURN/CALL → RIVER/BET
+
+⚠️ 关键：「④」这一层**不是**河牌下注前的到达范围 —— 更新轨迹的最后一条是 `RIVER/BET`，
+   即引擎在「他已经在河牌下注」之后，把这次下注的似然**又乘了一遍**才得到 math.heroEquity 的输入。
+
+逐层强弱分布（相对 Hero，逐组合精确比较）：
+层                                                  Hero 领先(弱)   平局        Hero 落后(强)   
+① 翻前范围（BB 跟注 BTN 开池后）                    91.13%          1.73%       7.14%           
+② 翻牌跟注后范围（BB call 2.5BB on K94）            79.91%          5.29%       14.79%          
+③ 转牌跟注后范围（BB call 7.5BB on K946）           71.43%          8.19%       20.38%          
+④ 河牌 BET 似然施加后（＝引擎的 math.heroEquity 口径）61.43%          8.98%       29.59%          
+
+======================================================================================================================
+ 第二部分  下注范围逐组合检查
+======================================================================================================================
+
+Villain 响应倾向（responseTendenciesOf 实测）：confidence=0.3500
+effectiveDimensions = {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8}
+
+P(BET | 手牌类别)（betProbabilityByClass(modeledRatio=0.7547)）：
+  NUT_VALUE=0.2442  STRONG_VALUE=0.2442  THIN_VALUE=0.0197  SHOWDOWN_VALUE=0.0000  MISSED_FLUSH_DRAW=0.0639  MISSED_STRAIGHT_DRAW=0.0639  MISSED_COMBO_DRAW=0.0639  PURE_AIR=0.0639
+
+betChips=40  potBeforeBet=53  actualRatio=0.7547  modeledRatio=0.7547  sizeApproximation=false
+到达范围总质量=1.0000  下注范围总质量(归一化前)=0.0374  他会下注的比例=3.74%
+下注范围组合数：到达 469 → 下注 236
+
+下注范围类别质量（BET RANGE classMasses）：
+  totalMass              1.0000
+  reachableRangeCount    236.0000
+  nutValueMass           0.0000
+  strongValueMass        0.9119
+  thinValueMass          0.0827
+  showdownMass           0.0000
+  missedFlushMass        0.0002
+  missedStraightMass     0.0027
+  missedComboMass        0.0003
+  pureAirMass            0.0022
+  valueMass              0.9946
+  bluffMass              0.0054
+  unclassifiedMass       0.0000
+
+引擎口径复核：EqVsBetRange = 0.0054（method=EXACT, iters=236）
+引擎报告值      ：0.0054（math.heroEquityVsBetRange）
+CALL EV = 0.0054 × (pot 93 + call 40) − 40 = -39.2774
+引擎报告       ：-39.2774
+
+下注范围逐组合（按归一化权重降序）：
+Hand        Hand Strength         tier  类别                  Arrival W   P(BET)    Bet W       Norm W    HeroEq
+4d4c        4三条（暗三条）       1     STRONG_VALUE          1.763e-2    0.2442    4.307e-3    0.1153    0.0000
+4s4c        4三条（暗三条）       1     STRONG_VALUE          1.763e-2    0.2442    4.307e-3    0.1153    0.0000
+4s4d        4三条（暗三条）       1     STRONG_VALUE          1.763e-2    0.2442    4.307e-3    0.1153    0.0000
+9h9d        9三条（暗三条）       1     STRONG_VALUE          1.692e-2    0.2442    4.133e-3    0.1106    0.0000
+9s9d        9三条（暗三条）       1     STRONG_VALUE          1.692e-2    0.2442    4.133e-3    0.1106    0.0000
+9s9h        9三条（暗三条）       1     STRONG_VALUE          1.692e-2    0.2442    4.133e-3    0.1106    0.0000
+KhKc        K三条（暗三条）       1     STRONG_VALUE          1.659e-2    0.2442    4.050e-3    0.1084    0.0000
+6d6c        6三条（暗三条）       1     STRONG_VALUE          4.868e-3    0.2442    1.189e-3    0.0318    0.0000
+6h6c        6三条（暗三条）       1     STRONG_VALUE          4.868e-3    0.2442    1.189e-3    0.0318    0.0000
+6h6d        6三条（暗三条）       1     STRONG_VALUE          4.868e-3    0.2442    1.189e-3    0.0318    0.0000
+2h2c        2三条（暗三条）       1     STRONG_VALUE          1.299e-3    0.2442    3.173e-4    0.0085    0.0000
+2s2c        2三条（暗三条）       1     STRONG_VALUE          1.299e-3    0.2442    3.173e-4    0.0085    0.0000
+2s2h        2三条（暗三条）       1     STRONG_VALUE          1.299e-3    0.2442    3.173e-4    0.0085    0.0000
+9dKc        顶两对 K9             2     THIN_VALUE            1.247e-2    0.0197    2.462e-4    0.0066    0.0000
+9hKc        顶两对 K9             2     THIN_VALUE            1.247e-2    0.0197    2.462e-4    0.0066    0.0000
+9sKc        顶两对 K9             2     THIN_VALUE            1.247e-2    0.0197    2.462e-4    0.0066    0.0000
+Kh9d        顶两对 K9             2     THIN_VALUE            1.247e-2    0.0197    2.462e-4    0.0066    0.0000
+9sKh        顶两对 K9             2     THIN_VALUE            1.247e-2    0.0197    2.462e-4    0.0066    0.0000
+AdAc        超对 A，K踢脚         2     THIN_VALUE            1.224e-2    0.0197    2.417e-4    0.0065    0.0000
+AhAc        超对 A，K踢脚         2     THIN_VALUE            1.224e-2    0.0197    2.417e-4    0.0065    0.0000
+AhAd        超对 A，K踢脚         2     THIN_VALUE            1.224e-2    0.0197    2.417e-4    0.0065    0.0000
+2cKc        顶两对 K2             2     THIN_VALUE            8.320e-3    0.0197    1.643e-4    0.0044    0.0000
+2hKh        顶两对 K2             2     THIN_VALUE            8.320e-3    0.0197    1.643e-4    0.0044    0.0000
+4cKc        顶两对 K4             2     THIN_VALUE            8.316e-3    0.0197    1.642e-4    0.0044    0.0000
+6cKc        顶两对 K6             2     THIN_VALUE            8.305e-3    0.0197    1.640e-4    0.0044    0.0000
+6hKh        顶两对 K6             2     THIN_VALUE            8.305e-3    0.0197    1.640e-4    0.0044    0.0000
+6d9d        两对 96               2     THIN_VALUE            5.720e-3    0.0197    1.130e-4    0.0030    0.0000
+6h9h        两对 96               2     THIN_VALUE            5.720e-3    0.0197    1.130e-4    0.0030    0.0000
+3c5c        顺子 6                1     STRONG_VALUE          1.850e-4    0.2442    4.519e-5    0.0012    0.0000
+3d5d        顺子 6                1     STRONG_VALUE          1.850e-4    0.2442    4.519e-5    0.0012    0.0000
+3h5h        顺子 6                1     STRONG_VALUE          1.850e-4    0.2442    4.519e-5    0.0012    0.0000
+3s5s        顺子 6                1     STRONG_VALUE          1.850e-4    0.2442    4.519e-5    0.0012    0.0000
+4c6c        两对 64               2     THIN_VALUE            1.985e-3    0.0197    3.920e-5    0.0010    0.0000
+4d6d        两对 64               2     THIN_VALUE            1.985e-3    0.0197    3.920e-5    0.0010    0.0000
+2c4c        两对 42               2     THIN_VALUE            2.071e-4    0.0197    4.091e-6    0.0001    0.0000
+2s4s        两对 42               2     THIN_VALUE            2.071e-4    0.0197    4.091e-6    0.0001    0.0000
+TdAc        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+ThAc        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+TsAc        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+AdTc        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+ThAd        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+TsAd        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+AhTc        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+AhTd        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+TsAh        高牌 AKT96            5     PURE_AIR              2.285e-5    0.0639    1.461e-6    0.0000    1.0000
+JdAc        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+JhAc        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+JsAc        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+AdJc        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+JhAd        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+JsAd        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+AhJc        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+AhJd        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+JsAh        高牌 AKJ96            5     PURE_AIR              2.279e-5    0.0639    1.457e-6    0.0000    1.0000
+QdAc        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+QhAc        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+QsAc        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+AdQc        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+QhAd        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+QsAd        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+AhQc        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+AhQd        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+QsAh        高牌 AKQ96            5     PURE_AIR              2.273e-5    0.0639    1.453e-6    0.0000    1.0000
+JdQc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+JhQc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+JsQc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QdJc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+JhQd        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+JsQd        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QhJc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QhJd        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+JsQh        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QsJc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QsJd        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+QsJh        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  2.085e-5    0.0639    1.333e-6    0.0000    1.0000
+7cJc        高牌 KJ976            5     PURE_AIR              1.750e-5    0.0639    1.119e-6    0.0000    1.0000
+7hJh        高牌 KJ976            5     PURE_AIR              1.750e-5    0.0639    1.119e-6    0.0000    1.0000
+7sJs        高牌 KJ976            5     PURE_AIR              1.750e-5    0.0639    1.119e-6    0.0000    1.0000
+8cJc        高牌 KJ986            5     PURE_AIR              1.747e-5    0.0639    1.117e-6    0.0000    1.0000
+8hJh        高牌 KJ986            5     PURE_AIR              1.747e-5    0.0639    1.117e-6    0.0000    1.0000
+8sJs        高牌 KJ986            5     PURE_AIR              1.747e-5    0.0639    1.117e-6    0.0000    1.0000
+7cQc        高牌 KQ976            5     PURE_AIR              1.740e-5    0.0639    1.112e-6    0.0000    1.0000
+7hQh        高牌 KQ976            5     PURE_AIR              1.740e-5    0.0639    1.112e-6    0.0000    1.0000
+7sQs        高牌 KQ976            5     PURE_AIR              1.740e-5    0.0639    1.112e-6    0.0000    1.0000
+8cQc        高牌 KQ986            5     PURE_AIR              1.736e-5    0.0639    1.110e-6    0.0000    1.0000
+8hQh        高牌 KQ986            5     PURE_AIR              1.736e-5    0.0639    1.110e-6    0.0000    1.0000
+8sQs        高牌 KQ986            5     PURE_AIR              1.736e-5    0.0639    1.110e-6    0.0000    1.0000
+7dAc        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+7hAc        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+7sAc        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+Ad7c        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+7hAd        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+7sAd        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+Ah7c        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+Ah7d        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+7sAh        高牌 AK976            5     PURE_AIR              1.722e-5    0.0639    1.101e-6    0.0000    1.0000
+8dAc        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+8hAc        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+8sAc        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+Ad8c        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+8hAd        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+8sAd        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+Ah8c        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+Ah8d        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+8sAh        高牌 AK986            5     PURE_AIR              1.720e-5    0.0639    1.100e-6    0.0000    1.0000
+7cAc        高牌 AK976            5     PURE_AIR              1.713e-5    0.0639    1.095e-6    0.0000    1.0000
+7hAh        高牌 AK976            5     PURE_AIR              1.713e-5    0.0639    1.095e-6    0.0000    1.0000
+8cAc        高牌 AK986            5     PURE_AIR              1.711e-5    0.0639    1.094e-6    0.0000    1.0000
+8hAh        高牌 AK986            5     PURE_AIR              1.711e-5    0.0639    1.094e-6    0.0000    1.0000
+TcAc        高牌 AKT96            5     PURE_AIR              1.704e-5    0.0639    1.090e-6    0.0000    1.0000
+ThAh        高牌 AKT96            5     PURE_AIR              1.704e-5    0.0639    1.090e-6    0.0000    1.0000
+JcAc        高牌 AKJ96            5     PURE_AIR              1.700e-5    0.0639    1.087e-6    0.0000    1.0000
+JhAh        高牌 AKJ96            5     PURE_AIR              1.700e-5    0.0639    1.087e-6    0.0000    1.0000
+QcAc        高牌 AKQ96            5     PURE_AIR              1.699e-5    0.0639    1.086e-6    0.0000    1.0000
+QhAh        高牌 AKQ96            5     PURE_AIR              1.699e-5    0.0639    1.086e-6    0.0000    1.0000
+7cTc        高牌 KT976            5     MISSED_STRAIGHT_DRAW  1.630e-5    0.0639    1.042e-6    0.0000    1.0000
+7dTd        高牌 KT976            5     MISSED_COMBO_DRAW     1.630e-5    0.0639    1.042e-6    0.0000    1.0000
+7hTh        高牌 KT976            5     MISSED_STRAIGHT_DRAW  1.630e-5    0.0639    1.042e-6    0.0000    1.0000
+7sTs        高牌 KT976            5     MISSED_STRAIGHT_DRAW  1.630e-5    0.0639    1.042e-6    0.0000    1.0000
+7c8c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.628e-5    0.0639    1.041e-6    0.0000    1.0000
+7d8d        高牌 K9876            5     MISSED_COMBO_DRAW     1.628e-5    0.0639    1.041e-6    0.0000    1.0000
+7h8h        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.628e-5    0.0639    1.041e-6    0.0000    1.0000
+7s8s        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.628e-5    0.0639    1.041e-6    0.0000    1.0000
+7dJd        高牌 KJ976            5     MISSED_FLUSH_DRAW     1.579e-5    0.0639    1.010e-6    0.0000    1.0000
+TdJc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+ThJc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+TsJc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JdTc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+ThJd        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+TsJd        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JhTc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JhTd        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+TsJh        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JsTc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JsTd        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+JsTh        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.577e-5    0.0639    1.008e-6    0.0000    1.0000
+8dJd        高牌 KJ986            5     MISSED_FLUSH_DRAW     1.576e-5    0.0639    1.008e-6    0.0000    1.0000
+7dQd        高牌 KQ976            5     MISSED_FLUSH_DRAW     1.570e-5    0.0639    1.004e-6    0.0000    1.0000
+TdQc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+ThQc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+TsQc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QdTc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+ThQd        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+TsQd        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QhTc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QhTd        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+TsQh        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QsTc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QsTd        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+QsTh        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.568e-5    0.0639    1.002e-6    0.0000    1.0000
+8dQd        高牌 KQ986            5     MISSED_FLUSH_DRAW     1.567e-5    0.0639    1.002e-6    0.0000    1.0000
+3dAc        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+3hAc        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+3sAc        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+Ad3c        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+3hAd        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+3sAd        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+Ah3c        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+Ah3d        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+3sAh        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.558e-5    0.0639    9.960e-7    0.0000    1.0000
+5dAc        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+5hAc        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+5sAc        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+Ad5c        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+5hAd        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+5sAd        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+Ah5c        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+Ah5d        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+5sAh        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.557e-5    0.0639    9.951e-7    0.0000    1.0000
+3cAc        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.550e-5    0.0639    9.909e-7    0.0000    1.0000
+3dAd        高牌 AK964            5     MISSED_COMBO_DRAW     1.550e-5    0.0639    9.909e-7    0.0000    1.0000
+3hAh        高牌 AK964            5     MISSED_STRAIGHT_DRAW  1.550e-5    0.0639    9.909e-7    0.0000    1.0000
+5cAc        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.548e-5    0.0639    9.899e-7    0.0000    1.0000
+5dAd        高牌 AK965            5     MISSED_COMBO_DRAW     1.548e-5    0.0639    9.899e-7    0.0000    1.0000
+5hAh        高牌 AK965            5     MISSED_STRAIGHT_DRAW  1.548e-5    0.0639    9.899e-7    0.0000    1.0000
+7dAd        高牌 AK976            5     MISSED_FLUSH_DRAW     1.546e-5    0.0639    9.881e-7    0.0000    1.0000
+8dAd        高牌 AK986            5     MISSED_FLUSH_DRAW     1.544e-5    0.0639    9.869e-7    0.0000    1.0000
+TdAd        高牌 AKT96            5     MISSED_FLUSH_DRAW     1.538e-5    0.0639    9.832e-7    0.0000    1.0000
+JdAd        高牌 AKJ96            5     MISSED_FLUSH_DRAW     1.534e-5    0.0639    9.808e-7    0.0000    1.0000
+QdAd        高牌 AKQ96            5     MISSED_FLUSH_DRAW     1.533e-5    0.0639    9.799e-7    0.0000    1.0000
+5cJc        高牌 KJ965            5     MISSED_STRAIGHT_DRAW  1.087e-5    0.0639    6.948e-7    0.0000    1.0000
+5dJd        高牌 KJ965            5     MISSED_COMBO_DRAW     1.087e-5    0.0639    6.948e-7    0.0000    1.0000
+5hJh        高牌 KJ965            5     MISSED_STRAIGHT_DRAW  1.087e-5    0.0639    6.948e-7    0.0000    1.0000
+5sJs        高牌 KJ965            5     MISSED_STRAIGHT_DRAW  1.087e-5    0.0639    6.948e-7    0.0000    1.0000
+8dTc        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+8hTc        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+8sTc        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Td8c        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+8hTd        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+8sTd        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Th8c        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Th8d        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+8sTh        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Ts8c        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Ts8d        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+Ts8h        高牌 KT986            5     MISSED_STRAIGHT_DRAW  1.086e-5    0.0639    6.943e-7    0.0000    1.0000
+5c8c        高牌 K9865            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.933e-7    0.0000    1.0000
+5d8d        高牌 K9865            5     MISSED_COMBO_DRAW     1.084e-5    0.0639    6.933e-7    0.0000    1.0000
+5h8h        高牌 K9865            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.933e-7    0.0000    1.0000
+5s8s        高牌 K9865            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.933e-7    0.0000    1.0000
+7d8c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+7h8c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+7s8c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8d7c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+7h8d        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+7s8d        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8h7c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8h7d        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+7s8h        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8s7c        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8s7d        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+8s7h        高牌 K9876            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.931e-7    0.0000    1.0000
+5c7c        高牌 K9765            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.930e-7    0.0000    1.0000
+5d7d        高牌 K9765            5     MISSED_COMBO_DRAW     1.084e-5    0.0639    6.930e-7    0.0000    1.0000
+5h7h        高牌 K9765            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.930e-7    0.0000    1.0000
+5s7s        高牌 K9765            5     MISSED_STRAIGHT_DRAW  1.084e-5    0.0639    6.930e-7    0.0000    1.0000
+3cQc        高牌 KQ964            5     MISSED_STRAIGHT_DRAW  1.049e-5    0.0639    6.709e-7    0.0000    1.0000
+3dQd        高牌 KQ964            5     MISSED_COMBO_DRAW     1.049e-5    0.0639    6.709e-7    0.0000    1.0000
+3hQh        高牌 KQ964            5     MISSED_STRAIGHT_DRAW  1.049e-5    0.0639    6.709e-7    0.0000    1.0000
+3sQs        高牌 KQ964            5     MISSED_STRAIGHT_DRAW  1.049e-5    0.0639    6.709e-7    0.0000    1.0000
+5cQc        高牌 KQ965            5     MISSED_STRAIGHT_DRAW  1.048e-5    0.0639    6.703e-7    0.0000    1.0000
+5dQd        高牌 KQ965            5     MISSED_COMBO_DRAW     1.048e-5    0.0639    6.703e-7    0.0000    1.0000
+5hQh        高牌 KQ965            5     MISSED_STRAIGHT_DRAW  1.048e-5    0.0639    6.703e-7    0.0000    1.0000
+5sQs        高牌 KQ965            5     MISSED_STRAIGHT_DRAW  1.048e-5    0.0639    6.703e-7    0.0000    1.0000
+TcJc        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.046e-5    0.0639    6.686e-7    0.0000    1.0000
+TdJd        高牌 KJT96            5     MISSED_COMBO_DRAW     1.046e-5    0.0639    6.686e-7    0.0000    1.0000
+ThJh        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.046e-5    0.0639    6.686e-7    0.0000    1.0000
+TsJs        高牌 KJT96            5     MISSED_STRAIGHT_DRAW  1.046e-5    0.0639    6.686e-7    0.0000    1.0000
+TcQc        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.040e-5    0.0639    6.647e-7    0.0000    1.0000
+TdQd        高牌 KQT96            5     MISSED_COMBO_DRAW     1.040e-5    0.0639    6.647e-7    0.0000    1.0000
+ThQh        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.040e-5    0.0639    6.647e-7    0.0000    1.0000
+TsQs        高牌 KQT96            5     MISSED_STRAIGHT_DRAW  1.040e-5    0.0639    6.647e-7    0.0000    1.0000
+JcQc        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  1.037e-5    0.0639    6.630e-7    0.0000    1.0000
+JdQd        高牌 KQJ96            5     MISSED_COMBO_DRAW     1.037e-5    0.0639    6.630e-7    0.0000    1.0000
+JhQh        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  1.037e-5    0.0639    6.630e-7    0.0000    1.0000
+JsQs        高牌 KQJ96            5     MISSED_STRAIGHT_DRAW  1.037e-5    0.0639    6.630e-7    0.0000    1.0000
+
+下注范围分类汇总（桶）：
+桶                                组合数  到达质量      下注质量      归一化后    桶内 Hero 权益  对总权益贡献
+44（暗三条，比 AK 强）            3       5.290e-2      1.292e-2      0.3458      0.00%           0.00%
+99（暗三条，比 AK 强）            3       5.077e-2      1.240e-2      0.3318      0.00%           0.00%
+KK（三条，比 AK 强）              1       1.659e-2      4.050e-3      0.1084      0.00%           0.00%
+66（暗三条，比 AK 强）            3       1.461e-2      3.567e-3      0.0955      0.00%           0.00%
+两对（K9/K6/K4/K2，比 AK 强）     10      1.039e-1      2.052e-3      0.0549      0.00%           0.00%
+22（暗三条，比 AK 强）            3       3.897e-3      9.518e-4      0.0255      0.00%           0.00%
+AA（比 AK 强）                    3       3.672e-2      7.252e-4      0.0194      0.00%           0.00%
+其他比 AK 强的成手（两对）        10      1.656e-2      4.932e-4      0.0132      0.00%           0.00%
+错失听牌 / 纯空气                 200     3.175e-3      2.030e-4      0.0054      100.00%         0.54%
+
+到达范围（引擎口径 ④）分类汇总 —— 对照「哪些牌被过滤掉了」：
+类别                    组合数  到达质量      P(BET|类)   贡献质量      占下注范围  
+STRONG_VALUE            17      0.1395        0.2442      3.407e-2      91.19%      
+SHOWDOWN_VALUE          233     0.7009        0.0000      0.000e+0      0.00%       
+THIN_VALUE              19      0.1564        0.0197      3.090e-3      8.27%       
+MISSED_STRAIGHT_DRAW    112     0.0016        0.0639      1.012e-4      0.27%       
+MISSED_COMBO_DRAW       12      0.0001        0.0639      9.482e-6      0.03%       
+PURE_AIR                67      0.0013        0.0639      8.342e-5      0.22%       
+MISSED_FLUSH_DRAW       9       0.0001        0.0639      8.941e-6      0.02%       
+合计                            1.0000                    3.736e-2      3.74%       
+
+======================================================================================================================
+ 第三部分  行动上下文（确认这是「他主动下注」节点）
+======================================================================================================================
+
+本街（RIVER）最后进攻者 position = BB｜首要对手 position = BB｜是否同一人 = true
+actionContext = FACING_DONK（FACING_CBET/FACING_DONK = 他面对我的下注；GENERIC_BET = 他领打）
+state.currentBet = 40（chip）｜potBeforeBet = 53｜betRatioToPot = 0.7547
+resolvePlayerProfile.actionContext（同一条判定）= FACING_DONK
+betRangeSizing = {"actualBetChips":40,"potChips":53,"actualRatio":0.7547169811320755,"modeledRatio":0.7547169811320755,"sizeApproximation":false}
+hero 上一街是否进攻者：TURN 最后进攻者 = BTN（BTN ⇒ 翻牌/转牌都是 Hero 在 cbet）
+
+buildBettingRangeFacts 的触发条件（contextBuilder 第 3559-3597 行）：
+  bettorPosition(BB) === primaryPosition(BB) ⇒ 走「他正在下注」分支（不是 Hero 下注，也不是响应模型）
+  arrivalEntries 取自 primaryBuild.range（= 本手 hero equity 用的同一份范围）
+
+resolvedV3.resolvedDimensions = {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8}
+resolvedV3.street[RIVER] = {"foldScale":1,"callScale":1,"checkRaiseScale":1,"betScale":0.6249999999999999}
+deniedStreetTraits = null
+
+======================================================================================================================
+ 第四部分  合成范围反证（Arrival 不变，只改下注权重）
+======================================================================================================================
+
+Arrival Range（固定，引擎口径）：EqVsArrivalRange = 0.6592（两组完全相同）
+pot=93  call=40  requiredEquity=0.3008  winnable=133
+可达组合：比 Hero 强 36 个｜比 Hero 弱 427 个｜平局 6 个
+
+A（价值为主：强价值 0.80 / 诈唬 0.20 / 弱价值 0）：组合数=242｜EqVsBetRange=0.0680｜RequiredEquity=0.3008｜CALL EV=-30.9511｜FOLD EV=0｜FinalAction=FOLD
+B（弱价值 + 诈唬更多：价值 0.50 / 弱价值 0.50 / 诈唬 0.50）：组合数=469｜EqVsBetRange=0.6592｜RequiredEquity=0.3008｜CALL EV=47.6674｜FOLD EV=0｜FinalAction=CALL
+
+权重合法性：每组权重 ∈ [0,1]，BetW = ArrivalW × w，归一化后 Σp = 1.0000 / 1.0000
+最终动作由 EV 决定：A ⇒ FOLD，B ⇒ CALL（未硬编码）
+
+同样的构造，用在**真正下注前**的到达范围（③ 层）上：
+  EqVsArrivalRange(③) = 0.7552｜A ⇒ 0.0000｜B ⇒ 0.7780
+
+======================================================================================================================
+ 第五部分  人物画像对照（NORMAL / CALLING_STATION / MANIAC / NIT，只改画像）
+======================================================================================================================
+
+--- NORMAL ---
+  resolvedDimensions = {"tightness":0.5,"aggression":0.5,"bluffTendency":0.5,"passivity":0.5}
+  P(BET|类) = STRONG 0.4478｜THIN 0.2390｜SHOWDOWN 0.0824｜AIR 0.2081
+  Bet Range：支持 469/469 组合｜价值质量 62.25%｜诈唬质量 0.80%｜摊牌质量 36.95%｜下注占比 15.66%
+  EqVsArrival=0.6621  EqVsBetRange=0.3531  CALL EV=6.9653  引擎 action=RAISE+174
+
+--- CALLING_STATION ---
+  resolvedDimensions = {"tightness":0.3,"aggression":0.3,"bluffTendency":0.35,"passivity":0.8}
+  P(BET|类) = STRONG 0.2442｜THIN 0.0197｜SHOWDOWN 0.0000｜AIR 0.0639
+  Bet Range：支持 236/469 组合｜价值质量 99.46%｜诈唬质量 0.54%｜摊牌质量 0.00%｜下注占比 3.74%
+  EqVsArrival=0.6592  EqVsBetRange=0.0054  CALL EV=-39.2774  引擎 action=FOLD+
+
+--- MANIAC ---
+  resolvedDimensions = {"tightness":0.15,"aggression":0.92,"bluffTendency":0.9,"passivity":0.35}
+  P(BET|类) = STRONG 0.9197｜THIN 0.7527｜SHOWDOWN 0.4019｜AIR 0.8310
+  Bet Range：支持 469/469 组合｜价值质量 45.11%｜诈唬质量 1.97%｜摊牌质量 52.92%｜下注占比 53.06%
+  EqVsArrival=0.6642  EqVsBetRange=0.5133  CALL EV=28.2705  引擎 action=RAISE+174
+
+--- VERY_TIGHT ---
+  resolvedDimensions = {"tightness":0.88,"aggression":0.45,"bluffTendency":0.15,"passivity":0.45}
+  P(BET|类) = STRONG 0.2338｜THIN 0.0000｜SHOWDOWN 0.0000｜AIR 0.0082
+  Bet Range：支持 217/469 组合｜价值质量 99.88%｜诈唬质量 0.12%｜摊牌质量 0.00%｜下注占比 3.09%
+  EqVsArrival=0.6620  EqVsBetRange=0.0012  CALL EV=-39.8448  引擎 action=FOLD+
+
+======================================================================================================================
+ 第六部分  诊断汇总（证据行）
+======================================================================================================================
+
+1) 引擎所称 Arrival Range（math.heroEquity 的输入）**已经包含 RIVER/BET 似然**：更新轨迹最后一条 = RIVER/BET。
+   → 真正「河牌下注前」的到达范围是第 ③ 层（权益 0.7552），而引擎用的是第 ④ 层（权益 0.6592）。
+2) 下注范围 = 第 ④ 层 × P(BET|类别)：到达 469 组合 → 下注 236 组合。
+3) 被 P(BET|类别) 判成 0 的类别：SHOWDOWN_VALUE（若为空则无整类清零）
+4) EqVsBetRange = 0.0054；CALL EV = -39.2774。
+

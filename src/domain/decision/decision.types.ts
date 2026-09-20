@@ -783,6 +783,24 @@ export type PlayerSnapshot = {
   confidence: number;
   /** 已观测手数 */
   handsObserved: number;
+  /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1：本次决策真正使用的实测统计披露**。
+   *
+   * 与 `handsObserved`（来自 `PlayerProfile` 手日志）**不是一回事**：
+   * 真实历史走的是 `villain.observedStats` 通道（扁平静态统计），
+   * 它不构造成手日志（**绝不为补齐统计虚构玩家历史**）。
+   *
+   * | 字段 | 含义 |
+   * |---|---|
+   * | `handsObserved` | 该玩家累计被记录的真实手数（来自历史存储） |
+   * | `usedStatKeys` | **本次真正进入模型**的统计项（其余项没有输入通道） |
+   * | `noteZh` | 中文披露：样本量 / 有效机会数 / 哪几项接入 / 哪些未接入 |
+   */
+  measuredStats?: {
+    readonly handsObserved: number;
+    readonly usedStatKeys: readonly string[];
+    readonly noteZh: string;
+  };
   /** 调整因子（**只影响概率**，不含任何动作） */
   adjustment: ProfileAdjustment;
   /** 中文说明 */

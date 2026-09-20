@@ -33,6 +33,8 @@ import {
   type ManualActionType,
 } from '../manualInput/manualInput.ts';
 import { applyTableOp } from './tableOps.ts';
+/* 🔴 PLAYER PROFILE EXPLOIT V1：真实历史的记录 / 注入 / 回退（生产入口接线） */
+import { applyUserOpWithHistory, defaultHistoryDir } from './playerHistory.ts';
 import { buildTablePreview, DYNAMIC_HINT_ZH, QUICK_PROFILE_ZH } from './tablePreview.ts';
 import { createTable, logicalSeatOrder, seatOfPosition, visualIndexOf } from './tableState.ts';
 import {
@@ -590,6 +592,13 @@ export type TableApiDeps = {
   /** 新牌桌 id 生成器（测试里可注入确定值） */
   newTableId: () => string;
   guard: RevisionGuard;
+  /**
+   * 🔴 **PLAYER PROFILE EXPLOIT V1**：玩家真实历史的存储目录。
+   *
+   * 缺省 = 仓库根 `data/`（`playerHistory.defaultHistoryDir()`）；
+   * **测试必须注入临时目录**，避免污染使用者现有玩家资料。
+   */
+  historyDir?: string;
 };
 
 const VALID_OP_KINDS: readonly string[] = [
@@ -758,7 +767,39 @@ export function handleTableRequest(body: unknown, deps: TableApiDeps): TableApiR
     };
   }
 
-  const outcome = applyTableOp(state, opParsed.op);
+  /*
+   * 🔴 **PLAYER PROFILE EXPLOIT V1：生产入口接上真实历史**。
+   *
+   * `applyUserOpWithHistory` = `applyTableOp` + 「记录本次真实行动」+「落座时注入实测统计」
+   * +「撤销时回退记录」。**牌桌行为与直接调用 `applyTableOp` 逐位一致**（纯函数部分未改），
+   * 历史层的写入失败/文件损坏**必须**如实带回给使用者，绝不静默。
+   *
+   * ⚠️ **持久化是显式选择**：只有调用方给出 `historyDir` 才会读写玩家历史。
+   * 未给出时（单测、嵌入式调用）行为与修复前**逐位一致**、**不触碰任何用户数据** ——
+   * 由真正的服务器入口（`webServer.ts`）显式传入默认目录。
+   */
+  if (deps.historyDir === undefined) {
+    const plain = applyTableOp(state, opParsed.op);
+    if (!plain.ok) {
+      return {
+        ok: false,
+        issues: plain.issues,
+        ...(plain.leaveDecision !== undefined ? { leaveDecision: plain.leaveDecision } : {}),
+        state,
+        preview: buildTablePreview(state),
+      };
+    }
+    deps.guard.record(plain.state.tableId, plain.state.revision);
+    return Object.freeze({
+      ok: true,
+      created: false,
+      state: plain.state,
+      preview: buildTablePreview(plain.state),
+    });
+  }
+
+  const history = applyUserOpWithHistory({ state, op: opParsed.op, historyDir: deps.historyDir });
+  const outcome = history.outcome;
   if (!outcome.ok) {
     return {
       ok: false,
@@ -803,6 +844,9 @@ export function handleTableRequest(body: unknown, deps: TableApiDeps): TableApiR
     created: false,
     state: outcome.state,
     preview: buildTablePreview(outcome.state),
+    /* 历史层的问题（保存失败 / 文件损坏）必须随成功响应一起如实返回 */
+    ...(history.historyIssues.length === 0 ? {} : { historyIssues: history.historyIssues }),
+    ...(history.recorded === 0 ? {} : { historyRecorded: history.recorded }),
   });
 }
 

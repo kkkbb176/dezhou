@@ -261,6 +261,19 @@ export function tableStateToManualHandInput(state: PokerTableState): AdapterResu
           displayName: primaryPlayer.displayName,
           quickProfile: primaryPlayer.quickProfile,
           dynamicHint: primaryPlayer.dynamicHint,
+          /*
+           * 🔴 **PLAYER PROFILE EXPLOIT V1：真实历史统计注入**。
+           *
+           * `observedStats` 由 `playerHistory` 从该 `playerId` 的真实行动记录推导
+           *（只含模型真正支持的统计项，机会数为 0 的项不出现）。
+           * 没有历史时**不加这个字段** ⇒ 与修复前逐位一致（标签先验 + 未知处理）。
+           */
+          ...(primaryPlayer.observedStats === undefined
+            ? {}
+            : { observedStats: primaryPlayer.observedStats }),
+          ...(primaryPlayer.observedStatsNoteZh === undefined
+            ? {}
+            : { observedStatsNoteZh: primaryPlayer.observedStatsNoteZh }),
           ...(primarySeat?.stackBB !== undefined ? { stackBB: primarySeat.stackBB } : {}),
         }
       : {};
