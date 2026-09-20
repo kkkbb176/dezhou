@@ -243,8 +243,8 @@
     {
       "path": "src/domain/decision/evidencePriority.ts",
       "category": "DECISION",
-      "sha256": "e7e11f2880fed17275626eff49a93c71738ef38df22af66a90a9e24c2ab66978",
-      "bytes": 26090,
+      "sha256": "49198947f3a872cbc2571c6e8444953f40970461831cfa7ddfaf74fc20c20632",
+      "bytes": 33210,
       "impact": "动作证据优先级与覆盖权限变化（谁能覆盖谁、UNKNOWN 是否参与比较、MARGINAL 是否允许启发式打断）→ **所有面对下注节点的动作来源与最终动作都可能变化**"
     },
     {
@@ -453,8 +453,8 @@
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "b1ccfaa8c8a7955b1b9bd53d0bd56c9a2fd5683a562d5a251daf44ebe9cb26cc",
-      "bytes": 189163,
+      "sha256": "e24e9b5acc1c9bb212a7c263d459058025cd988747de74ab127485515ad082c8",
+      "bytes": 191039,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
@@ -768,8 +768,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "63893bad04e126de59b99cb82ea9e031a6e333d3887217fc836f01634b8ed0ea",
-      "bytes": 144743,
+      "sha256": "88b62c48c9372a5f56139aaa29f2e80e85ab7ab8d72b57fcee35e48146515fb5",
+      "bytes": 148200,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {

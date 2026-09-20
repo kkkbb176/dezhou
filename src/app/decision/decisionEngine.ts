@@ -2422,6 +2422,15 @@ function pickCandidate(
         allowHeuristicTiebreak: true,
         // 跨动作比较用同一把容差带尺子（§1/§17）
         bandChips: uncertaintyBandChips,
+        /*
+         * 🔴 **CB-5**：本节点是否适用「打光筹码需要超过容差带的依据」这条护栏。
+         *
+         * 判据只有一处（这里）：**河牌 + 面对下注**。
+         * `callCandidate !== null` 就是「有一次跟注要付」= 面对下注
+         *（无人下注的节点只有 CHECK，没有 CALL 候选 —— 与本函数上方
+         * `hardConstraint` 用的是同一个既有判据，不另写一份）。
+         */
+        stackCommitmentGuardApplies: math.street === Street.RIVER && callCandidate !== null,
       });
       if (evidenceOut !== undefined) {
         evidenceOut.decision = evidenceDecision;
@@ -2545,8 +2554,22 @@ function pickCandidate(
          * 「算过但更低」与「没算过」是两件事，不能共用一句话」
          */
         reasons.push({
-          code: isoUsable ? 'ISO_RAISE_LOSES_ON_EV' : raiseModelUsable ? 'RAISE_MODEL_EV_LOSES' : 'RAISE_STRATEGIC_CANDIDATE',
-          textZh: isoUsable
+          code:
+            evidenceDecision.stackCommitmentGuard !== undefined
+              ? 'STACK_COMMITMENT_MARGIN_GUARD'
+              : isoUsable
+                ? 'ISO_RAISE_LOSES_ON_EV'
+                : raiseModelUsable
+                  ? 'RAISE_MODEL_EV_LOSES'
+                  : 'RAISE_STRATEGIC_CANDIDATE',
+          textZh:
+            evidenceDecision.stackCommitmentGuard !== undefined
+              ? /* 🔴 CB-5：这里**不能**说「跟注更高」—— 加注 EV 其实略高，只是高得没有意义 */
+                `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：${evidenceDecision.stackCommitmentGuard.reasonZh}` +
+                `｜被拦截动作 = ${evidenceDecision.stackCommitmentGuard.blockedAction}，` +
+                `有效备选 = ${evidenceDecision.stackCommitmentGuard.alternativeAction}` +
+                `（⚠️ 该加注的 EV 与候选金额均**未被修改**，仍可在诊断里查看）`
+              : isoUsable
             ? `RAISE（${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB）：**有**隔离加注模型的代理 EV ` +
               `${isoEv === null ? '—' : isoEv.toFixed(2)} 筹码 ⇒ 本次比较是**算出来的**：` +
               `跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 更高 ⇒ 不加注` +
@@ -3897,6 +3920,13 @@ export function decideAlpha(
             evidenceScope: evidenceDecisionForBasis.evidenceScope,
             overrideAttempt: evidenceDecisionForBasis.overrideAttempt,
             overrideBlockedReason: evidenceDecisionForBasis.overrideBlockedReason,
+            /*
+             * 🔴 **CB-5**：护栏的完整证据（被拦截动作 / 有效备选 / 两条 EV / 差 / 带 / 估计类型）。
+             * 只在这里**如实带出**，不参与任何计算 —— 与 `overrideJustification` 同一条纪律。
+             */
+            ...(evidenceDecisionForBasis.stackCommitmentGuard === undefined
+              ? {}
+              : { stackCommitmentGuard: evidenceDecisionForBasis.stackCommitmentGuard }),
             noteZh: evidenceDecisionForBasis.reasonZh.join('；'),
           }),
     actionEvidence: Object.freeze(

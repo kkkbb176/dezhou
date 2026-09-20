@@ -228,6 +228,27 @@ export type EvidenceDecision = {
   overrideAttempt: string | null;
   /** 阻断原因（例：`CANNOT_OVERRIDE_CLEAR_SUPPORTED_CALL`） */
   overrideBlockedReason: string | null;
+  /**
+   * 🔴 **CB-5 · 打光筹码的容差带护栏**（仅在该护栏触发时存在）。
+   *
+   * 语义：量化最优动作**会消耗 Hero 全部剩余筹码**，而它相对「最佳非全下候选」
+   * 的优势 `0 ≤ 差 ≤ 容差带` ⇒ 这点优势**不足以单独授权**打光筹码，
+   * 于是改按既有证据优先级选那个不消耗筹码的动作。
+   *
+   * ⚠️ 它**不**声称备选动作在真实牌局中更高 —— 两个数字都在模型自己的分辨力之内。
+   * ⚠️ 被拦截的动作**不会**从候选表/证据表里删除：这里只改最终裁决。
+   */
+  stackCommitmentGuard?: {
+    readonly blockedAction: string;
+    readonly alternativeAction: string;
+    readonly blockedEV: number;
+    readonly alternativeEV: number;
+    readonly gapChips: number;
+    readonly bandChips: number;
+    readonly blockedEstimateType: EstimateType;
+    readonly alternativeEstimateType: EstimateType;
+    readonly reasonZh: string;
+  };
   reasonZh: readonly string[];
 };
 
@@ -266,6 +287,16 @@ export function chooseByEvidencePriority(input: {
    * 缺省 ⇒ 不做跨动作结论（保守：不声称「谁更优」）。
    */
   bandChips?: number;
+  /**
+   * 🔴 **CB-5 · 本节点是否适用「打光筹码需要超过容差带的依据」这条护栏。**
+   *
+   * 由**调用方**判定（`street === RIVER && 面对下注`），因为「哪条街 / 是否面对下注」
+   * 是决策层的知识，本模块只做**权限裁决**、不重新实现牌局状态判断
+   *（同一条纪律：同一个判据只能有一处实现）。
+   *
+   * 缺省 / `false` ⇒ 行为与本护栏引入前**逐位一致**。
+   */
+  stackCommitmentGuardApplies?: boolean;
 }): EvidenceDecision {
   const candidates = input.candidates;
   const hard = input.hardConstraint ?? null;
@@ -344,6 +375,104 @@ export function chooseByEvidencePriority(input: {
         ? null
         : `${best.action} vs ${second.action}：各自模型的 EV 差 ${crossActionGap.toFixed(2)} 筹码` +
           (band === undefined ? '（未提供容差带 ⇒ 不做结论）' : `，容差带 ±${band.toFixed(2)}`);
+
+    /*
+     * 🔴 **CB-5 · 打光筹码的动作需要「超过容差带」的依据。**
+     *
+     * ## 缺陷（`reports/FLOP_RIVER_THEORY_EXPLOIT_AUDIT_V1.md` CB-5）
+     *
+     * 河牌面对下注时，一个**消耗全部剩余筹码**的加注只要 EV 比最佳备选高一丁点，
+     * 就会在同一张表的跨动作比较里胜出。实测（A♠K♠｜K♦9♣4♥6♠2♦，`analyzeManualHand`）：
+     *
+     * ```text
+     * RAISE(MODEL_EV) 48.48 vs CALL(PROXY_EV) 45.33 ⇒ 差 3.15，容差带 ±10.95
+     * RAISE(MODEL_EV) 42.96 vs CALL(PROXY_EV) 42.92 ⇒ 差 0.03，容差带 ±9.55
+     * ```
+     *
+     * 而 `decisionMargin.noteZh` 自己写着「容差带是**工程容差**，不是统计误差，
+     * 也不自动翻转动作」—— 它却在这里授权了**不可逆**的全下。
+     *
+     * ## 本护栏说什么 / 不说什么
+     *
+     * 说：`0 ≤ EV_stack − EV_alternative ≤ 容差带` ⇒ 这点优势**不足以单独授权**
+     * 把全部筹码押上；改按既有证据优先级选**最佳非全下**候选。
+     * **不**说：备选动作在真实牌局中一定更高（两个数字都在模型分辨力之内）。
+     *
+     * ## 触发条件（全部为硬条件，任一不成立即不触发）
+     *
+     * | # | 条件 | 防的是 |
+     * |---|---|---|
+     * | ① | `input.stackCommitmentGuardApplies === true`（调用方判定：**河牌 + 面对下注**） | 误伤翻前 / 翻牌 / 转牌的既有策略 |
+     * | ② | `band !== undefined` | 没有容差带 ⇒ 不做跨动作结论 |
+     * | ③ | `best.commitsStack === true` | 只约束**打光筹码**的动作 |
+     * | ④ | `second !== null && second.commitsStack !== true` | 必须存在**不消耗筹码**的备选 |
+     * | ⑤ | 两条 EV 都是有限数（`quantified` 已保证非 null） | **绝不把 null 当 0** |
+     * | ⑥ | `0 ≤ 差 ≤ band`（含边界） | 优势超过容差带 ⇒ 量化证据仍然支持加注 |
+     *
+     * ⚠️ 本轮不新增任何模型系数、不改任何 EV 公式；候选表与证据表**原样保留**。
+     */
+    const stackGuardGap =
+      best.commitsStack === true && second !== null && second.commitsStack !== true
+        ? best.ev! - second.ev!
+        : null;
+    /** 护栏的有效备选（已由条件保证非 null 且不消耗筹码） */
+    const stackGuardAlternative = second;
+    let stackCommitmentGuard: EvidenceDecision['stackCommitmentGuard'];
+    if (
+      input.stackCommitmentGuardApplies === true &&
+      band !== undefined &&
+      Number.isFinite(band) &&
+      stackGuardGap !== null &&
+      Number.isFinite(stackGuardGap) &&
+      stackGuardGap >= 0 &&
+      stackGuardGap <= band &&
+      stackGuardAlternative !== null
+    ) {
+      /** 显式取局部常量：`band` / 备选动作在上面这组条件之后已确定为有效值 */
+      const guardBand: number = band;
+      const guardAlternativeEV: number = stackGuardAlternative.ev!;
+      stackCommitmentGuard = Object.freeze({
+        blockedAction: best.action,
+        alternativeAction: stackGuardAlternative.action,
+        blockedEV: best.ev!,
+        alternativeEV: guardAlternativeEV,
+        gapChips: stackGuardGap,
+        bandChips: guardBand,
+        blockedEstimateType: best.estimateType,
+        alternativeEstimateType: stackGuardAlternative.estimateType,
+        reasonZh:
+          `「${best.action}」（${best.estimateType} EV ${best.ev!.toFixed(2)}）会让 Hero 把剩余筹码**全部投入**，` +
+          `而它相对最佳非全下候选「${stackGuardAlternative.action}」（${stackGuardAlternative.estimateType} ` +
+          `EV ${guardAlternativeEV.toFixed(2)}）只高 ${stackGuardGap.toFixed(2)} 筹码 —— ` +
+          `落在模型自身的工程容差带 ±${guardBand.toFixed(2)} 之内。` +
+          '⇒ **这点优势不足以单独授权打光筹码**，改按既有证据优先级选择不消耗筹码的动作。' +
+          '⚠️ 这不等于声称备选动作在真实牌局中更高（两个数字都在模型的分辨力之内）。',
+      });
+    }
+    if (stackCommitmentGuard !== undefined) {
+      return Object.freeze({
+        action: stackCommitmentGuard.alternativeAction,
+        source:
+          stackCommitmentGuard.alternativeEstimateType === EstimateType.INDEPENDENT_STRATEGIC_EVIDENCE
+            ? DecisionSourceKind.INDEPENDENT_STRATEGIC_EVIDENCE
+            : DecisionSourceKind.SUPPORTED_ACTION_PRIORITY,
+        priority: EVIDENCE_PRIORITY[stackCommitmentGuard.alternativeEstimateType],
+        estimateType: stackCommitmentGuard.alternativeEstimateType,
+        canOverrideEvidence: false,
+        evidenceScope: `${best.action}_STACK_COMMITMENT_WITHIN_BAND`,
+        overrideAttempt: `${best.action}_STACK_COMMITMENT`,
+        overrideBlockedReason: 'STACK_COMMITMENT_MARGIN_GUARD',
+        reasonZh: Object.freeze([
+          `量化赢家「${best.action}」会打光筹码：${best.estimateType} EV ${best.ev!.toFixed(2)}` +
+            `｜最佳非全下候选「${stackCommitmentGuard.alternativeAction}」` +
+            `${stackCommitmentGuard.alternativeEstimateType} EV ${stackCommitmentGuard.alternativeEV.toFixed(2)}` +
+            `｜差 ${stackCommitmentGuard.gapChips.toFixed(2)} ≤ 容差带 ±${stackCommitmentGuard.bandChips.toFixed(2)}`,
+          stackCommitmentGuard.reasonZh,
+          `最终动作 = ${stackCommitmentGuard.alternativeAction}；被拦截的打光动作**仍然保留**在候选表与证据表里（可审计）。`,
+        ]),
+        stackCommitmentGuard,
+      });
+    }
 
     if (crossActionInconclusive && strongestHeuristic !== null && strongestHeuristic.action !== best.action) {
       return Object.freeze({

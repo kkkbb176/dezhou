@@ -418,10 +418,10 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
 | 测试代码 | **102 个文件 / 48741 行**（口径：`test/**/*.test.ts`，2026-09-19 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **2,062 项 / 137 套件 / 106 个测试文件**（**PREFLOP P0 · F2 全下保护街道适用范围（11 项：F2-1 A–D 合法全下不被翻后保护拦下 / F2-2 全下**真的**进入证据表 / F2-3 M7·M8 无 EV 如实标 null / F2-4 不得绕过既有证据纪律 / M1 弱牌中等牌仍不能全下 / M5-1 翻后一对牌保护仍生效 / M5-2 翻后强牌不受限 / M6 最小加注 > 全下额边界 / M9 3–25BB 扫描 / M10 阈值与底池比例档未动 / 街道矩阵穷举）**；**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试 | **2,072 项 / 137 套件 / 107 个测试文件**（**CB-5 河牌「打光筹码」容差带护栏（10 项：CB5-01/02 A–E 五个节点不变量与护栏自洽 / CB5-03 黄金向量不变 / CB5-04 强牌全下保留 / CB5-05 H·I·J 差=0·=带·>带边界 / CB5-06 K·L EV=null 不得当 0 / CB5-07 M·N 负 EV 与非全下加注 / CB5-08 O 翻前 3Bet·4Bet / CB5-09 P 翻牌·转牌（含转牌真全下 186）/ CB5-10 M9 候选与证据保全）**；**PREFLOP P0 · F2 全下保护街道适用范围（11 项：F2-1 A–D 合法全下不被翻后保护拦下 / F2-2 全下**真的**进入证据表 / F2-3 M7·M8 无 EV 如实标 null / F2-4 不得绕过既有证据纪律 / M1 弱牌中等牌仍不能全下 / M5-1 翻后一对牌保护仍生效 / M5-2 翻后强牌不受限 / M6 最小加注 > 全下额边界 / M9 3–25BB 扫描 / M10 阈值与底池比例档未动 / 街道矩阵穷举）**；**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **163 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**P1 审计补登记 `reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md` → 163**；TEST 18 展示轮只刷新既有产物哈希，未新增登记项，数字以生成器输出为准） |
-| Git 状态（PREFLOP P0 · F2 修复后） | ⚠️ **不是干净基线**：`HEAD = 91c35e8`（= 已推送 `origin/main` 的 P1 CALL/FOLD 最小修复），**本轮 F2 修复未提交、未推送**（未获授权）：已修改 `src/app/decision/decisionEngine.ts`、`src/domain/decision/decision.types.ts`、`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`；新增未跟踪 `test/preflopAllInGuard.test.ts`、`reports/PREFLOP_DECISION_PATH_AUDIT_V1.md`、`reports/PREFLOP_F2_ALLIN_GUARD_FIX.md`、`scripts/f2-*.ts`、`scripts/preflop-path-audit*.ts`（**一律保留**）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-preF2-20260920-121657`（689 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
+| Git 状态（CB-5 护栏后） | ⚠️ **不是干净基线**：`HEAD = 536433d`（= 已推送 `origin/main` 的 F2 修复），**CB-5 修复未提交、未推送**（等人工确认）：已修改 `src/domain/decision/evidencePriority.ts`、`src/app/decision/decisionEngine.ts`、`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`；新增未跟踪 `test/riverStackCommitmentMarginGuard.test.ts`、`reports/CB5_RIVER_STACK_GUARD_V1.md` 及全部审计探针（**一律保留**）。检查点：`%TEMP%\dezhou-checkpoint-f2ac-20260920-131436`（719 文件 + `FILES.sha256.txt`，逐位 0 差异） |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
 | 历史基线回归 | 535 → … → **1,677** → **1,690** → **1,691** → **1,704** → **1,712**，无一次放宽断言（三次契约变更均已在报告里逐条说明：TEST 6 升级为「权益按画像方向移动 + 去重可见」；下注决策模型 13 项验收；**T9 的「三桶组合数之和」在混频下改为「并集 = 可达集合 + 质量守恒」**—— 旧断言在混频下是错的） |
@@ -1693,6 +1693,37 @@ P1-2b `FOLD = −80`、`CALL = −67.732181090706945`（分支 `CALL`）；最�
 
 **新增测试**：`test/preflopAllInGuard.test.ts`（**11 项**，修复前 4 项失败 → 修复后 11/11）。
 **审计报告**：`reports/PREFLOP_DECISION_PATH_AUDIT_V1.md`（F1–F8 + 墨菲 M1–M9）。
+
+### 10.0.23 CB-5 · 河牌「打光筹码」容差带护栏（2026-09，**已实施，未提交**）
+
+**授权**：`reports/FLOP_RIVER_THEORY_EXPLOIT_AUDIT_V1.md` §八 第①项（CB-1 + CB-5 同源，本轮只做 CB-5 的决策护栏；CB-1 的模型侧约束**未**实施）。
+**检查点**：`%TEMP%\dezhou-checkpoint-f2ac-20260920-131436`（719 文件 + sha256，逐位 0 差异）。
+
+**缺陷**：河牌面对下注时，**消耗 Hero 全部剩余筹码**的加注只要 EV 比最佳备选高一丁点就在跨动作比较中胜出 ——
+实测（A♠K♠｜K♦9♣4♥6♠2♦，`analyzeManualHand`）：`RAISE(MODEL_EV) 48.48 vs CALL(PROXY_EV) 45.33`（差 3.15／带 ±10.95）、
+`RAISE 42.956 vs CALL 42.924`（差 **0.03**／带 ±9.55）、AK 河牌黄金节点 NORMAL 画像（差 **0.09**／带 ±6.65）
+—— 而引擎自己在 `decisionMargin.noteZh` 写着「容差带是**工程容差**……也不自动翻转动作」，却在这里授权了不可逆的全下。
+
+**生产改动（2 个文件）**：
+
+- `src/domain/decision/evidencePriority.ts`：`chooseByEvidencePriority` 新增可选输入 `stackCommitmentGuardApplies`
+  与输出字段 `stackCommitmentGuard`；在**跨动作量化 EV 比较**路径中新增护栏：当
+  `best.commitsStack === true`、存在**不消耗筹码**的次优候选、两条 EV 均有限、且 `0 ≤ EV_stack − EV_alternative ≤ 容差带`
+  ⇒ 选该备选动作，并带上完整诊断（被拦截动作 / 备选 / 两条 EV / 差 / 带 / 两个估计类型 / 可读原因）。
+  **`ev === null` 的候选不在 `quantified` 里 ⇒ 结构上不可能被当成 0 触发本护栏。**
+- `src/app/decision/decisionEngine.ts`：调用点传 `stackCommitmentGuardApplies: math.street === Street.RIVER && callCandidate !== null`
+  （判据只有一处）；`decisionSource` 如实带出护栏字段；CALL 胜出分支在护栏触发时改用新原因码
+  **`STACK_COMMITMENT_MARGIN_GUARD`**，**不再**输出「跟注更高」这类与事实不符的文案。
+- **未改**：任何 EV 公式、条件范围构造、下注响应概率、画像融合、策略参数与容差带常量
+  （`MARGINAL_EV_GAP_RATIO` / `MODEL_UNCERTAINTY_RATIO` / `RAISE_EDGE_*` / `MAX_RAISE_TO_POT_RATIO` / `MIN_CATEGORY_FOR_LARGE_RAISE` 全部未动）；
+  普通（非全下）加注规则与翻前 / 翻牌 / 转牌策略未动。
+
+**验收**：新增 `test/riverStackCommitmentMarginGuard.test.ts`（10 项，修复前 **5 项失败** → 修复后 10/10）。
+**影响面（同一 124 个「节点 × 画像」输入，修复前 vs 修复后逐行 diff）**：**恰好 5 个节点**变化，
+全部是「一对牌面对大注／超池」的河牌节点，动作 `全下 → 跟注`（R-05 NORMAL/MANIAC、R-05b NORMAL/MANIAC、AK 河牌 NORMAL）；
+且**只有** `action` / `evidenceScope` / `consumesStack` / 新增护栏字段四类变化 ——
+**FOLD/CALL/RAISE 的 EV、条件权益、响应概率、容差带数值一律未变**。
+133 节点指纹与 125 局面扫描：**0 差异**。既有测试（P1 / V2 / U1 / P0-7 / F2 / TEST 16·17·18）无一因本修复改变。
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 
