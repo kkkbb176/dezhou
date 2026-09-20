@@ -1287,6 +1287,15 @@ export type DecisionDiagnostics = {
   allInGuard?: {
     readonly handCategory: number;
     readonly minCategoryForLargeRaise: number;
+    /**
+     * 🔴 **PREFLOP P0（F2）**：本判定所适用的街道。
+     *
+     * 「一对牌全下」保护的判据是成手牌类别，而**翻前没有成手牌**
+     *（`handCategory ≡ 0`）⇒ 该保护在 `PREFLOP` 上**按街道不适用**。
+     * 把这个字段带出来，使用者才能判断 `onePairAllInBlocked = false`
+     * 到底是「保护让位于自有 EV」还是「本街道根本不适用」。
+     */
+    readonly street?: Street;
     readonly consumesStack: boolean;
     readonly hasOwnEV: boolean;
     /**

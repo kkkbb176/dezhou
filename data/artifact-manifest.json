@@ -376,8 +376,8 @@
     {
       "path": "src/domain/decision/decision.types.ts",
       "category": "DECISION",
-      "sha256": "a43c96cdcad1fd193164aed56eddf8f3e952be59fa1447df4a7418fd5d0e1240",
-      "bytes": 78961,
+      "sha256": "812aa39a6f547df225146c27334919611ad05ceb57ec16fb99848bca26e1dc50",
+      "bytes": 79435,
       "impact": "决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ **所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）"
     },
     {
@@ -453,8 +453,8 @@
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "552eb2733ae3a87bfc8335cd9db548f440945ffdb0e6a68be55cfd9bd021bc04",
-      "bytes": 185769,
+      "sha256": "b1ccfaa8c8a7955b1b9bd53d0bd56c9a2fd5683a562d5a251daf44ebe9cb26cc",
+      "bytes": 189163,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
@@ -768,8 +768,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "9091b06f118d57cdde2ad7577dd63f77875d15f01380bb5ebf06a3480908dda1",
-      "bytes": 140393,
+      "sha256": "63893bad04e126de59b99cb82ea9e031a6e333d3887217fc836f01634b8ed0ea",
+      "bytes": 144743,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {

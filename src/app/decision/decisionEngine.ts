@@ -954,10 +954,41 @@ export function allInGuardVerdictOf(input: {
   consumesStack: boolean;
   hasOwnEV: boolean;
   minCategoryForLargeRaise?: number;
+  /**
+   * 🔴 **PREFLOP P0（F2）· 街道适用条件**。
+   *
+   * 本保护的判据是**成手牌类别** `handCategory < MIN_CATEGORY_FOR_LARGE_RAISE`，
+   * 而翻前**没有成手牌**：`contextBuilder.ts` 写的是 `described?.category ?? 0`，
+   * 翻前 `described === null` ⇒ **`handCategory ≡ 0` 恒成立**。
+   * 于是「一对牌打光」的保护在翻前被无条件套用，把**所有**翻前全下加注
+   *（短码推注、4bet 全下）判成违规 —— 审计 F2。
+   *
+   * `street` 就是这条规则的**适用街道**：
+   * - `PREFLOP` ⇒ 规则**不适用**（翻前没有「一对牌」这回事）；
+   * - `FLOP` / `TURN` / `RIVER` / **缺省** ⇒ 规则照旧生效（缺省保持向后兼容，
+   *   既有调用方与单测的语义逐位不变）。
+   *
+   * ⚠️ 这不是「删除保护」：翻前的全下准入由 `shouldRaise` 的 `qualifies`
+   *（起手牌档位 MONSTER/STRONG + 权益优势）把关 —— 弱牌与中等牌照样推不出去。
+   */
+  street?: Street;
 }): { onePairAllInBlocked: boolean; reasonZh: string } {
   const minCategory = input.minCategoryForLargeRaise ?? MIN_CATEGORY_FOR_LARGE_RAISE;
   if (!input.consumesStack) {
     return { onePairAllInBlocked: false, reasonZh: '不是全下加注 」 保护不适用' };
+  }
+  /*
+   * 🔴 **PREFLOP P0（F2）**：翻前没有成手牌类别 ⇒ 本保护**按街道不适用**。
+   * 说明见签名处的注释；这里只负责如实报出「为什么本街道不适用」。
+   */
+  if (input.street === Street.PREFLOP) {
+    return {
+      onePairAllInBlocked: false,
+      reasonZh:
+        '翻前 ⇒ 「一对牌全下」保护**按街道不适用**：翻前没有成手牌类别（`handCategory ≡ 0`，只有起手牌档位），' +
+        '「一对牌打光筹码」这一风险在翻前不存在。翻前的全下准入由**起手牌档位（MONSTER/STRONG）+ 权益优势**' +
+        '（`shouldRaise` 的 qualifies）把关 —— 不是无条件放开全下。',
+    };
   }
   if (input.handCategory >= minCategory) {
     return {
@@ -1015,7 +1046,7 @@ function shouldRaise(
    * 写着「河牌没有下一街，SPR 只作背景信息，不构成打光的理由」。
    */
   commitmentException = false,
-  options: { consumesStack?: boolean; hasOwnEV?: boolean } = {},
+  options: { consumesStack?: boolean; hasOwnEV?: boolean; street?: Street } = {},
 ): boolean {
   const edge = equity - requiredEquity;
   const qualifies =
@@ -1032,7 +1063,23 @@ function shouldRaise(
      * 「打光筹码」不能用底池比例近似（见 `ALL_IN_COMPARE_EPSILON` 上方的说明），
      * 174/93 = 1.87 的全下与「 .87 倍池的部分加注」是完全不同的两件事。
      */
-    if (options.consumesStack === true && options.hasOwnEV !== true) return false;
+    /*
+     * 🔴 **PREFLOP P0（F2）· 保护①的街道适用条件**。
+     *
+     * 这一条「全下必须有自有 EV 才能打光」的保护，判据是**成手牌类别**
+     *（外层 `handCategory < MIN_CATEGORY_FOR_LARGE_RAISE`），而翻前没有成手牌
+     *（`handCategory ≡ 0`，见 `handStrengthTier` 上方那段说明）——
+     * 无条件套用等于「翻前一律不得全下」，使短码推注 / 4bet 全下结构性不可达。
+     *
+     * 因此它只在**有成手牌类别可言**的街道生效（FLOP / TURN / RIVER，以及
+     * 未指定街道的既有调用 = 向后兼容）。
+     *
+     * ⚠️ 这不是「放开全下」：本函数上方的 `qualifies` 仍然要求
+     * **起手牌档位 MONSTER/STRONG + 权益优势**（翻前），弱牌与中等牌照样推不出去；
+     * 下面的**保护②（底池比例档）对所有街道一律不动**。
+     */
+    const streetApplies = options.street === undefined || options.street !== Street.PREFLOP;
+    if (streetApplies && options.consumesStack === true && options.hasOwnEV !== true) return false;
     /* 保护 ②：原有的底池比例档（管「没打光但已经很重」的加注）
 */
     if (pot > 0 && raiseToAmount / pot > MAX_RAISE_TO_POT_RATIO) return false;
@@ -2171,7 +2218,8 @@ function pickCandidate(
           commitmentException,
           /* 🔴 RIVER RAISE DECISION V2：全下必须用自己的 EV 才能证明「打光更好」
 */
-          { consumesStack: raiseConsumesStack, hasOwnEV: raiseModelUsable || isoUsable },
+          /* 🔴 PREFLOP P0（F2）：`street` 决定「全下保护」是否适用（翻前不适用） */
+          { consumesStack: raiseConsumesStack, hasOwnEV: raiseModelUsable || isoUsable, street: math.street },
         );
       /*
        * 🔴 **RIVER RAISE DECISION V2 · 全下保护的可审计判定**（§四）。
@@ -2190,6 +2238,8 @@ function pickCandidate(
         handCategory: math.handCategory,
         consumesStack: raiseConsumesStack,
         hasOwnEV: raiseModelUsable || isoUsable,
+        /* 🔴 PREFLOP P0（F2）：与 `shouldRaise` 用**同一个**街道判据（M2：不得两处口径） */
+        street: math.street,
       }).onePairAllInBlocked;
       const largeRaiseBlocked =
         raiseCandidate !== null &&
@@ -3337,6 +3387,8 @@ export function decideAlpha(
   const allInGuard = Object.freeze({
     handCategory: context.math.handCategory,
     minCategoryForLargeRaise: MIN_CATEGORY_FOR_LARGE_RAISE,
+    /* 🔴 PREFLOP P0（F2）：本判定所适用的街道（决定保护是否适用，见 `allInGuardVerdictOf`） */
+    street: context.math.street,
     consumesStack: rs?.consumesStack ?? false,
     hasOwnEV: rs?.hasOwnEV ?? false,
     /*
@@ -3363,6 +3415,8 @@ export function decideAlpha(
             handCategory: context.math.handCategory,
             consumesStack: rs.consumesStack,
             hasOwnEV: rs.hasOwnEV,
+            /* 🔴 PREFLOP P0（F2）：诊断侧必须与决策侧传同一个街道（M2） */
+            street: context.math.street,
           }).reasonZh,
   });
   const unevaluatedActions = (() => {

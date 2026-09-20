@@ -418,10 +418,10 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
 | 测试代码 | **102 个文件 / 48741 行**（口径：`test/**/*.test.ts`，2026-09-19 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **2,051 项 / 137 套件 / 105 个测试文件**（**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试 | **2,062 项 / 137 套件 / 106 个测试文件**（**PREFLOP P0 · F2 全下保护街道适用范围（11 项：F2-1 A–D 合法全下不被翻后保护拦下 / F2-2 全下**真的**进入证据表 / F2-3 M7·M8 无 EV 如实标 null / F2-4 不得绕过既有证据纪律 / M1 弱牌中等牌仍不能全下 / M5-1 翻后一对牌保护仍生效 / M5-2 翻后强牌不受限 / M6 最小加注 > 全下额边界 / M9 3–25BB 扫描 / M10 阈值与底池比例档未动 / 街道矩阵穷举）**；**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **163 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**P1 审计补登记 `reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md` → 163**；TEST 18 展示轮只刷新既有产物哈希，未新增登记项，数字以生成器输出为准） |
-| Git 状态（TEST 18 RAISE-TO 修复后） | ⚠️ **不是干净基线**：`HEAD = 3899189`（= 已推送 `origin/main` 的 M1 + TEST 17 备份提交），**8 个已修改**（`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`、`src/app/alphaPipeline.ts`、`src/viewmodels/decisionViewModel.ts`、`test/alphaRedteamRegression.test.ts`；另有 `src/app/manualInput/contextBuilder.ts`、`src/app/decision/decisionEngine.ts`、`src/infra/artifactDefinitions.ts`、`test/playerIdentityRouting.test.ts` 为**已提交**状态下的既有改动）+ 未跟踪的 M1 / TEST 17 / TEST 18 相关源文件、测试、报告与证据（一律保留）。**TEST 18 改动尚未提交、尚未推送**（未获授权）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-test18-20260919-221459`（664 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
+| Git 状态（PREFLOP P0 · F2 修复后） | ⚠️ **不是干净基线**：`HEAD = 91c35e8`（= 已推送 `origin/main` 的 P1 CALL/FOLD 最小修复），**本轮 F2 修复未提交、未推送**（未获授权）：已修改 `src/app/decision/decisionEngine.ts`、`src/domain/decision/decision.types.ts`、`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`；新增未跟踪 `test/preflopAllInGuard.test.ts`、`reports/PREFLOP_DECISION_PATH_AUDIT_V1.md`、`reports/PREFLOP_F2_ALLIN_GUARD_FIX.md`、`scripts/f2-*.ts`、`scripts/preflop-path-audit*.ts`（**一律保留**）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-preF2-20260920-121657`（689 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
 | 外部求解器 | **GTOpen**（commit `92c86ed`）作为独立计算引擎接入，本地 3737 端口；能力与限制见 `reports/GTOPEN_MULTI_TABLE_AUDIT.md` |
 | 独立红队轮次 | **15 轮**（范围 / 数值稳定性 / 画像 / 知识 / 动态行为自查 / 动态行为独立审计 / **Alpha 独立审计** / **牌桌录入 ×2** / **桌型语义独立审计** / **翻后形态扫描（Murphy）** / **河牌一致性（真人牌局反馈）** / **河牌一致性 V2.1** / **缓存键黄金向量** / **画像→范围主链（P0 架构修复）**） |
 | 历史基线回归 | 535 → … → **1,677** → **1,690** → **1,691** → **1,704** → **1,712**，无一次放宽断言（三次契约变更均已在报告里逐条说明：TEST 6 升级为「权益按画像方向移动 + 去重可见」；下注决策模型 13 项验收；**T9 的「三桶组合数之和」在混频下改为「并集 = 可达集合 + 质量守恒」**—— 旧断言在混频下是错的） |
@@ -1649,6 +1649,50 @@ P1-2b `FOLD = −80`、`CALL = −67.732181090706945`（分支 `CALL`）；最�
 
 **新增测试**：`test/callFoldVerdictRuler.test.ts`（**11 项**，A/B/C·D/E·F/H·J/I/K/L/M/N；修复前 4 项失败、
 修复后 11/11）。
+
+### 10.0.22 PREFLOP P0 · F2「一对牌全下」保护的街道适用范围（2026-09，**已实施，未提交**）
+
+**授权**：§10.0.21 之后由使用者正式授权的 F2 修复（"翻前节点错误使用翻后牌型类别保护，导致 AA 等强牌的合法全下加注被拦截"）；**不得**改 F1 的开池范围构建、**不得**新增 Solver / 扩 GTO 范围表 / 调画像参数。
+**检查点**：`%TEMP%\dezhou-checkpoint-preF2-20260920-121657`（689 文件 + `FILES.sha256.txt`，逐位校验 0 差异）。
+
+**根因（审计 §四 F2）**：`shouldRaise` 与 `allInGuardVerdictOf` 的两条保护都以**成手牌类别**为判据
+（`handCategory < MIN_CATEGORY_FOR_LARGE_RAISE = 3`），而翻前 `handCategory ≡ 0`
+（`contextBuilder.ts` 是 `described?.category ?? 0`，翻前 `described === null`）——
+于是「一对牌打光」的保护在翻前被无条件套用，**所有**翻前全下加注（短码推注 / 4bet 全下）被判违规。
+实测：BB 5BB 持 A♠A♥ 面对开池 3BB，唯一加注 = 全下 10 ⇒ 被拦 ⇒ 只能 `CALL 4`（身后剩 2BB）。
+
+**生产改动（2 个文件，均为**街道适用条件**，未删规则、未调阈值）**：
+
+- `src/app/decision/decisionEngine.ts`：`allInGuardVerdictOf` 新增可选 `street`，`PREFLOP` ⇒
+  该保护**按街道不适用**并给出如实说明；`shouldRaise` 的**保护①**（全下必须有自有 EV）加同一街道条件
+  （`streetApplies = options.street === undefined || options.street !== Street.PREFLOP`）。
+  **保护②（`MAX_RAISE_TO_POT_RATIO = 2.5` 底池比例档）对所有街道一字未动**；
+  `qualifies`（起手牌档位 MONSTER/STRONG + 权益优势）、`RAISE_EDGE_*`、`MIN_CATEGORY_FOR_LARGE_RAISE`、
+  `desiredTo`、尺寸网格倍数档、`isoRaiseSizeOf` **全部未动**。缺省 `street`（不传）保持既有语义 ⇒ 向后兼容。
+- 两个调用点（决策 + 诊断）**传同一个 `math.street`**（M2：不得两处口径）；诊断 `allInGuard` 增加
+  `street` 字段（`src/domain/decision/decision.types.ts` 的**类型**同步，纯类型、零行为）。
+
+**修复前失败证据（先写测试，4 项失败 / 7 项通过）**：
+`A·5BB AA：onePairAllInBlocked 期望 false 实际 true`、`A·5BB AA：heuristicScore 期望 >0 实际 0`、
+`M9：3–25BB 扫描中 5–8BB 同样被拦`、`街道矩阵：PREFLOP 期望不适用实际 true`。
+
+**影响面（133 节点指纹，修复前检查点 vs 工作区）**：**最终动作变化 = 0**；
+97 节点仅多出新增的 `street` 字段、其余逐字一致；36 节点发生实质变化，**全部**集中在
+`BB 5/6/7/8BB 面对 3BB 开池`这一族：
+`blocked: true → false`，其中 24 例（AA/KK/AKs/AKo/QQ/TT × 4 深度）`heuristicScore 0 → >0`
+并如实标注 `overrideAttempt = RAISE_HEURISTIC`、
+`overrideBlockedReason = CANNOT_OVERRIDE_CLEAR_SUPPORTED_CALL_WITH_UNEVALUATED_ALL_IN`；
+另 12 例（55/JTs/A5s）**只翻转保护判定、仍拿不到加注准入**（M1：保护没有被无条件取消）。
+翻后节点（含**多人池一对牌 + 全下**这一真实触发点）除新字段外**逐字不变**（M5）。
+
+**残留（须使用者决策，本轮未动）**：翻前全下仍**不会成为最终动作** —— 它没有自有 EV，
+而既有证据纪律规定「打光筹码且没有 EV 的启发式加注不得覆盖清晰的 CALL 证据」
+（`evidencePriority.ts:392-399`）。要让短码推注真正可达，需要为翻前全下建立**自有 EV 模型**（属新增模型，本轮明确禁止）。
+另：保护②（底池比例档）以 `handCategory < 3` 为前提，翻前恒成立，因此**大额非全下加注**仍受该档约束 —— 同一根因的
+第二处实例，需单独授权。
+
+**新增测试**：`test/preflopAllInGuard.test.ts`（**11 项**，修复前 4 项失败 → 修复后 11/11）。
+**审计报告**：`reports/PREFLOP_DECISION_PATH_AUDIT_V1.md`（F1–F8 + 墨菲 M1–M9）。
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 
