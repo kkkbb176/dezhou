@@ -53,6 +53,13 @@ export type ObservationRecord = {
   handId: string;
   /** 稳定玩家标识（**不是**座位号、**不是**显示名） */
   playerId: string;
+  /**
+   * 🔴 **PLAYER PROFILE TABLE UI V1**：当时的显示名。
+   *
+   * 只用于**查找与展示**：同名**绝不**自动合并（身份只认 `playerId`）。
+   * 记录它是因为「选人弹窗」必须能按名字搜索，而显示名不是身份的判据。
+   */
+  displayName?: string;
   /** 当时的座位（用于追溯，不作为身份） */
   seatId: string;
   /** 行动发生的街道 */
@@ -102,6 +109,14 @@ const HISTORY_FILE = 'player-history.jsonl';
  * 以免污染使用者现有的玩家资料。
  */
 export function defaultHistoryDir(): string {
+  /*
+   * 🔴 **PLAYER PROFILE TABLE UI V1**：允许用环境变量隔离目录。
+   *
+   * 浏览器端到端验收必须使用**临时目录**，绝不污染使用者的真实玩家历史
+   *（授权 §五）。生产默认仍是仓库根的 `data/`。
+   */
+  const override = process.env['DSH_PLAYER_HISTORY_DIR'];
+  if (typeof override === 'string' && override.trim().length > 0) return override.trim();
   return join(process.cwd(), 'data');
 }
 
@@ -368,13 +383,102 @@ export function findPlayersByName(
   if (!loaded.ok) return { ok: false, issues: loaded.issues };
   const ids = new Set(
     loaded.records
-      .filter((r) => (r as unknown as Record<string, unknown>)['displayName'] === displayName)
+      .filter((r) => r.displayName === displayName)
       .map((r) => r.playerId),
   );
   return {
     ok: true,
     matches: Object.freeze(
       [...ids].map((playerId) => ({ playerId, handsObserved: statsFromRecords(loaded.records, playerId).handsObserved })),
+    ),
+  };
+}
+
+/* ============================================================
+ * ⑤b 选人弹窗用的已知玩家名册（PLAYER PROFILE TABLE UI V1）
+ * ============================================================ */
+
+/** 名义 K（与 `observedStats.ts` 的收缩常数同量级）⇒ 「实测可信度」= n/(n+K) */
+export const MEASURED_CONFIDENCE_K = 500;
+
+export type KnownPlayer = {
+  playerId: string;
+  displayName: string;
+  handsObserved: number;
+  handsComplete: number;
+  /** 实测可信度 = n/(n+K)（**收缩权重**，不是准确率） */
+  measuredConfidence: number;
+  /** 河牌面对下注：成功次数 / 有效机会数（0 次机会 ⇒ `null`，**绝不显示为 0%**） */
+  foldToRiverBet: { successes: number; opportunities: number } | null;
+  /** 河牌过牌-加注：成功次数 / 有效机会数（同上） */
+  riverCheckRaise: { successes: number; opportunities: number } | null;
+  /** 已进入决策模型的统计项（只有模型真有通道的才会出现） */
+  connectedStatKeys: readonly string[];
+  /** 尚未接通的统计项（**如实列出**，不得标成已生效） */
+  unconnectedStatKeys: readonly string[];
+  noteZh: string;
+};
+
+const CONNECTED_KEYS: readonly string[] = ['foldToRiverBet', 'riverCheckRaise'];
+const UNCONNECTED_KEYS: readonly string[] = [
+  'vpip', 'pfr', 'threeBet', 'wtsd',
+  'foldToFlopCbet', 'foldToTurnCbet', 'flopCheckRaise', 'turnCheckRaise',
+];
+
+function knownPlayerOf(records: readonly ObservationRecord[], playerId: string): KnownPlayer {
+  const stats = statsFromRecords(records, playerId);
+  const displayName =
+    [...records].reverse().find((r) => r.playerId === playerId && typeof r.displayName === 'string')?.displayName ??
+    playerId;
+  const counts = (o: number, s: number) => (o > 0 ? Object.freeze({ successes: s, opportunities: o }) : null);
+  return Object.freeze({
+    playerId,
+    displayName,
+    handsObserved: stats.handsObserved,
+    handsComplete: stats.handsComplete,
+    measuredConfidence: Number(
+      (stats.handsObserved / (stats.handsObserved + MEASURED_CONFIDENCE_K)).toFixed(4),
+    ),
+    foldToRiverBet: counts(stats.opportunities.foldToRiverBet, stats.successes.foldToRiverBet),
+    riverCheckRaise: counts(stats.opportunities.riverCheckRaise, stats.successes.riverCheckRaise),
+    connectedStatKeys: Object.freeze(
+      CONNECTED_KEYS.filter((k) => stats.observedStats !== null && (stats.observedStats as Record<string, unknown>)[k] !== undefined),
+    ),
+    unconnectedStatKeys: Object.freeze([...UNCONNECTED_KEYS]),
+    noteZh: statsNoteZh(stats),
+  });
+}
+
+/**
+ * 已知玩家名册（选人弹窗的数据源）。
+ *
+ * - `query` 为空 ⇒ 返回全部；否则按**显示名或 playerId 的子串**过滤（大小写不敏感）；
+ * - **同名不同 `playerId` 会是两条独立记录**（`duplicateName: true`）——
+ *   使用者必须自己选，前端**不得**自动合并。
+ */
+export function listKnownPlayers(
+  historyDir: string,
+  query = '',
+): HistoryResult<{ players: readonly (KnownPlayer & { duplicateName: boolean })[] }> {
+  const loaded = loadObservations(historyDir);
+  if (!loaded.ok) return { ok: false, issues: loaded.issues };
+  const ids = [...new Set(loaded.records.map((r) => r.playerId))];
+  const all = ids.map((id) => knownPlayerOf(loaded.records, id));
+  const nameCounts = new Map<string, number>();
+  for (const p of all) nameCounts.set(p.displayName, (nameCounts.get(p.displayName) ?? 0) + 1);
+
+  const q = query.trim().toLowerCase();
+  const filtered =
+    q.length === 0
+      ? all
+      : all.filter(
+          (p) => p.displayName.toLowerCase().includes(q) || p.playerId.toLowerCase().includes(q),
+        );
+  filtered.sort((a, b) => b.handsObserved - a.handsObserved || a.playerId.localeCompare(b.playerId));
+  return {
+    ok: true,
+    players: Object.freeze(
+      filtered.map((p) => Object.freeze({ ...p, duplicateName: (nameCounts.get(p.displayName) ?? 0) > 1 })),
     ),
   };
 }
@@ -424,6 +528,7 @@ export function deriveObservations(
       Object.freeze({
         handId,
         playerId,
+        displayName: before.playersById[playerId]?.displayName,
         seatId: seat?.seatId ?? `seat_${action.position}`,
         street: (action.street ?? streetNow) as ObservationRecord['street'],
         actionType: action.type,

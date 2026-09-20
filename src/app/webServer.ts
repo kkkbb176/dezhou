@@ -59,7 +59,7 @@ import {
   type TableApiDeps,
 } from './table/tableApi.ts';
 /* 🔴 PLAYER PROFILE EXPLOIT V1：服务器入口显式开启玩家历史持久化（默认 `data/`） */
-import { defaultHistoryDir } from './table/playerHistory.ts';
+import { defaultHistoryDir, listKnownPlayers } from './table/playerHistory.ts';
 import { tableStateToManualHandInput } from './table/tableAdapter.ts';
 import {
   gtoCatalog,
@@ -453,6 +453,27 @@ async function handleRequest(
 
     if (method === 'GET' && url === '/api/table/meta') {
       sendJson(res, 200, { ok: true, meta: tableMetadata() });
+      return;
+    }
+
+    /*
+     * 🔴 **PLAYER PROFILE TABLE UI V1：已知玩家名册（选人弹窗 + 悬停画像的数据源）**。
+     *
+     * - `?q=` 为空 ⇒ 全部；否则按显示名 / playerId 子串过滤（大小写不敏感）；
+     * - 同名不同 `playerId` 是**两条独立记录**（带 `duplicateName: true`），前端必须让使用者自己选；
+     * - 历史文件损坏 ⇒ 返回 `ok:false` + 明确原因（前端显示「历史读取失败」，
+     *   **绝不**把损坏数据当成真实统计，也**不**显示成 0%）。
+     */
+    if (method === 'GET' && url === '/api/table/players') {
+      const listed = listKnownPlayers(defaultHistoryDir(), params.get('q') ?? '');
+      if (!listed.ok) {
+        sendJson(res, 200, {
+          ok: false,
+          issues: listed.issues.map((i) => ({ code: i.code, message: i.message })),
+        });
+        return;
+      }
+      sendJson(res, 200, { ok: true, players: listed.players });
       return;
     }
 

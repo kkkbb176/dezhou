@@ -474,15 +474,15 @@
     {
       "path": "src/app/webServer.ts",
       "category": "DECISION",
-      "sha256": "9ff2ad714dbd0e1a3f17001fc1e65999992fbe6ed2bc8cd497234f965269a54c",
-      "bytes": 52874,
+      "sha256": "50f19a9a57094941e2707ed80c63b88be08835048adffe68c8053b4dbd6d08f2",
+      "bytes": 53895,
       "impact": "内部测试服务器变化（路由 / 请求校验 / 响应结构 / 监听范围）→ **网页入口的可用性与隐私边界发生变化**"
     },
     {
       "path": "src/app/web/index.html",
       "category": "DECISION",
-      "sha256": "e8b14cf73fe0c390062033f464f0f3ccbf32632cc1cec682e09e10c4a6c13cd1",
-      "bytes": 6460,
+      "sha256": "a9a831750f1751a8273c511f6a07c3fd805b9c83d30daf5d1569aa1211a82001",
+      "bytes": 6625,
       "impact": "中文输入表单与结果页变化 → **使用者看到的界面与输入方式发生变化**（界面不得包含任何策略判断）"
     },
     {
@@ -768,8 +768,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "48394eefa0f1d3daec706ae8ef4439a6738e85dbe17b9aecb62330962c6d9d3b",
-      "bytes": 165548,
+      "sha256": "5e0928d883fb343646676ef7a5fdac703aefba57456a12132b182d7eaab2224c",
+      "bytes": 168727,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -943,15 +943,15 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "2efb3a989fcaec086011288086a468044627e430af07a0a0129155b1d6340f10",
-      "bytes": 83381,
+      "sha256": "0aaad159ff1520ea9b06a995cc34e4ac5d82a968937f24f99b354ceb6ae7c300",
+      "bytes": 94711,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {
       "path": "src/app/web/table.css",
       "category": "DECISION",
-      "sha256": "11b8cc51a60212a98213dc1b547a8653217b10eb9695806a89dcaad8367e6642",
-      "bytes": 14366,
+      "sha256": "67e12b30afadd13c216c931d3ba6c33aaebf95b967fc4c5fc49482e2be47ab47",
+      "bytes": 15762,
       "impact": "牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）"
     },
     {

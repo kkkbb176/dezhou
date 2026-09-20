@@ -802,6 +802,14 @@
 
       var node = el('div', classes.join(' '));
       /*
+       * 🔴 **PLAYER PROFILE TABLE UI V1：把稳定身份暴露到 DOM**。
+       *
+       * 供浏览器验收（`scripts/browser-e2e-player-picker.ts`）断言「这个座位上
+       * 到底绑的是哪一位玩家」—— 只看显示名会被同名玩家骗过。
+       */
+      node.setAttribute('data-player-id', seat.playerId || '');
+      node.setAttribute('data-seat-id', seat.seatId);
+      /*
        * 椭圆布局：`angleDeg` 的约定是 **0° = 6 点钟（正下方）**，
        * 沿行动方向（屏幕上逆时针：下 → 左 → 上 → 右）增大。
        *
@@ -860,8 +868,18 @@
       }
 
       node.onclick = function () {
+        hideSeatTip();
         openSeatMenu(seat);
       };
+      /* 悬停显示真实画像（PLAYER PROFILE TABLE UI V1 §三） */
+      node.onmouseenter = function (ev) {
+        showSeatTip(seat, ev);
+      };
+      node.onmousemove = function (ev) {
+        var tip = $('seatTip');
+        if (tip && tip.className === 'show') positionTip(tip, ev);
+      };
+      node.onmouseleave = hideSeatTip;
       box.appendChild(node);
     });
   }
@@ -1602,6 +1620,224 @@
     }
   }
 
+  /* ============================================================
+   * PLAYER PROFILE TABLE UI V1 · 玩家名册 / 选人弹窗 / 悬停画像
+   * ============================================================
+   *
+   * 数据来源**只有一个**：后端 `/api/table/players`（读真实历史 JSONL）。
+   * 前端**不缓存统计数字**到本地存储、不自己算比率 —— 否则界面与引擎会各说各话。
+   * 未观察到机会的指标后端返回 `null`，前端显示「暂无机会」，**绝不显示 0%**。
+   */
+
+  var rosterCache = null;
+
+  function fetchRoster(query) {
+    var url = '/api/table/players' + (query ? '?q=' + encodeURIComponent(query) : '');
+    return fetch(url, { cache: 'no-store' })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (body) {
+        return body;
+      })
+      .catch(function (e) {
+        return { ok: false, issues: [{ code: 'NETWORK', message: String(e) }] };
+      });
+  }
+
+  function statLine(label, pair) {
+    if (!pair) return label + '：暂无机会（未观察到 ⇒ 不是 0%）';
+    var pct = pair.opportunities > 0 ? Math.round((pair.successes / pair.opportunities) * 100) : null;
+    return (
+      label + '：' + pair.successes + ' / ' + pair.opportunities + ' 次机会' +
+      (pct === null ? '' : '（' + pct + '%）')
+    );
+  }
+
+  function profileTextOf(player) {
+    if (!player) return ['暂无历史记录'];
+    var lines = [];
+    lines.push('玩家：' + player.displayName + '（' + player.playerId + '）');
+    lines.push('历史累计：' + player.handsObserved + ' 手（已完成 ' + player.handsComplete + ' 手）');
+    lines.push('实测可信度（收缩权重）：' + player.measuredConfidence);
+    lines.push(statLine('河牌面对下注弃牌', player.foldToRiverBet));
+    lines.push(statLine('河牌过牌加注', player.riverCheckRaise));
+    lines.push(
+      '已进入决策模型：' +
+        (player.connectedStatKeys.length ? player.connectedStatKeys.join('、') : '无'),
+    );
+    lines.push('尚未接通：' + player.unconnectedStatKeys.join('、'));
+    return lines;
+  }
+
+  /** 悬停提示（**不遮挡公共牌 / 底池 / 行动按钮**：靠边吸附 + 指针穿透关闭） */
+  function showSeatTip(seat, ev) {
+    var tip = $('seatTip');
+    if (!tip) return;
+    var body = ['座位：' + seat.positionZh + '（' + seat.logicalPosition + '）'];
+    if (!seat.playerId) {
+      body.push('空座位 —— 点击可选择历史玩家或新建玩家');
+      tip.textContent = body.join('\n');
+      tip.className = 'show';
+      positionTip(tip, ev);
+      return;
+    }
+    body.push('当前画像：' + (seat.quickProfileZh || '未知') + '（标签先验）');
+    if (seat.dynamicHintZh && seat.dynamicHintZh !== '未知') body.push('近期观察：' + seat.dynamicHintZh);
+    tip.textContent = body.concat(['统计加载中…']).join('\n');
+    tip.className = 'show';
+    positionTip(tip, ev);
+    /** 悬停即取真实统计（只读接口；失败时如实写「读取失败」而不是编数字） */
+    fetchRoster('').then(function (res) {
+      if (tip.className !== 'show') return;
+      if (!res.ok) {
+        tip.textContent = body.concat(['实测统计：读取失败（' + (res.issues || [])[0]?.code + '）']).join('\n');
+        return;
+      }
+      var mine = (res.players || []).filter(function (p) {
+        return p.playerId === seat.playerId;
+      })[0];
+      tip.textContent = body.concat(profileTextOf(mine)).join('\n');
+    });
+  }
+
+  function positionTip(tip, ev) {
+    var x = (ev && ev.clientX ? ev.clientX : 0) + 14;
+    var y = (ev && ev.clientY ? ev.clientY : 0) + 14;
+    var w = 360;
+    if (x + w > window.innerWidth - 8) x = window.innerWidth - w - 8;
+    if (x < 8) x = 8;
+    if (y + 180 > window.innerHeight - 8) y = Math.max(8, (ev ? ev.clientY : 0) - 190);
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+
+  function hideSeatTip() {
+    var tip = $('seatTip');
+    if (tip) tip.className = '';
+  }
+
+  /**
+   * 选人弹窗（授权 §二）。
+   *
+   * | 功能 | 实现 |
+   * |---|---|
+   * | 按名字搜索 | `/api/table/players?q=` |
+   * | 显示名称 / 稳定 id / 区分信息 | `displayName` + `playerId` + 手数 + `duplicateName` 标记 |
+   * | 选择已有玩家入座 | `ADD_PLAYER{seatId, playerId, displayName}`（历史按 **playerId** 绑定） |
+   * | 新建玩家 | `ADD_PLAYER{seatId, displayName}`（新 id，**不继承**任何历史） |
+   * | 同名区分 | 列出全部候选，**绝不自动合并** |
+   */
+  function openPlayerPicker(seat) {
+    openModal(
+      '选择玩家 · ' + seat.positionZh + '（' + seat.logicalPosition + '）',
+      '按名字搜索已有玩家，或新建一位玩家。历史记录按「稳定身份」绑定，换座位不会丢；同名不会合并。',
+      function (modal) {
+        var input = el('input', 'pickerSearch');
+        input.type = 'text';
+        input.setAttribute('data-testid', 'playerSearch');
+        input.placeholder = '输入玩家名称或身份标识搜索…';
+        modal.appendChild(input);
+
+        var listBox = el('div', 'pickerList');
+        modal.appendChild(listBox);
+
+        function renderList(res) {
+          clear(listBox);
+          if (!res.ok) {
+            listBox.appendChild(
+              el('div', 'note danger', '历史读取失败：' + ((res.issues || [])[0]?.message || '未知原因') +
+                '（不会显示任何统计，以免把损坏数据当真实画像）'),
+            );
+            return;
+          }
+          var players = res.players || [];
+          if (players.length === 0) {
+            listBox.appendChild(el('div', 'note', '暂无历史记录 —— 可直接「新建玩家」。'));
+            return;
+          }
+          players.forEach(function (p) {
+            var row = el('div', 'pickerRow');
+            var head = el('div', 'pickerName', p.displayName + (p.duplicateName ? '（同名，请按身份区分）' : ''));
+            row.appendChild(head);
+            row.appendChild(el('div', 'pickerId', '身份 ' + p.playerId + '　历史 ' + p.handsObserved + ' 手'));
+            row.appendChild(
+              el(
+                'div',
+                'pickerStats',
+                statLine('河牌面对下注弃牌', p.foldToRiverBet) + '　｜　' + statLine('河牌过牌加注', p.riverCheckRaise),
+              ),
+            );
+            row.appendChild(
+              el(
+                'div',
+                'pickerConnected',
+                '已进入决策模型：' + (p.connectedStatKeys.length ? p.connectedStatKeys.join('、') : '无') +
+                  '　｜　尚未接通：' + p.unconnectedStatKeys.join('、'),
+              ),
+            );
+            var pick = el('button', 'primary', '让这位玩家入座');
+            pick.setAttribute('data-testid', 'pick-' + p.playerId);
+            pick.disabled = busy();
+            pick.onclick = function () {
+              sendOp({
+                kind: 'ADD_PLAYER',
+                seatId: seat.seatId,
+                playerId: p.playerId,
+                displayName: p.displayName,
+              }).then(function () {
+                rosterCache = null;
+                closeUnlessPending();
+              });
+            };
+            row.appendChild(pick);
+            listBox.appendChild(row);
+          });
+        }
+
+        function refresh() {
+          fetchRoster(input.value).then(function (res) {
+            rosterCache = res;
+            renderList(res);
+          });
+        }
+        input.oninput = refresh;
+        refresh();
+
+        var row = el('div', 'row');
+        var nameInput = el('input', 'pickerNewName');
+        nameInput.type = 'text';
+        nameInput.setAttribute('data-testid', 'newPlayerName');
+        nameInput.placeholder = '新玩家名称（可留空）';
+        row.appendChild(nameInput);
+        var create = el('button', null, '新建玩家并入座');
+        create.setAttribute('data-testid', 'createPlayer');
+        create.disabled = busy();
+        create.onclick = function () {
+          var name = nameInput.value.trim();
+          sendOp({
+            kind: 'ADD_PLAYER',
+            seatId: seat.seatId,
+            ...(name.length > 0 ? { displayName: name } : {}),
+          }).then(function () {
+            rosterCache = null;
+            closeUnlessPending();
+          });
+        };
+        row.appendChild(create);
+        modal.appendChild(row);
+        modal.appendChild(
+          el(
+            'div',
+            'note',
+            '新建玩家得到**新的稳定身份**，不会读取任何旧历史；' +
+              '要让同一位玩家延续历史，请在上面的列表里选择他（按身份匹配，不按名字）。',
+          ),
+        );
+      },
+    );
+  }
+
   function openSeatMenu(seat) {
     if (!seat.playerId) {
       openModal('空座位', seat.positionZh + '（' + seat.logicalPosition + '）', function (modal) {
@@ -1612,6 +1848,12 @@
           sendOp({ kind: 'ADD_PLAYER', seatId: seat.seatId }).then(closeUnlessPending);
         };
         row.appendChild(add);
+        var pickFromHistory = el('button', null, '选择历史玩家…');
+        pickFromHistory.disabled = busy();
+        pickFromHistory.onclick = function () {
+          openPlayerPicker(seat);
+        };
+        row.appendChild(pickFromHistory);
         modal.appendChild(row);
         modal.appendChild(
           el(
@@ -1629,6 +1871,38 @@
       seat.displayName + '　' + seat.positionZh,
       '状态：' + seat.statusZh + '　筹码：' + seat.stackBB + 'BB' + (seat.isHero ? '　（Hero）' : ''),
       function (modal) {
+        /*
+         * 🔴 **PLAYER PROFILE TABLE UI V1**：真实玩家画像（第一行）。
+         *
+         * 数字**只来自后端**（`/api/table/players`，读真实历史 JSONL）；
+         * 没有历史 ⇒ 显示「暂无历史记录」；没有观测机会 ⇒ 显示「暂无机会」，
+         * **绝不**显示 0%，也**绝不**把未接通的指标标成已生效。
+         */
+        var realBox = el('div', 'note drawerProfile');
+        realBox.textContent = '真实历史：加载中…';
+        modal.appendChild(realBox);
+        fetchRoster('').then(function (res) {
+          clear(realBox);
+          if (!res.ok) {
+            realBox.appendChild(el('div', 'danger', '真实历史读取失败：' + ((res.issues || [])[0]?.message || '')));
+            return;
+          }
+          var mine = (res.players || []).filter(function (p) {
+            return p.playerId === seat.playerId;
+          })[0];
+          profileTextOf(mine).forEach(function (line) {
+            realBox.appendChild(el('div', null, line));
+          });
+          realBox.appendChild(
+            el(
+              'div',
+              'hint',
+              '「真实观测统计」来自本工具记录的真实行动；「标签先验」由上面的快速画像提供；' +
+                '「尚未接通」的指标**没有**输入通道，不作为本次决策依据。',
+            ),
+          );
+        });
+
         // ---- 画像 ----
         var profileRow = el('div', 'row');
         profileRow.appendChild(el('div', 'label', '快速画像（只作为输入证据，不直接改结论）'));

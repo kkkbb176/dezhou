@@ -775,3 +775,76 @@ details.debug pre {
 #toast.danger {
   border-color: var(--danger);
 }
+
+/* ============================================================
+ * PLAYER PROFILE TABLE UI V1 · 悬停画像 / 选人弹窗
+ * ============================================================
+ * 悬停提示：`pointer-events: none` ⇒ **永不拦截点击**，
+ * 因此不可能遮挡公共牌、底池或行动按钮（授权 §三）。
+ */
+.seatTip {
+  position: fixed;
+  display: none;
+  pointer-events: none;
+  z-index: 300;
+  max-width: 360px;
+  white-space: pre-line;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.seatTip.show {
+  display: block;
+}
+
+.pickerSearch,
+.pickerNewName {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0;
+  padding: 6px 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.pickerList {
+  max-height: 40vh;
+  overflow-y: auto;
+  margin: 6px 0;
+}
+
+.pickerRow {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.pickerName {
+  font-weight: 600;
+}
+
+.pickerId {
+  opacity: 0.75;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.pickerStats {
+  opacity: 0.85;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.drawerProfile {
+  max-height: 30vh;
+  overflow-y: auto;
+}
