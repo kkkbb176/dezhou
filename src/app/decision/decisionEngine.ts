@@ -1734,8 +1734,39 @@ function pickCandidate(
     const layeredEdge =
       exactLayeredEV !== null && math.winnable > 0 ? exactLayeredEV / math.winnable : null;
 
+    /*
+     * 🔴 **P1 · 单层裁决必须与 CALL EV 用同一把尺子**
+     *（`reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md`）。
+     *
+     * `math.callEV` 的权益输入是 **`EqVsBetRange ?? heroEquity`**（`contextBuilder.ts:585`），
+     * 而 `edge`（本函数上方）用的是 **`math.heroEquity`**（整体/到达范围）。
+     * 上面那段注释声明「单层时 `edge = E − c/winnable = callEV / winnable`」——
+     * 这条恒等式**只在两份条件权益相同时成立**。
+     *
+     * 原始 99 节点（BTN 9♥9♣，转牌面对 BB 20 领打）实测：
+     * `EqVsBetRange = 32.906%`、`heroEquity = 21.546%` ⇒ `callEV / winnable = +3.92%`
+     * 却被 `edge = −7.44%` 判成「数学明显不划算」，一个 **+2.705 筹码的跟注被弃掉**，
+     * 并触发 `ACTION_CONTRADICTS_CHIP_EV`。
+     *
+     * 修法：单层时**直接用已有的 CALL EV 反推**每 1 可争夺筹码的边际
+     *（`callEV / winnable`，与 `edge` 的既有定义式同源，不重复估计权益）。
+     *
+     * ⚠️ 仅在 CALL EV **存在、有限，且 `winnable` 有限且为正**时使用；
+     * 否则保持原有回退（`edge` / `layeredEquity ⇒ null`），**绝不通过除法伪造裁决边际**。
+     * 分层底池优先级（`layeredEdge`）与 `MATH_EV_EPSILON` / `MARGINAL_EV_GAP_RATIO` 均不变。
+     */
+    const singleLayerEdge =
+      exactLayeredEV === null &&
+      !layeredEquity &&
+      math.callEV !== null &&
+      Number.isFinite(math.callEV) &&
+      Number.isFinite(math.winnable) &&
+      math.winnable > 0
+        ? math.callEV / math.winnable
+        : null;
+
     /** 用于硬判的「每 1 可争夺筹码的 EV」；`null` ⇒ 口径不足，不判方向 */
-    const verdictEdge = layeredEdge ?? (layeredEquity ? null : edge);
+    const verdictEdge = layeredEdge ?? (layeredEquity ? null : (singleLayerEdge ?? edge));
 
     /*
      * ============================================================
@@ -1817,6 +1848,22 @@ function pickCandidate(
       const withinTolerance = evEdge !== null && Math.abs(evEdge) <= uncertaintyBandChips;
       /* 🔴 TEST 17：本句同时报「权益」与「跟注 EV」⇒ 两者必须同源（纯标注，不改数值） */
       const callEvEquity = callEvEquityOf(math);
+      /*
+       * 🔴 **P1 · 本句必须描述「判据实际用的那把尺子」**。
+       *
+       * 走 `verdictEdge < −5%` 这条支路时，若 CALL EV 可得，则 `verdictEdge = callEV / winnable`
+       * ⇒ `callEV < 0` ⇒ 用 `EqVsBetRange` 报「权益低于门槛」是**真的**；
+       * 而 CALL EV 不可得时判据退回 `edge`（**整体范围权益**口径），
+       * 此时若仍引用下注范围权益就会出现「32.9% 低于 29.0%」这种自相矛盾的句子
+       *（P1 审计在 99 节点抓到过）。因此按**实际标尺**选择要报的权益。
+       */
+      const foldRuler =
+        math.callEV === null
+          ? {
+              labelZh: '整体范围权益（到达范围；CALL EV 不可得时判据用的标尺）',
+              value: math.heroEquity,
+            }
+          : { labelZh: callEvEquity.usedLabelZh, value: callEvEquity.usedValue };
       reasons.push({
         code: 'MATH_FOLD_DOMINANT',
         textZh:
@@ -1827,7 +1874,7 @@ function pickCandidate(
                 ? `；差距在**模型容差带** ±${uncertaintyBandChips.toFixed(2)} 筹码内（工程容差，不是统计误差），` +
                   '但容差**不改变 EV 排名**，也不自动翻转动作'
                 : '')
-            : `${callEvEquity.usedLabelZh} ${((callEvEquity.usedValue ?? 0) * 100).toFixed(1)}% ` +
+            : `${foldRuler.labelZh} ${((foldRuler.value ?? 0) * 100).toFixed(1)}% ` +
               `低于跟注所需 ${(math.requiredEquity * 100).toFixed(1)}%：` +
               (math.callEV === null
                 ? '跟注在数学上是负期望'

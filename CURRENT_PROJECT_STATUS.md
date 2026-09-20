@@ -418,7 +418,7 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 |---|---|
 | 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
 | 测试代码 | **102 个文件 / 48741 行**（口径：`test/**/*.test.ts`，2026-09-19 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **2,040 项 / 137 套件 / 104 个测试文件**（**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试 | **2,051 项 / 137 套件 / 105 个测试文件**（**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **163 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**P1 审计补登记 `reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md` → 163**；TEST 18 展示轮只刷新既有产物哈希，未新增登记项，数字以生成器输出为准） |
 | Git 状态（TEST 18 RAISE-TO 修复后） | ⚠️ **不是干净基线**：`HEAD = 3899189`（= 已推送 `origin/main` 的 M1 + TEST 17 备份提交），**8 个已修改**（`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`、`src/app/alphaPipeline.ts`、`src/viewmodels/decisionViewModel.ts`、`test/alphaRedteamRegression.test.ts`；另有 `src/app/manualInput/contextBuilder.ts`、`src/app/decision/decisionEngine.ts`、`src/infra/artifactDefinitions.ts`、`test/playerIdentityRouting.test.ts` 为**已提交**状态下的既有改动）+ 未跟踪的 M1 / TEST 17 / TEST 18 相关源文件、测试、报告与证据（一律保留）。**TEST 18 改动尚未提交、尚未推送**（未获授权）。完整恢复检查点：`%TEMP%\dezhou-checkpoint-test18-20260919-221459`（664 文件 + `FILES.sha256.txt`，逐位校验 0 差异） |
@@ -1623,6 +1623,32 @@ P1-2b `FOLD = −80`、`CALL = −67.732181090706945`（分支 `CALL`）；最�
 **影响面**：扫描 75 局面中 **15 例**命中（全部为「中对 / 边缘摊牌价值」牌面），方向单向（只会弃掉本该跟的牌）。
 **待授权**：最小修复 = 硬判标尺与 `callEV` 同源（保留 layeredEdge / layeredEquity 优先级与全部阈值）+
 带内文案改说「无差别带内取代价最小方向」+ 新增 6 条失败测试（P1-1…P1-6）+ 全量 verify 与指定回归。
+
+### 10.0.21 P1 · CALL/FOLD 裁决标尺最小修复（2026-09，**已实施，未提交**）
+
+**授权**：§10.0.20 的缺陷修复（"本轮只修复 CALL/FOLD 决策依据不一致"）。
+**检查点**：`%TEMP%\dezhou-checkpoint-p1fix-20260920-102512`（675 文件 + sha256，逐位 0 差异）。
+
+**生产改动（1 个文件，1 处表达式 + 1 处文案）**：
+
+- `src/app/decision/decisionEngine.ts` 新增 `singleLayerEdge`：**单层**（`layeredEV` 缺失且
+  `requiredEquityApplies === true`）且 `callEV` 有限、`winnable` 有限为正时，
+  `verdictEdge = callEV / winnable`（与 `edge` 的既有定义式同源，**不重复估计权益**）；
+  否则保持原回退（`edge` / `layeredEquity ⇒ null`），**绝不用除法伪造裁决边际**。
+  `MATH_EV_EPSILON` / `MARGINAL_EV_GAP_RATIO` / 容差带 / CALL EV 公式 / FOLD 零点 **均未改动**。
+- 同分支文案：`MATH_FOLD_DOMINANT` 现在报**判据实际使用的标尺**（CALL EV 可得时 = 下注范围权益；
+  不可得时 = 整体范围权益），消除「32.9% 低于 29.0%」这类自相矛盾句。
+
+**原始 99 节点（修复后，生产链自选）**：`CALL EV = +2.705235410024` ｜ **最终动作 `CALL 20`**
+（理由 `MATH_CALL_SUPPORTED`：「对手下注范围权益 32.9% 高于跟注所需 29.0% … 差距在模型容差带 ±3.45 内
+⇒ 置信度偏低，但 EV 排名不变」）｜ `consistency.ok = true` ｜ 用户可见 warnings = 空 ｜ 分类仍是 `MARGINAL`。
+
+**影响面（125 局面扫描，5 节点形状 × 5 画像 × 5 统计形态）**：动作变化 **15 例**，全部是
+「转牌·面对领打（99）」这一节点，**FOLD → CALL 20**；`ACTION_CONTRADICTS_CHIP_EV` 由 **15 例降为 0 例**；
+其余 **110 例逐位不变**（含 A♣J♣ 转牌、A♠A♥ 河牌、K♣Q♣ 翻牌、无人下注节点）。多人边池与分层 EV 路径未触碰。
+
+**新增测试**：`test/callFoldVerdictRuler.test.ts`（**11 项**，A/B/C·D/E·F/H·J/I/K/L/M/N；修复前 4 项失败、
+修复后 11/11）。
 
 ### 10.1 测试基准的历史教训**测试数量不是产品进度。** 1,242 项测试不代表「软件完成 100%」。它代表的是：**已经写下的东西有保障**，而不是**该写的东西已经写完**。
 
