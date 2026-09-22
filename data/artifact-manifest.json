@@ -1055,15 +1055,15 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "4ee1d966160552f4cab7170aa7450aaf397d1380c893ff7c4d3fa482d2fa252f",
-      "bytes": 107252,
+      "sha256": "8c4e01b107447ec6b42563ab293e4753afb84ac38b20cd038a60c360a0df776c",
+      "bytes": 111421,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {
       "path": "src/app/web/table.css",
       "category": "DECISION",
-      "sha256": "de978750fdf4351e5fe6f60e95f57e1d9074aacbd1caa64fe7c122765513cfcc",
-      "bytes": 17464,
+      "sha256": "27a481303c8fd99867fa639dfd2b85b59430aecc99ab5ea586e62192f4936940",
+      "bytes": 21090,
       "impact": "牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）"
     },
     {

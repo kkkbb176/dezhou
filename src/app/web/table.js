@@ -2615,7 +2615,97 @@
     });
   }
 
+  /**
+   * ============================================================
+   * LIVE UI V1：把**低频区域**折起来（最小 DOM 变更，幂等）
+   * ============================================================
+   *
+   * ## 为什么折叠而不是删掉
+   *
+   * 任务第五节要求「保留现有 GTO、人物画像、决策分析及调试能力，
+   * 但**不默认占用主界面**」。所以它们是**收起来**，不是移除。
+   *
+   * ## 折叠哪一块（实测依据）
+   *
+   * 1366×768 下文档高 1028px（要滚 2 屏）。逐块量高度后，最该收的是
+   * **牌面选择器（52 张牌 ≈ 183px）** —— 它只在开局选 Hero 手牌时用一次。
+   *
+   * ## 为什么用原生 `<details>`
+   *
+   * 在 `app` 里加一个 `collapsed` 字段就要在 `render()` 里同步它，
+   * 而 `render()` 每录一个动作都跑 —— 那是没必要的耦合。
+   * 原生 `<details>` 由浏览器维护开合，**不占 app 状态、不需要 render 参与**。
+   *
+   * ## ⚠️ 第一版把布局弄坏了，这里记录原因
+   *
+   * 第一版为了「把兄弟内容一起收进去」，写了
+   * `while (parent.firstChild) details.appendChild(parent.firstChild)`
+   * —— 它把**整个父容器的子节点**都搬进 details。于是：
+   *
+   * - `#handPanel` 的标题与内容被搬走 ⇒ 面板只剩 40px，Hero 手牌看不见了；
+   * - 生成一个 `summary` 为空的嵌套 details；
+   * - 折叠看着"生效"，实际收错了东西。
+   *
+   * 现在改成**只移动目标元素自己**，插回原位置，父容器与兄弟都不动。
+   */
+  function setupCollapsiblePanels() {
+    /** 把 id 元素本身包进 <details>；open 决定默认是否展开 */
+    function wrap(id, summaryText, open) {
+      var target = document.getElementById(id);
+      if (!target) return;
+      if (target.parentNode && target.parentNode.classList &&
+          target.parentNode.classList.contains('collapsible-body')) return; /* 幂等 */
+
+      var details = document.createElement('details');
+      details.className = 'collapsible';
+      if (open === true) details.open = true;
+
+      var summary = document.createElement('summary');
+      summary.textContent = summaryText;
+      details.appendChild(summary);
+
+      var body = document.createElement('div');
+      body.className = 'collapsible-body';
+
+      /*
+       * ⚠️ **必须对 DOM 能力做检测**，不能直接用 `insertBefore`。
+       *
+       * 本仓库的前端测试跑在一个**极简假 DOM** 上（`test/helpers/tableJsHarness.ts`），
+       * 它只实现了 `appendChild` / `removeChild`，**没有** `insertBefore`。
+       * 第一版这里直接调 `target.parentNode.insertBefore(...)`，于是在假 DOM 里：
+       *
+       * ```text
+       * TypeError: Cannot read properties of null (reading 'insertBefore')
+       *   at wrap → setupCollapsiblePanels → boot
+       * ```
+       *
+       * `boot()` 一抛错，**整个表格初始化就停了** ⇒ `newTableModal` 的 8 个测试
+       * 全部失败。也就是说：一处非核心的渐进增强，把主流程弄挂了。
+       *
+       * 真浏览器里 `insertBefore` 存在，走它（details 插在原位置，顺序不变）；
+       * 否则退化为 `removeChild` + `appendChild`（假 DOM 足够用）。
+       */
+      var parent = target.parentNode;
+      if (parent === null || parent === undefined) return;
+      if (typeof parent.insertBefore === 'function') {
+        parent.insertBefore(details, target);
+      } else {
+        if (typeof parent.appendChild === 'function') parent.appendChild(details);
+        else return;
+      }
+      if (typeof parent.removeChild === 'function') parent.removeChild(target);
+      body.appendChild(target);
+      details.appendChild(body);
+    }
+
+    /* 牌面选择器：默认收起（开局需要时点开） */
+    wrap('cardPicker', '牌面选择器（点开选 Hero 手牌 / 公共牌）', false);
+    /* 说明：默认收起（它原本占 216px，比建议区还高） */
+    wrap('limits', '说明与限制（点开查看）', false);
+  }
+
   function boot() {
+    setupCollapsiblePanels();
     bindTopbar();
     /*
      * 「GTO 范围」入口。

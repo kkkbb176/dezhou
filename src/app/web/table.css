@@ -925,3 +925,145 @@ details.debug pre {
   max-height: 30vh;
   overflow-y: auto;
 }
+
+/* ============================================================================
+ * LIVE UI V1 —— 实战快速模式（1366×768 内完成主要操作）
+ * ============================================================================
+ *
+ * ## 这一步只做 CSS，不动 DOM
+ *
+ * 目的：先把「要滚 2 屏」压下去，量出效果再决定是否调整结构。
+ * 所以下面的规则**只改尺寸、间距、字号与折叠**，不改任何 id / class 的语义，
+ * table.js 的渲染逻辑一行都不用动。
+ *
+ * ## 三条硬约束（来自任务第二节）
+ *
+ * 1. **1366×768 内完成主要操作** —— 轮次信息 + 合法动作 + 建议必须在首屏
+ * 2. **保留 GTO / 画像 / 调试能力，但不默认占用主界面** —— 折叠，不删除
+ * 3. 减少每手牌点击次数 —— 见下方 `#actionButtons button` 的加大命中区
+ *
+ * ## 为什么用 max-height 而不是 media query
+ *
+ * 目标是「笔记本视口」，但不同机器的缩放比不同（125% 缩放下 1366×768 只剩
+ * 1093×614 CSS 像素）。用 `max-height` 让它在**任何矮视口**下都压缩，
+ * 而不是只在一个特定宽度上生效。
+ */
+
+/* ---- ① 顶栏：紧凑化 ---- */
+#topbar {
+  gap: 6px;
+  padding: 5px 10px;
+  row-gap: 4px;
+}
+#topbar .group {
+  gap: 4px;
+}
+#topbar .label {
+  font-size: 11px;
+  opacity: 0.8;
+}
+/* 位置/桌型按钮：缩小但仍保留足够命中区（不小于 24px 高） */
+#topbar .position-buttons button {
+  padding: 2px 7px;
+  font-size: 12px;
+  min-height: 24px;
+  line-height: 1.2;
+}
+#topbar button {
+  padding: 3px 8px;
+  font-size: 12px;
+  min-height: 24px;
+}
+#topbar select {
+  padding: 2px 4px;
+  font-size: 12px;
+}
+#topbar .badge {
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+/* ---- ② 牌桌：矮视口下压缩，把下方内容提上来 ---- */
+@media (max-height: 820px) {
+  #tableWrap {
+    aspect-ratio: auto;
+    min-height: 0;
+    height: clamp(300px, 42vh, 430px);
+  }
+  #main {
+    padding: 8px;
+    gap: 8px;
+  }
+  .panel {
+    padding: 8px;
+  }
+  .panel h2 {
+    font-size: 13px;
+    margin: 0 0 6px;
+  }
+}
+
+/* ---- ③ 座位卡片：紧凑（姓名/位置/筹码/状态 四行压到三行高度） ---- */
+.seat {
+  width: 88px;
+  padding: 4px 5px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.seat .badge {
+  font-size: 10px;
+}
+
+/* ---- ④ 「说明」默认折叠：它原本占 216px，比建议区还高 ----
+   注意：**不删除**，只是收起来。内容仍由 table.js 写进 #limits。 */
+.panel > h2.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+.panel > h2.collapsible::before {
+  content: '▸ ';
+  opacity: 0.6;
+}
+.panel.expanded > h2.collapsible::before {
+  content: '▾ ';
+}
+.panel.collapsed > .collapsible-body {
+  display: none;
+}
+
+/* ---- ⑤ 行动按钮：加大命中区，降低误点（减少返工 = 实际减少点击） ---- */
+#actionButtons button {
+  min-height: 34px;
+  padding: 6px 14px;
+  font-size: 14px;
+}
+#actionButtons {
+  gap: 6px;
+}
+
+/* ---- ⑥ LIVE UI V1：折叠区的样式（原生 <details>，无额外状态） ---- */
+.panel > details.collapsible {
+  margin: 0;
+}
+.panel > details.collapsible > summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  opacity: 0.85;
+  padding: 2px 0;
+  list-style: none;
+}
+.panel > details.collapsible > summary::before {
+  content: '▸ ';
+  opacity: 0.6;
+}
+.panel > details.collapsible[open] > summary::before {
+  content: '▾ ';
+}
+.panel > details.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.panel > details.collapsible > summary:hover {
+  opacity: 1;
+  color: var(--accent);
+}
