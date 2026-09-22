@@ -495,8 +495,8 @@
     {
       "path": "src/app/web/index.html",
       "category": "DECISION",
-      "sha256": "c49a7244645930acbd426399e1acfc22297534fa2117896ba097769ae14ab45f",
-      "bytes": 11079,
+      "sha256": "e61944bde70b99dcd3caaef34f60081f0357c2b346fcd706a7e6e691180ff4fe",
+      "bytes": 10918,
       "impact": "中文输入表单与结果页变化 → **使用者看到的界面与输入方式发生变化**（界面不得包含任何策略判断）"
     },
     {
@@ -803,7 +803,7 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "dba435d88be108a92feb1d3970e6395993644adf5d24e03b6daa3443d217796f",
+      "sha256": "9cb9857257055b8ef995e0b099abc29921be43965137d21313099d1530f4e8c6",
       "bytes": 179179,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
@@ -873,8 +873,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "1b4840e7dca2accb66e6fda8dea3b4bf7847d30a33ee7301c22a93840a3b8957",
-      "bytes": 76769,
+      "sha256": "d8952b87133f37adaab654f3488f3063d088ccf0b623b6e61c5964e0d8606dd7",
+      "bytes": 76898,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -1055,16 +1055,16 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "bdc6e22ca16b4d3d407340aadadae5c74bfa1feb61f8dc95b447c060e20f3dea",
-      "bytes": 132098,
+      "sha256": "1b8a36fe27d99ba3fec33f16bc69479109056e52710956e75a26f9793d95f9ca",
+      "bytes": 144877,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {
-      "path": "test/liveUiV2.test.ts",
+      "path": "test/liveUiV3.test.ts",
       "category": "DECISION",
-      "sha256": "dc3c95b50fee42def836b18bcc1326145b4f1373bacd0e7db589dcd653d1865b",
-      "bytes": 27228,
-      "impact": "LIVE UI V2 的**界面与交互回归锁**变化 → 「空座位只显示加号且仍可点开真实座位菜单」「最近动作最多 5 条并如实说明前面还有几条」「🔴 服务端的建议绝不能被当成 Hero 的实际动作写进牌局」「切到录入历史必须收起旧建议」「主要动作按钮 ≥ 42px / 座位卡片 92×48 / 顶栏 44px 与右栏 380px」「🔴 body 锁死纵向滚动」「🔴 不用大面积绿色毡面与任何渐变」「蓝色只给 Hero 与当前行动者」「右栏顺序必须是行动者→动作→建议→最近动作」「table.css 里 V1 的 11 段覆盖块必须消失」「index.html 必须在其后加载 live-ui.css」「代码里不得再用 insertBefore」「重叠请求结束后控件必须复原」这些保证发生变化；删掉任何一条断言都等于放弃对应的界面纪律"
+      "sha256": "fa84227d4f9e02fae9cb80f2362e8dd254ae3247e8ef294d1ab5e70566987412",
+      "bytes": 37459,
+      "impact": "LIVE UI V3 的**界面与交互回归锁**变化 → 「空座位只显示加号且仍可点开真实座位菜单」「最近动作最多 5 条并如实说明前面还有几条」「🔴 服务端的建议绝不能被当成 Hero 的实际动作写进牌局」「切到录入历史必须收起旧建议」「主要动作按钮 ≥ 42px / 座位卡片 92×48 / 顶栏 44px 与右栏 380px」「🔴 body 锁死纵向滚动」「🔴 不用大面积绿色毡面与任何渐变」「蓝色只给 Hero 与当前行动者」「右栏顺序必须是行动者→动作→建议→最近动作」「table.css 里 V1 的 11 段覆盖块必须消失」「index.html 必须在其后加载 live-ui.css」「代码里不得再用 insertBefore」「🔴 没有拟物椭圆牌桌」「🔴 九个座位必须落进九个不同单元格且不占用中心牌面区」「重叠请求结束后控件必须复原」这些保证发生变化；删掉任何一条断言都等于放弃对应的界面纪律"
     },
     {
       "path": "reports/LIVE_UI_V2_GIT_AND_MERGE.md",
@@ -1090,8 +1090,8 @@
     {
       "path": "src/app/web/live-ui.css",
       "category": "DECISION",
-      "sha256": "d9159a3556e2a06e9e9cba1fced45477ac7482d66389bc5de21a1964327bf949",
-      "bytes": 27919,
+      "sha256": "f59bff6d0899a2d50f2b12d13a6d24687e965accd737d750d2599595e2adb1c2",
+      "bytes": 35822,
       "impact": "LIVE UI V2 布局与外观的唯一来源（顶栏 44px / 左椭圆牌桌 / 右 380px 操作台）变化 → **实战录入时的可见信息与可点击区域发生变化**；🔴 它同时承担三条界面纪律的视觉实现：(1) **不用大面积绿色毡面**、蓝色只给 Hero 与当前行动者；(2) 主操作按钮 ≥ 42px、座位卡片 ≥ 90×48px（不得为塞进一屏而缩小到难以点击）；(3) 1366×768 下正常录入一手牌**不出现纵向滚动**；改这里等于改变「使用者一眼能看到什么」，而看不清当前行动者与合法动作会直接导致录入错误"
     },
     {
@@ -1160,8 +1160,8 @@
     {
       "path": "test/interactiveTableRedteam2.test.ts",
       "category": "DECISION",
-      "sha256": "a798caaa123b0b9285cf65162358591091f069af361883e3fba0cf4f23fa854e",
-      "bytes": 31810,
+      "sha256": "a96a9a1985567480fae69e9b82a38d83230348cb74e2c1b8f6cf912acc509321",
+      "bytes": 31850,
       "impact": "红队第二轮（F-01/F-02/V-xx）的永久回归测试变化 → 对应修复的保护强度发生变化；含一个 **DOM 桩**真实执行 `table.js`（能抓到「渲染残骸让整块面板不再更新」这类缺陷）"
     },
     {
@@ -1251,8 +1251,8 @@
     {
       "path": "test/helpers/tableJsHarness.ts",
       "category": "DECISION",
-      "sha256": "c5646cbae2cd06cf1c59e205a16530fe9958ac16029ea216ccb15c41e9d1329c",
-      "bytes": 27617,
+      "sha256": "81d8883e670daf7ab328210d9ead0692934c6c8febef94672effa7fa9957d2e4",
+      "bytes": 27749,
       "impact": "**执行 `table.js` 的 harness**（DOM 桩 / 可控 fake timer / 真后端语义 fetch 桩 / bootstrap）变化 → **依赖它的生产路径回归可能「假绿」**：例如 fake timer 若不再支持取消或不再能精确 fire，Case B / Case E 会静默失去鉴别力，而测试仍然全绿；因此它不是普通测试工具，而是上述保证证据链的组成部分。本文件刻意**不含**任何 `CURRENT_DECISION` / `HISTORY_ENTRY` 业务判断"
     },
     {

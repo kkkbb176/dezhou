@@ -1122,16 +1122,17 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」',
   },
   {
-    path: 'test/liveUiV2.test.ts',
+    path: 'test/liveUiV3.test.ts',
     category: ManifestCategory.DECISION,
     impact:
-      'LIVE UI V2 的**界面与交互回归锁**变化 → ' +
+      'LIVE UI V3 的**界面与交互回归锁**变化 → ' +
       '「空座位只显示加号且仍可点开真实座位菜单」「最近动作最多 5 条并如实说明前面还有几条」' +
       '「🔴 服务端的建议绝不能被当成 Hero 的实际动作写进牌局」「切到录入历史必须收起旧建议」' +
       '「主要动作按钮 ≥ 42px / 座位卡片 92×48 / 顶栏 44px 与右栏 380px」' +
       '「🔴 body 锁死纵向滚动」「🔴 不用大面积绿色毡面与任何渐变」「蓝色只给 Hero 与当前行动者」' +
       '「右栏顺序必须是行动者→动作→建议→最近动作」「table.css 里 V1 的 11 段覆盖块必须消失」' +
       '「index.html 必须在其后加载 live-ui.css」「代码里不得再用 insertBefore」' +
+      '「🔴 没有拟物椭圆牌桌」「🔴 九个座位必须落进九个不同单元格且不占用中心牌面区」' +
       '「重叠请求结束后控件必须复原」这些保证发生变化；' +
       '删掉任何一条断言都等于放弃对应的界面纪律',
   },
