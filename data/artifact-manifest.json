@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1.0.0",
-  "generatedAt": "2026-09-21",
+  "generatedAt": "2026-09-22",
   "generator": "npm run manifest（src/infra/artifactManifest.ts）",
   "exclusions": [
     {
@@ -1055,8 +1055,8 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "b49f3c368fbc78f67e5ba0a419636cd9c4acecfa12430d832ab9de6706fb67ed",
-      "bytes": 106525,
+      "sha256": "4ee1d966160552f4cab7170aa7450aaf397d1380c893ff7c4d3fa482d2fa252f",
+      "bytes": 107252,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {

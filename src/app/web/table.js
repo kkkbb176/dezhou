@@ -2685,6 +2685,19 @@
       app: app,
       render: render,
       renderResult: typeof renderResult === 'function' ? renderResult : null,
+      /*
+       * 🔴 把**真实用户点击所走的那一步**也暴露出来。
+       *
+       * 为什么必须带上它：只改 `app.state` 会让 `app.preview` 停在旧值，
+       * 于是横幅 / 时间线 / 行动者显示的是**上一手**的内容 ——
+       * 验收脚本会把这个不一致误报成产品缺陷
+       * （我第一次截图就踩到了：建议区已经出了「全下」，
+       * 横幅却还写着「本手还没开始」）。
+       *
+       * `applyTableResponse` 是「服务端响应 → state + preview」的**唯一**入口，
+       * 挂上它之后，验收走的就是与真实点击完全相同的那条路。
+       */
+      applyTableResponse: applyTableResponse,
     };
   } catch (hookError) {
     /* 钩子失败绝不影响页面 */
