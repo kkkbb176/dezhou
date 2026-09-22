@@ -1067,3 +1067,147 @@ details.debug pre {
   opacity: 1;
   color: var(--accent);
 }
+
+/* ---- ⑦ LIVE UI V1：快捷尺寸行（常用尺寸一次点击即录入） ----
+ * 依据：任务第五节要求「加注提供来自现有合法动作数据的快捷尺寸」。
+ * 这里**不计算任何金额** —— 按钮由后端 `actionButtons` 里 group='SIZE' 的项直接渲染，
+ * 它们本身就是合法动作、自带精确 amountChips，点了即发 ACT。 */
+#quickSizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+#quickSizes .qs-label {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-right: 2px;
+}
+#quickSizes button {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-color: var(--accent-dim);
+}
+#quickSizes button.quick {
+  border-color: var(--accent);
+}
+#quickSizes button.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+#quickSizes .qs-all {
+  opacity: 0.8;
+}
+
+/* ============================================================================
+ * LIVE UI V1 阶段 2B：右列加宽 + 竖向堆叠压缩
+ * ============================================================================
+ *
+ * ## 实测问题
+ *
+ * 右列固定 320px 时，「当前行动」面板宽 320 ⇒ 统计格（7 个键值对）只能一行一对，
+ * 单它一项就占 **118px**；行动按钮 4 颗挤成两行（74px）；快捷尺寸 5 颗占 **102px**。
+ * 面板总高 **477px**，把文档撑到 1028px（要滚 2 屏）。
+ *
+ * ## 处理
+ *
+ * 1. 右列 320 → 420px（左列仍有余量：牌桌是等宽自适应的）
+ * 2. 统计格改成**多列**：宽度够就一行放多对，高度直接砍半
+ * 3. 「重新分析」按钮降级为小号（正常流程用不到它 —— 自动分析会跑）
+ */
+
+#main {
+  grid-template-columns: minmax(0, 1fr) 420px;
+}
+
+/* 窄视口（<1100px）回落到单列，避免右列把牌桌挤扁 */
+@media (max-width: 1100px) {
+  #main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 统计格：从「一行一对」改为**自适应多列**，这是右列里最占高度的一块 */
+.statGrid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 2px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.statGrid .k {
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+/* 「重新分析」：正常流程不需要点，降级为次要按钮 */
+#analyzeBtn:not(.primary) {
+  min-height: 26px;
+  padding: 2px 10px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* ---- ⑧ LIVE UI V1：「重新分析」+ 尺寸提示 并排（省一行） ---- */
+.actionMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.actionMeta #sizeButtons {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.75;
+}
+.actionMeta #analyzeBtn {
+  flex: 0 0 auto;
+}
+
+/* ---- ⑨ LIVE UI V1：矮视口下牌桌再压一档，把决策区顶进首屏 ----
+ * 依据：任务第二节第 4 条「1366×768 内完成主要操作」。
+ * 420px 右列下实测整页 930px，仍差约 100px；
+ * 牌桌是**纯展示区**（座位与公共牌），压缩它不影响任何操作，
+ * 而右下方的行动按钮/快捷尺寸/建议必须留在首屏。 */
+@media (max-height: 820px) {
+  #tableWrap {
+    height: clamp(240px, 34vh, 320px);
+  }
+}
+
+/* ---- ⑩ 修正：`#analyzeBtn` 的 `width:100%` 在新容器里必须让位 ----
+ * 它原来独占整行，所以 width:100% 是对的；现在与尺寸提示并排，
+ * 若仍占 100% 会把 flex 行撑成两行（实测 .actionMeta 高 43px 而不是 ~26px）。 */
+.actionMeta #analyzeBtn {
+  width: auto;
+  margin-top: 0;
+  padding: 4px 12px;
+  min-height: 30px;
+  font-size: 13px;
+}
+
+/* ---- ⑪ 让行动按钮与快捷尺寸**各占一行**（实测两行会让右列高 140px） ----
+ *
+ * 420px 右列扣掉面板内边距后约 400px 可用：
+ *   4 颗行动按钮（弃牌 / 跟注 1.5BB / 加注（选尺寸） / 全下（100BB））
+ *   3 颗快捷尺寸（加注到 2BB / 2.5BB / 3BB）
+ * 原内边距 6px 14px + 字号 14px 时两者都刚好**多出约 15px**，于是各换一行。
+ * 收紧内边距与字号即可一行放下 —— 命中区仍 ≥30px，不影响点击准确度。 */
+#actionButtons button {
+  padding: 5px 9px;
+  font-size: 13px;
+  min-height: 32px;
+}
+#quickSizes button {
+  padding: 4px 8px;
+  font-size: 12.5px;
+  min-height: 28px;
+}
+#quickSizes .qs-label {
+  font-size: 10.5px;
+}

@@ -1168,6 +1168,77 @@
       );
     }
 
+    /*
+     * ============================================================
+     * LIVE UI V1：**快捷尺寸行**（把加注从 2 击降到 1 击）
+     * ============================================================
+     *
+     * ## 解决的问题（实测）
+     *
+     * 「加注」原本是三步：点「加注（选尺寸）」→ 再点具体尺寸 → 才发出动作。
+     * 而弃牌/跟注/全下都是 1 击。加注恰恰是实战里最常用、也最需要快的动作。
+     *
+     * ## 为什么这不是「前端自己算金额」（任务第五节的红线）
+     *
+     * 下面每一颗按钮用的都是后端 `preview.actionButtons` 里 `group === 'SIZE'`
+     * 的项 —— 它们**本身就是合法动作**，且自带后端算好的精确 `amountChips`。
+     * 前端只决定「把哪几个排到最前面」，**不计算任何金额、不判断任何合法性**。
+     * 最小加注 / 有效筹码 / 全下保护全部仍由后端裁决。
+     *
+     * ## 排序依据
+     *
+     * 按 `amountBB` 升序 —— 尺寸网格本来就是递增的，升序即「从小到大」，
+     * 与使用者心里「加多少」的顺序一致。
+     * 不按「离某个理想值最近」排序：那需要前端知道理想值是多少，属于策略判断。
+     *
+     * ## 默认显示前几个
+     *
+     * **3 个**：实测 5 个在 420px 右列里要占 102px（两行），而 3 个只占一行。
+     * 其余仍可通过点「加注（选尺寸）」用完整列表 —— **没有减少任何可选项**。
+     */
+    var QUICK_SIZE_LIMIT = 3;
+    var quickBox = $('quickSizes');
+    if (quickBox === null) {
+      quickBox = el('div', null, '');
+      quickBox.id = 'quickSizes';
+      /* 插在 #actionButtons 之后，与主行动按钮同区，位置固定 */
+      if (box.parentNode !== null && box.parentNode !== undefined) {
+        if (typeof box.parentNode.insertBefore === 'function') box.parentNode.insertBefore(quickBox, box.nextSibling);
+        else box.parentNode.appendChild(quickBox);
+      }
+    }
+    clear(quickBox);
+    if (sizes.length > 0) {
+      var ordered = sizes.slice().sort(function (x, y) {
+        return (x.amountChips === undefined ? 0 : x.amountChips) - (y.amountChips === undefined ? 0 : y.amountChips);
+      });
+      var isBet = ordered[0].type === 'BET';
+      quickBox.appendChild(el('span', 'qs-label', (isBet ? '下注' : '加注') + '快捷：'));
+      ordered.slice(0, QUICK_SIZE_LIMIT).forEach(function (button) {
+        var b = el('button', 'quick', button.labelZh);
+        b.setAttribute('data-quick-size', String(button.amountChips));
+        b.onclick = function () {
+          app.sizeExpanded = null;
+          sendOp({
+            kind: 'ACT',
+            action: {
+              type: button.type,
+              ...(button.amountChips !== undefined ? { amountChips: button.amountChips } : {}),
+            },
+          });
+        };
+        quickBox.appendChild(b);
+      });
+      if (ordered.length > QUICK_SIZE_LIMIT) {
+        var more = el('button', 'qs-all' + (app.sizeExpanded !== null ? ' active' : ''), '其余 ' + (ordered.length - QUICK_SIZE_LIMIT) + ' 个尺寸…');
+        more.onclick = function () {
+          app.sizeExpanded = app.sizeExpanded === ordered[0].type ? null : ordered[0].type;
+          render();
+        };
+        quickBox.appendChild(more);
+      }
+    }
+
     var blockers = $('blockers');
     clear(blockers);
     if (p.analyzeBlockers.length > 0) {
@@ -1241,15 +1312,72 @@
     metaLine.id = 'resultMeta';
     box.appendChild(metaLine);
 
+    /*
+     * ============================================================
+     * LIVE UI V1：**详细分析默认折叠**
+     * ============================================================
+     *
+     * ## 解决的问题（实测）
+     *
+     * 1366×768 下，录完一手之后文档高会涨到 **1675px（要滚 3 屏）**，
+     * 而元凶是这一块：「建议」面板单块 **832px** —— 决策理由全文 +
+     * 范围明细 + GTO 状态 + 桌况。它在宽 320px 的右列里逐行折行，
+     * 于是把整页撑成三屏。
+     *
+     * ## 折叠规则（任务第八节第 5 条）
+     *
+     * | 保留在**外面**（必须一眼看到） | 收进**详细分析**（需要时才看） |
+     * |---|---|
+     * | 建议动作（`actionZh`） | 决策理由全文 |
+     * | 建议尺寸 / 置信度 / 分类 | 警告与披露 |
+     * | | 对手范围来源与指标 |
+     * | | GTO 取数结局 |
+     *
+     * ## 为什么不是删掉
+     *
+     * 任务第五节要求保留「决策分析」能力。折叠后内容一字不少，
+     * 点一下 summary 就展开；而且**默认收起**才符合「不默认占用主界面」。
+     *
+     * ## 为什么用 `<details open=false>` 而不是 CSS 隐藏
+     *
+     * 与 `setupCollapsiblePanels` 同一个理由：不占 `app` 状态、
+     * 不需要 `render()` 参与开合。这里每次 `render()` 重建 innerHTML 语义，
+     * 但 `open` 状态需要**跨渲染保留**（录下一个动作时不该自动弹开），
+     * 因此从**既有 DOM** 继承上一次的 `open`（见下）。
+     */
+    /*
+     * ⚠️ **必须做能力检测**：本仓库的前端测试跑在极简假 DOM 上
+     * （`test/helpers/tableJsHarness.ts`），它只实现了 `querySelectorAll`，
+     * **没有 `querySelector`**。第一版这里直接调 `box.querySelector(...)`，
+     * 于是在假 DOM 里抛 `TypeError: box.querySelector is not a function`
+     * ⇒ `renderResult` 中断 ⇒ 整个 `render()` 挂掉
+     * ⇒ `autoAnalyzeHistoryEntry` 的 Case J 与 `fillSeatsUi` 的 FILLUI-06 失败。
+     *
+     * ⚠️ 这是我在本轮**第二次**踩同一类坑（第一次是 `insertBefore`）。
+     * 结论：给这个前端加任何 DOM API 之前，先确认假 DOM 有没有实现它。
+     */
+    var prevDetails = null;
+    if (typeof box.querySelector === 'function') {
+      prevDetails = box.querySelector('details.analysisDetails');
+    } else if (typeof box.querySelectorAll === 'function') {
+      var found = box.querySelectorAll('details.analysisDetails');
+      prevDetails = found !== null && found !== undefined && found.length > 0 ? found[0] : null;
+    }
+    var details = el('details', 'analysisDetails');
+    details.open = prevDetails !== null && prevDetails !== undefined ? prevDetails.open : false;
+    var summary = el('summary', null, '详细分析（决策理由 / 范围来源 / GTO 状态）');
+    details.appendChild(summary);
+    box.appendChild(details);
+
     var list = el('ul');
     list.id = 'resultReasons';
     (a.viewModel.reasonsZh || []).forEach(function (text) {
       list.appendChild(el('li', null, text));
     });
-    box.appendChild(list);
+    details.appendChild(list);
 
     (a.viewModel.warningsZh || []).forEach(function (text) {
-      box.appendChild(el('div', 'warn', text));
+      details.appendChild(el('div', 'warn', text));
     });
 
     /*
@@ -1342,7 +1470,7 @@
           line.className = 'gtoPendingLine';
         }
       });
-      box.appendChild(provBox);
+      details.appendChild(provBox);
 
       /*
        * 🔴 **这次 GTO 到底怎么回事** —— 与建议同屏的**唯一**必显说明。
@@ -1358,12 +1486,12 @@
        */
       var gto = a.gtoStatus;
       if (gto && gto.state === 'SOLVE_FAILED') {
-        box.appendChild(el('div', 'warn', '⚠️ ' + gto.messageZh));
+        details.appendChild(el('div', 'warn', '⚠️ ' + gto.messageZh));
       } else if (gto && gto.state !== 'SOLVER_RANGE' && gto.messageZh) {
         var cls =
           gto.state === 'BACKGROUND_SOLVING' || gto.state === 'MIXED' ? 'gtoPending' : 'gtoReason';
         var prefix = cls === 'gtoPending' ? '⏳ ' : 'ℹ️ ';
-        box.appendChild(el('div', cls, prefix + gto.messageZh));
+        details.appendChild(el('div', cls, prefix + gto.messageZh));
       }
 
       /*
@@ -1399,7 +1527,7 @@
         gto.reasons.forEach(function (reason) {
           if (typeof reason !== 'string' || shown[reason] === true) return;
           if (reason === gto.messageZh) return;
-          box.appendChild(el('div', 'gtoReason', '　· ' + reason));
+          details.appendChild(el('div', 'gtoReason', '　· ' + reason));
         });
       }
     }
@@ -1464,7 +1592,7 @@
         }
         lpBox.appendChild(el('div', 'gtoReason', '　· ' + (ev ? ev.textZh : '')));
       }
-      box.appendChild(lpBox);
+      details.appendChild(lpBox);
     }
   }
 

@@ -118,8 +118,15 @@
           <!--
             ⚠️ 正常流程**不需要**点这个按钮 —— 轮到 Hero 时会自动分析。
             它只用于：手动重试 / 调试 / 用户主动刷新。
+
+            🔴 LIVE UI V1：把它与「尺寸提示」并排放进 `.actionMeta`，
+            而不是各占一行 —— 实测两行合计约 52px，并排后只占约 30px。
+            `#analyzeBtn` 的 id 与事件绑定**没有变化**，只是外层多了一个 flex 容器，
+            因此 table.js 里所有 `$('analyzeBtn')` 的取用保持原样。
           -->
-          <button id="analyzeBtn" class="primary" disabled>重新分析</button>
+          <div class="actionMeta">
+            <button id="analyzeBtn" class="primary" disabled>重新分析</button>
+          </div>
           <div id="blockers" class="blocked"></div>
         </div>
 
