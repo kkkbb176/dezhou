@@ -432,6 +432,30 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '**最终建议的动作、尺寸与置信度发生变化**',
   },
   {
+    /*
+     * 🔴 阶段 B 补登记（`reports/PREFLOP_RAISE_DECISION_V1.md`）：
+     * 这两个文件是**翻前加注 EV 的唯一来源**（响应概率 + 条件范围 + 逐尺寸 EV），
+     * 改了它们会让「翻前是加注还是跟注、加到多少」发生变化。
+     */
+    path: 'src/app/manualInput/preflopRaiseResponse.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '翻前加注响应模型变化（起手牌强度阶梯 / 继续门槛余量 `PREFLOP_CONTINUE_MARGIN` / ' +
+      '再加注闸门 `PREFLOP_RERAISE_GATE` / 诈唬再加注门槛）→ ' +
+      '**他的弃/跟/再加注概率与条件范围发生变化 ⇒ 翻前每一个加注尺寸的 EV 与排名都会变**；' +
+      '⚠️ 该文件里的全部常数都是**未校准的结构性先验**，改动必须在报告中重新做敏感度分析',
+  },
+  {
+    path: 'src/app/manualInput/preflopRaiseFacts.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '翻前加注事实包变化（逐尺寸资金口径 / 被再加注分支 / 单挑与身后玩家门槛 / EV 组装）→ ' +
+      '**翻前加注的自有 EV、可比较性门槛与「未评估动作」披露发生变化**；' +
+      '⚠️ 现金流必须继续走 `raiseResponse.raiseEVOf`（全项目唯一公式），' +
+      '改动必须同步 `test/preflopRaiseDecision.test.ts`（独立复算）与 ' +
+      '`test/preflopRaiseE2E.test.ts`（端到端一致性）',
+  },
+  {
     path: 'src/app/alphaPipeline.ts',
     category: ManifestCategory.DECISION,
     impact:
@@ -656,13 +680,51 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '③ 对求解器范围再乘一次似然（重复计票，范围被收缩两次）。',
   },
   {
+    path: 'test/tableDynamicsIdSpace.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '🔴 **桌况链路的 ID 口径**回归锁：钉住「座位 id（`seat_BTN`）」与' +
+      '「持久 playerId（`p2`）」不得混用。' +
+      '`computeTableDynamics` 的三个入参（`presentPlayerIds` / `heroPlayerId` / ' +
+      '`relevantPlayerIds`）都在持久 id 空间，而引擎侧给的是座位 id；' +
+      '混用会造成**静默失效**：实测 `recordsUsed` 0（6 条记录全被判「非在桌玩家」）' +
+      '⇒ 桌况恒为「观察中」、调整永不生效，且没有任何报错。' +
+      '它同时锁住「Hero 自己的行为不得混进对手桌况」这条自我剥削防线。',
+  },
+  {
+    path: 'test/preflopRaiseCashflow.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '🔴 **翻前加注资金流与引擎分层台账逐位一致**的回归锁。' +
+      '它防的是一类特别隐蔽的缺陷形态：**测试与生产共享同一条错误公式**，' +
+      '于是「测试全绿」与「公式错误」同时成立。' +
+      '本项目在这一行上错过**两次**（把「他跟注要补的差价」当成「他投入的量」），' +
+      '因此本文件的期望值一律由**引擎台账**（`computeLayeredPot` 的 ' +
+      '`main` / `contested` / `returned`）给出，事实包只提供「要测哪个尺寸」。' +
+      '⚠️ 它同时钉住「`finalPot` ≠ `computePot`」这条口径区分：' +
+      '`computePot = main + returned`，只在双方都能跟满时相等。',
+  },
+  {
+    path: 'test/solverRangeAdmission.test.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**求解器缓存准入闸**的防线变化 → 「没收敛的快照能不能进建议」这条链的可信度发生变化。' +
+      '🔴 它防的缺陷实测存在：缓存里 `c067cd8cb`（6MAX/1000000BB/UTG/RFI）' +
+      '`brGapTotal 129.147510` 而 `targetGap` 只有 `0.2`、`notConverged = true`，' +
+      '却被当成求解器结论换掉对手的 169 类权重（权益、底价、Call EV、动作排名全跟着变）。' +
+      '它同时钉住**判别力**：必须拒绝未收敛的，也**必须不能**误杀已收敛的，' +
+      '因此冻结了「不给 `effectiveStackBB` 加人为上限」这条决定。',
+  },
+  {
     path: 'src/app/manualInput/solverRangePrior.ts',
     category: ManifestCategory.DECISION,
     impact:
       '🔴 **范围先验的来源开关**：这个文件决定「对手范围来自求解器还是启发式」。' +
       '它变化会直接影响所有翻前决策的输入数据。' +
-      '⚠️ 它内含三道拒绝闸（动作可达性 / 配置匹配 / 行动者一致性），' +
-      '放宽任何一道都会让**别的牌局**的策略被当成这个牌局的。',
+      '⚠️ 它内含四道拒绝闸（动作可达性 / 配置匹配 / 行动者一致性 / **收敛准入**），' +
+      '放宽任何一道都会让**别的牌局**的策略、或**没收敛的噪声**被当成这个牌局的结论。' +
+      '`admitSolverBaseline` 是**冷求解与缓存共用**的那一道闸 —— ' +
+      '只加在其中一条路径上等于没加（另一条会成为漏洞）。',
   },
   {
     path: 'src/app/manualInput/solverScenarioForOpponent.ts',
@@ -946,6 +1008,111 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '**畸形载荷是否被拒绝、迟到请求是否会被丢弃**发生变化；' +
       '`parseTableState` 是「客户端状态不可信」这条纪律的唯一执行点（撤销栈也必须逐条校验）',
   },
+  /* ============================================================
+   * TABLE DYNAMICS V1（牌桌动态适应）
+   *
+   * 这一组产物的共同点：它们决定「从真实行为记录里读出了什么桌况」，
+   * 因此**改任何一个都会改变调整输入**。登记它们的目的不是形式合规，
+   * 而是让「昨天为什么多调了一档」有唯一的可查对象。
+   * ============================================================ */
+  {
+    path: 'src/app/table/playerHistory.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**逐手行为记录的形状与写入时机**变化 → 「机会数 / 命中数」的分母来源变化；' +
+      '该文件在**行动发生的那一刻**快照行动前状态（人数 / 有效筹码 / 底池 / ' +
+      '面对下注额与池比 / 本街第几个行动 / 身后还有几人）—— 这些都是**只能在此刻取得**的事实，' +
+      '事后无法从行动序列反推。改动它等于改变**此后全部桌况统计与玩家实测统计**的输入；' +
+      '旧格式记录（缺桌况字段）会被桌况层如实排除并计数，不会被当成 0',
+  },
+  {
+    path: 'src/app/table/tableDynamicsSeatOrder.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '本街行动顺序的共享推导变化 → 「身后还有几个未行动的对手」与「翻前第几个行动」' +
+      '所依据的顺序发生变化；该顺序由 `config.tableSize` + `config.dealerPosition` 推导，' +
+      '**取不到就返回空顺序并让相关字段为 null（不猜）**。' +
+      'playerHistory 与 tableDynamicsServer 必须共用这一份实现',
+  },
+  {
+    path: 'src/domain/tableDynamics/tableDynamics.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**桌况模型与五类调整方向**变化 → 十项维度（入池松紧 / 冷跟 / 再加注压力 / 多人底池 / ' +
+      '三档面对下注弃牌 / 持续下注 / 过牌加注 / 盲注弃池）的机会定义、工程基线、' +
+      '平滑与收缩强度、方向门槛、调整幅度上限（±15%）发生变化 ⇒ ' +
+      '**对手标签与调整方向会变**。改动必须同步核对 `TABLE_DYNAMICS_CONFIG` 里的 ' +
+      '「工程初始值」声明不得被写成「已校准参数」',
+  },
+  {
+    path: 'src/domain/tableDynamics/tableDynamicsShadow.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**影子执行契约**变化 → 「正式建议是否先于调整计算」「失败与超时是否被收敛为状态」' +
+      '「调整后的建议是否被写回正式建议」发生变化。' +
+      '🔴 本文件是「影子模式绝不改变正式建议」这条保证的唯一执行点：' +
+      '任何把 `adjusted` 回写 `base`、或让异常向上传播的改动都会破坏它',
+  },
+  {
+    path: 'src/domain/tableDynamics/tableDynamicsDigest.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌况稳定摘要的算法变化 → **缓存键 / 重放判据**变化；' +
+      '摘要必须只包含**影响结果**的部分（版本、可信度、逐维度机会数与收缩后比率），' +
+      '不含耗时与文案 —— 否则「同一输入」会产生不同键，表现为缓存永远不命中',
+  },
+  {
+    path: 'src/app/table/tableDynamicsWiring.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**调整落到输入的翻译层**变化 → 对手标签注入到哪个字段、哪些座位被跳过发生变化；' +
+      '🔴 本文件是「不产生动作、不加 EV、不伪造」三条禁令的执行点：' +
+      '它只能改 `seatProfiles`（或已存在的 `villains[]` 项），' +
+      '座位 id 对不上时必须**跳过并记录原因**，不得硬塞键让模型静默忽略',
+  },
+  {
+    path: 'src/app/table/tableDynamicsServer.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**服务端接入**变化 → 桌况取数（玩家历史）、模式解析（`DSH_TABLE_DYNAMICS`，默认影子、' +
+      '`ACTIVE` 本阶段必须降级）、影子对比落盘路径（`<dataDir>/table-dynamics-log.jsonl`）' +
+      '与响应片段形状发生变化 ⇒ **界面上看到的桌况与实验对比会变**',
+  },
+  {
+    path: 'test/tableDynamics.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌况模型的**行为契约锁**变化 → 「无数据不得编造数字」「机会数不等于动作次数」' +
+      '「少量连续加注不得产生极端调整」「整桌偏松不得覆盖个体紧」「离桌玩家不得主导桌况」' +
+      '「不读未来信息」「单挑与多人边界」「影子不改变正式建议」' +
+      '「调整后金额仍合法」这些保证发生变化',
+  },
+  {
+    path: 'test/tableDynamicsE2E.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '桌况**端到端契约锁**变化 → 「真实牌桌操作确实写入桌况字段」「重复事件不重复累计」' +
+      '「撤销后无残留」「影子对比记录字段齐全且可逐条读回」「桌况变化则摘要变化」' +
+      '这些保证发生变化',
+  },
+  {
+    path: 'scripts/table-dynamics-examples.ts',
+    category: ManifestCategory.REPORT,
+    impact:
+      '牌桌动态适应的**三组可重放示例**（盲位弃给开池偏多 / 跟注偏多 / 再加注压力较高）变化 → ' +
+      '「桌况读出来是什么方向、注入哪些对手标签、可信度多少」的书面基准发生变化；' +
+      '该脚本只读（不写文件、不改状态），运行方式：`node --experimental-strip-types scripts/table-dynamics-examples.ts`',
+  },
+  {
+    path: 'reports/PROJECT_FUNCTIONAL_STATUS_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**全项目功能状态审计**（逐项给出完成程度 / 验证程度 / 是否影响正式建议 / ' +
+      '当前能做什么 / 关键限制与证据）变化 → ' +
+      '「这套软件现在实际能完成什么、哪些只是框架或影子、哪些会让结论错误」的' +
+      '**唯一书面基准**发生变化；它同时登记了未完成项、优先工作包与未审范围，' +
+      '改动它等于改变对项目当前状态的判断',
+  },
   {
     path: 'src/app/web/table.js',
     category: ManifestCategory.DECISION,
@@ -1053,6 +1220,26 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact:
       '桌型拓扑**属性测试**（穷举 9,481 组拓扑组合 + 5,551 组 Button 轮转）变化 → ' +
       '「容量 × 本手人数 × Button 座位的每一个组合都成立」这一保证发生变化',
+  },
+  {
+    path: 'test/seatSwap.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**座位对调语义**（`setHeroPosition`）回归测试变化 → ' +
+      '「换位后玩家数 / 空位数 / 桌上筹码总数三者逐位不变」「Button 不悬空 ⇒ 本手角色 = 所坐座位名」' +
+      '「目标座位空着时 Hero 的筹码跟着他走」这四条保证发生变化；' +
+      '本文件是使用者报告「6 人桌设为 UTG 却显示大盲位」的修复锁',
+  },
+  {
+    path: 'test/preflopFiveBetMinRaise.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '**翻前连续再加注（3Bet/4Bet/5Bet）最小加注额**回归测试变化 → ' +
+      '「lastRaiseSize 必须是上一次完整加注增量 ⇒ minRaiseTo = currentBet + lastRaiseSize」' +
+      '「加注低于最小额被拒、短码全下例外成立、不足额全下不改写 lastRaiseSize」' +
+      '「尺寸网格与决策候选不得出现低于最小额的尺寸」「最终建议必须落在网格内且可被实际执行入口接受」' +
+      '「全下的 amountChips 是本 street 投入口径（预览按钮刻意不带金额）」这些保证发生变化；' +
+      '本文件是使用者报告「建议 5Bet 到 32BB（最小应为 34BB）」的专项审计结论锁',
   },
   {
     path: 'reports/TABLE_SIZE_SEMANTICS_AUDIT.md',
@@ -1194,6 +1381,66 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '覆盖「最小加注/下注 == 全下 ⇒ 由尺寸项承担、不再生成独立 ALL_IN」' +
       '「正常加注 < 全下 ⇒ RAISE 与 ALL_IN 是两个不同动作」' +
       '「短码全下低于最小加注 ⇒ 独立 ALL_IN 不得被误删」三类情形与跨场景不变量',
+  },
+  {
+    /*
+     * 🔴 PREFLOP RAISE DECISION 阶段 A/B 报告补登记：它是本阶段
+     * **唯一**记录「翻前加注第一次拥有自有 EV」的完整结论的文件 ——
+     * 包含分级结论（合法按钮 / 启发式 / 模型 EV / 已校准 / 已实战验证）、
+     * 明确不支持清单、参数敏感度与三类误差的分列披露。
+     */
+    path: 'reports/PREFLOP_RAISE_DECISION_V1.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**翻前加注决策系统阶段 A/B 的结论**变化 → 「翻前加注有没有自有 EV」「哪些场景明确不支持」' +
+      '「全下保护与偏离最高模型 EV 的披露」「参数敏感度与权益采样误差」这些判定发生变化；' +
+      '改动该文件等于改变「本阶段完成到什么程度」的**唯一书面基准**',
+  },
+  {
+    path: 'reports/SOLVER_WIRING_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '🔴 **求解器接线审计**：回答「现有求解器接在哪个入口 / 哪些局面能调用 / ' +
+      '什么结果会被接受 / 最后有没有影响页面建议」。它是「先把现有连接用对、再扩大数据」' +
+      '这条决策的事实依据 —— 实测同一输入注入求解器范围后，决策响应有 **225 个字段**变化' +
+      '（对对手范围权益 83.0%→84.7%、Call EV 306.36→315.81、置信度 0.30→0.35、' +
+      '**用户看到的中文理由文本**）。' +
+      '⚠️ 它同时**推翻**了 `reports/ROUND1_COMPUTATION_AND_ADMISSION_FIX.md` §2.6 的' +
+      '「生产环境里求解器范围从未生效」—— 那是探针绕过 `scenarioForOpponent` 直接构造 ' +
+      '`buildGtoScenario` 造成的误判。真实覆盖面边界（只覆盖 RFI 第一个行动位、' +
+      '**9MAX 缓存为 0 条**、VS_OPEN 已被实现却被生产 `maxRaises = 2` 挡死）在此逐条实测列出。',
+  },
+  {
+    path: 'reports/ROUND1_COMPUTATION_AND_ADMISSION_FIX.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '第一轮「计算正确性与数据准入修复」的交付记录：翻前加注资金流与引擎分层台账逐位一致、' +
+      '求解器缓存准入闸（18 条真实缓存实测：拒绝 3 / 放行 15）、玩家记录 id 口径修复、' +
+      '画像验收规范 A1–A5 修正。' +
+      '⚠️ 它记录了本项目一处**方法论教训**：同一行公式错过两轮，' +
+      '且旧测试断言的正是错误公式（「测试全绿」与「公式错误」同时成立）。' +
+      '其 §2.6 的结论已在 `reports/SOLVER_WIRING_AUDIT.md` 中被推翻并就地标注保留。',
+  },
+  {
+    path: 'reports/NINE_MAX_SOLVER_CLOSED_LOOP_V1.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '🔴 **9MAX 求解器完整闭环**的交付记录：真实 9 人桌局面' +
+      '（100BB / 枪口位开池 2.5BB / Hero=BB / A♠A♥ / 缓存键 `c7348fc89`）走通' +
+      '「未命中 → 后台求解（181 秒、12 次迭代、gap 0.021030 < 目标 0.05）→ 准入 → 落盘 ' +
+      '→ 再次读取 → **重启后读取**（`cacheSource=persistent`）→ 页面正确显示来源」。' +
+      '它同时钉住两件事：① **「1225 组合」不是范围宽度**（= C(50,2) 全部组合；' +
+      '真实等效宽度 94.1、加权 121.1），② 9MAX 的真实能力边界（**`addAllin=false` ⇒ ' +
+      '求解器菜单只有 FOLD/RAISE 2.5**、开池模板只覆盖第一个行动位、VS_OPEN 被 ' +
+      '`maxRaises=2` 挡死）。任何降低这三条约束的改动都会让本报告的结论失效。',
+  },
+  {
+    path: 'reports/evidence/preflop-raise-sensitivity.txt',
+    category: ManifestCategory.REPORT,
+    impact:
+      '**翻前加注模型的参数敏感度原始证据**变化 → 「换 margin / gate / 开池尺寸 / 筹码深度后' +
+      '推荐尺寸是否移动」「换随机种子后建议是否翻转」这些实测数字发生变化；' +
+      '由 `scripts/rr-sensitivity.ts` 生成（可复现）',
   },
 ]);
 

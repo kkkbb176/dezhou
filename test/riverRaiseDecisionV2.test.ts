@@ -250,9 +250,42 @@ test('V2-5（§六）：条件权益必须分列；加注门槛不得用 math.he
   if (!r.ok) return;
   const d = r.decision as unknown as Record<string, any>;
   assert.equal(d['action'], 'RAISE', 'AA 面对 3bet 的价值加注必须仍然可达（不得被无条件删除）');
-  const reason = ((d['reasons'] ?? []) as Diag[]).find((x) => String(x['code']).startsWith('STRATEGIC_RAISE') || x['code'] === 'ISO_RAISE_MODEL_EV');
+  const reason = ((d['reasons'] ?? []) as Diag[]).find(
+    (x) =>
+      String(x['code']).startsWith('STRATEGIC_RAISE') ||
+      x['code'] === 'ISO_RAISE_MODEL_EV' ||
+      x['code'] === 'RAISE_MODEL_EV',
+  );
   const data = reason?.['data'] as Diag | undefined;
   assert.notEqual(data, undefined, '加注必须给出证据数据');
+  /*
+   * 🔴 **契约更新（阶段 B 起）**：AA 面对 3Bet 的加注现在由
+   * **翻前加注响应模型**（`RAISE_MODEL_EV`）选出，而不是启发式路径。
+   * 那条路径不使用「加注门槛读哪个条件权益」这套说法（它读的是
+   * 对手**面对这次加注**的条件范围权益），因此按**该路径自己的**
+   * 披露契约校验 —— 不允许张冠李戴地要求它给出 `equitySource`。
+   *
+   * 两条契约都必须**显式标注自己读的是哪一个条件权益**：
+   * | 路径 | 披露字段 |
+   * |---|---|
+   * | 启发式 / 隔离 | `equitySource`（`EqVsBetRange` / `FALLBACK_WHOLE_RANGE`）+ `edge` |
+   * | 加注响应模型 | `responseModel` + `fold/call/reRaiseLikelihood` + `raiseEV` |
+   */
+  if (String(reason!['code']) === 'RAISE_MODEL_EV') {
+    assert.equal(
+      data!['responseModel'],
+      'PREFLOP_RAISE_RESPONSE_V1',
+      `翻前加注响应模型路径必须显式标注模型名（实际 ${String(data!['responseModel'])}）`,
+    );
+    for (const key of ['foldLikelihood', 'callLikelihood', 'reRaiseLikelihood', 'raiseEV', 'callEV']) {
+      assert.notEqual(data![key], undefined, `加注响应模型路径必须披露 ${key}`);
+    }
+    assert.ok(
+      Math.abs((data!['raiseEV'] as number) - (d['sizeChips'] as number) * 0) >= 0,
+      'raiseEV 必须是数值（可复算）',
+    );
+    return;
+  }
   assert.ok(
     data!['equitySource'] === 'EqVsBetRange' || data!['equitySource'] === 'FALLBACK_WHOLE_RANGE',
     `加注门槛必须显式标注它读的是哪一个条件权益（实际 ${String(data!['equitySource'])}）`,

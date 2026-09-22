@@ -380,7 +380,14 @@ function behaviorZhOf(action: OpponentPreflopAction['action']): string {
   }
 }
 
-/** 把一次成功的查询变成 `contextBuilder` 要的范围覆盖 */
+/**
+ * 把一次成功的查询变成 `contextBuilder` 要的范围覆盖。
+ *
+ * 🔴 **必须带上准入结论与收敛目标**（2026-09-22 补）：
+ * 这个覆盖会换掉对手整个范围（实测连带改动决策响应 225 个字段），
+ * 而在此之前页面只能看到一个裸的 `gap 0.1652…`，
+ * **无法判断它算不算达标**（达标线是求解器自设的 targetGap）。
+ */
 function overrideFromPrior(
   entry: OpponentScenario,
   prior: Extract<SolverRangePrior, { ok: true }>,
@@ -392,6 +399,8 @@ function overrideFromPrior(
     usedActions: prior.usedActions,
     reportedGap: prior.reportedGap,
     iterationsCompleted: prior.iterationsCompleted,
+    targetGap: prior.targetGap,
+    admitVerdictZh: prior.admitVerdictZh,
   };
 }
 
@@ -690,9 +699,16 @@ async function readOneOpponentRange(
       };
     }
     /*
-     * 缓存里那份数据**通不过校验**（节点不可达 / 行动者不是他 / 频率全零）。
-     * 🔴 这时**绝不**拿它当范围用，但要**如实说明**为什么 ——
-     * 直接回落会让「缓存里有东西却不用」变得无法解释。
+     * 缓存里那份数据**通不过校验**。分两类，都必须如实说明，绝不静默回落：
+     *
+     * 1. **结构不匹配**（节点不可达 / 行动者不是他 / 频率全零）——
+     *    这份数据说的不是这个节点。
+     * 2. 🔴 **未通过准入**（未收敛 / 没有收敛目标 / 快照取自求解中途）——
+     *    节点是对的，但这份频率**不是均衡**，用它算范围等于把噪声当结论。
+     *    （实测：缓存里 `c067cd8cb` 是「1000000BB」那条，BR gap 129.1475
+     *    而目标只有 0.2，`notConverged = true`，修复前会被照用。）
+     *
+     * 两类都回落启发式先验，并在 `reasonZh` 里说清是哪一类。
      */
     return {
       ...base,
@@ -976,7 +992,21 @@ export function analyzeManualHand(
         {
           code: 'DEADLINE_EXCEEDED',
           message:
-            `分析超过硬性时间上限（${deadline.hardMs} ms，实际 ${deadline.elapsedMs()} ms），已中止。` +
+            /*
+             * 🔴 **措辞必须准确：这是「协作式截止（cooperative deadline）」，不是硬性上限。**
+             *
+             * 机制：`DecisionDeadline` 由**被调用方主动查询**（`hardExpired()`），
+             * 检查点位于阶段边界（`alphaPipeline` 与 `decisionPipeline` 各若干处）。
+             * 它**不能**在任意指令处抢占：一段不可分割的重计算
+             *（例如一组蒙特卡洛迭代）会把超时推到该段结束。
+             *
+             * 实测（本轮）：设定硬上限 240ms 时实际中止于 **491ms**（约 2 倍超时）。
+             * 因此这里**不得**写「硬性时间上限」—— 那会让使用者以为预算是精确保证，
+             * 而实际是「最多比预算多花一个不可中断阶段的时间」。
+             */
+            `分析超过时间预算并已在检查点中止（预算 ${deadline.hardMs} ms，` +
+            `实际 ${deadline.elapsedMs()} ms）。这是**协作式截止**：` +
+            `超出部分来自当时正在进行的不可中断计算阶段。` +
             '这不是输入错误 —— 请重试；若持续出现，请反馈该手牌的输入内容。',
         },
       ],
@@ -1073,6 +1103,16 @@ export function analyzeManualHand(
         : {}),
       ...(Object.keys(parsed.value.seatProfiles).length > 0
         ? { seatProfiles: parsed.value.seatProfiles as Readonly<Partial<Record<Position, QuickProfile>>> }
+        : {}),
+      /*
+       * 🔴 **TABLE DYNAMICS V1 第二轮：作用范围明确的维度调整进入上下文**。
+       *
+       * 不传 ⇒ 与既有行为逐位一致；传了 ⇒ **只覆盖显式给出的轴**，
+       * 其余维度走既有机制（标签维度 / 实测维度 / V3 融合）。
+       * 这是「行为证据 → 模型输入」的**精确**通道：不像标签那样一次改四个维度。
+       */
+      ...(parsed.value.villainDimensions !== undefined
+        ? { villainDimensions: parsed.value.villainDimensions }
         : {}),
       ...(options.equitySeed !== undefined ? { equitySeed: options.equitySeed } : {}),
       /* 🔴 PLAYER PROFILE V3：把首要对手的连续统计带进上下文（可选，缺省 ⇒ 与 V2 逐位一致） */
@@ -1485,6 +1525,25 @@ export function hashManualInput(input: ManualHandInput): string {
         : Object.entries(input.seatProfiles)
             .filter(([, value]) => value !== undefined)
             .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    /*
+     * 🔴 **TABLE DYNAMICS V1 第二轮**：作用范围明确的维度调整必须进哈希。
+     *
+     * 它直接改写响应倾向（`callScale`/`foldScale`/`raiseScale`/`bluffRaiseScale`
+     * /`riverBetScale`）⇒ 同一手牌换一组维度就会得到不同的响应概率与 EV。
+     * 不写进哈希会产生两个后果（都是铁律 F-10 的同一类缺陷）：
+     *   1. 「昨天 CALL 今天 FOLD」追不到原因；
+     *   2. 两个不同的桌况被记成同一条记录，去重把真实差异吃掉。
+     */
+    villainDimensions:
+      input.villainDimensions === undefined
+        ? null
+        : [
+            input.villainDimensions.tightness ?? null,
+            input.villainDimensions.aggression ?? null,
+            input.villainDimensions.passivity ?? null,
+            input.villainDimensions.bluffTendency ?? null,
+            input.villainDimensions.confidence,
+          ],
     actionHistory: input.actionHistory.map((a) => [
       a.position,
       a.type,

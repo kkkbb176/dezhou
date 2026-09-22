@@ -633,6 +633,83 @@ input[type='number'] {
   white-space: pre-wrap;
 }
 
+/*
+ * ============================================================
+ * 牌桌动态适应 V1 —— 可展开的桌况摘要
+ * ============================================================
+ *
+ * 设计意图（三条，逐条对应授权 §七）：
+ *
+ * 1. **不抢建议的位置**：默认折叠成一行；展开才显示细节。
+ * 2. **一眼分清「建议」与「实验」**：整体用 `--muted` 低对比色，
+ *    只有「调整真的改变了建议」那一行用强调色。
+ * 3. **不制造仪表盘**：没有图表、没有进度条、没有大数字——
+ *    它是「观察记录」，不是「战绩面板」。
+ */
+.tdPanel {
+  margin-top: 8px;
+  border-top: 1px solid var(--line, #2a2f3a);
+  padding-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tdSummary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  /* 触屏可用：`details/summary` 原生支持点击展开，不依赖 hover */
+  list-style: revert;
+  padding: 2px 0;
+}
+
+.tdSummary:hover {
+  color: var(--text, #e6e8ec);
+}
+
+.tdHead {
+  color: var(--text, #e6e8ec);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.tdNote {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+
+.tdDims,
+.tdPlayers,
+.tdAdjust,
+.tdCompare {
+  margin-top: 2px;
+}
+
+.tdDim {
+  color: var(--muted);
+  font-size: 11px;
+  padding-left: 4px;
+  white-space: pre-wrap;
+}
+
+.tdWhy {
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.85;
+  padding-left: 4px;
+  white-space: pre-wrap;
+}
+
+/* 「观察中」—— 样本不足时唯一允许的措辞，绝不显示编造的频率 */
+.tdObserving {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+  padding-left: 4px;
+}
+
 .banner {
   background: var(--panel-2);
   border-left: 3px solid var(--accent);

@@ -13,6 +13,24 @@ scripts/tmp-*
 .DS_Store
 Thumbs.db
 
+# 🔴 **真实使用者运行数据 —— 绝不进版本控制**
+#
+# 这三类文件的共同点：它们是**这台机器上真实打过的牌**产生的记录，
+# 含玩家显示名、逐手行为明细与决策对比。仓库是**公开仓库**，
+# 一旦提交就等于把个人牌局数据发布出去。
+#
+# | 文件 | 内容 | 为什么敏感 |
+# |---|---|---|
+# | `data/player-history.jsonl` | 逐手行为记录（含 displayName） | 真实玩家身份 + 行为画像 |
+# | `data/table-dynamics-log.jsonl` | 影子对比记录（含 handId、注入的座位标签） | 真实牌局标识 + 桌况 |
+# | `data/decision-log.jsonl` | 决策日志（含 inputHash、版本） | 真实牌局指纹（上面已有，保留） |
+#
+# ⚠️ **本规则与「审计」无关**：审计探针一律写 `mkdtempSync` 的临时目录；
+# 只有**使用者自己运行软件**才会在这些路径产生文件。
+# 测试夹具必须使用合成数据，且不得依赖这些路径存在。
+data/player-history.jsonl
+data/table-dynamics-log.jsonl
+
 # 🔴 GTOpen 是**外部求解器**（第三方源码 + 工具链 + 分发包，约 260 MB），
 # 不属于本项目的版本控制范围 —— 它按 commit `92c86ed` 固定在本地，
 # 能力与限制见 reports/GTOPEN_MULTI_TABLE_AUDIT.md。

@@ -74,6 +74,11 @@ import {
  */
 import { CASHFLOW_CONTRACT } from '../manualInput/raiseResponse.ts';
 import {
+  evaluatePreflopRaiseModel,
+  preflopRaiseSizeFactsOf,
+  type PreflopRaiseFacts,
+} from '../manualInput/preflopRaiseFacts.ts';
+import {
   DECISION_SOURCE_ZH,
   DecisionSourceKind,
   EstimateType,
@@ -202,6 +207,143 @@ export const MIN_EQUITY_ITERATIONS = 5000;
 /* ============================================================
  * 候选动作评估
  * ============================================================ */
+
+/* ============================================================
+ * 翻前加注候选的选择（阶段 B）
+ * ============================================================ */
+
+/**
+ * 从「翻前加注事实包 + 全部候选」里选出**被比较的加注候选**。
+ *
+ * ## 默认规则：最高模型 EV
+ *
+ * 使用者的硬要求是「同一模型下，默认选择已评估合法候选中 EV 最高者」。
+ * 本函数对事实包里**每一个**尺寸取它**自己的** EV，取最高者。
+ *
+ * ## 🔴 唯一的例外：打光全部筹码需要「超过模型容差带」的优势
+ *
+ * 当最高 EV 的候选是**全下**、而它与**最佳非全下候选**的差落在模型容差带
+ * `bandChips`（既有 `MODEL_UNCERTAINTY_RATIO × winnable`）之内时，
+ * 改选最佳非全下候选，并在诊断里显式说明「这不是 EV 第一名」。
+ *
+ * 理由与既有的 CB-5 护栏（河牌）**同源**（`evidencePriority.ts` 的
+ * `stackCommitmentGuard`）：这点优势在模型的**分辨力之内**，
+ * 不足以单独授权一个**不可逆**的动作。使用者第五节允许这种保护，
+ * 但要求「必须明确显示偏离最高模型 EV 的原因」—— 因此调用方会把
+ * `protectionApplied` 写成一条 `PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION` 理由。
+ *
+ * ⚠️ 这**不是**「为了不推荐全下而调参」：容差带是既有的、与 EV 同量纲的
+ * 工程容差，且**只在全下**上生效；差距超过容差带时全下照旧被选中。
+ */
+export type PreflopRaiseChoice = {
+  /** 被比较的加注金额（本街累计，raise-to 口径） */
+  readonly sizeChips: number | null;
+  /** 最高模型 EV（全下保护**之前**的那名） */
+  readonly bestEVSizeChips: number | null;
+  readonly bestEV: number | null;
+  /** 保护是否被触发（真 ⇒ 上面那个 sizeChips ≠ bestEVSizeChips） */
+  readonly protectionApplied: boolean;
+  readonly protectionNoteZh: string | null;
+  /** 事实包里有自有 EV 的**全部**尺寸（披露用，升序） */
+  readonly evaluatedSizes: readonly number[];
+};
+
+export function choosePreflopRaiseCandidate(input: {
+  readonly facts: PreflopRaiseFacts | null | undefined;
+  /** 每个金额对应的证据 EV（同一个模型；缺项表示该金额没有自有 EV） */
+  readonly evBySizeChips: ReadonlyMap<number, number>;
+  /** 本街全下额（本街累计口径） */
+  readonly allInToAmount: number;
+  /** 与 EV 同量纲的模型容差带（筹码） */
+  readonly bandChips: number;
+}): PreflopRaiseChoice {
+  const facts = input.facts ?? null;
+  const empty: PreflopRaiseChoice = Object.freeze({
+    sizeChips: null,
+    bestEVSizeChips: null,
+    bestEV: null,
+    protectionApplied: false,
+    protectionNoteZh: null,
+    evaluatedSizes: Object.freeze([]),
+  });
+  if (facts === null) return empty;
+
+  const rows: { sizeChips: number; ev: number; isAllIn: boolean }[] = [];
+  for (const size of facts.sizes) {
+    const usable = evaluatePreflopRaiseModel({
+      facts,
+      candidateSizeChips: size.sizeChips,
+      actionIsRaiseLike: true,
+    });
+    if (!usable.usable) continue;
+    const ev = input.evBySizeChips.get(size.sizeChips) ?? size.raiseEV;
+    if (ev === null || ev === undefined || !Number.isFinite(ev)) continue;
+    rows.push({
+      sizeChips: size.sizeChips,
+      ev,
+      isAllIn: size.sizeChips >= input.allInToAmount - 1e-9,
+    });
+  }
+  if (rows.length === 0) return empty;
+
+  const sorted = rows.slice().sort((a, b) => b.ev - a.ev || a.sizeChips - b.sizeChips);
+  const best = sorted[0]!;
+  const evaluatedSizes = Object.freeze(rows.map((r) => r.sizeChips).sort((a, b) => a - b));
+
+  /* 最高 EV 不是全下 ⇒ 保护不适用，直接用第一名 */
+  if (!best.isAllIn) {
+    return Object.freeze({
+      sizeChips: best.sizeChips,
+      bestEVSizeChips: best.sizeChips,
+      bestEV: best.ev,
+      protectionApplied: false,
+      protectionNoteZh: null,
+      evaluatedSizes,
+    });
+  }
+
+  /* 最高 EV 是全下：找一个不消耗筹码的备选（最高 EV 的那一个） */
+  const alternative = sorted.find((r) => !r.isAllIn) ?? null;
+  const band = Number.isFinite(input.bandChips) ? Math.max(0, input.bandChips) : Number.POSITIVE_INFINITY;
+  const gap = alternative === null ? Number.POSITIVE_INFINITY : best.ev - alternative.ev;
+
+  /*
+   * ⚠️ **没有非全下备选时不适用本保护**（短码局面）。
+   *
+   * 当全下是**唯一**的加注尺寸（例如 5BB 的筹码、最小加注就等于全下）时，
+   * 把它换掉只能换成「跟注」或「弃牌」—— 那两者都**不是**「同样的动作、
+   * 更小的风险」，而是完全不同的策略。此时保护的前提（「存在一个风险更小、
+   * 收益几乎相同的替代」）不成立，因此不触发。
+   *
+   * 这不是放行：那个全下仍然必须**自带模型 EV**（`evaluatePreflopRaiseModel`
+   * 的硬条件），并且它的 EV 必须真的胜出（`chooseByEvidencePriority` 的比较）。
+   */
+  if (alternative !== null && gap >= 0 && gap <= band) {
+    return Object.freeze({
+      sizeChips: alternative.sizeChips,
+      bestEVSizeChips: best.sizeChips,
+      bestEV: best.ev,
+      protectionApplied: true,
+      protectionNoteZh:
+        `最高模型 EV 的候选是**全下**（${(best.sizeChips / facts.bigBlind).toFixed(1)}BB，EV ${best.ev.toFixed(2)} 筹码），`
+        + `但与最佳非全下候选（${(alternative.sizeChips / facts.bigBlind).toFixed(1)}BB，EV ${alternative.ev.toFixed(2)} 筹码）`
+        + `只差 ${gap.toFixed(2)} 筹码，落在模型容差带 ±${band.toFixed(2)} 之内 ⇒ `
+        + '按**风险偏好保护**改选非全下候选：这点优势在模型的分辨力之内，不足以单独授权一个不可逆的动作。'
+        + '⚠️ 这不是「全下的 EV 更低」——两个数字都在模型分辨力之内；'
+        + '若差距超过容差带，全下仍会被选中。',
+      evaluatedSizes,
+    });
+  }
+
+  return Object.freeze({
+    sizeChips: best.sizeChips,
+    bestEVSizeChips: best.sizeChips,
+    bestEV: best.ev,
+    protectionApplied: false,
+    protectionNoteZh: null,
+    evaluatedSizes,
+  });
+}
 
 type Evaluation = {
   candidates: readonly DecisionCandidate[];
@@ -1608,6 +1750,11 @@ function pickCandidate(
       commitmentException: boolean;
       commitmentClause: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null;
       overrideJustificationKind: string | null;
+      /**
+       * 🔴 **阶段 B：翻前加注候选的选择过程**（默认取最高模型 EV；
+       * 全下保护触发时如实记录偏离原因 —— 使用者第五节要求必须显示出来）。
+       */
+      preflopRaiseChoice?: PreflopRaiseChoice | null;
     };
   },
 ): DecisionCandidate | null {
@@ -2015,8 +2162,63 @@ function pickCandidate(
       const iso = context.preflopIso ?? null;
       const isoToChips =
         iso !== null && iso.isoSize.legalIsoSize !== null ? iso.isoSize.legalIsoSize * math.bigBlind : null;
-      const raiseCandidate =
+      const preferredRaiseCandidate =
         pickClosestRaise(candidates, isoToChips ?? desiredTo) ?? largestRaise(candidates);
+      /** 翻前加注候选的选择结果（`choosePreflopRaiseCandidate` 的输出；供诊断） */
+      let preflopRaiseChoice: PreflopRaiseChoice | null = null;
+      /*
+       * 🔴🔴 **阶段 B：当翻前模型对**每个**尺寸都算出了 EV 时，
+       * 被比较的加注候选 = **EV 最高的那个合法尺寸**。**
+       *
+       * ## 为什么必须这样（使用者的硬要求）
+       *
+       * > 「同一模型下，默认选择已评估合法候选中 EV 最高者。」
+       *
+       * 修复前，`raiseCandidate` 由 `desiredTo = pot + 2×跟注额` 选出（一个**尺寸启发式**），
+       * 然后只给**那一个**尺寸算 EV。翻前实测的后果：
+       *
+       * ```text
+       * Hero BB AA 面对 BTN 开池 2.5BB（100BB 深）
+       *   加注到 7.5BB 的模型 EV = +474.91 筹码   ← 被尺寸启发式选中
+       *   全下 100BB 的模型 EV   = +955.24 筹码   ← 更高，却从未与它比较
+       * ```
+       *
+       * 这不是「为了推荐加注而调参数」：**尺寸的选择规则**从「离 pot+2c 最近」
+       * 变成「EV 最高」，而 EV 全部来自同一个模型、同一套响应假设。
+       * 若最高 EV 的是 7.5BB，它就仍然选 7.5BB。
+       *
+       * ## 作用域严格受限
+       *
+       * 只对**翻前加注事实包**（`context.preflopRaise`，阶段 B 的模型）生效。
+       * 翻后（U1 的单一尺寸 `raiseResponse`）与隔离加注（`isoToChips`）
+       * **逐位保持既有行为** —— 它们的模型本来就只算一个尺寸。
+       */
+      const raiseCandidate = (() => {
+        const preflopFacts = context.preflopRaise ?? null;
+        if (preflopFacts === null) return preferredRaiseCandidate;
+
+        /*
+         * 每一个加注金额的证据 EV（同一模型、同一零点）。
+         * 只在**进入比较的候选**里找，避免选出网格外的金额。
+         */
+        const evBySize = new Map<number, number>();
+        for (const c of candidates) {
+          if (c.action !== DecisionAction.RAISE && c.action !== DecisionAction.ALL_IN) continue;
+          if (c.sizeChips === undefined) continue;
+          const size = preflopRaiseSizeFactsOf(preflopFacts, c.sizeChips);
+          if (size === null || size.raiseEV === null) continue;
+          evBySize.set(c.sizeChips, size.raiseEV);
+        }
+        const choice = choosePreflopRaiseCandidate({
+          facts: preflopFacts,
+          evBySizeChips: evBySize,
+          allInToAmount: legal.allInToAmount,
+          bandChips: uncertaintyBandChips,
+        });
+        preflopRaiseChoice = choice;
+        if (choice.sizeChips === null) return preferredRaiseCandidate;
+        return candidates.find((c) => c.sizeChips === choice.sizeChips) ?? preferredRaiseCandidate;
+      })();
       /*
        * 隔离加注的 EV **只有在下面两件事同时成立时**才可使用（否则宁可不给）：
        * ① 事实上算得出来（`proxyEV !== null`）；
@@ -2033,23 +2235,96 @@ function pickCandidate(
        *
        * `null` = 本节点没有可用的加注响应模型（不是「RAISE EV = 0」）。
        */
-      const raiseModelFacts = ((context.postflopFacts as unknown as Record<string, any> | undefined)?.[
-        'raiseResponse'
-      ] ?? null) as
-        | {
-            sizeChips: number;
-            raiseEV: number | null;
-            assumptionsZh: readonly string[];
-            /** 🔴 U1 P0：资金口径契约（缺失 ⇒ 旧口径 缓存化 ⇒ 不得参与比较）
-*/
-            cashflowContract?: string;
-            currentPot?: number;
-            heroAdd?: number;
-            villainAdd?: number;
-            heroContestedAdd?: number;
-            finalPot?: number;
+      const raiseModelFacts = (() => {
+        const fromU1 = ((context.postflopFacts as unknown as Record<string, any> | undefined)?.[
+          'raiseResponse'
+        ] ?? null) as
+          | {
+              sizeChips: number;
+              raiseEV: number | null;
+              assumptionsZh: readonly string[];
+              /** 🔴 U1 P0：资金口径契约（缺失 ⇒ 旧口径 缓存化 ⇒ 不得参与比较） */
+              cashflowContract?: string;
+              currentPot?: number;
+              heroAdd?: number;
+              villainAdd?: number;
+              heroContestedAdd?: number;
+              finalPot?: number;
+            }
+          | null;
+        if (fromU1 !== null) return fromU1;
+
+        /*
+         * 🔴🔴 **阶段 B：翻前加注自有 EV**（2026-09 翻前加注决策系统）。
+         *
+         * 在它之前，**翻前的每一个加注金额都没有自有 EV** ——
+         * U1 的响应模型要求 `board.length >= 3`，而翻前 `board` 恒为空，
+         * 于是每个加注金额都被列进 `unevaluatedActions`（`RAISE_EV_NOT_IMPLEMENTED`），
+         * 「加注是否比跟注好」只能靠启发式。
+         *
+         * ## 为什么在这里「借用」U1 的事实包形状
+         *
+         * 下面那一段（资金口径门槛、尺寸匹配、`assumptionsZh` 披露、
+         * `shouldRaise` 的 `hasOwnEV`、全下保护）**已经是**一条完整的、
+         * 被测试锁住的通路。翻前要做的是产出**同形状**的事实，而不是
+         * 在旁边再修一条平行的判断链 —— 两条链必然有一天分歧
+         *（本项目反复踩过的「两处口径」）。
+         *
+         * ## 与 U1 的**诚实差别**（必须在 `assumptionsZh` 里说清）
+         *
+         * U1（翻后）：模型的再加注分支**没有 Hero 的再加注**；
+         * 翻前：本模型只展开被再加注后的 FOLD / CALL，**Hero 的 5Bet 未展开**。
+         * 两者都是「有限的未来行动树」，但**不是同一棵树**，因此
+         * 这里的说明文案逐字来自翻前事实包，不复用 U1 的文案。
+         *
+         * ## 尺寸来源
+         *
+         * `preflopRaise.sizes` 覆盖**尺寸网格里的每一个合法尺寸**，
+         * 每个尺寸只提供**属于它自己**的响应概率、条件范围与 EV。
+         * 尺寸对不上时 `raiseFactsCashOk` / `raiseModelSizeMatches` 会照常拒绝，
+         * 并推一条显式理由（不得借用别的尺寸的数字）。
+         */
+        const preflopFacts = context.preflopRaise ?? null;
+        if (preflopFacts === null || raiseCandidate === null) return null;
+        const evalResult = evaluatePreflopRaiseModel({
+          facts: preflopFacts,
+          candidateSizeChips: raiseCandidate.sizeChips,
+          actionIsRaiseLike: true,
+        });
+        if (!evalResult.usable) {
+          if (evalResult.unavailableZh !== null) {
+            reasons.push({
+              code: 'PREFLOP_RAISE_EV_UNAVAILABLE',
+              textZh: `翻前加注 EV 不可用：${evalResult.unavailableZh}`,
+              data: {
+                candidateSizeChips: raiseCandidate.sizeChips ?? 'NONE',
+                modelVersion: preflopFacts.modelVersion,
+              },
+            });
           }
-        | null;
+          return null;
+        }
+        const size = preflopRaiseSizeFactsOf(preflopFacts, raiseCandidate.sizeChips);
+        if (size === null) return null;
+        return {
+          sizeChips: size.sizeChips,
+          raiseEV: size.raiseEV,
+          assumptionsZh: size.assumptionsZh,
+          cashflowContract: preflopFacts.cashflowContract,
+          currentPot: size.currentPot,
+          heroAdd: size.heroAdd,
+          villainAdd: size.villainAdd,
+          heroContestedAdd: size.heroContestedAdd,
+          finalPot: size.finalPot,
+          /*
+           * 下面这些字段 U1 的事实包里没有，但诊断层要用来如实披露
+           * 「他会不会再加注」「被再加注后我评估了哪些应对」。
+           */
+          _preflop: true as const,
+          _preflopSize: size,
+          _preflopFacts: preflopFacts,
+        };
+      })();
       /*
        * 🔴 **U1：加注自有 EV 现在存在人
 *（`reports/UNCERTAINTY_REGISTER.md`）。
@@ -2269,24 +2544,38 @@ function pickCandidate(
 */
           hasOwnEV: raiseModelUsable || isoUsable,
           /*
-           * 🔴 **U1 披露一致性
-*：真正拿到「自己的可比 EV」的那
-*些加注尺寸
-*。
+           * 🔴 **披露一致性：真正拿到「自己的可比 EV」的那些加注尺寸。**
            *
-           * 为什么必须从这里带出去：`unevaluatedActions`（decideAlpha 里算）用
+           * 为什么必须从这里带出去：`unevaluatedActions`（`decideAlpha` 里算）用
            * `candidate.ev === null` 当作「没有 EV 模型」的代理 —— 而加注候选的
            * `ev` 字段**永远**是 null（加注 EV 挂在证据表上，不在候选表上）。
-           * 于是修复前会出现自相矛盾的输出：动作 **非
-* RAISE EV 选出， 9 暗三条
-           * 节点：RAISE 174 ⇒ MODEL_EV +140.01），同一份诊断却把 174 列进
-           * 「RAISE_EV_NOT_IMPLEMENTED 未评估」。这里把事实带出去，让披露层
-           * 只列**真的**没有 EV 的金额」
+           * 于是修复前会出现自相矛盾的输出：动作由 RAISE EV 选出，同一份诊断
+           * 却把那个金额列进「RAISE_EV_NOT_IMPLEMENTED 未评估」。
+           *
+           * 🔴🔴 **阶段 B 修正：必须是「所有**有**自有 EV 的尺寸」，不是「被选中的那一个」。**
+           *
+           * 修复前这里只推 `[raiseCandidate.sizeChips]` —— 而翻前事实包对
+           * **尺寸网格里的每一个尺寸**都算了 EV（每个尺寸有自己的响应概率与
+           * 条件范围）。只报一个会让诊断说「其余金额仍缺响应模型」，
+           * 而事实是它们**都已经算过**。这与 U1 那一轮的缺陷（U10）是同一形态：
+           * 披露层落后于模型层。
            */
           raiseSizesWithOwnEV: Object.freeze(
-            raiseModelUsable || isoUsable
-              ? (raiseCandidate.sizeChips === undefined ? [] : [raiseCandidate.sizeChips])
-              : [],
+            (() => {
+              const fromPreflop = context.preflopRaise ?? null;
+              if (fromPreflop !== null) {
+                return fromPreflop.sizes
+                  .filter((s) => evaluatePreflopRaiseModel({
+                    facts: fromPreflop,
+                    candidateSizeChips: s.sizeChips,
+                    actionIsRaiseLike: true,
+                  }).usable)
+                  .map((s) => s.sizeChips);
+              }
+              return raiseModelUsable || isoUsable
+                ? (raiseCandidate.sizeChips === undefined ? [] : [raiseCandidate.sizeChips])
+                : [];
+            })(),
           ),
           onePairAllInBlocked,
           largeRaiseBlocked,
@@ -2295,6 +2584,7 @@ function pickCandidate(
           commitmentException,
           commitmentClause,
           overrideJustificationKind: raiseOverrideJustificationKind,
+          preflopRaiseChoice,
         };
       }
 
@@ -2457,14 +2747,89 @@ function pickCandidate(
        * 现在这条路径单独成支，并如实报出模型 EV、跟注 EV 与响应权重。
        */
       const raiseByU1Model = evidenceDecision.action === 'RAISE' && !isoUsable && raiseModelUsable && raiseCandidate !== null;
+      /*
+       * 🔴🔴 **阶段 B：有自有 EV 的加注不再过 `shouldRaise` 的启发式档位门。**
+       *
+       * ## 为什么这条门必须为「有自有 EV 的加注」让开
+       *
+       * `shouldRaise` 的 `qualifies` 要求 **牌力档（MONSTER/STRONG）+ 权益优势**。
+       * 那条门的**存在理由**是「没有可比 EV 时，只好用牌力与权益优势当代理」——
+       * 这是它自己的注释写着的。一旦这个加注**有**与 CALL 同一零点的模型 EV，
+       * 「用牌力当代理」就变成**用启发式覆盖已经算出来的 EV**：
+       *
+       * ```text
+       * 实测（BB 76s 面对 BTN 开池，阶段 B 之前）：
+       *   加注 7.5BB 的模型 EV = +? （未实现）
+       *   建议 = CALL（启发式：76s 是 MEDIUM 档 ⇒ 不能加注）
+       * ```
+       *
+       * 使用者的要求是：「同一模型下，默认选择已评估合法候选中 EV 最高者」，
+       * 并且「不得因为牌名是 AA、AK 就强制覆盖 EV 排名」——
+       * 反面同样成立：**不得因为牌力档是 MEDIUM 就否决一个 EV 更高的加注**。
+       *
+       * ## 这**不是**在放行所有加注
+       *
+       * 让开的只有这一条启发式档位门。加注仍要过：
+       * ① `chooseByEvidencePriority` 的跨动作比较（EV 必须真的最高）；
+       * ② `shouldRaise` 里的**量级保护**（底池比例档 → 本轮不动）；
+       * ③ 全下保护（`onePairAllInBlocked`，翻前不适用）。
+       *
+       * ## ⚠️ 本轮不改变没有自有 EV 的加注行为
+       *
+       * 翻后（U1 的 `raiseResponse`）与隔离加注（`preflopIso`）**都不受影响**：
+       * 它们的 `raiseModelUsable` / `isoUsable` 为真时，`evidenceDecision.action`
+       * 本来就只在 EV 真的更高时才是 `RAISE`，此前也无条件进入下面那个分支。
+       * 唯一的行为变化发生在**翻前**：从「启发式档位说了算」变成「EV 说了算」。
+       */
+      const raiseHasOwnEvaluatedEV = raiseModelUsable || isoUsable;
       if (
         evidenceDecision.action === 'RAISE' &&
         raiseCandidate !== null &&
-        (raiseByModel || raiseByU1Model || raiseQualifies)
+        (raiseByModel || raiseByU1Model || raiseHasOwnEvaluatedEV || raiseQualifies)
       ) {
+        /*
+         * 🔴 **响应概率必须报「本次真正用到的那一份」**（阶段 B 修复）。
+         *
+         * 修复前这里只读 `context.postflopFacts.raiseResponse` —— 而翻前**没有**
+         * 这个事实包（U1 的模型要求 `board.length >= 3`），于是翻前用模型 EV
+         * 做决策时，理由句里**看不到**「他弃/跟/再加注」这三个数。
+         * 与 `reports/UNCERTAINTY_REGISTER.md` 的 U10/U11 是同一形态：
+         * 用某个模型的 EV 决策，却报不出那个模型的输入。
+         *
+         * 现在翻前优先取 `context.preflopRaise` 里**该尺寸**的事实。
+         */
         const u1Facts = ((context.postflopFacts as unknown as Record<string, any> | undefined)?.[
           'raiseResponse'
         ] ?? null) as Record<string, any> | null;
+        const preflopSizeForReason =
+          context.preflopRaise === null || context.preflopRaise === undefined || raiseCandidate === null
+            ? null
+            : preflopRaiseSizeFactsOf(context.preflopRaise, raiseCandidate.sizeChips);
+        const responseFactsForReason: {
+          readonly foldLikelihood: number;
+          readonly callLikelihood: number;
+          readonly reRaiseLikelihood: number;
+          readonly priceRequiredEquity: number;
+          readonly modelNoteZh: string;
+        } | null =
+          preflopSizeForReason !== null
+            ? {
+                foldLikelihood: preflopSizeForReason.foldLikelihood,
+                callLikelihood: preflopSizeForReason.callLikelihood,
+                reRaiseLikelihood: preflopSizeForReason.reRaiseLikelihood,
+                priceRequiredEquity: preflopSizeForReason.priceRequiredEquity,
+                modelNoteZh: 'PREFLOP_RAISE_RESPONSE_V1',
+              }
+            : u1Facts === null
+              ? null
+              : {
+                  foldLikelihood: u1Facts['foldLikelihood'] as number,
+                  callLikelihood: u1Facts['callLikelihood'] as number,
+                  reRaiseLikelihood: u1Facts['reRaiseLikelihood'] as number,
+                  priceRequiredEquity: (u1Facts['model']?.['priceRequiredEquity'] as number) ?? 0,
+                  modelNoteZh: 'PUBLIC_BAND_RAISE_RESPONSE_V1',
+                };
+        const raisesByPreflopModel = raiseByU1Model && preflopSizeForReason !== null;
         reasons.push({
           code: raiseByModel ? 'ISO_RAISE_MODEL_EV' : raiseByU1Model ? 'RAISE_MODEL_EV' : 'STRATEGIC_RAISE_FOR_VALUE',
           textZh: raiseByModel
@@ -2476,18 +2841,25 @@ function pickCandidate(
               `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
               '；⚠️ 这是**代理 EV**，不是 Solver EV，RAKE 未实现'
             : raiseByU1Model
-              ? `加注： ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB。**面对加注的响应模型 EV** = ` +
+              ? `加注： ${(raiseCandidate.sizeBB ?? 0).toFixed(1)}BB。**${raisesByPreflopModel ? '翻前加注响应模型' : '面对加注的响应模型'} EV** = ` +
                 `${raiseModelFacts!.raiseEV!.toFixed(2)} 筹码 vs 跟注 ${evOfCall === null ? '—' : evOfCall.toFixed(2)} 筹码` +
               `（同一零点 = 弃牌 0）⇒ 依据来源 = **${evidenceDecision.source}**` +
-                (u1Facts === null
+                (responseFactsForReason === null
                   ? ''
-                  : `｜他面对这次加注：弃 ${((u1Facts['foldLikelihood'] as number) * 100).toFixed(1)}% / ` +
-                    `跟 ${((u1Facts['callLikelihood'] as number) * 100).toFixed(1)}% / ` +
-                    `再加注 ${((u1Facts['reRaiseLikelihood'] as number) * 100).toFixed(1)}%` +
-                    `（价格 ${((u1Facts['model']?.['priceRequiredEquity'] as number) ?? 0).toFixed(4)}）`) +
+                  : `｜他面对这次加注：弃 ${(responseFactsForReason.foldLikelihood * 100).toFixed(1)}% / ` +
+                    `跟 ${(responseFactsForReason.callLikelihood * 100).toFixed(1)}% / ` +
+                    `再加注 ${(responseFactsForReason.reRaiseLikelihood * 100).toFixed(1)}%` +
+                    `（价格 ${responseFactsForReason.priceRequiredEquity.toFixed(4)}，模型 ${responseFactsForReason.modelNoteZh}）`) +
                 '；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；' +
-                '再加注分支按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌 ⇒ 该 EV 偏低，' +
-                '且**不构成**对真实牌局 EV 的严格下界，见 assumptionsZh）；RAKE 未实现'
+                (raisesByPreflopModel
+                  ? preflopSizeForReason!.reraiseAvailable
+                    ? '被再加注分支**只展开 Hero 的 FOLD / CALL**（Hero 的 5Bet **未展开**）；' +
+                      '非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌 ⇒ 不构成严格下界，见 assumptionsZh）；RAKE 未实现'
+                    : '本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；' +
+                      '即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；' +
+                      '非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现'
+                  : '再加注分支按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌 ⇒ 该 EV 偏低，' +
+                    '且**不构成**对真实牌局 EV 的严格下界，见 assumptionsZh）；RAKE 未实现')
               : `牌力（${math.handRankZh}）与权益优势（高出跟注所需 ${((raiseEquity - math.requiredEquity) * 100).toFixed(1)} 个百分点，` +
                 `按 **${raiseEquitySource}** 条件权益计算）` +
                 '支持主动加注做大底池' +
@@ -2502,25 +2874,30 @@ function pickCandidate(
             edge: Number(((raiseEquity - math.requiredEquity) * 100).toFixed(1)),
             tier,
             source: evidenceDecision.source,
-            /* 🔴 §六：加注门槛用的是哪一个条件权益，必须可审计
-*/
+            /* 🔴 §六：加注门槛用的是哪一个条件权益，必须可审计 */
             equitySource: raiseEquitySource,
             raiseEquity: Number(raiseEquity.toFixed(6)),
             consumesStack: raiseConsumesStack ? 1 : 0,
             ...(raiseByModel ? { isoEV: isoEv === null ? 'NOT_AVAILABLE' : Number(isoEv.toFixed(2)) } : {}),
-            /* 🔴 U1：模型 EV 路径必须把两个 EV 与响应权重一起带出来（可审计（
-*/
+            /* 🔴 U1 / 阶段 B：模型 EV 路径必须把两个 EV 与响应权重一起带出来（可审计） */
             ...(raiseByU1Model
               ? {
                   raiseEV: Number(raiseModelFacts!.raiseEV!.toFixed(6)),
                   callEV: evOfCall === null ? 'NOT_AVAILABLE' : Number(evOfCall.toFixed(6)),
-                  responseModel: 'PUBLIC_BAND_RAISE_RESPONSE_V1',
-                  ...(u1Facts === null
+                  responseModel: responseFactsForReason?.modelNoteZh ?? 'PUBLIC_BAND_RAISE_RESPONSE_V1',
+                  ...(responseFactsForReason === null
                     ? {}
                     : {
-                        foldLikelihood: Number((u1Facts['foldLikelihood'] as number).toFixed(6)),
-                        callLikelihood: Number((u1Facts['callLikelihood'] as number).toFixed(6)),
-                        reRaiseLikelihood: Number((u1Facts['reRaiseLikelihood'] as number).toFixed(6)),
+                        foldLikelihood: Number(responseFactsForReason.foldLikelihood.toFixed(6)),
+                        callLikelihood: Number(responseFactsForReason.callLikelihood.toFixed(6)),
+                        reRaiseLikelihood: Number(responseFactsForReason.reRaiseLikelihood.toFixed(6)),
+                      }),
+                  ...(preflopSizeForReason === null
+                    ? {}
+                    : {
+                        reraiseBranchKind: preflopSizeForReason.reraiseBranchKind,
+                        reraiseBranchEV: Number(preflopSizeForReason.reraiseBranchEV.toFixed(6)),
+                        heroFiveBetExpanded: 0,
                       }),
                 } : {}),
           },
@@ -3348,6 +3725,11 @@ export function decideAlpha(
       commitmentException: boolean;
       commitmentClause: 'ROLE_STRENGTH' | 'FUTURE_STREET_COMMITMENT' | null;
       overrideJustificationKind: string | null;
+      /**
+       * 🔴 **阶段 B：翻前加注候选的选择过程**（默认取最高模型 EV；
+       * 全下保护触发时如实记录偏离原因 —— 使用者第五节要求必须显示出来）。
+       */
+      preflopRaiseChoice?: PreflopRaiseChoice | null;
     };
   } = {};
   const baseDecision = actionable    ? pickCandidate(
@@ -3625,6 +4007,33 @@ export function decideAlpha(
   // 于是「系统拒绝给建议」在 HTTP 响应与 JSONL 日志里长得和
   // 「系统建议弃牌」一模一样 —— 机器可读字段与真实语义相反。
   const action = finalCandidate?.action ?? null;
+
+  /*
+   * 🔴 **阶段 B：偏离最高模型 EV 时必须显示原因**（使用者第五节的硬要求）。
+   *
+   * 唯一的偏离来源是「全下在模型容差带内的优势不足以授权不可逆动作」
+   * （见 `choosePreflopRaiseCandidate`）。它必须是一条**显式理由**，
+   * 而不是悄悄换一个动作 —— 使用者原话：
+   * 「若采用风险偏好或不确定性保护，必须明确显示偏离最高模型 EV 的原因」。
+   *
+   * ⚠️ 放在 `finalCandidate` / `uncertaintyBandChips` 之后：理由里要报
+   * 「实际选了哪个金额、最高 EV 是哪个金额、差多少、带有多宽」。
+   */
+  const preflopRaiseChoice = evidenceOut?.raiseShape?.preflopRaiseChoice ?? null;
+  if (preflopRaiseChoice !== null && preflopRaiseChoice.protectionApplied) {
+    reasons.push({
+      code: 'PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION',
+      textZh: `⚠️ **偏离最高模型 EV**：${preflopRaiseChoice.protectionNoteZh ?? ''}`,
+      data: {
+        chosenSizeChips: finalCandidate?.sizeChips ?? 'NONE',
+        bestEvSizeChips: preflopRaiseChoice.bestEVSizeChips ?? 'NONE',
+        bestEV: preflopRaiseChoice.bestEV === null
+          ? 'NOT_AVAILABLE'
+          : Number(preflopRaiseChoice.bestEV.toFixed(6)),
+        uncertaintyBandChips: Number((MODEL_UNCERTAINTY_RATIO * context.math.winnable).toFixed(6)),
+      },
+    });
+  }
 
   /* ============================================================
    * ---- 6.5 决策一致性守卫（RIVER CONSISTENCY V2 · 使用者 §19）----
@@ -3909,6 +4318,19 @@ export function decideAlpha(
     betDecision: postflopAdvice?.betDecision ?? null,
     /* 多人 limp 隔离加注事实包 —— 只有「面对跛入且无人加注」的翻前节点才有 */
     preflopIso: context.preflopIso ?? null,
+    /*
+     * 🔴 **翻前加注事实包**（阶段 B）—— 逐尺寸的响应概率 / 条件范围 /
+     * 被再加注分支 / RAISE EV。只在「单挑 + 我之后无人未行动 + 面对加注」时非 null。
+     *
+     * ## 为什么整包原样带出去（而不是只带被选中的那个尺寸）
+     *
+     * 使用者第十一节要求诊断区显示「各候选动作与尺寸的 EV」「对手弃/跟/再加注
+     * 概率」「不同分支的条件权益」「对手再加注后 Hero 评估过哪些应对」。
+     * 那四件事**都是逐尺寸的**，只带一个尺寸无法回答。
+     * 与 `preflopIso` / `betDecision` 同一条纪律：**只取值、不重算** ——
+     * 界面显示的必须是真正参与判断的那份数据。
+     */
+    preflopRaise: context.preflopRaise ?? null,
     /* 多人联合响应树（≥2 家；单挑时为 null —— 那时 betEV 是单挑口径） */
     multiwayBetDecision: postflopAdvice?.betDecision?.multiway ?? null,
     /*

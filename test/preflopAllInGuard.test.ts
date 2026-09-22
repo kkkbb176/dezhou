@@ -205,49 +205,66 @@ test('F2-1（A–D）：翻前「加注到全下」不得被**翻后**的一对�
         `${tag}：非全下加注也必须如实说明保护不适用，实际「${String(g['noteZh'])}」`,
       );
     }
-    /* hasOwnEV 保持如实（翻前没有 3bet/4bet 响应模型 ⇒ false） */
-    assert.equal(g['hasOwnEV'], false, `${tag}：翻前的加注**没有**自有 EV ⇒ hasOwnEV 必须如实为 false`);
-  }
-});
-
-test('F2-2（A–D）：全下加注必须**真的**进入证据表（不是「合法但没被评估」）', () => {
-  for (const [tag, input] of PREFLOP_CASES) {
-    const run = decide(input);
+    /*
+     * 🔴 **阶段 B 起的口径变更（有据可依，不是放宽断言）**
+     *
+     * 修复前这里断言 `hasOwnEV === false`，理由写在当时：**「翻前没有
+     * 3bet/4bet 响应模型」**。阶段 B 把这个模型建出来了
+     *（`preflopRaiseFacts.ts` / `preflopRaiseResponse.ts`），
+     * 因此「翻前的加注没有自有 EV」**不再是事实**——
+     * 断言必须跟着事实走，而不是把旧行为锁死。
+     *
+     * 现在锁的是**更强**的性质：有 EV 就必须是**真的**自有 EV
+     *（金额在事实包里、契约匹配、EV 非 null），而不是随口说 true。
+     */
+    assert.equal(g['hasOwnEV'], true, `${tag}：阶段 B 起翻前加注**有**自有 EV ⇒ hasOwnEV 必须为 true`);
     const raise = raiseEvidenceOf(run);
-    assert.notEqual(raise, undefined, `${tag}：RAISE 必须在证据表里有条目`);
-    const g = guardOf(run);
-    if (g['consumesStack'] !== true) continue; // 本档不是全下 ⇒ 不适用本断言（由 M9 扫描覆盖）
-    assert.ok(
-      Number(raise!['heuristicScore']) > 0,
-      `${tag}：合法全下必须通过加注准入（shouldRaise）并带上启发式分数，` +
-        `实际 heuristicScore=${String(raise!['heuristicScore'])}（0 ⇒ 被判据拦下、未参与任何比较）`,
-    );
-    /* M2：两个调用点（决策 + 诊断）必须口径一致 —— 分数>0 却仍报「被拦」就是两份口径 */
-    assert.equal(
-      g['onePairAllInBlocked'],
-      false,
-      `${tag}：证据表说它过了准入，但 allInGuard 仍报被拦 ⇒ 两处口径不一致`,
-    );
+    assert.notEqual(raise, undefined, `${tag}：RAISE 必须有证据条目`);
+    assert.notEqual(raise!['ev'], null, `${tag}：有自有 EV ⇒ 证据条目里必须真的给出 EV`);
+    assert.equal(String(raise!['estimateType']), 'MODEL_EV', `${tag}：估计类型必须如实写 MODEL_EV`);
+    const sizes = (guardOf(run)['raiseSizesWithOwnEV'] ?? []) as number[];
+    assert.ok(sizes.length > 0, `${tag}：必须至少有一个尺寸带自有 EV`);
+    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+    assert.notEqual(pr, null, `${tag}：翻前加注事实包必须存在`);
+    for (const size of sizes) {
+      assert.ok(
+        (pr!['sizes'] as readonly Diag[]).some((s) => Number(s['sizeChips']) === size),
+        `${tag}：声称有自有 EV 的尺寸 ${size} 必须真的在事实包里（不得凭空声明）`,
+      );
+    }
   }
 });
 
-test('F2-3（M7/M8）：允许全下 ≠ 声称它有 EV —— 无 EV 的加注必须如实标 null', () => {
+test('F2-3（M7/M8）：允许全下 ≠ 伪造 EV —— 每个加注金额的 EV 必须来自它**自己**的尺寸', () => {
   for (const [tag, input] of PREFLOP_CASES) {
     const run = decide(input);
     const raise = raiseEvidenceOf(run);
     assert.notEqual(raise, undefined, `${tag}：RAISE 必须有证据条目`);
-    assert.equal(raise!['ev'], null, `${tag}：翻前没有 3bet/4bet 响应模型 ⇒ 加注 EV 必须是 null，不得伪造`);
-    assert.equal(String(raise!['estimateType']), 'HEURISTIC', `${tag}：估计类型必须如实写 HEURISTIC`);
-    assert.deepEqual(
-      [...((guardOf(run)['raiseSizesWithOwnEV'] ?? []) as number[])],
-      [],
-      `${tag}：没有任何加注尺寸带自有 EV ⇒ raiseSizesWithOwnEV 必须为空`,
-    );
-    const codes = reasonCodes(run);
-    assert.equal(
-      codes.some((c) => c === 'RAISE_MODEL_EV' || c === 'ISO_RAISE_MODEL_EV'),
-      false,
-      `${tag}：不得出现「加注有模型 EV」的理由码（实际 ${JSON.stringify(codes)}）`,
+
+    /*
+     * 🔴 **阶段 B 起的口径变更**：修复前这里断言「翻前加注 EV 必须是 null」，
+     * 理由是当时确实没有翻前响应模型。现在有了（阶段 B），
+     * 因此断言改成锁**更强**的性质 —— 不得借用别的尺寸的 EV：
+     *
+     * ```text
+     * 证据里那个 EV 必须能在事实包里找到**同一个金额**的 raiseEV，
+     * 且两者逐位相等（尺寸对不上就是「拿别的动作的数字冒充本动作」）。
+     * ```
+     */
+    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+    const chosenSize = run.sizeChips;
+    if (raise!['ev'] === null) {
+      /* 没有自有 EV 的加注仍然必须如实标 null，且不得声称有模型 */
+      assert.deepEqual([...((guardOf(run)['raiseSizesWithOwnEV'] ?? []) as number[])], [], `${tag}：标了 null 就不得声称任何尺寸有自有 EV`);
+      return;
+    }
+    assert.notEqual(pr, null, `${tag}：有 EV 就必须有事实包`);
+    assert.notEqual(chosenSize, null, `${tag}：有 EV 就必须有金额（raise-to 口径）`);
+    const sizeFacts = (pr!['sizes'] as readonly Diag[]).find((s) => Number(s['sizeChips']) === chosenSize);
+    assert.notEqual(sizeFacts, undefined, `${tag}：被比较的金额 ${String(chosenSize)} 必须在事实包里`);
+    assert.ok(
+      Math.abs(Number(sizeFacts!['raiseEV']) - Number(raise!['ev'])) < 1e-6,
+      `${tag}：证据 EV 必须等于**该金额自己**的 raiseEV（不得借用别的尺寸）`,
     );
   }
 });
@@ -283,14 +300,61 @@ test('F2-4：不得为了「让全下可达」而伪造 EV 或绕过既有证据
         `${tag}：全下被考虑过就必须留下痕迹（overrideAttempt / heuristicScore）`,
       );
     }
+    /*
+     * 🔴 **阶段 B 新增：有 EV 的全下也必须赢在容差带之外**（或如实披露偏离）。
+     *
+     * 这是「全下保护」在翻前的对应物：全下是不可逆的，因此
+     * ① 它必须自带模型 EV；② 若它与最佳非全下候选的差落在模型容差带内，
+     * 则改选非全下候选并**显式说明偏离了最高模型 EV**。
+     */
+    if (commitsStack && run.sizeChips !== null && Math.abs(run.sizeChips - allInToOf(run)) < 1e-9) {
+      assert.notEqual(raise['ev'], null, `${tag}：被选中的全下必须自带模型 EV`);
+      const codes = reasonCodes(run);
+      const protection = codes.includes('PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION');
+      assert.equal(protection, false, `${tag}：若触发保护就不该选中全下 —— 两者不可能同时为真`);
+    }
+    if (reasonCodes(run).includes('PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION')) {
+      /* 触发保护 ⇒ 选中的必须**不是**全下，且必须给出「最高 EV 是哪个金额」 */
+      assert.ok(
+        run.sizeChips === null || Math.abs(run.sizeChips - allInToOf(run)) >= 1e-9,
+        `${tag}：触发全下保护时不得选中全下`,
+      );
+      const reason = run.reasons.find((r) => String(r['code']) === 'PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION');
+      const data = (reason?.['data'] ?? {}) as Diag;
+      assert.notEqual(data['bestEvSizeChips'], 'NONE', `${tag}：必须报出最高 EV 是哪一个金额`);
+      assert.ok(String(reason?.['textZh']).includes('偏离'), `${tag}：必须显式写明「偏离最高模型 EV」`);
+    }
   }
 });
 
 /* ============================================================
- * M1：弱牌 / 中等牌**仍然**不能推全下（保护不是被无条件取消）
+ * M1：弱牌 / 中等牌**仍然**不能凭牌力档位拿到全下
  * ============================================================ */
 
-test('M1：修好强牌之后，弱牌与中等牌在同样节点上仍然拿不到全下', () => {
+test('M1：弱牌与中等牌不得**凭牌力档位**拿到全下；全下必须由它**自己的模型 EV** 赢出来', () => {
+  /*
+   * ## 🔴 阶段 B 起的口径变更（有据可依，不是放宽断言）
+   *
+   * 修复前本测试断言「弱/中等起手牌在 5BB 节点上拿不到全下」，
+   * 而那在当时**是**正确的 —— 因为翻前没有任何加注 EV 模型，
+   * 全下只能由「牌力档位 + 权益优势」的启发式放行，弱牌的档位不够。
+   *
+   * 阶段 B 把翻前加注 EV 建出来了（`preflopRaiseResponse.ts`），
+   * 于是「弱牌能不能推」不再由**牌名**决定，而由**EV**决定 ——
+   * 这正是使用者第五节的硬要求：
+   *
+   * > 「不得因为牌名是 AA、AK 就强制覆盖 EV 排名。」
+   * > 反面同样成立：不得因为牌名是 55、JTs 就否决一个 EV 更高的动作。
+   *
+   * ## 本测试现在锁什么（比旧断言更强）
+   *
+   * 1. **弱/中等牌不得凭档位拿到启发式准入**（`heuristicScore === 0`）——
+   *    旧缺陷（用牌力当代理）没有被悄悄放回来；
+   * 2. 若它们确实被选为全下，那必须是 **`MODEL_EV` 路径**：
+   *    证据表里的 EV 非 null、估计类型是 `MODEL_EV`，
+   *    且该 EV **逐位等于**它自己尺寸的 `raiseEV`（不借用别的尺寸）；
+   * 3. 全下被选中时，还必须已经赢过最佳非全下候选（或如实披露偏离）。
+   */
   const cases: ReadonlyArray<readonly [string, readonly [string, string], string]> = [
     ['72o（WEAK）', ['7s', '2d'], '起手牌：弱起手牌'],
     ['55（小对子 ⇒ MEDIUM）', ['5s', '5h'], '起手牌：小对子'],
@@ -305,15 +369,46 @@ test('M1：修好强牌之后，弱牌与中等牌在同样节点上仍然拿不
       String(m['handRankZh']).startsWith(expectedLabel),
       `${tag}：前置——起手牌档位标签必须是「${expectedLabel}…」，实际「${String(m['handRankZh'])}」`,
     );
+    /* ① 档位不能单独放行加注（旧缺陷的永久锁） */
     assert.equal(
       Number(raise?.['heuristicScore'] ?? 0),
       0,
-      `${tag}：起手牌档位不足以支撑全下 ⇒ 加注准入必须仍然不通过（实际 heuristicScore=${String(raise?.['heuristicScore'])}）`,
+      `${tag}：起手牌档位不足以支撑全下 ⇒ 启发式准入必须仍然不通过（实际 heuristicScore=${String(raise?.['heuristicScore'])}）`,
     );
-    assert.equal(
-      run.action === 'RAISE' || run.action === 'ALL_IN',
-      false,
-      `${tag}：弱/中等起手牌不得被选成全下（实际 ${run.action}）`,
+
+    const isStackOff =
+      (run.action === 'RAISE' || run.action === 'ALL_IN') &&
+      run.sizeChips !== null &&
+      Math.abs(run.sizeChips - allInToOf(run)) < 1e-9;
+
+    if (!isStackOff) {
+      /* 没推 ⇒ 与旧行为一致，无需更多断言 */
+      continue;
+    }
+    /* ② 推了就必须是模型 EV 赢出来的，且 EV 属于它自己的尺寸 */
+    assert.notEqual(
+      raise?.['ev'],
+      null,
+      `${tag}：被选中的全下必须自带模型 EV（不得靠档位或启发式）`,
+    );
+    assert.equal(String(raise?.['estimateType']), 'MODEL_EV', `${tag}：估计类型必须是 MODEL_EV`);
+    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+    assert.notEqual(pr, null, `${tag}：有 EV 就必须有事实包`);
+    const sizeFacts = (pr!['sizes'] as readonly Diag[]).find(
+      (s) => Number(s['sizeChips']) === run.sizeChips,
+    );
+    assert.notEqual(sizeFacts, undefined, `${tag}：被选中的金额必须在事实包里`);
+    assert.ok(
+      Math.abs(Number(sizeFacts!['raiseEV']) - Number(raise!['ev'])) < 1e-6,
+      `${tag}：证据 EV 必须等于该金额自己的 raiseEV`,
+    );
+    /* ③ 它必须真的胜出，或如实披露偏离 */
+    const codes = reasonCodes(run);
+    const protection = codes.includes('PREFLOP_ALL_IN_UNCERTAINTY_PROTECTION');
+    assert.equal(protection, false, `${tag}：触发保护时不应选中全下`);
+    assert.ok(
+      codes.includes('RAISE_MODEL_EV'),
+      `${tag}：由模型 EV 选出的加注必须留下 RAISE_MODEL_EV 理由（实际 ${JSON.stringify(codes)}）`,
     );
   }
 });
@@ -442,13 +537,60 @@ test('M9：有效筹码 3–25BB 扫描——全下候选始终在候选表里�
  * ============================================================ */
 
 test('M10：底池比例保护与既有证据纪律保持原样（未被调参掩盖）', () => {
-  /* 100BB、BB 面对开池：候选尺寸远小于全下（consumesStack=false）⇒ 本次修复**不该**影响它 */
   const run = decide(bbVsOpen(['As', 'Ah'], 100));
   const g = guardOf(run);
-  assert.equal(String(mathOf(run)['street']), 'PREFLOP', '前置：翻前节点');
-  assert.equal(g['consumesStack'], false, '前置：100BB 时选中的加注不是全下');
-  assert.equal(g['onePairAllInBlocked'], false, '不消耗筹码 ⇒ 保护本来就不适用（修复前后一致）');
+  const m = mathOf(run);
+  assert.equal(String(m['street']), 'PREFLOP', '前置：翻前节点');
+  /*
+   * 🔴 **阶段 B 起的口径变更**：修复前这里断言「100BB 时选中的加注不是全下」，
+   * 依据是当时的实际输出（尺寸启发式选 pot+2c）。
+   *
+   * 阶段 B 起，被比较的加注候选 = **模型 EV 最高**的那个合法尺寸，
+   * 而 100BB 深时 AA 的全下 EV（+21.45）显著高于最佳非全下尺寸（+12.39，
+   * 差 9.06 筹码，远超模型容差带 ±0.65）⇒ 全下**被合法地选中**。
+   *
+   * 因此本测试改为锁**规则本身**（阈值与判据未被调参），
+   * 而不再锁某一个结果尺寸：
+   *
+   * 1. `minCategoryForLargeRaise` 仍为 3（阈值未动）；
+   * 2. 翻后语义下恒等式仍然成立（类别 < 3 ∧ 打光 ∧ 无自有 EV ⇒ 被拦）；
+   * 3. 翻前若选中的是**全下**，它必须自带模型 EV 且赢了容差带之外 ——
+   *    这正是「没有被调参掩盖」的可执行形式。
+   */
   assert.equal(g['minCategoryForLargeRaise'], 3, '阈值不得被改动');
+  assert.equal(g['onePairAllInBlocked'], false, '翻前没有成手牌类别 ⇒ 该保护按街道不适用');
+
+  const isStackOff =
+    (run.action === 'RAISE' || run.action === 'ALL_IN') &&
+    run.sizeChips !== null &&
+    Math.abs(run.sizeChips - allInToOf(run)) < 1e-9;
+  if (isStackOff) {
+    const raise = raiseEvidenceOf(run);
+    assert.notEqual(raise?.['ev'], null, '被选中的全下必须自带模型 EV');
+    assert.equal(String(raise?.['estimateType']), 'MODEL_EV', '估计类型必须是 MODEL_EV');
+    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+    assert.notEqual(pr, null, '必须有翻前加注事实包');
+    const allEVs = (pr!['sizes'] as readonly Diag[])
+      .map((s) => Number(s['raiseEV']))
+      .filter((v) => Number.isFinite(v));
+    const bestEV = Math.max(...allEVs);
+    const band = 0.05 * Number(m['winnable']);
+    const alternativeBest = Math.max(
+      ...(pr!['sizes'] as readonly Diag[])
+        .filter((s) => s['isAllIn'] !== true)
+        .map((s) => Number(s['raiseEV']))
+        .filter((v) => Number.isFinite(v)),
+    );
+    assert.ok(
+      Math.abs(Number(raise?.['ev']) - bestEV) < 1e-6,
+      '被选中的全下必须是网格里 EV 最高的那个尺寸',
+    );
+    assert.ok(
+      bestEV - alternativeBest > band,
+      `容差带内不得授权全下：优势 ${(bestEV - alternativeBest).toFixed(2)} 必须 > 带 ${band.toFixed(2)}`,
+    );
+  }
+
   /* 恒等式在翻后语义下仍然成立：类别 < 3 ∧ 打光 ∧ 无自有 EV ⇒ 被拦（由 M5-1 实测） */
   assert.equal(
     allInGuardVerdictOf({ handCategory: 2, consumesStack: true, hasOwnEV: false, street: Street.RIVER })

@@ -295,7 +295,21 @@ function readTableJs(): string {
  * RT-L3（MAJOR）：Hero 移动座位 / 换桌型不得吞掉别人的筹码
  * ============================================================ */
 
-test('RT-L3（MAJOR）：Hero 移动座位时，筹码必须**跟着 Hero 走**', () => {
+/**
+ * ## 2026-09 座位对调语义（本题的断言已随之更新）
+ *
+ * 旧实现把 Hero 的原座位腾空、把目标座位上的人**解绑**，于是满座 6 人桌
+ * 「CO → BB」会留下一个空座位（本手变 5 人），而那个空座位若正好是 Button
+ * 座位，Button 就会浮到别人手里 —— 使用者看到的形态是
+ * 「把 Hero 设为 UTG，头像却显示大盲位」。
+ *
+ * 现在换位 = **两个人对调座位**（`test/seatSwap.test.ts` 锁语义）。本测试
+ * 仍然只关心红队当年命中的那件事：**筹码不得被人顺手吞掉**。
+ *
+ * 口径也随之明确为「筹码跟着座位走（物理换座）」：两个人换位置时，
+ * 桌上那两堆筹码都没动，只是换了个人看着它 —— 因此**总数逐位不变**。
+ */
+test('RT-L3（MAJOR）：Hero 移动座位必须对调座位，且不得吞掉或凭空增加筹码', () => {
   let state = fullTable(Position.CO, 100);
   // 把 Hero 改到 250BB，目标座位（BB）改到 33BB
   state = must(
@@ -312,26 +326,47 @@ test('RT-L3（MAJOR）：Hero 移动座位时，筹码必须**跟着 Hero 走**'
       stackBB: 33,
     }),
   );
+  const displacedPlayerId = seatOfPosition(state, Position.BB)!.playerId!;
+  const chipTotalBefore = state.seats.reduce((sum, s) => sum + s.stackBB, 0);
 
   const moved = must(applyTableOp(state, { kind: 'SET_HERO_POSITION', position: Position.BB }));
   const heroSeat = seatOfPosition(moved, Position.BB)!;
 
   assert.equal(heroSeat.playerId, moved.heroPlayerId, 'Hero 必须在 BB 座位');
-  assert.equal(heroSeat.stackBB, 250, 'Hero 的筹码必须跟着他走（不能继承 33BB）');
   assert.equal(
     seatOfPosition(moved, Position.CO)!.playerId,
-    null,
-    'Hero 原来的座位必须腾空',
+    displacedPlayerId,
+    '被换的人必须坐到 Hero 原来的 CO 座位（旧语义下他会被解绑、从盘面上消失）',
+  );
+  assert.equal(
+    moved.seats.filter((s) => s.playerId === null).length,
+    0,
+    '满座对调不得产生空座位（否则本手人数凭空少一个）',
+  );
+  assert.equal(
+    moved.seats.reduce((sum, s) => sum + s.stackBB, 0),
+    chipTotalBefore,
+    '桌上筹码总数必须逐位不变 —— 两个人的筹码都留在各自座位上',
+  );
+  assert.equal(
+    seatOfPosition(moved, Position.BB)!.stackBB,
+    33,
+    'Hero 到 BB 座位拿到的是该座位原有的 33BB（物理换座）',
+  );
+  assert.equal(
+    seatOfPosition(moved, Position.CO)!.stackBB,
+    250,
+    '被换的人到 CO 座位拿到的是该座位原有的 250BB —— 谁都没有被吞掉筹码',
   );
   assert.ok(
-    moved.notices.some((n) => n.includes('交给 Hero') || n.includes('不再绑定')),
-    `必须提示目标座位上原本的人被解绑，实际提示：${moved.notices.join(' | ')}`,
+    moved.notices.some((n) => n.includes('对调座位')),
+    `必须如实提示发生了座位对调，实际提示：${moved.notices.join(' | ')}`,
   );
-  // 被顶掉的那位玩家对象仍在历史里
+  // 玩家对象不得被删除
   assert.equal(
     Object.keys(moved.playersById).length,
     Object.keys(state.playersById).length,
-    '玩家对象不得被删除（只是不再绑定座位）',
+    '玩家对象不得被删除',
   );
 
   // 关键：结果状态必须自洽（否则之后每个请求都会失败）
@@ -592,46 +627,87 @@ test('RT：空操作（值未变）不得推进 revision、不得占用撤销栈
   assert.equal(sameProfile.state.revision, state.revision, '画像未变 → revision 不得变化');
 });
 
-test('RT：筹码跟随 Hero 之后，结果状态仍然自洽（端到端再验一次）', () => {
+test('RT：满座对调之后，结果状态仍然自洽（端到端再验一次）', () => {
   let state = fullTable(Position.CO, 100);
   const seat = seatOfPosition(state, Position.UTG)!;
   state = must(applyTableOp(state, { kind: 'SET_STACK', seatId: seat.seatId, stackBB: 42 }));
+  const displacedPlayerId = seat.playerId;
   const moved = must(applyTableOp(state, { kind: 'SET_HERO_POSITION', position: Position.UTG }));
-  assert.equal(seatOfPosition(moved, Position.UTG)!.stackBB, 100, 'Hero 的 100BB 跟到 UTG');
+  assert.equal(
+    seatOfPosition(moved, Position.UTG)!.stackBB,
+    42,
+    '物理换座：Hero 到 UTG 拿到该座位原有的 42BB',
+  );
 
   /*
-   * Hero 换位后原座位空了。
+   * 🔴 **座位对调语义（2026-09）**：满座换位**不再留下空座位**。
    *
-   * 🔴 **Table Topology Correction**：空座位**不再**阻断分析 —— 5 人参与
-   * 照常成局。旧断言「必须如实报告无法分析」已被本轮语义取代，
-   * 新断言钉住实质：原座位确实被排除在本手之外，且被如实告知。
+   * 旧实现会把 Hero 的原座位腾空（本手变 5 人）—— 而那个空座位若正好是
+   * Button 座位，Button 就浮到别人手里，使用者看到「设为 UTG 却显示大盲位」。
+   * 现在的实质是：两个人换位置，参与者仍是 6 人，且没有任何空座提示。
    */
-  assert.ok(
-    !participantSeatsOf(moved).some((s) => s.logicalPosition === Position.CO),
-    'Hero 换位后原座位必须被排除在本手参与者之外',
+  assert.equal(
+    moved.seats.filter((s) => s.playerId === null).length,
+    0,
+    '满座换位不得留下空座位',
+  );
+  assert.equal(
+    participantSeatsOf(moved).length,
+    6,
+    '本手人数必须仍是 6（旧语义下会变成 5）',
+  );
+  assert.equal(
+    seatOfPosition(moved, Position.CO)!.playerId,
+    displacedPlayerId,
+    '被换的人坐到 Hero 原来的 CO 座位',
   );
   assert.equal(
     staffingProblems(moved).length,
     0,
-    'Hero 换位留下的空座不得阻断分析（容量 ≠ 本手人数）',
+    '满座对调不得产生人员问题',
   );
-  assert.ok(
-    staffingNotices(moved).some((n) => n.includes('关煞位')),
-    `空座必须被如实告知：${staffingNotices(moved).join(' / ')}`,
-  );
-  const refilled = must(
-    applyTableOp(moved, { kind: 'ADD_PLAYER', seatId: seatOfPosition(moved, Position.CO)!.seatId }),
+  assert.equal(
+    staffingNotices(moved).length,
+    0,
+    `没有空座就不该有空座提示：${staffingNotices(moved).join(' / ')}`,
   );
 
   const adapted = tableStateToManualHandInput({
-    ...refilled,
+    ...moved,
     heroCards: ['As', 'Kd'] as const,
   });
   assert.equal(adapted.ok, true, `适配必须成功：${adapted.ok ? '' : JSON.stringify(adapted.issues)}`);
   if (!adapted.ok) return;
   assert.equal(adapted.input.heroPosition, Position.UTG);
-  assert.equal(adapted.input.effectiveStackBB, 100, '有效筹码必须取 Hero 自己的筹码');
-  assert.equal(adapted.input.seatStacksBB![Position.UTG], 100);
-  // 被新加入的玩家拿到默认筹码，而不是被顶掉那位的 42BB
-  assert.equal(adapted.input.seatStacksBB![Position.CO], 100);
+  assert.equal(adapted.input.effectiveStackBB, 42, '有效筹码必须取 Hero 所坐座位的那份');
+  assert.equal(adapted.input.seatStacksBB![Position.UTG], 42);
+  assert.equal(adapted.input.seatStacksBB![Position.CO], 100, '被换的人那份筹码留在 CO 座位上');
+});
+
+test('RT：空座位分支（非满座换位）仍如实报告留下的空座', () => {
+  /*
+   * 对调只在**目标座位有人**时发生。目标座位空着时沿用旧语义：
+   * Hero 搬过去、自己的原座位腾空 —— 此时必须由 `staffingNotices`
+   * 如实告知「哪个座位空了」，而不是让使用者自己发现本手少了一个人。
+   */
+  let state = createTable({ tableSize: 6, heroPosition: Position.CO, defaultStackBB: 100 });
+  state = must(applyTableOp(state, { kind: 'ADD_PLAYER', seatId: 'seat_BTN' }));
+  const moved = must(applyTableOp(state, { kind: 'SET_HERO_POSITION', position: Position.UTG }));
+
+  assert.equal(seatOfPosition(moved, Position.UTG)!.playerId, moved.heroPlayerId);
+  assert.equal(seatOfPosition(moved, Position.CO)!.playerId, null, '原座位必须腾空');
+  assert.equal(
+    moved.seats.filter((s) => s.playerId === null).length,
+    4,
+    '只有 Hero 与 BTN 那位玩家在座，其余 4 座本来就是空的',
+  );
+  assert.equal(
+    participantSeatsOf(moved).length,
+    2,
+    '本手参与者是 2 人（Hero 搬走之后原 CO 座位空了）',
+  );
+  assert.ok(
+    staffingNotices(moved).some((n) => n.includes('关煞位')),
+    `空座必须被如实告知：${staffingNotices(moved).join(' / ')}`,
+  );
 });

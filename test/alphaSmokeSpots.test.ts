@@ -610,10 +610,34 @@ test(`烟测:${SPOTS.length} 个 Golden Spots 全部可分析且不含「一眼�
 
     // ---- 尺寸合法性（每个 spot 都查）----
     if (decision.sizeChips !== undefined) {
-      const stack = decision.diagnostics.math.myRemainingStack;
-      if (!(decision.sizeChips > 0) || decision.sizeChips > stack) {
+      const math = decision.diagnostics.math;
+      /*
+       * 🔴 **口径修正（阶段 B 暴露）**：动作金额的语义**逐动作不同**。
+       *
+       * | 动作 | `sizeChips` 口径 | 合法上限 |
+       * |---|---|---|
+       * | `CALL` | 本次新增投入 | 剩余筹码 |
+       * | `BET` / `RAISE` / `ALL_IN` | **本街累计（raise-to）** | `本街已投入 + 剩余筹码` |
+       *
+       * 修复前这里拿 `sizeChips > myRemainingStack` 判所有动作 —— 对加注族而言
+       * 是**拿两种口径比大小**。实测（`preflop-04-AA-vs-3bet`，Hero CO 已投入 3BB、
+       * 剩余 97BB、合法全下 = 100BB）：
+       *
+       * ```text
+       * 尺寸非法：10000（剩余筹码 9700）   ← 10000 正是引擎自己的 allInToAmount
+       * ```
+       *
+       * 这是 TEST 18（`raiseToAmountConsistency.test.ts`）已经修过的那类缺陷，
+       * 本条烟测漏了。现在改成按动作口径判。
+       */
+      const limit =
+        decision.action === DecisionAction.CALL
+          ? math.myRemainingStack
+          : math.myCommittedThisStreet + math.myRemainingStack;
+      if (!(decision.sizeChips > 0) || decision.sizeChips > limit + 1e-9) {
         failures.push(
-          `[${spot.id}] ${spot.note}\n    尺寸非法：${decision.sizeChips}（剩余筹码 ${stack}）`,
+          `[${spot.id}] ${spot.note}\n    尺寸非法：${decision.sizeChips}（${decision.action} 的上限 ${limit}` +
+            `｜本街已投入 ${math.myCommittedThisStreet}、剩余 ${math.myRemainingStack}）`,
         );
       }
     }
@@ -623,8 +647,16 @@ test(`烟测:${SPOTS.length} 个 Golden Spots 全部可分析且不含「一眼�
     // 这是修复 F-01 后立刻暴露的新问题：对手下注越大，
     // 加注目标 `底池 + 2×跟注` 越高，于是系统在**河牌持一对**时
     // 建议加注到 40BB（底池的 6 倍，实际就是全下）。
-    // 引擎已加 `MAX_RAISE_TO_POT_RATIO` 保护，这里从外部再钉一遍。
-    if (decision.actionable && decision.action === DecisionAction.RAISE) {
+    // 引擎已加 `MAX_RAISE_TO_POT_RATIO` 保护（`handCategory < 3` ⇒ 生效），
+    // 这里从外部再钉一遍。
+    //
+    // 🔴 **阶段 B 的作用域修正**：该保护在引擎里被 `handCategory < 3` 包住，
+    // 而**翻前 `handCategory ≡ 0`**（没有成手牌）⇒ 它同样会拦翻前。
+    // 但翻前的「加注额 / 底池」天然很大 —— 100BB 深、面对 3Bet 时的合法全下
+    // 就是 7.4 倍底池（4Bet 全下是**正常**打法，不是「把筹码乱打光」）。
+    // 因此这条检查必须**明确按街道限定在翻后**，与引擎的 `commitments.ts`
+    // 与 `preflopAllInGuard` 的街道适用范围保持同一口径。
+    if (decision.actionable && decision.action === DecisionAction.RAISE && String(decision.diagnostics.math.street) !== 'PREFLOP') {
       const pot = decision.diagnostics.math.pot;
       const to = decision.sizeChips ?? 0;
       const tier = decision.diagnostics.math.handRankZh;

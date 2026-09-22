@@ -463,9 +463,38 @@ test('GTO-SCN-15：Decision Engine 不得出现任何 GTO 相关分支（没有 
 test('GTO-SCN-16：前端 JS 不得直接访问 GTOpen 端口（只能走 Alpha 自己的 API）', () => {
   for (const name of ['gto.js', 'table.js']) {
     const text = readFileSync(join(REPO_ROOT, 'src', 'app', 'web', name), 'utf8');
+    /* ① 端口与求解器地址：任何硬编码都违规 */
     assert.ok(!/3737/.test(text), `${name} 不得硬编码 GTOpen 端口`);
     assert.ok(!/127\.0\.0\.1/.test(text), `${name} 不得硬编码求解器地址`);
-    assert.ok(!/preflop/.test(text), `${name} 不得直接调用求解器端点`);
+
+    /*
+     * ② **所有** `fetch` / `postJson` 的地址必须是**同源相对路径**。
+     *
+     * ## 为什么这样判（而不是继续用裸词 `/preflop/`）
+     *
+     * 原判据是 `/preflop/` —— 本意是「不得直接拼求解器端点」，却把
+     * **任何**含 preflop 的标识符都当成违规。阶段 B 往牌桌调试区加了一条
+     * **纯展示**字段 `preflopRaise`（翻前加注事实包的逐尺寸证据）后，这条
+     * 断言误报。误报本身就是缺陷：一条安全断言如果会对无关标识符报警，
+     * 维护者迟早会把它删掉。
+     *
+     * 也不能改成「路径黑名单」：`gto.js` 调 `/api/gto/range` **正是**本测试
+     * 要求的做法（「只能走 Alpha 自己的 API」），而它包含 `/gto/range` 子串。
+     *
+     * 真正的语义是「不得直连求解器」，可执行的形式是：
+     * **每一个请求地址都必须是 `'/'` 开头的同源相对路径** ——
+     * 于是 `http://127.0.0.1:3737/...`、绝对 URL、协议相对 URL 一律不合法。
+     */
+    const callSites = [...text.matchAll(/(?:fetch|postJson)\s*\(\s*(['"`])([^'"`]*)\1/g)];
+    assert.ok(callSites.length > 0, `${name} 应当有可检查的请求点（判据失效会让本断言变成空转）`);
+    for (const site of callSites) {
+      const url = site[2]!;
+      assert.ok(
+        url.startsWith('/') && !url.startsWith('//'),
+        `${name} 的请求地址必须是同源相对路径，实际「${url}」` +
+          '（直连求解器或外部地址一律不允许）',
+      );
+    }
   }
 });
 

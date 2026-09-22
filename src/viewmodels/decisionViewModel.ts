@@ -119,6 +119,15 @@ export type DecisionDebugViewModel = {
    */
   preflopIso: readonly { label: string; value: string }[];
   /**
+   * 🔴 **翻前加注事实包**（PREFLOP RAISE DECISION 阶段 B）—— 逐尺寸的
+   * 响应概率 / 条件权益 / 被再加注分支 / EV。
+   *
+   * 使用者第十一节要求诊断区显示「各候选动作与尺寸的 EV」「对手弃/跟/再加注概率」
+   * 「不同分支的条件权益」「对手再加注后 Hero 评估过哪些应对」——
+   * 这四件事都是**逐尺寸**的。
+   */
+  preflopRaise: readonly { label: string; value: string }[];
+  /**
    * 🔴 **多人联合响应树**（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1）。
    *
    * 逐对手响应 → 联合状态 → 条件权益 → 逐分支 EV → 总 EV，
@@ -691,7 +700,36 @@ export function toDecisionViewModel(
             row('针对对手', d.range.opponentPositionZh),
             row('来源类型', d.range.sourceKind),
             row('来源可信度', d.range.confidence.toFixed(2)),
-            row('有效组合数', `${d.range.supportSize} / 1326（${percentZh(d.range.supportShare, 1)}）`),
+            /*
+             * 🔴 **两个「组合数」必须分清**（2026-09-22 修复）。
+             *
+             * 修复前这一行写的是「有效组合数」，而 `range.types.ts` 里
+             * **两个字段的注释都叫「有效组合数」**：
+             *
+             * | 字段 | 真实含义 | 9MAX 实测 |
+             * |---|---|---|
+             * | `supportSize` | `rawWeight > 0` 的组合数 | **1225**（= C(50,2)，即**全部**） |
+             * | `effectiveComboCount` | `1 / Σ(p²)`，分布集中度 | **134.5** |
+             *
+             * 于是界面上会出现「有效组合数 1225 / 1326（92.4%）」——
+             * 使用者会读成「他的范围有 1225 个组合那么宽」，
+             * 而真实等效宽度只有 **134.5**（约 11%）。
+             * 求解器在每类上都留了一点频率，所以正权重数必然等于全部组合，
+             * 这个数字**不携带任何范围信息**。
+             */
+            row(
+              '正权重组合数',
+              `${d.range.supportSize} / 1326（${percentZh(d.range.supportShare, 1)}）` +
+                '——**仅表示非零**；求解器范围通常覆盖全部组合，此数不反映范围宽窄',
+            ),
+            row(
+              '有效组合数 1/Σp²',
+              `${d.range.metrics.effectiveComboCount.toFixed(1)}` +
+                `（等效宽度；占正权重组合的 ${percentZh(
+                  d.range.supportSize > 0 ? d.range.metrics.effectiveComboCount / d.range.supportSize : 0,
+                  1,
+                )}）`,
+            ),
             row('熵', `${d.range.metrics.entropyBits.toFixed(2)} bit`),
             row('是否塌缩', boolZh(d.range.collapsed)),
             row('来源说明', d.range.sourceDescription),
@@ -1011,6 +1049,121 @@ export function toDecisionViewModel(
         row('身后玩家风险（SB/BB）', iso.playersBehind.noteZh),
         row('模型假设', iso.assumptionsZh.join('；')),
         row('抽水', `${iso.rakeStatus}（本项目无 Rake Engine —— 所有 EV 都未计抽水）`),
+      ]);
+    })(),
+
+    /*
+     * 🔴 **翻前加注（PREFLOP RAISE DECISION 阶段 B）**。
+     *
+     * 使用者第十一节要求诊断区显示的五件事，这里逐尺寸给出：
+     *
+     * | 要求 | 本节的哪一行 |
+     * |---|---|
+     * | 各候选动作与尺寸的 EV | 「逐尺寸 EV」 |
+     * | 对手弃／跟／再加注概率 | 「逐尺寸响应」 |
+     * | 不同分支的条件权益 | 「条件权益」 |
+     * | 对手再加注后 Hero 评估过哪些应对 | 「被再加注分支」 |
+     * | 范围来源 / 模型版本 / 未支持项 | 「模型 / 范围来源」「未支持」 |
+     */
+    preflopRaise: (() => {
+      const pr = d.preflopRaise ?? null;
+      if (pr === null) {
+        return Object.freeze([
+          row(
+            '翻前加注模型',
+            '—（本节点不是「单挑 + 我之后无人未行动 + 面对加注」的翻前节点 ⇒ ' +
+              '**没有**加注 EV，加注金额已如实列入「未评估动作」）',
+          ),
+        ]);
+      }
+      const num = (v: number | null | undefined, digits = 2): string =>
+        v === null || v === undefined ? '—' : v.toFixed(digits);
+      const pct = (v: number | null | undefined, digits = 1): string =>
+        v === null || v === undefined ? '—' : `${(v * 100).toFixed(digits)}%`;
+      const eqOf = (e: { value: number | null; method: string; iterations: number }): string =>
+        e.value === null ? '—' : `${pct(e.value)}（${e.method}，${e.iterations} 次）`;
+
+      return Object.freeze([
+        row('翻前加注模型', pr.noteZh),
+        row(
+          '模型 / 范围来源',
+          `${pr.version} ｜ 响应模型 ${pr.modelVersion} ｜ 证据等级 ${pr.evidence} ｜ ` +
+            `资金口径契约 ${pr.cashflowContract}`,
+        ),
+        row(
+          '位置 / 筹码（来自真实桌型与行动顺序）',
+          `Hero ${pr.heroPosition} vs ${pr.opponentPosition}｜底池 ${num(pr.currentPot)}｜` +
+            `我跟注需 ${num(pr.heroCallCost)}｜我剩余 ${num(pr.heroRemaining)}｜` +
+            `跟注后 SPR ${num(pr.sprAfterCall)}｜最小加注到 ${num(pr.minRaiseToAmount)}｜全下到 ${num(pr.allInToAmount)}`,
+        ),
+        row(
+          '到达范围（他的，按行动历史条件化）',
+          `${pr.arrival.comboCount} 组合｜质量 ${num(pr.arrival.mass, 4)}｜来源 ${pr.arrival.source}`,
+        ),
+        row(
+          '逐尺寸 EV（零点 = 弃牌 ≡ 0，单位 = 筹码）',
+          pr.sizes
+            .map(
+              (s) =>
+                `${num(s.sizeBB, 1)}BB→${num(s.raiseEV)}${s.isAllIn ? '（全下）' : ''}`,
+            )
+            .join('｜'),
+        ),
+        row(
+          '逐尺寸响应（他弃／跟／再加注）',
+          pr.sizes
+            .map(
+              (s) =>
+                `${num(s.sizeBB, 1)}BB：弃 ${pct(s.foldLikelihood)} / 跟 ${pct(s.callLikelihood)} / ` +
+                `再加 ${pct(s.reRaiseLikelihood)}｜需权益 ${num(s.priceRequiredEquity, 4)}`,
+            )
+            .join('；'),
+        ),
+        row(
+          '条件权益（每一支各一份，不许混用）',
+          pr.sizes
+            .map(
+              (s) =>
+                `${num(s.sizeBB, 1)}BB：对跟注桶 ${eqOf(s.heroEquityVsRaiseCallRange)}｜` +
+                `对再加注桶 ${eqOf(s.heroEquityVsReraiseRange)}`,
+            )
+            .join('；'),
+        ),
+        row(
+          '资金口径（我投入／被跟注／他补／终池／退回）',
+          pr.sizes
+            .map(
+              (s) =>
+                `${num(s.sizeBB, 1)}BB：我新增 ${num(s.heroAdd)}、被跟注 ${num(s.heroContestedAdd)}、` +
+                `他补 ${num(s.villainAdd)}、终池 ${num(s.finalPot)}、退回 ${num(s.uncalledReturn)}` +
+                `${s.villainIsAllInByCall ? '（他跟平即全下）' : ''}`,
+            )
+            .join('；'),
+        ),
+        row(
+          '被再加注分支（只展开 Hero 的 FOLD / CALL）',
+          pr.sizes
+            .map((s) =>
+              s.reraiseAvailable
+                ? `${num(s.sizeBB, 1)}BB：他再加到 ${num(s.reRaiseTo)}（最小合法 ${num(s.reRaiseMinLegalTo)}` +
+                  `${s.villainReRaiseIsAllIn ? '，全下' : ''}）⇒ Hero 弃牌 ${num(s.reraiseFoldBranchEV)} / ` +
+                  `跟注 ${num(s.reraiseCallBranchEV)} ⇒ 取 **${num(s.reraiseBranchEV)}**（${s.reraiseBranchKind}）` +
+                  `｜我再跟需 ${num(s.heroAdditionalCallVsReRaise)}`
+                : `${num(s.sizeBB, 1)}BB：不产出再加注分支` +
+                  `${s.reraiseBranchKind === 'FOLD_ONLY_UNAVAILABLE' ? '（权益不可得 ⇒ 该支按下界计）' : ''}`,
+            )
+            .join('；'),
+        ),
+        row(
+          '未支持（必须与上面的数字一起读）',
+          '① 被再加注分支**只**比较 Hero 的 FOLD / CALL —— **Hero 的 5Bet 应对未展开**' +
+            `（heroFiveBetExpanded = ${String(pr.sizes[0]?.heroFiveBetExpanded ?? false)}）；` +
+            '② 非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌）；' +
+            '③ 全下分支没有后续街 ⇒ 精确；' +
+            '④ 多人池 / 身后有人未行动时**不产出**本事实包（不按单挑偷偷计算）；' +
+            `⑤ 抽水 ${pr.rakeStatus}（本项目无 Rake Engine）`,
+        ),
+        row('模型假设（逐条）', pr.assumptionsZh.join('；')),
       ]);
     })(),
 

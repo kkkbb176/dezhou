@@ -58,8 +58,15 @@ import {
   tableMetadata,
   type TableApiDeps,
 } from './table/tableApi.ts';
+import type { PokerTableState } from './table/table.types.ts';
 /* 🔴 PLAYER PROFILE EXPLOIT V1：服务器入口显式开启玩家历史持久化（默认 `data/`） */
 import { defaultHistoryDir, listKnownPlayers } from './table/playerHistory.ts';
+import {
+  runTableDynamicsForTable,
+  tableDynamicsModeZh,
+} from './table/tableDynamicsServer.ts';
+import { tableDynamicsModeFromEnv } from './table/tableDynamicsServer.ts';
+import { SHADOW_BUDGET_MS } from './table/tableDynamicsServer.ts';
 import { tableStateToManualHandInput } from './table/tableAdapter.ts';
 import {
   gtoCatalog,
@@ -738,6 +745,15 @@ async function handleRequest(
       const body = parsed as { input?: unknown; table?: unknown };
       let input: unknown = body.input;
       const tableRaw = body.table;
+      /**
+       * 🔴 **TABLE DYNAMICS V1**：牌桌路径要保留这份状态。
+       *
+       * 桌况需要三样东西，而它们**只在牌桌上存在**：
+       * 谁坐在哪个座位（`seatIdByPlayerId`）、本手人数与街道、Hero 是谁。
+       * 若这里不保留，桌况层就只能从输入反推位置 ——
+       * 那会踩上模块 A-4 已登记的缺陷（座位名 ≠ 本手角色）。
+       */
+      let tableForDynamics: PokerTableState | null = null;
 
       if (input === undefined && tableRaw !== undefined) {
         const parsedTable = parseTableState(tableRaw);
@@ -759,6 +775,7 @@ async function handleRequest(
           return;
         }
         input = adapted.input;
+        tableForDynamics = parsedTable.state;
       }
 
       if (input === null || typeof input !== 'object') {
@@ -863,6 +880,69 @@ async function handleRequest(
         return;
       }
 
+      /*
+       * 🔴 **牌桌动态适应 V1（影子模式）**。
+       *
+       * ## 顺序是刻意放在这里的
+       *
+       * 1. `result` 已经算完 ⇒ **正式建议不可能被下面的调整影响**；
+       * 2. 影子里第二次调用的是**同一个** `analyzeManualHand`，
+       *    因此调整前后是同一套收益口径（`sameCashflowContract`）；
+       * 3. 任何失败（桌况算不出、历史损坏、写盘失败）都只在
+       *    `tableDynamics` 字段里如实说明，**不改 `decision`**。
+       *
+       * ⚠️ 只有**牌桌路径**才有桌况：表单路径没有座位/人数事实，
+       * 因此那里返回「不适用」而不是编一个桌况出来。
+       */
+      const tableDynamics =
+        tableForDynamics === null
+          ? {
+              mode: tableDynamicsModeFromEnv(),
+              status: 'NOT_APPLICABLE',
+              summaryZh: '仅牌桌路径支持桌况分析',
+              observing: true,
+              tableConfidence: 0,
+              confidenceZh: '样本不足',
+              handsObserved: 0,
+              recordsUsed: 0,
+              dimensions: [],
+              relevantPlayers: [],
+              adjustments: [],
+              comparison: null,
+              appliedChanges: [],
+              dynamicsDigest: 'n/a',
+              reasonZh: '本次是**表单路径**（没有座位与人数事实）⇒ 不做桌况调整',
+              coverageZh: '（不适用）',
+              logIssueZh: null,
+              modeZh: tableDynamicsModeZh(tableDynamicsModeFromEnv()),
+            }
+          : {
+              ...runTableDynamicsForTable({
+                table: tableForDynamics,
+                input: input as ManualHandInput,
+                analyze: (inp: ManualHandInput) => analyzeManualHand(inp, { rules, asOf: Date.now() }),
+                /*
+                 * 🔴 **影子预算的真实隔离**：把预算翻译成这次分析**自己的**
+                 * `DecisionDeadline`，让生产管线在它自己的检查点上中止影子计算。
+                 *
+                 * 为什么不能只在外层计时：本项目**没有** `AbortSignal` 这类外部
+                 * 取消原语，同步分析一旦开始就会跑完并占用线程 —— 那时再返回
+                 * 「超时」只是事后声明，使用者等待的时间一秒没少（授权 §五禁止）。
+                 */
+                withBudget:
+                  (analyze: (i: ManualHandInput) => unknown, ms: number) =>
+                  (i: ManualHandInput) =>
+                    analyzeManualHand(i, {
+                      rules,
+                      asOf: Date.now(),
+                      budget: { softMs: ms, hardMs: Math.round(ms * 1.6) },
+                    }),
+                historyDir: defaultHistoryDir(),
+                shadowBudgetMs: SHADOW_BUDGET_MS,
+              }).status,
+              modeZh: tableDynamicsModeZh(tableDynamicsModeFromEnv()),
+            };
+
       sendJson(res, 200, {
         ok: true,
         viewModel: result.viewModel,
@@ -875,6 +955,13 @@ async function handleRequest(
           classification: result.decision.classification,
           actionable: result.decision.actionable,
         },
+        /*
+         * 🔴 **桌况与影子对比**（TABLE DYNAMICS V1）。
+         *
+         * 界面必须能一眼分清「正式建议」与「实验结果」：
+         * `decision` 永远是正式建议；`tableDynamics.comparison` 是实验。
+         */
+        tableDynamics,
         /*
          * 🔴 **范围来源必须跟着建议一起回传**。
          *
@@ -916,7 +1003,21 @@ async function handleRequest(
            */
           fromSolver: rangeIsFromSolver(r.sourceId),
           confidence: r.confidence,
+          /*
+           * 🔴 **两个「组合数」都要给，并标明各自含义**（2026-09-22 修复）。
+           *
+           * 此前这里只有 `supportSize`，而它在页面上被标成「有效组合数」。
+           * 9MAX 实测：`supportSize = 1225`（= C(50,2)，即**全部**组合，
+           * 因为求解器在 169 类上都留了频率），而真实等效宽度
+           * `effectiveComboCount = 134.5`。只给前者会让使用者把范围读宽约 9 倍。
+           *
+           * 两个字段都保留且命名明确：`supportSize` = 正权重组合数，
+           * `effectiveComboCount` = 1/Σ(p²) 等效宽度。
+           */
           supportSize: r.supportSize,
+          supportSizeNoteZh: '正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**',
+          effectiveComboCount: r.metrics.effectiveComboCount,
+          normalizedEntropy: r.metrics.normalizedEntropy,
           collapsed: r.collapsed,
           /*
            * 🔴 这一家的**取数结局**（Phase 1.3）。

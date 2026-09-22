@@ -27,6 +27,17 @@
  *（= 从它顺时针找到的第一个合格座位，也就是 `NEXT_HAND` 将要轮到的那一个）。
  *
  * 本文件把这三件事都锁住：显示不重不漏、预览与冻结同源、状态不被偷改。
+ *
+ * ## 🔴 2026-09 追加：产生「悬空 Button」的那条路径已经被堵住
+ *
+ * 上面那条错乱的**触发条件**是「Hero 换位把自己的旧座位腾空，而它正是 Button
+ * 座位」。使用者后来报告的形态是「6 人桌把 Hero 设为 UTG，头像却显示 BB」——
+ * 同一条路径。现在 `setHeroPosition` 改成**座位对调**（两人交换座位，
+ * 不产生空座位），因此满座换位不再让 Button 悬空。
+ *
+ * 本文件保留「有效 Button」这一层读法（它仍然是必要的防线：`CLEAR_SEAT`、
+ * 换桌型裁座位、暂离都还会让 `buttonSeatId` 指向不能坐的座位），
+ * 而**对调本身的语义**由 `test/seatSwap.test.ts` 单独锁住。
  */
 
 import { test } from 'node:test';
@@ -124,9 +135,23 @@ test('BTN-02：Hero 在 CO 时的角色必须与有效 Button 推导一致（不
    * ⚠️ 不断言「角色名 == 位置名」—— 角色由 Button 决定，与物理位置名本就是两件事
    *（Hero 坐在 CO 座位上，角色可能是 BB）。要断言的是**由有效 Button 推导**：
    * 修复前 Hero 拿到的是「回落规则算出来的」角色，实测就是大盲位。
+   *
+   * 🔴 2026-09 座位对调语义之后，这条路径的**前提**变了：换位不再腾空 Hero
+   * 的旧座位（也就不会让 Button 座位悬空），因此这里现在是一条更强的断言 ——
+   * Hero 的角色必须**正好等于**他所坐的座位名。旧前提「Button 座位确实空了」
+   * 由下一条断言反向钉住（座位必须**仍然有人**）。
    */
   const staleButtonSeat = state.seats.find((s) => s.seatId === state.buttonSeatId)!;
-  assert.equal(staleButtonSeat.playerId, null, '前置条件：Button 座位确实空了（本用例的前提）');
+  assert.notEqual(
+    staleButtonSeat.playerId,
+    null,
+    '座位对调后 Button 座位上必须仍然有人（旧实现会把它腾空，Button 于是浮到别人手里）',
+  );
+  assert.equal(
+    effectiveButtonSeatId(state),
+    state.buttonSeatId,
+    'Button 座位仍有人 ⇒ 有效 Button 不得浮动',
+  );
 
   assert.ok(heroSeat.handRole !== null, 'Hero 必须有角色');
   assert.equal(
@@ -138,6 +163,11 @@ test('BTN-02：Hero 在 CO 时的角色必须与有效 Button 推导一致（不
     heroSeat.handRole,
     Position.BB,
     'Hero 不得被回落规则顶成大盲位（修复前实测如此：Hero 在 CO，却显示大盲位）',
+  );
+  assert.equal(
+    heroSeat.handRole,
+    Position.CO,
+    'Button 不浮动 ⇒ Hero 在 CO 座位的本手角色就是关煞位（顶栏与头像必须一致）',
   );
 });
 

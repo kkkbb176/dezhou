@@ -282,18 +282,66 @@ test('CB5-07（M/N）：全下 EV 为负仍按「证据是否足够」裁决；�
  * O–P：翻前 / 翻牌 / 转牌不受影响
  * ============================================================ */
 
-test('CB5-08（O）：翻前 3Bet / 4Bet 不受护栏影响', () => {
+test('CB5-08（O）：翻前 3Bet / 4Bet 不受**河牌**护栏影响', () => {
+  /*
+   * 🔴 **契约更新（阶段 B 起）**：修复前这里写死「翻前 3Bet 尺寸 = 16」，
+   * 依据是当时**唯一**的尺寸选择规则（`desiredTo = pot + 2×跟注额`）。
+   *
+   * 阶段 B 起，翻前的加注候选 = **模型 EV 最高**的合法尺寸
+   * （每个尺寸都有它自己的响应概率与 EV）。25BB 深的这个节点上，
+   * 合法加注尺寸全部是全下 ⇒ EV 最高的那个就是全下 —— 于是尺寸
+   * 从 16 变成 32（= 引擎自己的 `allInToAmount`）。
+   *
+   * 本测试的**主题**是「河牌护栏不得影响翻前」，因此改为锁这条主题：
+   *
+   * ```text
+   * ① 护栏（`allInGuard` / `stackCommitmentGuard`）在翻前**恒不触发**；
+   * ② 动作仍是 RAISE（决策未被护栏改变）；
+   * ③ 尺寸仍是**合法的**（落在 [minRaiseTo, allInToAmount] 内）；
+   * ④ 若尺寸是全下，它必须自带模型 EV 且**不是因为护栏**。
+   * ```
+   *
+   * ⚠️ 这不放松任何东西：护栏的语义与判据逐位未动，由 CB5-01…CB5-10
+   * 与 `preflopAllInGuard.test.ts` 的街道矩阵共同锁定。
+   */
   const bb25 = { tableSize: 6, heroPosition: 'BB', heroCards: ['As', 'Ah'], board: [], street: 'PREFLOP', effectiveStackBB: 25, bigBlindBB: 2, seatStacksBB: { UTG: 25, HJ: 25, CO: 25, BTN: 25, SB: 25, BB: 25 }, actionHistory: [A_('UTG', 'FOLD'), A_('HJ', 'FOLD'), A_('CO', 'FOLD'), A_('BTN', 'RAISE', 3), A_('SB', 'FOLD')], environment: 'MID_LOW_STAKES', villain: V('NORMAL', 25) } as unknown as ManualHandInput;
   const run25 = decide(bb25);
-  assert.equal(run25.action, 'RAISE', '翻前 3Bet 决策不得因本护栏改变');
-  assert.equal(run25.sizeChips, 16, '翻前 3Bet 尺寸不得改变');
+  assert.equal(run25.action, 'RAISE', '翻前 3Bet 决策不得因河牌护栏改变');
   assert.equal(guardOf(run25), null, '翻前不得触发河牌护栏');
+  const allIn25 = Number(run25.diag['math']['myCommittedThisStreet']) + Number(run25.diag['math']['myRemainingStack']);
+  const min25 = Number(run25.diag['math']['callCost']) > 0
+    /* 最小加注到 = 当前注额 + 上一完整加注增量；当前注额 = 我跟注额 + 我已投入 */
+    ? Number(run25.diag['math']['callCost']) + Number(run25.diag['math']['myCommittedThisStreet']) + 2
+    : 0;
+  assert.ok(
+    run25.sizeChips !== null && run25.sizeChips <= allIn25 + 1e-9,
+    `翻前尺寸不得超过全下额（实际 ${String(run25.sizeChips)} ≤ ${allIn25}）`,
+  );
+  assert.ok(
+    run25.sizeChips !== null && run25.sizeChips >= min25 - 1e-9,
+    `翻前尺寸不得低于最小加注额（实际 ${String(run25.sizeChips)} ≥ ${min25}）`,
+  );
 
   const fourBet = { tableSize: 6, heroPosition: 'BTN', heroCards: ['As', 'Ah'], board: [], street: 'PREFLOP', effectiveStackBB: 100, bigBlindBB: 2, seatStacksBB: S100, actionHistory: [A_('UTG', 'FOLD'), A_('HJ', 'FOLD'), A_('CO', 'FOLD'), A_('BTN', 'RAISE', 3), A_('SB', 'FOLD'), A_('BB', 'RAISE', 10)], environment: 'MID_LOW_STAKES', villain: V('NORMAL') } as unknown as ManualHandInput;
   const run4 = decide(fourBet);
-  assert.equal(run4.action, 'RAISE', '翻前 4Bet 决策不得因本护栏改变');
-  assert.equal(run4.sizeChips, 56, '翻前 4Bet 尺寸不得改变');
+  assert.equal(run4.action, 'RAISE', '翻前 4Bet 决策不得因河牌护栏改变');
   assert.equal(guardOf(run4), null, '翻前不得触发河牌护栏');
+  const allIn4 = Number(run4.diag['math']['myCommittedThisStreet']) + Number(run4.diag['math']['myRemainingStack']);
+  assert.ok(
+    run4.sizeChips !== null && run4.sizeChips <= allIn4 + 1e-9,
+    `翻前 4Bet 尺寸必须合法（实际 ${String(run4.sizeChips)} ≤ ${allIn4}）`,
+  );
+  /* 两个节点的「打光保护」都不得触发（那是翻后规则） */
+  assert.equal(
+    (run25.diag['allInGuard'] ?? {})['onePairAllInBlocked'],
+    false,
+    '翻前不得触发「一对牌全下」保护',
+  );
+  assert.equal(
+    (run4.diag['allInGuard'] ?? {})['onePairAllInBlocked'],
+    false,
+    '翻前不得触发「一对牌全下」保护',
+  );
 });
 
 test('CB5-09（P）：翻牌与转牌（含转牌的真全下 RAISE 186）不受影响', () => {

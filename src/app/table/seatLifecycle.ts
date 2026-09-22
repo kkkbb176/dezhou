@@ -889,11 +889,44 @@ export function setTableSize(state: PokerTableState, tableSize: 6 | 9): TableOpO
 /**
  * 设置 Hero 位置（§21）。
  *
- * ## 只改逻辑位置 + 重算视觉序号
+ * ## 换位 = 两个人**对调座位**（2026-09 座位对调语义）
  *
- * 换位时把原 Hero 座位腾空（那个人就是 Hero，他换座位了），
- * 新座位若原本有人则把那个人清掉（并要求用户重新安排）。
- * **不修改任何已录入的手牌/公共牌/行动记录** —— 那些是本手的历史事实。
+ * ```text
+ * 目标座位空着  → Hero 搬过去，自己原来的座位腾空（沿用旧语义）
+ * 目标座位有人  → Hero 与那个人**交换座位**，没有任何座位变成空的
+ * ```
+ *
+ * ## 为什么必须是「对调」而不是「把对方清掉」（使用者报告的形态）
+ *
+ * 旧实现把目标座位上的人解绑，并把 Hero 的原座位腾空。满座 6 人桌「Hero 从
+ * BTN 挪到 UTG」于是产生三个可见后果：
+ *
+ * | 后果 | 实测 |
+ * |---|---|
+ * | 本手人数凭空少一个 | 6 人桌 → **5 人**本手（9 人桌 → 8 人） |
+ * | 被顶掉的人从盘面上消失 | 只剩一条 notice，使用者以为「人丢了」 |
+ * | Button 悬空 ⇒ 从 Hero 手里溜走 | 腾空的正是 Button 座位 ⇒ 有效 Button 顺时针浮到 SB ⇒ **Hero 在 UTG 座位上被标成「大盲位（BB）」**，与顶栏「Hero 在 UTG」当场矛盾 |
+ *
+ * 对调把这三条一起消掉：不产生空座位 ⇒ Button 不悬空 ⇒ 每个人本手角色
+ * 就等于他坐的那个座位名（在 Button 不动的前提下）。
+ *
+ * ## 🔴 筹码规则：目标座位有人 = 物理换座；没人 = 筹码跟着 Hero 走
+ *
+ * | 情形 | 新座位上那份筹码来自哪 | 原因 |
+ * |---|---|---|
+ * | 目标座位**有人** | 该座位原有的那份（两份都留在座位上） | 物理换座：桌面这一堆筹码没动，只是换了个人看着它。**总数逐位不变** |
+ * | 目标座位**空着** | Hero 自己带过去 | 没有第二个人 ⇒ 不存在归属歧义；拿默认值顶掉会把 Hero 的筹码静默改写成 100BB |
+ *
+ * ⚠️ 曾经的替代方案是「不管有没有人都让 Hero 带着自己的筹码搬过去」。它在
+ * **有人**那一支会**凭空增减筹码**：目标座位是短码时 Hero 的筹码被改小
+ * （红队 RT-L3 实测 250BB → 33BB），被换的那位则带着 250BB 坐到 Hero 的旧座位 ——
+ * 桌上筹码总数变了，而且没有任何东西能解释差额去了哪。物理换座没有这个问题。
+ *
+ * 因此三条不变量是：**座位数不变、玩家数不变、桌上筹码总数不变** ——
+ * 由 `test/seatSwap.test.ts` 锁住。
+ *
+ * **不修改任何已录入的手牌 / 公共牌 / 行动记录** —— 那些是本手的历史事实
+ * （本手进行中整个操作会被拒绝）。
  */
 export function setHeroPosition(state: PokerTableState, position: Position): TableOpOutcome {
   if (state.handActive) {
@@ -912,16 +945,19 @@ export function setHeroPosition(state: PokerTableState, position: Position): Tab
   if (position === state.heroPosition) return ok(state);
 
   const oldHeroPosition = state.heroPosition;
-  /**
-   * ⚠️ Hero 的筹码必须**跟着人走**（红队命中）。
-   *
-   * 修复前直接把目标座位的 `stackBB` 留给 Hero —— 于是「把 Hero 从 CO
-   * 换到 BB」会让他**静默继承 BB 那个人的筹码**（例如从 210BB 变成 33BB），
-   * 被顶掉的那位玩家则无声消失。屏幕上看起来一切正常，
-   * 但之后每一次决策用的都是错误的筹码。
-   */
-  const heroStackBB = seatOfPosition(state, oldHeroPosition)?.stackBB ?? state.defaultStackBB;
+  const oldHeroSeat = seatOfPosition(state, oldHeroPosition);
+  const targetSeat = seatOfPosition(state, position)!;
+  /** 目标座位上原本的人（空座位时为 null）—— 他要换到 Hero 原来的座位上 */
+  const displacedPlayerId = targetSeat.playerId;
 
+  /**
+   * 座位重建：**只换 `playerId` 与随之而来的在场状态**。
+   *
+   * `stackBB` 只在**目标座位空着**时被写一次（Hero 把自己的筹码带过去，
+   * 见函数头「筹码规则」）；对调情形下两份筹码都留在各自座位上，刻意不赋值 ——
+   * 少一处赋值就少一处「筹码被静默改写」的可能。
+   */
+  const heroStackBB = oldHeroSeat?.stackBB ?? state.defaultStackBB;
   const seats = state.seats.map((s) => {
     if (s.logicalPosition === position) {
       return Object.freeze({
@@ -929,29 +965,39 @@ export function setHeroPosition(state: PokerTableState, position: Position): Tab
         playerId: state.heroPlayerId,
         status: SeatStatus.SEATED_ACTIVE,
         sitOutNextHand: false,
-        stackBB: heroStackBB,
+        ...(displacedPlayerId === null ? { stackBB: heroStackBB } : {}),
       });
     }
     if (s.logicalPosition === oldHeroPosition) {
-      return Object.freeze({
-        ...s,
-        playerId: null,
-        status: SeatStatus.EMPTY,
-        sitOutNextHand: false,
-        stackBB: state.defaultStackBB,
-      });
+      return displacedPlayerId === null
+        ? Object.freeze({
+            ...s,
+            playerId: null,
+            status: SeatStatus.EMPTY,
+            sitOutNextHand: false,
+            stackBB: state.defaultStackBB,
+          })
+        : Object.freeze({
+            ...s,
+            playerId: displacedPlayerId,
+            status: SeatStatus.SEATED_ACTIVE,
+            sitOutNextHand: false,
+          });
     }
     return s;
   });
 
-  const displaced = seatOfPosition(state, position);
   const displacedName =
-    displaced?.playerId != null ? (state.playersById[displaced.playerId]?.displayName ?? displaced.playerId) : null;
+    displacedPlayerId !== null
+      ? (state.playersById[displacedPlayerId]?.displayName ?? displacedPlayerId)
+      : null;
+  const targetStackBB = targetSeat.stackBB;
   const notices = [`Hero 位置已改为 ${position}（牌桌视图已旋转，Hero 固定在底部）。`];
   if (displacedName !== null) {
     notices.push(
-      `${POSITION_ZH[position]} 座位上原本是「${displacedName}」—— 该座位已交给 Hero，` +
-        '他不再绑定任何座位（玩家对象仍保留在历史里）。请用「加入玩家」重新安排。',
+      `已与「${displacedName}」**对调座位**：他换到 ${oldHeroPosition} 座位` +
+        `（${heroStackBB}BB），Hero 坐 ${position}（${targetStackBB}BB）。` +
+        '筹码留在各自座位上 —— 本手人数与桌上筹码总数都不变。',
     );
   }
 

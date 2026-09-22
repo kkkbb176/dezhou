@@ -415,6 +415,12 @@ test('POT-D9：🔴 对手范围**缺失**不得被当成「无人能争 ⇒ 胜
     usedActions: [],
     reportedGap: null,
     iterationsCompleted: null,
+    /*
+     * 本用例只关心「范围塌缩后权益算不出来」，不关心准入结论本身
+     * —— 但要**如实标注**这是测试构造的覆盖，不是真求解器产物。
+     */
+    targetGap: null,
+    admitVerdictZh: '（测试构造的范围覆盖，非真实求解器产物）',
   } as const;
 
   const built = buildDecisionContext({

@@ -35,6 +35,7 @@ import type { EnvironmentAdvice, PriorityVerdict } from '../../domain/environmen
 import type { OpponentRangeFacts } from '../postflop/types.ts';
 import type { QuickProfile } from '../../app/manualInput/manualInput.ts';
 import type { PreflopIsoFacts } from '../../app/manualInput/limpIsolation.ts';
+import type { PreflopRaiseFacts } from '../../app/manualInput/preflopRaiseFacts.ts';
 import type { MultiwayBetFacts } from '../../domain/postflop/betResponse.ts';
 import type { RaiseResponseModelFacts } from '../../app/manualInput/raiseResponse.ts';
 
@@ -1080,6 +1081,14 @@ export type DecisionContext = {
    */
   preflopIso?: PreflopIsoFacts | null;
   /**
+   * **翻前加注事实包**（逐尺寸响应 / 条件范围 / 被再加注分支 / RAISE EV）。
+   *
+   * 只在「单挑、我之后无人未行动、面对加注」的翻前节点存在；
+   * 其余情形为 `undefined` —— 原因由 `contextBuilder` 写进 warnings，
+   * **不允许**静默按单挑计算。
+   */
+  preflopRaise?: PreflopRaiseFacts | null;
+  /**
    * **首要对手**的范围快照（= 第一个已实现的对手）。
    *
    * 🔴 它**只用于展示与玩家画像**，**不再**是权益的依据 ——
@@ -1257,6 +1266,15 @@ export type DecisionDiagnostics = {
   betDecision?: Readonly<Record<string, unknown>> | null;
   /** 🔴 多人 limp 隔离加注事实包（只有「面对跛入且无人加注」的翻前节点才有） */
   preflopIso?: PreflopIsoFacts | null;
+  /**
+   * 🔴 **翻前加注事实包**（PREFLOP RAISE DECISION · 阶段 B）。
+   *
+   * 逐尺寸的响应概率 / 条件范围 / 被再加注分支 / RAISE EV。
+   * 只在**单挑、我之后无人未行动、且面对加注**的翻前节点存在；
+   * 其余情形为 `undefined` 且 `contextBuilder` 会把**原因**写进 warnings
+   *（多人时**不偷偷按单挑算**）。
+   */
+  preflopRaise?: PreflopRaiseFacts | null;
   /**
    * 🔴 **多人联合响应树**（MULTIWAY POSTFLOP RESPONSE TREE PHASE 1）。
    *

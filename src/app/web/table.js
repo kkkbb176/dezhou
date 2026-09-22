@@ -650,7 +650,16 @@
         app.state.heroPosition === p.value ? 'active' : '',
         p.labelZh + '（' + p.value + '）',
       );
-      b.title = '把 Hero 放到 ' + p.value + '（牌桌视图会旋转，Hero 固定在底部）';
+      /*
+       * 🔴 **座位对调语义**（2026-09）：目标座位上如果有人，两个人是**交换座位**
+       * 而不是「把对方顶掉」。筹码跟着座位走（谁都没有被吞掉筹码）。
+       *
+       * 提示必须写清楚 —— 否则使用者点完只会看到一条 notice，
+       * 而不知道「对面那个人去哪了」（旧实现是把人解绑，盘面上直接消失）。
+       */
+      b.title =
+        '把 Hero 放到 ' + p.value + '（牌桌视图会旋转，Hero 固定在底部）。' +
+        '那个座位上如果有人，会与 Hero **对调座位**；筹码留在各自座位上。';
       b.onclick = function () {
         sendOp({ kind: 'SET_HERO_POSITION', position: p.value });
       };
@@ -1280,6 +1289,23 @@
         ),
       );
       prov.forEach(function (r) {
+        /*
+         * 🔴 **两个「组合数」必须分开显示**（2026-09-22 修复）。
+         *
+         * 修复前这一行是 `'｜ 有效组合 ' + r.supportSize`，实测会渲染成
+         * 「有效组合 1225」—— 而 1225 = C(50,2) 是**全部**合法组合
+         * （求解器在 169 类上都留了一点频率），**不携带任何范围宽窄信息**；
+         * 真实等效宽度是 `effectiveComboCount`（同一局面实测 **94.1**，
+         * 只有 1225 的 7.7%）。
+         *
+         * 只显示前者会让使用者把对手范围读宽约 13 倍。
+         */
+        var widthText =
+          '｜ 正权重组合 ' +
+          r.supportSize +
+          (r.effectiveComboCount === undefined || r.effectiveComboCount === null
+            ? ''
+            : '（等效宽度 ' + Number(r.effectiveComboCount).toFixed(1) + '，即 1/Σp²）');
         var line =
           el(
             'div',
@@ -1291,8 +1317,7 @@
               r.sourceZh +
               ' ｜ 可信度 ' +
               Number(r.confidence).toFixed(2) +
-              ' ｜ 有效组合 ' +
-              r.supportSize,
+              widthText,
           );
         provBox.appendChild(line);
 
@@ -1340,6 +1365,24 @@
         var prefix = cls === 'gtoPending' ? '⏳ ' : 'ℹ️ ';
         box.appendChild(el('div', cls, prefix + gto.messageZh));
       }
+
+      /*
+       * ============================================================
+       * 🔴 牌桌动态适应 V1 —— 可展开的桌况摘要
+       * ============================================================
+       *
+       * ## 三条展示纪律（授权 §七）
+       *
+       * 1. **一句话摘要 + 可展开**：不新增占位的大型仪表盘。
+       * 2. **样本不足显示「观察中」**：绝不显示编造的频率或提升幅度。
+       * 3. **实验结果不能看起来像正式建议**：因此整块带 `tableDynamics`
+       *    前缀，且**正式建议仍在上面**（本块只读 `a.tableDynamics`，
+       *    永远不覆盖 `a.decision`）。
+       *
+       * 数据全部来自后端回传的 `a.tableDynamics`；界面**不做任何计算**，
+       * 也不自己拼结论 —— 拼措辞就会与后端判定分歧，而那种分歧看不出来。
+       */
+      renderTableDynamics(box, a.tableDynamics);
 
       /*
        * 具体理由（逐条）。对 `NO_SCENARIO` 这类**没有 outcome 可挂**的状态，
@@ -1423,6 +1466,208 @@
       }
       box.appendChild(lpBox);
     }
+  }
+
+  /**
+   * 牌桌动态适应 V1 —— 可展开的桌况摘要（授权 §七）
+   *
+   * ## 为什么是「一行摘要 + 折叠」而不是仪表盘
+   *
+   * 牌桌页面的核心价值是「轮到我时 1 秒看懂该做什么」。一块常驻的
+   * 统计数据会把建议挤下去 —— 因此默认只显示一句话，细节靠展开。
+   *
+   * ## 为什么样式刻意低调（`gtoReason` 而非高亮）
+   *
+   * 影子结果是**实验**，不是建议。用与「补充说明」同一档的样式，
+   * 使用者一眼就能分清「上面那条是要我做的，下面这段是系统在观察」。
+   *
+   * ## 不编造数字
+   *
+   * 逐维度一律显示 `成功/机会`（分母必须可见）；机会数为 0 显示「观察中」；
+   * 后端没给的字段（例如 `comparison`）就不渲染，绝不用 0 顶替。
+   */
+  function renderTableDynamics(box, td) {
+    if (!td) return;
+    if (td.status === 'NOT_APPLICABLE') return; // 表单路径：不占地方
+
+    var details = el('details', 'tdPanel');
+    details.id = 'tableDynamicsPanel';
+
+    var summary = el('summary', 'tdSummary');
+    summary.textContent =
+      '桌况（实验·' + (td.mode === 'SHADOW' ? '影子模式' : String(td.mode)) + '）：' + td.summaryZh;
+    details.appendChild(summary);
+
+    /* ---- ① 模式与可信度（先讲清楚「这不是建议」） ---- */
+    details.appendChild(
+      el(
+        'div',
+        'tdNote',
+        '以下内容是**实验对比**，不会改变上面的建议。' +
+          '模式：' +
+          (td.modeZh || td.mode) +
+          '｜可信度：' +
+          td.confidenceZh +
+          '｜已观察 ' +
+          td.handsObserved +
+          ' 手（' +
+          td.recordsUsed +
+          ' 条记录）',
+      ),
+    );
+
+    /* ---- ② 逐维度证据（机会数必须可见） ---- */
+    var dims = td.dimensions || [];
+    var withData = dims.filter(function (d) {
+      return d.opportunities > 0;
+    });
+    if (withData.length === 0) {
+      details.appendChild(el('div', 'tdObserving', '观察中：还没有足够的有效机会。'));
+    } else {
+      var list = el('div', 'tdDims');
+      list.appendChild(el('div', 'tdHead', '统计依据（成功次数 / 有效机会）：'));
+      withData.forEach(function (d) {
+        var dirZh =
+          d.direction === 'HIGHER' ? '偏高' : d.direction === 'LOWER' ? '偏低' : '正常';
+        list.appendChild(
+          el(
+            'div',
+            'tdDim',
+            '· ' +
+              d.labelZh +
+              '：' +
+              d.rateZh +
+              '　' +
+              dirZh +
+              '　可信度 ' +
+              (Number(d.confidence) * 100).toFixed(0) +
+              '%',
+          ),
+        );
+      });
+      var empty = dims.filter(function (d) {
+        return d.opportunities === 0;
+      });
+      if (empty.length > 0) {
+        list.appendChild(
+          el(
+            'div',
+            'tdObserving',
+            '· 暂无有效机会（观察中）：' +
+              empty
+                .map(function (d) {
+                  return d.labelZh;
+                })
+                .join('、'),
+          ),
+        );
+      }
+      details.appendChild(list);
+    }
+
+    /* ---- ③ 当前相关玩家 ---- */
+    var players = td.relevantPlayers || [];
+    if (players.length > 0) {
+      var pBox = el('div', 'tdPlayers');
+      pBox.appendChild(el('div', 'tdHead', '当前相关玩家（这次要调整的座位）：'));
+      players.forEach(function (p) {
+        pBox.appendChild(
+          el(
+            'div',
+            'tdDim',
+            '· ' +
+              p.positionZh +
+              '：' +
+              p.quickProfile +
+              '　依据' +
+              (p.source === 'INDIVIDUAL' ? '个体证据' : '整桌（个体不足）') +
+              '　可信度 ' +
+              (Number(p.confidence) * 100).toFixed(0) +
+              '%',
+          ),
+        );
+      });
+      details.appendChild(pBox);
+    }
+
+    /* ---- ④ 五类调整方向 ---- */
+    var adjs = td.adjustments || [];
+    if (adjs.length > 0) {
+      var aBox = el('div', 'tdAdjust');
+      aBox.appendChild(el('div', 'tdHead', '建议调整方向（五类分别判断，不使用统一松紧倍率）：'));
+      adjs.forEach(function (a) {
+        var badge =
+          a.status === 'SUGGESTED'
+            ? '【建议】'
+            : a.status === 'OBSERVING'
+              ? '【观察中】'
+              : '【不适用】';
+        var directionZh =
+          a.status !== 'SUGGESTED'
+            ? ''
+            : a.direction === 'HIGHER'
+              ? '偏高'
+              : a.direction === 'LOWER'
+                ? '偏低'
+                : '不变';
+        aBox.appendChild(
+          el(
+            'div',
+            'tdDim',
+            '· ' +
+              badge +
+              a.labelZh +
+              (directionZh ? '：' + directionZh : '') +
+              '　作用对象：' +
+              a.appliesTo,
+          ),
+        );
+        aBox.appendChild(el('div', 'tdWhy', '　　' + (a.unsupportedReasonZh || a.reasonZh || '')));
+      });
+      details.appendChild(aBox);
+    }
+
+    /* ---- ⑤ 影子对比（正式 vs 调整后） ---- */
+    if (td.comparison) {
+      var c = td.comparison;
+      var cBox = el('div', 'tdCompare');
+      cBox.appendChild(el('div', 'tdHead', '影子对比（仅供复盘）：'));
+      cBox.appendChild(el('div', 'tdDim', '· 正式建议（未调整）：' + c.baseZh));
+      cBox.appendChild(el('div', 'tdDim', '· 调整后建议（实验）：' + c.adjustedZh));
+      cBox.appendChild(
+        el(
+          'div',
+          'tdWhy',
+          c.changed
+            ? '　　⇒ 桌况调整**改变了建议**（正式建议未受影响，这只是一次实验记录）'
+            : '　　⇒ 桌况调整**没有改变建议**（可能是调整幅度不足，也可能是这个节点本来就不敏感）',
+        ),
+      );
+      if (c.sameCashflowContract !== true) {
+        cBox.appendChild(
+          el('div', 'warn', '　　⚠️ 两次结果未使用同一收益口径 ⇒ **本次对比不可比**，请勿据此判断'),
+        );
+      }
+      if ((td.appliedChanges || []).length > 0) {
+        cBox.appendChild(el('div', 'tdHead', '调整了哪些输入参数：'));
+        td.appliedChanges.forEach(function (line) {
+          cBox.appendChild(el('div', 'tdWhy', '　· ' + line));
+        });
+      }
+      details.appendChild(cBox);
+    }
+
+    /* ---- ⑥ 数据不足 / 失败的原因（必须显示，不能沉默） ---- */
+    if (td.reasonZh) {
+      details.appendChild(el('div', 'tdWhy', '说明：' + td.reasonZh));
+    }
+    if (td.logIssueZh) {
+      details.appendChild(el('div', 'warn', '⚠️ ' + td.logIssueZh));
+    }
+    /* ---- ⑦ 记录口径（排除了多少条、为什么） ---- */
+    details.appendChild(el('div', 'tdWhy', td.coverageZh || ''));
+
+    box.appendChild(details);
   }
 
   function renderTimeline() {
@@ -1531,6 +1776,18 @@
             rangeProvenance: app.analysis.rangeProvenance,
             reasonsZh: app.analysis.viewModel ? app.analysis.viewModel.reasonsZh : undefined,
             warningsZh: app.analysis.viewModel ? app.analysis.viewModel.warningsZh : undefined,
+            /*
+             * 🔴 **PREFLOP RAISE DECISION 阶段 B**：翻前加注的**逐尺寸**证据。
+             *
+             * 「他弃/跟/再加注」「每个尺寸的 EV」「被再加注后我评估过哪些应对」
+             * 这几件事都是**逐尺寸**的，只显示一条建议看不出来。
+             * 数据来自 `decisionViewModel.debug.preflopRaise`（由 `preflopRaise`
+             * 事实包原样搬运，**不在界面层重算**）。
+             */
+            preflopRaise:
+              app.analysis.viewModel && app.analysis.viewModel.debug
+                ? app.analysis.viewModel.debug.preflopRaise
+                : undefined,
             issues: app.analysis.issues,
             timings: app.analysis.meta ? app.analysis.meta.timings : undefined,
             warnings: app.analysis.meta ? app.analysis.meta.warnings : undefined,
@@ -2391,5 +2648,46 @@
     document.addEventListener('DOMContentLoaded', boot);
   } else {
     boot();
+  }
+
+  /*
+   * ============================================================
+   * 🔴 **浏览器验收钩子**（只读，不改变任何行为）
+   * ============================================================
+   *
+   * ## 为什么需要它
+   *
+   * 本文件是一个 IIFE，`app` 与 `render` 都是**私有**的。于是
+   * 「这条建议在**真实页面**上到底显示成什么」只能靠**截图人工看**，
+   * 自动化验收做不到 —— 而人工看无法进入回归。
+   *
+   * 有了这个钩子，验收脚本可以：
+   *
+   * ```js
+   * window.__dshTest.app.analysis = <服务端真实返回的 payload>;
+   * window.__dshTest.render();          // ← 调用**本文件自己的** render
+   * document.body.innerText             // ← 读它生成的真实 DOM
+   * ```
+   *
+   * 关键点：渲染走的是**同一个 `render()`**，验收读的是**同一份 DOM**，
+   * 因此「验收通过」与「页面正确」是同一件事，不是两套实现。
+   *
+   * ## 为什么它不会影响生产
+   *
+   * - **只读暴露**：只把已有的对象与方法挂出去，不新增任何逻辑分支；
+   * - **不参与任何判定**：`render` 的行为不读这个钩子；
+   * - 验收脚本是本仓库的 `probes/`（临时目录），不随产品发布；
+   * - 最坏情况（有人在控制台乱改 `app.analysis`）与在控制台里手改
+   *   DOM 是同一类事情，**本来就能做**，因此不引入新的攻击面。
+   */
+  try {
+    window.__dshTest = {
+      app: app,
+      render: render,
+      renderResult: typeof renderResult === 'function' ? renderResult : null,
+    };
+  } catch (hookError) {
+    /* 钩子失败绝不影响页面 */
+    void hookError;
   }
 })();

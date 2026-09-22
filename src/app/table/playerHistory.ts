@@ -34,8 +34,9 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { actorOnTurn } from '../../domain/poker/engine.ts';
-import { playerById } from '../../domain/poker/gameState.ts';
+import { applyAction, actorOnTurn } from '../../domain/poker/engine.ts';
+import { computePot, playerById } from '../../domain/poker/gameState.ts';
+import { streetOrderOf as sharedStreetOrderOf } from './tableDynamicsSeatOrder.ts';
 import type { PlayerObservedStats } from '../../domain/player/observedStats.ts';
 import { deriveLegalActions } from '../manualInput/legalActions.ts';
 import type { ManualActionType } from '../manualInput/manualInput.ts';
@@ -91,6 +92,69 @@ export type ObservationRecord = {
   saved: boolean;
   /** 该手当时是否已完成（未完成不得计为已完成牌局） */
   handComplete: boolean;
+
+  /* ============================================================
+   * 🔴 TABLE DYNAMICS V1：行动前状态快照（桌况统计的唯一事实来源）
+   *
+   * ## 为什么这些字段必须**在行动发生时**记录
+   *
+   * 桌况维度（入池松紧 / 跟注倾向 / 再加注压力 / 多人底池倾向 /
+   * 面对不同下注大小的弃牌倾向）里的每一条，都是
+   * **「机会」的分母**。而「机会由牌局状态定义，绝不由玩家动作定义」
+   * （README 不变量 14）：一个从不在盲位防守的玩家，不能因为「他没有防守动作」
+   * 就永远不进分母。
+   *
+   * 分母所需要的状态（当时有几个人还没弃牌、有效筹码多少、
+   * 底池多大、他面对的下注占底池多少、他身后还有几个人没行动）
+   * **只在这一刻存在** —— 事后再从行动记录里反推，就要重新实现一遍引擎。
+   *
+   * ## 向后兼容
+   *
+   * 全部可选。旧记录（本版本之前写入的）没有这些字段，
+   * 桌况层必须把它们当作**「该条记录不参与桌况统计」**，
+   * 而**不是**当作 0（那会把「未记录」变成「观测到 0」，是本项目明令禁止的形态）。
+   * ============================================================ */
+
+  /** 行动**之前**还没弃牌的玩家数（= 本手当前人数，不是座位容量） */
+  activeCount?: number;
+  /** 行动**之前**的有效筹码（BB）= 未弃牌玩家中最小「剩余 + 本街已投入」 */
+  effectiveStackBB?: number;
+  /** 行动**之前**的底池（BB，含本街已投入） */
+  potBB?: number;
+  /**
+   * 行动**之前**该玩家面对的下注额（BB）。
+   *
+   * `0` = 他没面对下注（可以过牌或率先下注）。与 `facedBet` 的区别：
+   * `facedBet` 只说「有没有」，本字段给出**多少** ——
+   * 「面对不同下注大小的弃牌倾向」这条维度要的正是这个数。
+   */
+  facedBetBB?: number;
+  /**
+   * 面对的下注额 ÷ 当时的底池（含对手本次下注）。
+   *
+   * 分桶口径见 `tableDynamics.ts` 的 `BET_SIZE_BUCKETS`。
+   * 未面对下注 ⇒ 0；底池为 0（理论上不会发生）⇒ `null`。
+   */
+  facedBetPotRatio?: number | null;
+  /**
+   * 该玩家在**本街行动顺序**里的序号（0 = 本街第一个行动的人）。
+   *
+   * 用途：翻前 `0 = 盲注位 / 1 = UTG` 之类的位置语义，
+   * 以及「身后还有几个人没行动」（= 本街行动者总数 − 本序号 − 1）。
+   * 无法确定时为 `null`（**不猜**）。
+   */
+  actorOrderIndex?: number | null;
+  /** 本街会行动的玩家总数（用于算「身后还有几个」） */
+  streetActorCount?: number | null;
+  /**
+   * 该玩家**身后**还有几个玩家尚未行动（含他之后的所有本街行动者）。
+   *
+   * 用途：「身后及盲位弃牌偏多 ⇒ 评估扩大后位开池」这条调整方向
+   * 需要知道当时他身后到底有几个人 —— 人数为 0 时这条调整**不适用**。
+   */
+  playersYetToAct?: number | null;
+  /** 该行动时 Button 的逻辑位置（位置语义的唯一权威来源） */
+  buttonPosition?: string;
 };
 
 export type HistoryIssue = { code: string; message: string };
@@ -492,6 +556,138 @@ export function handIdOf(state: PokerTableState): string {
   return `${state.tableId}#H${handNumber}`;
 }
 
+/* ============================================================
+ * 🔴 TABLE DYNAMICS V1：行动前状态快照
+ *
+ * 这一节只做**一件事**：把桌况统计需要的分母，在行动发生的那一刻取出来。
+ * 它不解释、不推断、不补默认值 —— 取不到就是 `null`，
+ * 由桌况层把「缺字段」当成「该条记录不参与统计」。
+ * ============================================================ */
+
+/**
+ * 一次行动发生**之前**的可观测状态。
+ *
+ * 全部字段都直接读引擎，唯一被计算的是 `playersYetToAct`
+ *（= 本街行动者总数 − 本序号 − 1，纯计数）。
+ */
+type PreActionSnapshot = {
+  actorPosition: string | null;
+  toCallChips: number;
+  activeCount: number | null;
+  effectiveStackChips: number | null;
+  potChips: number | null;
+  actorOrderIndex: number | null;
+  streetActorCount: number | null;
+  buttonPosition: string | null;
+};
+
+const EMPTY_SNAPSHOT: PreActionSnapshot = {
+  actorPosition: null,
+  toCallChips: 0,
+  activeCount: null,
+  effectiveStackChips: null,
+  potChips: null,
+  actorOrderIndex: null,
+  streetActorCount: null,
+  buttonPosition: null,
+};
+
+/**
+ * 本街的行动顺序（只保留还没弃牌的玩家），以及按钮的逻辑位置。
+ *
+ * 为什么需要它：`playersYetToAct` 与「翻前第几个行动」都必须来自
+ * **牌局状态的行动顺序**，不能从行动记录反推 ——
+ * 否则「从不盲位防守的玩家」永远不会进入分母（README 不变量 14）。
+ *
+ * 实现已移到 `tableDynamicsSeatOrder.ts`：`tableDynamicsServer` 需要**同一份**
+ * 推导，两份实现迟早分歧（那正是「同一条事实两处各算一次」的缺陷形态）。
+ */
+function streetOrderOf(engine: {
+  players: readonly { position: string; folded: boolean }[];
+  street: string;
+  config?: { tableSize?: number; dealerPosition?: string };
+}): { order: string[]; buttonPosition: string | null } {
+  return sharedStreetOrderOf(engine);
+}
+
+/**
+ * 取「某个行动发生之前」的快照。
+ *
+ * ⚠️ 一次表操作可能追加**多条**行动（批量重放时），
+ * 因此不能对全部行动复用同一个 `before` 快照 ——
+ * 那样第 1 条之后的每条记录都会带上错误的底池与人数。
+ * 调用方负责把状态逐步推进到该行动之前。
+ */
+function preActionSnapshot(engine: Parameters<typeof actorOnTurn>[0]): PreActionSnapshot {
+  const id = actorOnTurn(engine);
+  const actor = id === null ? undefined : playerById(engine, id);
+  const live = engine.players.filter((p) => !p.folded);
+  const committed = (p: (typeof engine.players)[number]): number =>
+    p.committedByStreet[engine.street] ?? 0;
+
+  const stacksBehind = live.map((p) => p.remainingStack + committed(p));
+  const effectiveStackChips = stacksBehind.length === 0 ? null : Math.min(...stacksBehind);
+  const potChips = computePot(engine);
+  const { order, buttonPosition } = streetOrderOf(engine);
+
+  const actorOrderIndex = actor === undefined ? null : order.indexOf(actor.position);
+  const toCallChips = actor === undefined ? 0 : deriveLegalActions(engine, actor).callCost;
+
+  return {
+    actorPosition: actor?.position ?? null,
+    toCallChips,
+    activeCount: live.length,
+    effectiveStackChips,
+    potChips,
+    actorOrderIndex: actorOrderIndex === null || actorOrderIndex < 0 ? null : actorOrderIndex,
+    streetActorCount: order.length === 0 ? null : order.length,
+    buttonPosition,
+  };
+}
+
+/** 把快照按 BB 口径写成记录字段（金额一律保留 4 位，与既有 `toCallBB` 同口径） */
+function snapshotFields(
+  snapshot: PreActionSnapshot,
+  chipsPerBB: number,
+): Pick<
+  ObservationRecord,
+  | 'activeCount'
+  | 'effectiveStackBB'
+  | 'potBB'
+  | 'facedBetBB'
+  | 'facedBetPotRatio'
+  | 'actorOrderIndex'
+  | 'streetActorCount'
+  | 'playersYetToAct'
+  | 'buttonPosition'
+> {
+  const toBB = (chips: number): number => Number((chips / chipsPerBB).toFixed(4));
+  const facedBetChips = snapshot.toCallChips;
+  const potAfterBetChips =
+    snapshot.potChips === null ? null : snapshot.potChips + Math.max(0, facedBetChips);
+  return {
+    activeCount: snapshot.activeCount ?? undefined,
+    effectiveStackBB:
+      snapshot.effectiveStackChips === null ? undefined : toBB(snapshot.effectiveStackChips),
+    potBB: snapshot.potChips === null ? undefined : toBB(snapshot.potChips),
+    facedBetBB: toBB(facedBetChips),
+    /*
+     * 池比口径 = 需跟注额 ÷ **面对下注后的底池**（= 行动前底池 + 他这次要跟的额）。
+     * 这样「半池下注」得到 0.5/1.5 = 0.3333… 而不是 0.5 ——
+     * 与扑克习惯里「⅓ 池 / 半池 / ¾ 池 / 满池」的分桶基准一致。
+     */
+    facedBetPotRatio:
+      potAfterBetChips === null || potAfterBetChips <= 0 ? null : Number((facedBetChips / potAfterBetChips).toFixed(4)),
+    actorOrderIndex: snapshot.actorOrderIndex,
+    streetActorCount: snapshot.streetActorCount,
+    playersYetToAct:
+      snapshot.actorOrderIndex === null || snapshot.streetActorCount === null
+        ? null
+        : snapshot.streetActorCount - snapshot.actorOrderIndex - 1,
+    buttonPosition: snapshot.buttonPosition ?? undefined,
+  };
+}
+
 export function deriveObservations(
   before: PokerTableState,
   after: PokerTableState,
@@ -502,28 +698,32 @@ export function deriveObservations(
   const viewAfter = engineViewOf(after);
   const phase = viewAfter.ok ? viewAfter.engine.phase : 'BETTING';
 
-  /** 操作前谁是行动者、要跟多少（**当时可观测的必要状态**） */
-  let actorPosition: string | null = null;
-  let toCallChips = 0;
-  if (viewBefore.ok) {
-    const id = actorOnTurn(viewBefore.engine);
-    const actor = id === null ? undefined : playerById(viewBefore.engine, id);
-    if (actor !== undefined) {
-      actorPosition = actor.position;
-      toCallChips = deriveLegalActions(viewBefore.engine, actor).callCost;
-    }
-  }
-
   const chipsPerBB = before.bigBlindBB > 0 ? before.bigBlindBB : 1;
   const handId = handIdOf(before);
   /** 街道取引擎**当时**的真实街（录牌/行动都以引擎为准） */
   const streetNow = viewBefore.ok ? viewBefore.engine.street : 'PREFLOP';
+
+  /**
+   * 逐步推进的引擎状态。
+   *
+   * 每次迭代结束时把本条行动应用到 `cursor` 上，使下一条行动拿到
+   * **它自己的**行动前状态。应用失败（理论上不会发生 —— 历史本身就是
+   * 这么重放出来的）⇒ 后续记录的快照字段置 `null`，绝不猜。
+   */
+  let cursor = viewBefore.ok ? viewBefore.engine : null;
   const out: ObservationRecord[] = [];
+
   for (const action of appended) {
     const seat = before.seats.find((s) => s.logicalPosition === action.position);
     const playerId = seat?.playerId ?? null;
     /** 座位没绑玩家（引擎自动补齐的盲注等）⇒ 不记录，绝不虚构主人 */
     if (playerId === null) continue;
+
+    const snapshot: PreActionSnapshot =
+      cursor === null
+        ? EMPTY_SNAPSHOT
+        : preActionSnapshot(cursor as Parameters<typeof actorOnTurn>[0]);
+
     out.push(
       Object.freeze({
         handId,
@@ -533,16 +733,43 @@ export function deriveObservations(
         street: (action.street ?? streetNow) as ObservationRecord['street'],
         actionType: action.type,
         amountBB: action.amountBB ?? 0,
-        facedBet: actorPosition === action.position && toCallChips > 0,
-        toCallBB: Number((toCallChips / chipsPerBB).toFixed(4)),
+        facedBet: snapshot.toCallChips > 0,
+        toCallBB: Number((snapshot.toCallChips / chipsPerBB).toFixed(4)),
+        ...snapshotFields(snapshot, chipsPerBB),
         seq: before.revision,
         baseRevision: before.revision,
         historyLength: after.actionHistory.length,
         source: 'USER_INPUT' as const,
         saved: false,
-        handComplete: phase === 'COMPLETE',
+        /*
+         * 🔴 **两个终态都算「本手已完成」**（2026-09-22 修复）。
+         *
+         * `HandPhase` 有两个终态（`gameState.ts:79-85`）：
+         * - `SHOWDOWN`：河牌下注轮结束，等待摊牌 —— **绝大多数手停在这里**
+         * - `COMPLETE`：仅剩一人，或摊牌结果已记录
+         *
+         * 修复前只判 `=== 'COMPLETE'`，于是摊牌手**全部**拿到
+         * `handComplete = false`。实测 24 条记录里 0 条为 true、界面
+         * 「已完成 N 手」恒为 0 —— 而统计本身照常计入（两处口径不一致）。
+         */
+        handComplete: phase === 'COMPLETE' || phase === 'SHOWDOWN',
       }),
     );
+
+    /* 推进到本条行动**之后**，供下一条使用 */
+    if (cursor !== null) {
+      const actorId = actorOnTurn(cursor as Parameters<typeof actorOnTurn>[0]);
+      if (actorId !== null) {
+        const applied = applyAction(cursor as never, {
+          playerId: actorId,
+          type: action.type as never,
+          ...(action.amountBB === undefined ? {} : { amount: Math.round(action.amountBB * chipsPerBB) }),
+        } as never);
+        cursor = applied.ok ? (applied.state as typeof cursor) : null;
+      } else {
+        cursor = null;
+      }
+    }
   }
   return Object.freeze(out);
 }

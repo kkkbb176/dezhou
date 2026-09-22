@@ -201,8 +201,32 @@ export const QUICK_PROFILE_CONFIDENCE = 0.35;
  */
 export const DYNAMIC_HINT_CONFIDENCE = 0.3;
 
-export type ManualVillain = {
-  /**
+/**
+ * 🔴 **作用范围明确的维度调整**（TABLE DYNAMICS V1 第二轮）。
+ *
+ * 只允许这四个轴 —— 它们是**唯一**会流向「响应倾向」的维度
+ *（见 `betResponse.ts` 的 `responseTendenciesOf`）：
+ *
+ * | 轴 | 影响的下游系数 |
+ * |---|---|
+ * | `tightness` | `callScale`（−0.18×）、`foldScale`（+0.32×） |
+ * | `passivity` | `callScale`（+0.30×）、`foldScale`（−0.25×）、`riverBetScale`（−0.3×） |
+ * | `aggression` | `raiseScale`（+0.30×）、`riverBetScale`（+0.3×） |
+ * | `bluffTendency` | `bluffRaiseScale`（+0.35×）、`riverBetScale`（+0.25×） |
+ *
+ * **不在表里的轴一律走既有机制**（标签维度 / 实测维度 / V3 融合），
+ * 因此「有证据的调整」不会被放大成「整组标签替换」。
+ */
+export type VillainDimensionsInput = Readonly<{
+  tightness?: number;
+  aggression?: number;
+  passivity?: number;
+  bluffTendency?: number;
+  /** 证据可信度 0..1（进 `responseTendenciesOf` 的缩放） */
+  confidence: number;
+}>;
+
+export type ManualVillain = {  /**
    * 🔴 **引擎口径 id**（`seat_<位置>`，见 `reconstruct.playerIdOfPosition`）。
    *
    * ## 语义（PLAYER IDENTITY ROUTING V1 修正）
@@ -387,6 +411,34 @@ export type ManualHandInput = {
    */
   seatProfiles?: Readonly<Partial<Record<Position, string>>>;
   /**
+   * 🔴 **作用范围明确的维度调整**（TABLE DYNAMICS V1 第二轮）。
+   *
+   * ## 为什么需要它：标签通道会把「有证据的调整」放大成「无依据的连带调整」
+   *
+   * `seatProfiles` / `quickProfile` 的值是**原型标签**，而一个标签是
+   * **四个维度的固定组合**（`archetypeDimensions.ts` 的 `ARCHETYPE_DIMENSIONS`）：
+   *
+   * | 标签 | tightness | aggression | **bluffTendency** | passivity |
+   * |---|---|---|---|---|
+   * | `UNDERBLUFFER` | 0.62 | 0.45 | **0.12** | 0.5 |
+   * | `AGGRESSIVE` | 0.45 | 0.82 | **0.60** | 0.3 |
+   *
+   * 桌况层的证据只有**翻前再加注频率**，它**不能**推出「他翻后诈唬多/少」；
+   * 而 `bluffTendency` 会流向范围层（`profileProvider`）与翻后响应
+   *（`bettingRange` / `betResponse` 的 `bluffRaiseScale`、`riverBetScale`）。
+   * ⇒ 用标签表达「再加注偏少」等于**顺手改了翻后诈唬倾向**，属于无依据的连带调整。
+   *
+   * 因此新增本字段：**只**传入有证据支持的那几个维度，其余维度由既有机制
+   *（标签维度 / 实测维度 / V3 融合）照常决定，**不被覆盖**。
+   *
+   * ## 契约（严格可选；不传 ⟺ 与既有行为逐位一致）
+   *
+   * - 四个轴各自可选：**只覆盖显式给出的轴**；
+   * - 不在本表里的轴走既有路径（标签维度或 V3 融合维度）；
+   * - 语义与 `PlayerDimensions` 一致（0.5 = 中立）；
+   * - 只影响**响应倾向与响应权重**，不改变牌力 / 底池 / 赔率 / 权益公式。
+   */
+  villainDimensions?: VillainDimensionsInput;  /**
    * **本手真正参与的物理座位**（Table Topology Correction）。
    *
    * ## 为什么必须与 `tableSize` 分开
@@ -466,6 +518,8 @@ export type ParsedManualInput = {
   seatStacksBB: Readonly<Partial<Record<Position, number>>>;
   /** 逐座位画像（**已校验**；缺省的位置没有画像证据） */
   seatProfiles: Readonly<Partial<Record<Position, string>>>;
+  /** 作用范围明确的维度调整（**已逐轴校验**；缺省 ⇒ 与既有行为逐位一致） */
+  villainDimensions: VillainDimensionsInput | undefined;
   /** 本手参与的物理座位（**已校验**：容量内的唯一位置，且必须包含 Hero 与 Button） */
   occupiedPositions: readonly Position[];
   /** Button 的物理座位（**已校验**：必须是本手参与者） */
@@ -930,6 +984,64 @@ export function parseManualInput(input: ManualHandInput): ParseResult {
   }
 
   /*
+   * 🔴 **作用范围明确的维度调整必须逐轴校验**（TABLE DYNAMICS V1 第二轮）。
+   *
+   * 与 `seatProfiles` 同一条 Fail-Closed 纪律：未知键、非数字、越界值一律**阻断**，
+   * 绝不静默夹取 —— 「看起来设了维度、实际用的是中立先验」比没有更危险。
+   * 允许**只给一部分轴**（那是「这一轴没有证据」，语义合法）。
+   */
+  const rawVillainDimensions = input.villainDimensions;
+  let villainDimensions: ParsedManualInput['villainDimensions'];
+  if (rawVillainDimensions !== undefined) {
+    if (
+      typeof rawVillainDimensions !== 'object' ||
+      rawVillainDimensions === null ||
+      Array.isArray(rawVillainDimensions)
+    ) {
+      issues.push({
+        code: 'INVALID_NUMBER',
+        message: '作用范围明确的维度调整必须是一个对象',
+        field: 'villainDimensions',
+      });
+    } else {
+      const allowed = new Set(['tightness', 'aggression', 'passivity', 'bluffTendency', 'confidence']);
+      const out: {
+        tightness?: number;
+        aggression?: number;
+        passivity?: number;
+        bluffTendency?: number;
+        confidence: number;
+      } = { confidence: 0 };
+      for (const [key, raw] of Object.entries(rawVillainDimensions)) {
+        if (!allowed.has(key)) {
+          issues.push({
+            code: 'INVALID_NUMBER',
+            message:
+              `未知的维度键「${key}」。可选：tightness / aggression / passivity / ` +
+              'bluffTendency / confidence（**只允许这四个轴**，其余维度走既有机制）',
+            field: `villainDimensions.${key}`,
+          });
+          continue;
+        }
+        if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0 || raw > 1) {
+          issues.push({
+            code: 'INVALID_NUMBER',
+            message: `「${key}」必须是 0..1 之间的有限数，当前 ${String(raw)}`,
+            field: `villainDimensions.${key}`,
+          });
+          continue;
+        }
+        if (key === 'confidence') out.confidence = raw;
+        else if (key === 'tightness') out.tightness = raw;
+        else if (key === 'aggression') out.aggression = raw;
+        else if (key === 'passivity') out.passivity = raw;
+        else out.bluffTendency = raw;
+      }
+      villainDimensions = out;
+    }
+  }
+
+  /*
    * 🔴 **注入式行为画像的形状必须校验**（V2.1 失败模式审计 #3 / #4）。
    *
    * ## 修复前实测（两处，都是「静默或半静默」的失败）
@@ -1111,6 +1223,7 @@ export function parseManualInput(input: ManualHandInput): ParseResult {
       opponentCount,
       seatStacksBB: Object.freeze(seatStacksBB),
       seatProfiles: Object.freeze(seatProfiles),
+      villainDimensions: villainDimensions === undefined ? undefined : Object.freeze(villainDimensions),
       occupiedPositions: Object.freeze(occupiedPositions),
       buttonPosition,
       handedness: occupiedPositions.length,

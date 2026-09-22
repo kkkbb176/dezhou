@@ -63,6 +63,7 @@ import { opponentRangeFactsOf } from './rangeFacts.ts';
 import { describeHand } from '../../domain/poker/handDescription.ts';
 import { handDescriptionText } from '../../i18n/index.ts';
 import { computeEquity } from '../../domain/poker/equity.ts';
+import { confidenceHalfWidth } from '../../domain/poker/equityPolicy.ts';
 import { EquityComputeMode } from '../../domain/poker/equity.types.ts';
 import { RangeState, toRangeAction, type Range } from '../../domain/range/range.types.ts';
 import { buildRangeFromRankClasses } from '../../domain/range/range.ts';
@@ -140,6 +141,7 @@ import {
   STREET_ZH,
   type DynamicHint,
   type QuickProfile,
+  type VillainDimensionsInput,
 } from '../manualInput/manualInput.ts';
 import {
   ALPHA_CONTEXT_VERSION,
@@ -187,6 +189,11 @@ import {
 } from '../../domain/postflop/actionContext.ts';
 import { buildBettingRangeFacts } from './bettingRange.ts';
 import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
+import {
+  buildPreflopRaiseFacts,
+  arrivalEntriesOf,
+  type PreflopRaiseFacts,
+} from './preflopRaiseFacts.ts';
 import {
   resolvePlayerIdentity,
   type PlayerIdentityResolution,
@@ -267,6 +274,14 @@ export type ContextBuildInput = {
    * 他爱不爱弃牌；只支持一个画像时，另一个座位只能当中立先验 —— 那是表达能力缺口。
    */
   seatProfiles?: Readonly<Partial<Record<Position, QuickProfile>>>;
+  /**
+   * 🔴 **TABLE DYNAMICS V1 第二轮：作用范围明确的维度调整**。
+   *
+   * 只逐轴覆盖「**标签侧**维度」，其余轴保持标签维度不变；
+   * 实测维度与 V3 融合在下一层照常生效（不覆盖已有证据支持的维度）。
+   * 缺省 ⇒ 与既有行为逐位一致。
+   */
+  villainDimensions?: VillainDimensionsInput;
   /**
    * 用户手选的动态观察提示。
    *
@@ -1074,7 +1089,9 @@ function buildBaseRange(
               `${solverOverride.labelZh}。求解器 ${solverOverride.engineCommit ?? '未知版本'}，` +
               `取用动作 [${solverOverride.usedActions.join('/')}]，` +
               `迭代 ${solverOverride.iterationsCompleted ?? '未报告'}` +
-              `${solverOverride.reportedGap === null ? '' : `，gap ${solverOverride.reportedGap}`}。` +
+              `${solverOverride.reportedGap === null ? '' : `，gap ${solverOverride.reportedGap}`}` +
+              `${solverOverride.targetGap === null ? '' : `（目标 ${solverOverride.targetGap}）`}。` +
+              `✅ **${solverOverride.admitVerdictZh}**。` +
               '⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。',
             verified: false,
             confidence: SOLVER_RANGE_CONFIDENCE,
@@ -1126,7 +1143,7 @@ export const SOLVER_RANGE_CONFIDENCE = 0.55;
  * 这里只负责「有就用、没有就回落」，不负责去拿。
  */
 export type SolverRangeOverride = {
-  /** 169 类权重，**按牌名**索引（不是按序号） */
+  /** 169 类权重，**按名**索引（不是按序号） */
   weights: RankClassWeights;
   /** 中文说明，会进 provenance.description */
   labelZh: string;
@@ -1134,6 +1151,27 @@ export type SolverRangeOverride = {
   usedActions: readonly string[];
   reportedGap: number | null;
   iterationsCompleted: number | null;
+  /**
+   * 🔴 **收敛准入的一句话结论**（2026-09-22 补）。
+   *
+   * ## 为什么必须带到页面上
+   *
+   * 这个覆盖会**换掉对手的整个范围**，实测连带改动决策响应里
+   * **225 个字段**（整体范围权益 83.0%→84.7%、Call EV 306.36→315.81、
+   * 他弃牌率 62.8%→61.6%、`range.confidence` 0.30→0.55 …）。
+   *
+   * 在此之前，页面只能看到 `gap 0.16526005516619705` 这么一个**裸数字** ——
+   * 而「0.165 算不算达标」**无法从页面判断**（达标线是求解器自己设的
+   * `targetGap`，本例是 0.2）。使用者因此既无法确认这份数据可信，
+   * 也无法发现它**没**通过准入。
+   *
+   * 现在由准入闸（`admitSolverBaseline`）给出结论并原样展示：
+   * 达标的写「已通过准入（gap X < 目标 Y）」，未达标的**根本不会被注入**
+   * （所以正常路径下不会出现"未通过却仍在用"的文案）。
+   */
+  admitVerdictZh: string;
+  /** 求解器自己设的收敛目标（准入判据的分母）；未报告为 null */
+  targetGap: number | null;
 };
 
 /**
@@ -3723,7 +3761,44 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     seatId: string | null | undefined,
   ): { readonly profile: FacingBetProfile; readonly labelDimensions: PlayerDimensions } | null => {
     if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) return null;
-    const labelDimensions = playerBuilt.tendency.dimension.dimensions;
+    /*
+     * 🔴 **TABLE DYNAMICS V1 第二轮：作用范围明确的维度调整**。
+     *
+     * ## 为什么在这里逐轴覆盖，而不是替换整个标签
+     *
+     * 标签（`quickProfile`）是**四个维度的固定组合**：把「再加注偏少」
+     * 写成 `UNDERBLUFFER` 会**同时**把 `bluffTendency` 改到 0.12、
+     * `tightness` 改到 0.62 —— 而本模块的证据只有**翻前再加注频率**，
+     * 它**不能**推出「他翻后诈唬少」。那属于**无依据的连带调整**
+     *（`bluffTendency` 流向范围层的 `profileProvider` 与翻后的
+     * `bluffRaiseScale` / `riverBetScale`）。
+     *
+     * 因此这里只**逐轴覆盖**调用方显式给出的维度，其余轴保持
+     * `playerBuilt.tendency.dimension.dimensions`（标签维度）不变。
+     *
+     * ## 为什么不覆盖「已有证据支持的维度」
+     *
+     * 实测维度（`observedDimensions`）与 V3 融合在**下一层**照常生效：
+     * `facingBetProfileOf` 以 `labelDimensions` 作为**标签侧**输入，
+     * 实测侧仍按 `blendWeight` 融合 ⇒ 有实测证据的轴不会被本覆盖吞掉
+     *（它只替换「标签侧」那部分）。
+     *
+     * 不传 `villainDimensions` ⇒ **逐位等于既有实现**（本分支不进）。
+     */
+    const baseLabelDimensions = playerBuilt.tendency.dimension.dimensions;
+    const override = input.villainDimensions;
+    const labelDimensions: PlayerDimensions =
+      override === undefined
+        ? baseLabelDimensions
+        : {
+            ...baseLabelDimensions,
+            ...(override.tightness === undefined ? {} : { tightness: override.tightness }),
+            ...(override.aggression === undefined ? {} : { aggression: override.aggression }),
+            ...(override.passivity === undefined ? {} : { passivity: override.passivity }),
+            ...(override.bluffTendency === undefined
+              ? {}
+              : { bluffTendency: override.bluffTendency }),
+          };
     return {
       profile: facingBetProfileOf({
         baseDimensions: resolvedV3.resolved.baseDimensions,
@@ -4092,14 +4167,28 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      *
      * ```text
      * 他跟平后的本街总额 = villainStreetCommitted + villainAdd
-     * 我真正留在池中      = min(heroAdd, 他跟平后的本街总额 − 我本街已投)
-     * 终点底池            = currentPot + 我留在池中的 + 他补的
+     * 我真正被跟注的量    = min(heroAdd, 他跟平后的本街总额 − 我本街已投)
+     * 终点底池            = currentPot + 我真正被跟注的量 + 他补的差价
      * ```
      *
      * 三种情形都对：
-     * · 双方都跟得满 ⇒ 终池 = currentPot + heroAdd + villainAdd（使用者给的恒等式）；
+     * · 双方都跟得满 ⇒ `被跟注量 === villainAdd` ⇒ 终池 = currentPot + heroAdd + villainAdd；
      * · 他筹码不足   ⇒ 只算他跟得起的部分，我的超额**退回**（不计入投入）；
      * · 我本街已投>0 ⇒ 不重复扣那部分（`heroAdd = raiseTo − 我本街已投`）。
+     *
+     * 🔴 **2026-09-22：三种候选写法已由引擎台账 `computeLayeredPot` 逐位裁定**
+     * （54 个尺寸 × 6 组筹码配置，见 `out/…CASHFLOW…` 与本文件同名的翻前副本）：
+     *
+     * | 写法 | 60BB 加注到 10000 的终池 | 裁定 |
+     * |---|---|---|
+     * | `min(heroAdd, villainAdd)` | 更小 | ❌ 把「补的差价」当「投入的量」，54/54 全错 |
+     * | `min(heroAdd, 他本街总额 − 我本街已投)`（**本处保留**） | 12150 | ✅ 54/54 与台账 `main` 一致 |
+     * | `2 × min(双方本街总额)` | 12000 | ❌ **漏掉死钱**（台账 `deadMoney = 150`） |
+     *
+     * 引擎台账实测：`{ contested: 12150, deadMoney: 150, returned: { seat_CO: 4000 } }`
+     * ⇒ `finalPot` **必须**含死钱；但 `villainStreetTotalAfterCall` 与
+     * `heroStreetCommitted` 都只是**本街**口径，不含前面街投入与死钱，
+     * 所以**不能**改写成 `2 × contested` 形式。
      */
     const heroAdd = Math.max(0, raiseTo - heroStreetCommitted);
     if (!(heroAdd > 0)) return null;
@@ -4868,6 +4957,80 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     });
   })();
 
+  /*
+   * ---- 8d. 翻前加注事实包（PREFLOP RAISE DECISION · 阶段 B）----
+   *
+   * 在它之前，**翻前的每一个加注金额都没有自有 EV**：响应模型
+   * （`raiseResponse.buildRaiseResponse`）要求 `board.length >= 3`，
+   * 而翻前 `board` 恒为空 ⇒ 决策层把每个加注金额列进 `unevaluatedActions`
+   * （`RAISE_EV_NOT_IMPLEMENTED`），「加注是否比跟注好」只能靠启发式。
+   *
+   * 现在：对**尺寸网格里的每一个合法尺寸**分别给出响应概率、条件范围、
+   * 被再加注分支与 RAISE EV。
+   *
+   * 🔴 三条硬边界（全部由 `buildPreflopRaiseFacts` 内部判定并给出原因）：
+   * 1. **只在单挑**（活跃对手 = 1）时构建 —— 多人时返回 `NOT_HEADS_UP`；
+   * 2. **我之后还有人未行动**时不构建（`PLAYERS_BEHIND`）；
+   * 3. 不是翻前 ⇒ 不构建。
+   *
+   * 这三条都是**明确拒绝**，不是「静默按单挑算」。
+   */
+  const preflopRaiseFacts: PreflopRaiseFacts | null = (() => {
+    if (state.street !== 'PREFLOP') return null;
+    if (hero.holeCards === null || hero.holeCards.length !== 2) return null;
+    if (legal.callCost <= 0) return null;
+    if (opponents.length !== 1) return null;
+    const opponent = opponents[0]!;
+    const opponentBuild = allRangeBuilds.find((entry) => entry.opponentId === opponent.id)?.build;
+    if (opponentBuild === undefined || opponentBuild.range === null) return null;
+
+    const built = buildPreflopRaiseFacts({
+      state,
+      hero,
+      opponent,
+      legal,
+      /*
+       * 他的**到达范围** = 本链更新后的范围，且当前这次加注**只在这里计一次**
+       * （与下注范围同一条纪律：进攻动作的似然不得既进范围又进响应模型）。
+       * 翻前的开池动作已由基础范围档位表达（`baseAggression` 跳过逻辑），
+       * 因此这里的范围就是 `P(手牌 | 他开池)`。
+       */
+      arrivalEntries: arrivalEntriesOf(opponentBuild.range),
+      arrivalSource: opponentBuild.snapshot?.sourceId ?? 'PREFLOP_POSTERIOR_RANGE',
+      range: opponentBuild.range,
+      tendencies: tendenciesForSeat(opponent.id),
+      playersRemainingToAct: playersYetToAct.length,
+      seed: input.equitySeed ?? 20260913,
+      equityOf: (entries, seedOffset) => {
+        const outcome = rangeEquityOf(
+          hero.holeCards!,
+          allBoardCards(state),
+          entries,
+          (input.equitySeed ?? 20260913) + seedOffset,
+        );
+        return {
+          value: outcome.value,
+          method: outcome.method,
+          iterations: outcome.iterations,
+          confidenceHalfWidth:
+            outcome.value === null || outcome.iterations <= 0
+              ? null
+              : confidenceHalfWidth(outcome.value, outcome.iterations),
+        };
+      },
+    });
+    if (!built.ok) {
+      /*
+       * ⚠️ 拒绝原因必须进 warnings（不得静默）—— 使用者要能看出
+       * 「这次没有加注 EV」到底是因为什么。
+       */
+      warnings.push(built.noteZh);
+      return null;
+    }
+    return built.facts;
+  })();
+
+  /* ---- 8e. 「我之后还有谁要行动」 ---- */
   /** 我之后还需要行动的对手数（取自 pendingQueue，已含「下注重开行动」） */
   const playersRemainingToActCount = (() => {
     const queue = state.pendingQueue;
@@ -4908,6 +5071,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
       || allRangeBuilds.some((entry) => entry.build.profileAppliedToRange === true),
     ...(postflopFacts !== undefined ? { postflopFacts } : {}),
     ...(preflopIsoFacts !== null ? { preflopIso: preflopIsoFacts } : {}),
+    ...(preflopRaiseFacts !== null ? { preflopRaise: preflopRaiseFacts } : {}),
     range: rangeBuild.snapshot,
     opponentRanges: Object.freeze(
       usableRangeBuilds

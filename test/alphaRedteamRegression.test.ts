@@ -1001,6 +1001,12 @@ test('F-10：`ManualHandInput` 的**每一个**字段都必须影响哈希', () 
       ...reference,
       occupiedPositions: [Position.UTG, Position.HJ, Position.CO, Position.BTN, Position.BB],
     }),
+    // TABLE DYNAMICS V1 第二轮：作用范围明确的维度调整也必须影响哈希
+    //（它直接改写响应倾向 ⇒ 同一手牌换一组维度就会得到不同 EV）
+    villainDimensions: () => ({
+      ...reference,
+      villainDimensions: { aggression: 0.82, confidence: 0.6 },
+    }),
     buttonPosition: () => ({ ...reference, buttonPosition: Position.CO }),
   };
 
@@ -1022,6 +1028,7 @@ test('F-10：`ManualHandInput` 的**每一个**字段都必须影响哈希', () 
     'seatStacksBB',
     'seatProfiles',
     'occupiedPositions',
+    'villainDimensions',
     'buttonPosition',
   ];
   assert.deepEqual(

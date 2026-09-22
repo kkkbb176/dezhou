@@ -1,7 +1,7 @@
 {
   "storeVersion": "gto-strategy-store-v1",
-  "updatedAt": "2026-09-15T15:08:22.832Z",
-  "writes": 18,
+  "updatedAt": "2026-09-21T23:13:41.660Z",
+  "writes": 19,
   "entries": [
     {
       "cacheKey": "c91e7b60a",
@@ -290,6 +290,22 @@
       "payloadBytes": 145703,
       "scenarioZh": "4MAX / 50BB / BTN / VS_OPEN / 1 条前序动作",
       "qualityZh": "低收敛：BR gap 之和 0.044372，迭代 40 次。频率是**未收敛快照**，不可当作均衡。"
+    },
+    {
+      "cacheKey": "c134d931a",
+      "scenarioHash": "g594ecb1f",
+      "treeId": "t42656f1e",
+      "quality": "LOW_CONVERGENCE",
+      "engine": "gtopen",
+      "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+      "tableSize": 9,
+      "effectiveStackBB": 40,
+      "heroPosition": "UTG",
+      "kind": "RFI",
+      "createdAt": "2026-09-21T23:13:41.156Z",
+      "payloadBytes": 84399,
+      "scenarioZh": "9MAX / 40BB / UTG / RFI / 无人入池",
+      "qualityZh": "低收敛：BR gap 之和 0.022316，迭代 12 次。频率是**未收敛快照**，不可当作均衡。"
     }
   ]
 }
