@@ -294,7 +294,47 @@ npm run verify
 
 ## 八、Git 分支与远程状态
 
-见 `reports/LIVE_UI_V2_GIT_AND_MERGE.md`（提交与推送在本报告定稿后单独执行并核实）。
+### 实施前的基线
+
+| 项 | 值 |
+|---|---|
+| 分支 | `dev-computer-a` |
+| 起始 HEAD | `c65836b`（LIVE UI V1 交付报告） |
+| `origin/dev-computer-a` | `c65836b` |
+| `origin/main` | `7dffffc` |
+| 另一个 worktree | `D:\德州-worktrees\opportunity-model-v1` @ `a91967d` |
+
+### 本轮的三个阶段提交（都在 `dev-computer-a` 上）
+
+| 提交 | 内容 |
+|---|---|
+| `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
+| `cb87df9` | `feat(ui)`：LIVE UI V2 —— 椭圆牌桌 + 右侧 380px 操作台 + 44px 单行顶栏 |
+| `a950861` | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项 |
+
+### 推送与核实（`git ls-remote` 实测）
+
+```text
+本地 HEAD                    : a950861ca3744c9c7fcd8a71905add678123ed53
+refs/heads/dev-computer-a    : a950861ca3744c9c7fcd8a71905add678123ed53   ✔ 一致
+refs/heads/main              : 7dffffc965116c0a688d3357244624153def6a52   ✔ 未触碰
+```
+
+推送命令：`git push origin dev-computer-a`。
+
+> ⚠️ **GitHub 连通性**：本次推送前 **6 次失败**
+>（`Recv failure: Connection was reset` / `Failed to connect to github.com:443
+> after 21068 ms`），第 7 次成功。这是本机到 GitHub 的间歇性连通问题，
+> **不是仓库问题**；重试即可，不要为此改写历史或换推法。
+
+### 纪律遵守情况
+
+- ✅ 只在 `dev-computer-a` 上实施；
+- ✅ **未**修改 `main`（本地与远程都仍是 `7dffffc`）；
+- ✅ **未**触碰另一个 worktree；
+- ✅ 未强推、未硬重置、未 `git clean`；
+- ✅ 每完成一个可验证阶段独立提交（3 个提交，每个都可单独回退）；
+- ✅ 推送后核实了远程 SHA 与本地一致。
 
 ---
 

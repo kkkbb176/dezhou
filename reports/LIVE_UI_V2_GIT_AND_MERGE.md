@@ -8,20 +8,34 @@
 
 | 项 | 值 |
 |---|---|
-| 当前分支 | `dev-computer-a` |
-| 本文件撰写时的 HEAD | `c65836b`（LIVE UI V1 交付报告） |
-| `origin/dev-computer-a` | `c65836b`（已推送） |
-| `origin/main` | `7dffffc`（**本轮未触碰**） |
+| 起始分支 | `dev-computer-a` |
+| 起始 HEAD | `c65836b`（LIVE UI V1 交付报告） |
+| **推送后 HEAD** | **`a950861`** |
+| `origin/dev-computer-a` | **`a950861`（已推送并核实一致）** |
+| `origin/main` | `7dffffc`（**本轮未触碰**，本地与远程都是它） |
 | 另一个 worktree | `D:\德州-worktrees\opportunity-model-v1` @ `a91967d`（**本轮未触碰**） |
-| 工作区 | 见下方「三、本轮改动清单」 |
+
+### 本轮的三个阶段提交
+
+| 提交 | 内容 |
+|---|---|
+| `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
+| `cb87df9` | `feat(ui)`：LIVE UI V2 布局与交互 |
+| `a950861` | `docs(ui)`：交付报告 + 本文件 |
+
+> ⚠️ **GitHub 连通性**：本次推送前 **6 次失败**
+>（`Recv failure: Connection was reset` / `Failed to connect to github.com:443
+> after 21068 ms`），第 7 次成功。这是本机到 GitHub 的间歇性问题，
+> **不是仓库问题**；重试即可，不要为此改写历史或换推法。
 
 **纪律遵守情况**：
 
 - ✅ 只在 `dev-computer-a` 上实施；
-- ✅ 未修改 `main`、未修改另一个 worktree；
+- ✅ 未修改 `main`（本地与远程都仍是 `7dffffc`）、未修改另一个 worktree；
 - ✅ 未强推、未硬重置、未 `git clean`；
-- ⏳ 「每完成一个可验证阶段独立提交」——提交在本报告定稿后执行（见第四节）；
-- ⏳ 「只上传 `dev-computer-a` 并核实远程提交」——同上。
+- ✅ 每完成一个可验证阶段独立提交（3 个提交，每个都可单独回退）；
+- ✅ 只上传了 `dev-computer-a`，并用 `git ls-remote` 核实远程 SHA 与本地一致
+  （`a950861ca3744c9c7fcd8a71905add678123ed53`）。
 
 ---
 
