@@ -310,14 +310,12 @@ npm run verify
 |---|---|
 | `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
 | `cb87df9` | `feat(ui)`：LIVE UI V2 —— 椭圆牌桌 + 右侧 380px 操作台 + 44px 单行顶栏 |
-| `a950861` | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项 |
-| `ab13edf` | `docs(ui)`：把最终的 Git 状态（已推送并核实）写进两份报告 |
+| `a950861` 起 | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项，以及把最终 Git 状态同步进报告 |
 
 ### 推送与核实（`git ls-remote` 实测）
 
 ```text
-本地 HEAD                    : ab13edf1476a75b0d69e972a5f2980a82f81ab4b
-refs/heads/dev-computer-a    : ab13edf1476a75b0d69e972a5f2980a82f81ab4b   ✔ 一致
+本地 dev-computer-a 的 HEAD 与 refs/heads/dev-computer-a 逐字符一致   ✔
 refs/heads/main              : 7dffffc965116c0a688d3357244624153def6a52   ✔ 未触碰
 ```
 

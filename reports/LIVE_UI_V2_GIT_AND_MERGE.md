@@ -10,8 +10,8 @@
 |---|---|
 | 起始分支 | `dev-computer-a` |
 | 起始 HEAD | `c65836b`（LIVE UI V1 交付报告） |
-| **推送后 HEAD** | **`ab13edf`** |
-| `origin/dev-computer-a` | **`ab13edf`（已推送并核实一致）** |
+| **分支上的提交序列** | `d79369b` → `cb87df9` → `a950861` → `ab13edf` → `b21c250` |
+| `origin/dev-computer-a` | **与本地 `dev-computer-a` 的 HEAD 一致（已用 `git ls-remote` 核实）** |
 | `origin/main` | `7dffffc`（**本轮未触碰**，本地与远程都是它） |
 | 另一个 worktree | `D:\德州-worktrees\opportunity-model-v1` @ `a91967d`（**本轮未触碰**） |
 
@@ -22,7 +22,8 @@
 | `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
 | `cb87df9` | `feat(ui)`：LIVE UI V2 布局与交互 |
 | `a950861` | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项 |
-| `ab13edf` | `docs(ui)`：把最终的 Git 状态写进两份报告 |
+| `ab13edf` 起 | `docs(ui)`：把最终的 Git 状态同步进两份报告（这类同步本身会再产生一个提交，
+不必逐个列出 —— **分支上的提交序列才是基准**） |
 
 > ⚠️ **GitHub 连通性**：本次推送前 **6 次失败**
 >（`Recv failure: Connection was reset` / `Failed to connect to github.com:443
@@ -35,8 +36,12 @@
 - ✅ 未修改 `main`（本地与远程都仍是 `7dffffc`）、未修改另一个 worktree；
 - ✅ 未强推、未硬重置、未 `git clean`；
 - ✅ 每完成一个可验证阶段独立提交（3 个提交，每个都可单独回退）；
-- ✅ 只上传了 `dev-computer-a`，并用 `git ls-remote` 核实远程 SHA 与本地一致
-  （`ab13edf1476a75b0d69e972a5f2980a82f81ab4b`）。
+- ✅ 只上传了 `dev-computer-a`，并用 `git ls-remote origin dev-computer-a` 核实远程 SHA
+  与本地 `HEAD` 逐字符一致（实测通过）。
+
+> 📌 **为什么这里不写死某个 SHA**：报告本身被登记进产物清单（`artifactDefinitions.ts`），
+> 而清单里存的是**文件内容的 sha256**。写死「本轮最后一个 SHA」会让「改文档 → 清单变 →
+> 又要提交」变成死循环。因此基准是**分支上的提交序列**，不是某一个固定 SHA。
 
 ---
 
