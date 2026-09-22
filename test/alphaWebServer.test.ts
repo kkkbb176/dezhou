@@ -149,16 +149,27 @@ test('服务器:首页返回交互式牌桌页面且 UTF-8 正确', async () => 
 
     // 中文必须存在且未被编码破坏
     assert.ok(html.includes('牌桌快速录入'), '页面标题必须是中文');
-    assert.ok(html.includes('我的手牌'), '必须有手牌区');
+    /*
+     * ⚠️ LIVE UI V3 把「我的手牌」改成了「Hero 手牌」—— 在这个界面里
+     * 「Hero」就是使用者自己，而 V3 的文案统一用 `Hero`（座位标记、
+     * 决策区标题也都是 Hero）。这里断言的是**手牌区存在**，
+     * 因此同时接受两种写法：文案可以改，区域不能没有。
+     */
+    assert.ok(
+      html.includes('Hero 手牌') || html.includes('我的手牌'),
+      '必须有手牌区',
+    );
     assert.ok(html.includes('公共牌') || html.includes('boardRow'), '必须有公共牌槽位');
     assert.ok(html.includes('当前行动'), '必须有行动区');
     assert.ok(html.includes('建议'), '必须有结果区');
-    assert.ok(html.includes('行动时间线'), '必须有时间线');
+    assert.ok(html.includes('时间线'), '必须有时间线');
     assert.ok(html.includes('调试'), '必须有调试面板（规范第 81 条）');
 
     // 静态资源必须由同一台服务器提供（无构建步骤）
     assert.ok(html.includes('/table.js'), '必须引用客户端脚本');
     assert.ok(html.includes('/table.css'), '必须引用样式');
+    /* LIVE UI V3 的布局与视觉规范必须一起加载（没有它页面会退化成裸 HTML） */
+    assert.ok(html.includes('/live-ui.css'), '必须引用 live-ui.css');
 
     // 不得出现被破坏的编码（问号串是 PowerShell/编码事故的典型特征）
     assert.ok(!html.includes('????'), '页面不得含编码破坏产生的问号串');

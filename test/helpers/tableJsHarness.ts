@@ -143,6 +143,8 @@ const ELEMENT_IDS: readonly string[] = [
    * 才有地方可测（真实缺陷：重叠请求会把按钮永久禁用）。
    */
   'moreBtn', 'moreMenu',
+  /* V3：完整时间线的 <details>（enderTimeline() 用它找 <summary> 写条数） */
+  'timelinePanel', 'timelineSummary',
   'debugSeats', 'debugMath', 'debugInput', 'debugFingerprint', 'debugDecision',
   'overlay', 'modal', 'toast',
   'autoAnalyzeLine', 'autoAnalyzeBadge', 'modeButtons',

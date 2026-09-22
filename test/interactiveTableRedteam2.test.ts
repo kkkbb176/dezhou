@@ -244,6 +244,7 @@ test('F-01（CRITICAL）：分析成功之后，渲染函数必须**跑到底**�
     'recentActions',
     /* LIVE UI V2：顶栏设置菜单（用 `getElementById` 取，见 harness 里的说明） */
     'moreBtn', 'moreMenu',
+    'timelinePanel', 'timelineSummary',
     'debugSeats', 'debugMath', 'debugInput', 'debugFingerprint', 'debugDecision',
     'overlay', 'modal', 'toast',
   ];

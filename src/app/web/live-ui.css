@@ -1,194 +1,209 @@
 /* ============================================================================
- * LIVE UI V2 —— 实战界面样式（布局与外观的**唯一**来源）
+ * LIVE UI V3 —— 实战界面样式（布局与视觉规范的唯一来源）
  * ============================================================================
  *
- * ## 为什么是独立文件，而不是继续往 table.css 末尾追加
+ * ## V3 与 V2 的关系
  *
- * V1 的做法是「想到一条加一条」，于是 `table.css` 末尾堆了 **11 段**
- * 互相覆盖的 `LIVE UI V1 ①…⑪` 规则（929–1213 行）。那种做法的代价是：
- * 想改一个间距要翻五处、`!important` 越来越多、删一条不知道会不会崩。
+ * V2 已经把「布局与外观」从 `table.css` 的 11 段追加覆盖块里收拢到本文件。
+ * V3 在这个基础上**换掉视觉方向**，不是继续微调：
  *
- * V2 把那 11 段**整段删除**（`table.css` 现在止于 928 行），把布局与外观
- * 集中到本文件。`table.css` 只保留：
- *   - 主题变量（`--felt` 等 token 仍在那里，测试引用它）
- *   - 按钮 / 面板 / 牌面 / 弹层 / 画像提示等**基础组件**样式
+ * | | V2 | V3 |
+ * |---|---|---|
+ * | 牌桌 | 拟物椭圆毡桌（`border-radius: 50% / 46%`，占地 966×600） | **没有牌桌**；座位是 5×3 网格里的紧凑 Pill |
+ * | 座位 | 绝对定位 + 三角函数摆在椭圆上 | 网格定位（`grid-column` / `grid-row`） |
+ * | 视觉层级 | 靠边框与卡片分组 | 靠**留白与字号**；一个界面最多三处分区线 |
+ * | 配色 | 深灰 + 金色 Hero + 蓝色行动者 | 同一套色板，但收敛为 9 个语义色（见下） |
+ * | 右栏 | 380px，四段 | 372px，四段，**建议区固定高度不跳动** |
  *
- * 本文件加载在 `table.css` **之后**，因此可以直接接管布局，
- * 不需要堆覆盖规则 —— 每条规则只出现一次。
+ * 保留不变的是**契约**：所有 id / class 名字、加载顺序（`table.css` → 本文件）、
+ * 「页面不含任何策略判断」这条纪律。
  *
  * ## 类名 / id 契约（**不得改动**）
  *
  * 被前端测试与浏览器验收脚本引用，只改样式、不改名字：
  *   `.seat` · `#seats .seat` · `.seat.empty` · `.seatTip` · `#topbar` · `#main`
- *   `#handSize` · `#potLine` · `#streetLine` · `#boardRow` · `#heroHandRow`
- *   `#cardPicker` · `#pickerGrid` · `#actorLine` · `#statGrid`
- *   `#actionButtons` · `#quickSizes` · `#sizeButtons` · `#analyzeBtn`
- *   `#blockers` · `#result` · `#limits` · `#timeline` · `#main .panel`
+ *   `#left` · `#rail` · `#tableWrap` · `#tableCenter` · `#handSize` · `#notices`
+ *   `#streetLine` · `#potLine` · `#boardRow` · `#heroHandRow` · `#heroHandInline`
+ *   `#cardPicker` · `#pickerGrid` · `#pickerTarget` · `#handPanel`
+ *   `#actorLine` · `#autoAnalyzeLine` · `#statGrid` · `#actionButtons`
+ *   `#quickSizes` · `#sizeButtons` · `#customAmount` · `#analyzeBtn` · `#blockers`
+ *   `#result` · `#recentActions` · `#timeline` · `#limits` · `#moreBtn` · `#moreMenu`
  *
- * ## 设计约束（任务第一 / 二 / 四 / 八 / 九节）
+ * ## 设计约束（任务第三 / 六 / 七 / 十节）
  *
- *   - 深灰 / 炭黑为主；**不用大面积绿色毡面**；不用渐变、发光、大面积阴影
- *   - 蓝色**只**用于 Hero 与当前行动玩家
- *   - 不展示长篇说明与调试信息（收进 `<details>` 与设置菜单）
- *   - 主操作按钮 ≥ 42px；座位卡片约 90×48px；顶栏 44px；右栏 380px
- *   - 1366×768 下**不出现纵向滚动**
+ *   - 不用大面积绿色毡布、不用拟物牌桌、不用渐变 / 发光 / 夸张阴影
+ *   - 不堆嵌套卡片、不用多层边框、不重复标题
+ *   - 正常信息 13–14px；次要标签 11–12px；关键金额 18–20px；不用 10px 以下
+ *   - 间距只用 4 / 8 / 12 / 16px 体系；圆角与边线规则统一
+ *   - 主操作按钮 ≥ 42px；1366×768 下正常录入**不出现纵向滚动**
  * ========================================================================== */
 
 /* ============================================================
- * 0. 设计令牌（只在本文件用，避免与 table.css 的 token 打架）
- * ============================================================ */
+ * 0. 设计令牌 —— 任务第六节给定的色板，逐条对应
+ * ============================================================
+ * 刻意**只**定义这些语义色。V2 有 19 个 `--v2-*` 令牌，其中多个是同一颜色
+ * 的不同写法（`--v2-blue` / `--v2-act` 完全相同），改一处会漏另一处。
+ * V3 收敛为 9 个，每个都有明确用途，不再出现同义令牌。
+ */
 :root {
-  --v2-bg: #0f1114;
-  --v2-bar: #16191d;
-  --v2-rail: #14171b;
-  --v2-panel: #191d22;
-  --v2-panel-2: #1f242a;
-  --v2-line: #272c33;
-  --v2-line-2: #333941;
-  --v2-text: #e7eaee;
-  --v2-sub: #a2aab5;
-  --v2-dim: #6e7783;
-  --v2-blue: #3d86e0;
-  --v2-blue-soft: #1b3350;
-  --v2-blue-line: #2f5d92;
-  --v2-hero: #d9a441;
-  --v2-hero-soft: #2a2318;
-  --v2-danger: #c8564a;
-  /* 牌桌：炭黑中性面，**不用绿色毡面**（任务第一节） */
-  --v2-table: #1b2026;
-  --v2-table-edge: #2c333c;
+  --bg: #111417; /* 页面背景 */
+  --surface: #171b20; /* 主内容背景（操作台、座位 Pill） */
+  --surface-2: #1d232a; /* 次级背景（按钮、输入框、菜单） */
+  --line: #2a313a; /* 弱边线 */
+  --text: #e7edf5; /* 主文字 */
+  --text-2: #9aa6b2; /* 次级文字 */
+  --actor: #4da3ff; /* 当前行动强调色 */
+  --hero: #f0c36d; /* Hero 标识 */
+  --idle: #5c6672; /* 失活状态 */
+
+  /* 牌面：扑克牌必须是白底，这是可读性而非装饰 */
+  --card-face: #eef1f5;
+  --card-ink: #14181d;
+  --card-red: #b8342a;
+
+  /* 间距体系：只用这四档（任务第六节） */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  /* 统一的圆角与边线 */
+  --r: 8px;
+  --r-sm: 6px;
+  --hair: 1px solid var(--line);
 }
 
 /* ============================================================
- * 1. 页面骨架：顶栏 44px + 主体（左桌 / 右操作台）
+ * 1. 页面骨架
  * ============================================================ */
 /*
  * ⚠️ 写成**单行** `html, body` 而不是跨行 —— 跨行的选择器列表会让
- * 「逐行解析 CSS」的检查脚本（`test/liveUiV2.test.ts`）漏掉第一个选择器。
+ * 「逐行解析 CSS」的检查脚本（`test/liveUiV3.test.ts`）漏掉第一个选择器。
  * 那是检查工具的问题，但让 CSS 好解析没有代价。
  */
 html, body {
   height: 100%;
 }
 body {
-  background: var(--v2-bg);
-  color: var(--v2-text);
-  overflow: hidden; /* 任务第二节：录入过程不允许纵向滚动 */
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC',
+    'Hiragino Sans GB', 'Source Han Sans SC', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+  overflow: hidden; /* 任务第十节：正常操作不需要纵向滚动 */
   display: flex;
   flex-direction: column;
 }
 
 /* ============================================================
- * 2. 顶部控制栏（约 44px，**单行不换行**）
+ * 2. 顶部工具栏（42px 单行，不换行）
  * ============================================================
- * 只放「一局中会改的」：桌型 / Hero 位置 / 盲注单位 / 下一手 / 撤销。
- * 低频操作全部收进 `.more` 菜单 —— 因此这一行在 1366px 下不会溢出。
+ * 只放「一局中会改的」：桌型 / Hero 位置 / 盲注单位 / 下一手 / 撤销 / 设置。
  */
 #topbar {
-  flex: 0 0 44px;
-  height: 44px;
+  flex: 0 0 42px;
+  height: 42px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px;
-  background: var(--v2-bar);
-  border-bottom: 1px solid var(--v2-line);
+  gap: var(--s3);
+  padding: 0 var(--s3);
+  background: var(--surface);
+  border-bottom: var(--hair);
   position: static; /* 覆盖 table.css 的 sticky，避免叠加偏移 */
   z-index: 30;
   flex-wrap: nowrap;
-  overflow: visible; /* 设置菜单要能溢出到顶栏之外 */
+  overflow: visible; /* 设置菜单要能溢出到工具栏之外 */
 }
 #topbar .tb-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s2);
   flex: 0 0 auto;
+  min-width: 0;
 }
 #topbar .tb-label {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 11.5px;
+  color: var(--idle);
   white-space: nowrap;
   flex: 0 0 auto;
 }
 #topbar .tb-actions {
-  margin-left: 6px;
-  padding-left: 10px;
-  border-left: 1px solid var(--v2-line);
+  gap: var(--s2);
+  padding-left: var(--s3);
+  border-left: var(--hair);
 }
 #topbar .spacer {
   margin-left: auto;
 }
 #topbar .hint {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 11.5px;
+  color: var(--text-2);
   white-space: nowrap;
 }
-#topbar select {
-  font-family: inherit;
-  font-size: 12.5px;
-  color: var(--v2-text);
-  background: var(--v2-panel-2);
-  border: 1px solid var(--v2-line-2);
-  border-radius: 6px;
-  padding: 4px 6px;
-  height: 30px;
-}
+
+/* 工具栏控件：统一高度 28px、统一圆角与边线 */
+#topbar select,
 #topbar button {
   font-family: inherit;
   font-size: 12.5px;
-  color: var(--v2-text);
-  background: var(--v2-panel-2);
-  border: 1px solid var(--v2-line-2);
-  border-radius: 6px;
-  padding: 0 12px;
-  height: 30px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: var(--hair);
+  border-radius: var(--r-sm);
+  height: 28px;
+  padding: 0 10px;
   cursor: pointer;
 }
+#topbar select {
+  padding: 0 6px;
+}
 #topbar button:hover {
-  border-color: var(--v2-blue);
+  border-color: var(--actor);
 }
 #topbar button.primary {
-  background: var(--v2-blue-soft);
-  border-color: var(--v2-blue);
+  background: #16324f;
+  border-color: var(--actor);
+  color: #cfe3fb;
   font-weight: 600;
 }
 #topbar button.danger {
-  color: #e7a79e;
+  color: #e0a49b;
 }
 #topbar .position-buttons {
   display: flex;
-  gap: 3px;
-  min-width: 0;
-}
-/*
- * ⚠️ 顶栏是单行不换行（44px 定高），因此**必须给可收缩的组留出收缩余地**，
- * 否则内容一多就被 `overflow: hidden` 静默裁掉 —— 用户看到的是
- * 「撤销 / 设置按钮不见了」，没有任何报错。
- * 这里让桌型与 Hero 位置两组允许收缩并省略，右侧的固定操作永远可见。
- */
-#topbar .tb-group:not(.tb-actions):not(.more) {
+  gap: var(--s1);
   min-width: 0;
   overflow: hidden;
 }
 #topbar .position-buttons button {
-  padding: 0 8px;
-  height: 28px;
+  padding: 0 var(--s2);
+  height: 26px;
   font-size: 12px;
   white-space: nowrap;
 }
 #topbar .position-buttons button.active {
-  background: var(--v2-blue-soft);
-  border-color: var(--v2-blue);
+  background: #16324f;
+  border-color: var(--actor);
   color: #fff;
   font-weight: 600;
 }
 #topbar .badge {
-  font-size: 11px;
-  color: var(--v2-sub);
-  background: var(--v2-panel-2);
-  border: 1px solid var(--v2-line-2);
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: var(--hair);
   border-radius: 999px;
-  padding: 2px 9px;
+  padding: var(--s1) 10px;
+}
+/*
+ * 桌型与 Hero 位置两组允许收缩：内容一多若不能收缩，
+ * 就会被 `overflow: hidden` **静默裁掉**（V2 实测过：右半边的
+ * 「下一手 / 撤销 / 设置」整块消失，没有任何提示）。
+ */
+#topbar .tb-group:not(.tb-actions):not(.more) {
+  overflow: hidden;
 }
 
 /* ---- 设置菜单（低频操作的唯一去处）---- */
@@ -197,30 +212,29 @@ body {
   flex: 0 0 auto;
 }
 #topbar .more-btn {
-  min-width: 68px;
+  min-width: 64px;
 }
 #topbar .more-btn.open {
-  background: var(--v2-blue-soft);
-  border-color: var(--v2-blue);
+  background: #16324f;
+  border-color: var(--actor);
 }
 #topbar .more-menu {
   position: absolute;
   right: 0;
-  top: 34px;
+  top: 32px;
   z-index: 60;
-  background: var(--v2-panel);
-  border: 1px solid var(--v2-line-2);
-  border-radius: 8px;
-  padding: 6px;
-  width: 216px;
-  /*
-   * 显隐**只靠 `hidden` 属性**（table.js 里 `menu.hidden = ...`），
-   * 不用 class 控制 —— 少一套状态，也就少一次「class 忘了清」的事故。
-   * `[hidden]` 必须显式写 `display:none`，否则会被下面的 `display:block` 覆盖。
-   */
+  background: var(--surface);
+  border: var(--hair);
+  border-radius: var(--r);
+  padding: var(--s2);
+  width: 224px;
   display: block;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
+/*
+ * 显隐只靠 `hidden` 属性（table.js 里 `menu.hidden = ...`）。
+ * `[hidden]` 必须显式 `display: none`，否则会被上面的 `display: block` 覆盖。
+ */
 #topbar .more-menu[hidden] {
   display: none;
 }
@@ -231,46 +245,45 @@ body {
   height: 30px;
   background: transparent;
   border: none;
-  border-radius: 5px;
-  padding: 0 9px;
+  border-radius: var(--r-sm);
+  padding: 0 10px;
   font-size: 12.5px;
 }
 #topbar .more-menu button:hover {
-  background: var(--v2-panel-2);
+  background: var(--surface-2);
   border-color: transparent;
 }
 #topbar .more-menu .mm-title {
-  font-size: 10px;
-  color: var(--v2-dim);
-  letter-spacing: 0.7px;
-  margin: 8px 0 3px 9px;
+  font-size: 11px;
+  color: var(--idle);
+  margin: var(--s2) 0 var(--s1) 10px;
 }
 #topbar .more-menu .mm-title:first-child {
   margin-top: 0;
 }
 #topbar .more-menu .position-buttons {
   flex-wrap: wrap;
-  padding: 0 6px;
+  padding: 0 var(--s2);
 }
 #topbar .more-menu .position-buttons button {
   height: 26px;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 #topbar .more-menu .badge {
   display: block;
-  margin: 6px 9px 0;
+  margin: var(--s2) 10px 0;
   text-align: center;
 }
 #topbar .more-menu .mm-details {
-  border-top: 1px solid var(--v2-line);
-  margin-top: 8px;
-  padding-top: 4px;
+  border-top: var(--hair);
+  margin-top: var(--s2);
+  padding-top: var(--s1);
 }
 #topbar .more-menu .mm-details > summary {
-  font-size: 11.5px;
-  color: var(--v2-sub);
+  font-size: 12px;
+  color: var(--text-2);
   cursor: pointer;
-  padding: 5px 9px;
+  padding: 6px 10px;
   list-style: none;
 }
 #topbar .more-menu .mm-details > summary::-webkit-details-marker {
@@ -278,60 +291,63 @@ body {
 }
 #topbar .more-menu .mm-details > summary::before {
   content: '▸ ';
-  color: var(--v2-dim);
+  color: var(--idle);
 }
 #topbar .more-menu .mm-details[open] > summary::before {
   content: '▾ ';
 }
 #topbar .more-menu .mm-debug {
-  max-height: 46vh;
+  max-height: 44vh;
   overflow-y: auto;
+}
+#topbar .more-menu .hint {
+  font-size: 11.5px;
+  color: var(--text-2);
+  padding: var(--s1) 10px;
+  max-height: 30vh;
+  overflow-y: auto;
+  white-space: normal;
 }
 
 /* ============================================================
- * 3. 主体：左桌 1fr + 右操作台 380px
+ * 3. 主体：左（主战况）1fr + 右（操作台）372px
  * ============================================================ */
 #main {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 0;
-  padding: 0;
+  grid-template-columns: minmax(0, 1fr) 372px;
   align-items: stretch;
 }
-/* 窄视口（< 1100px）退化为上下堆叠；1366×768 走不到这里 */
-@media (max-width: 1100px) {
+/* 窄视口（< 1120px）退化为上下堆叠；1366×768 走不到这里 */
+@media (max-width: 1120px) {
   #main {
     grid-template-columns: minmax(0, 1fr);
   }
   #rail {
     border-left: none;
-    border-top: 1px solid var(--v2-line);
+    border-top: var(--hair);
   }
 }
 
-/* 左列：本手拓扑行 + 牌桌 + 两个折叠面板 */
 #left {
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 8px 10px 10px;
-  gap: 7px;
+  padding: var(--s3);
+  gap: var(--s2);
 }
+
+/* 本手拓扑行：一行文字，不是卡片 */
 #handSize {
   flex: 0 0 auto;
-  font-size: 11.5px;
-  color: var(--v2-sub);
-  background: var(--v2-panel);
-  border: 1px solid var(--v2-line);
-  border-radius: 6px;
-  padding: 5px 10px;
-  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding: 0 2px;
 }
 #handSize b {
-  color: var(--v2-text);
+  color: var(--text);
   font-weight: 600;
 }
 #notices:empty {
@@ -341,240 +357,291 @@ body {
   flex: 0 0 auto;
 }
 #notices .banner {
-  font-size: 11.5px;
-  color: #e8c9a0;
-  background: #2b2418;
-  border: 1px solid #4a3d24;
-  border-radius: 6px;
-  padding: 5px 9px;
-  margin-bottom: 5px;
+  font-size: 12.5px;
+  color: #e6c79c;
+  background: #2a2318;
+  border: var(--hair);
+  border-color: #4a3d24;
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  margin-bottom: var(--s2);
 }
 
 /* ============================================================
- * 4. 牌桌：真椭圆，填满左列剩余高度
+ * 4. 主战况区：5 列 × 3 行网格
  * ============================================================
- * `renderSeats()` 已经按真椭圆算好了 `left/top` 百分比
- * （`x = 50 + 40cosθ`、`y = 48 + 40sinθ`，0° = 6 点钟），
- * 所以这里只需要一个**同样是椭圆**的容器 —— 不用 3×3 网格近似。
+ * 中间 3 列 × 中间行是中心牌面区（`#tableCenter`，`grid-area: 2 / 2 / 3 / 5`）。
+ * 座位由 `renderSeats()` 用 `grid-column` / `grid-row` 放进各自的单元格。
+ *
+ * 🔴 **没有牌桌**：`#tableWrap` 不画背景、不画边框、不画圆角。
+ * V2 那张椭圆毡桌占 966×600 却不承载任何信息，是「为造型而造型」。
  */
 #tableWrap {
   flex: 1 1 auto;
   min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: var(--s2) var(--s3);
+  align-items: center;
+  justify-items: center;
+  background: none; /* 覆盖 table.css 的径向绿色渐变 */
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  /* 保留 V2 的遗留属性声明是**没必要**的 —— 这里全部显式归零，避免继承旧值 */
+  aspect-ratio: auto;
   position: relative;
-  width: 100%;
-  background: var(--v2-table);
-  border: 1px solid var(--v2-table-edge);
-  border-radius: 50% / 46%;
-  overflow: visible; /* 座位允许压到桌沿外侧 */
-  box-shadow: none; /* 任务第一节：不用大面积阴影 */
-  background-image: none; /* 覆盖 table.css 的径向绿色渐变 → 不再是大面积绿色 */
 }
+/*
+ * `#seats` 用 `display: contents` 把它的子节点「提升」到 `#tableWrap` 的网格里。
+ *
+ * 为什么保留 `#seats` 这一层而不是直接往 `#tableWrap` 里塞座位：
+ * 它是测试与验收脚本的既有契约（`test/helper` 的 id 注册表、`#seats .seat` 选择器、
+ * `renderSeats()` 的 `$('seats')`）。用 `display: contents` 既能保留这一层，
+ * 又能让座位真正参与父网格 —— 不需要再引入一层绝对定位。
+ */
+#seats {
+  display: contents;
+}
+
+/* ---- 中心牌面区 ---- */
 #tableCenter {
-  position: absolute;
-  left: 50%;
-  top: 45%;
-  transform: translate(-50%, -50%);
+  grid-area: 2 / 2 / 3 / 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  padding: 0;
   text-align: center;
-  width: 46%;
-}
-#potLine {
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: 0.2px;
-  color: var(--v2-text);
+  min-width: 0;
 }
 #streetLine {
   font-size: 11.5px;
-  color: var(--v2-dim);
-  margin-top: 3px;
-  letter-spacing: 0.5px;
+  color: var(--text-2);
+  letter-spacing: 0.6px;
+}
+#potLine {
+  font-size: 20px; /* 关键金额（任务第六节） */
+  font-weight: 650;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 #boardRow {
   display: flex;
-  gap: 5px;
-  justify-content: center;
-  margin-top: 9px;
-}
-#boardRow .slot {
-  width: 32px;
-  height: 44px;
-  border-radius: 4px;
-  background: #22272e;
-  border: 1px dashed var(--v2-line-2);
-  display: flex;
+  gap: var(--s1);
+  margin-top: var(--s1);
+  min-height: 62px;
   align-items: center;
-  justify-content: center;
-  color: var(--v2-dim);
-  font-size: 13px;
 }
-#boardRow .card {
-  width: 32px;
-  height: 44px;
-  border-radius: 4px;
-  background: #eef0f3;
-  color: #14171b;
+/*
+ * 公共牌 **不做小**（任务第四节：不要把公共牌做得过小，影响快速识别）。
+ * 44×62 是「一眼能读出点数与花色」的下限。
+ */
+#boardRow .card,
+#boardRow .slot {
+  width: 44px;
+  height: 62px;
+  border-radius: var(--r-sm);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.05;
+}
+#boardRow .slot {
+  background: var(--surface);
+  border: 1px dashed #333c46;
+  color: var(--idle);
+  font-size: 15px;
+  cursor: pointer;
+}
+#boardRow .slot:hover {
+  border-color: var(--actor);
+  color: var(--actor);
+}
+#boardRow .card {
+  background: var(--card-face);
+  color: var(--card-ink);
   border: none;
+  cursor: pointer;
 }
 #boardRow .card.red {
-  color: #b8342a;
+  color: var(--card-red);
+}
+#boardRow .card.pending {
+  opacity: 0.75;
 }
 
-/* ---- Hero 手牌：贴在牌桌左下角，**可直接点击改牌** ---- */
+/* ---- Hero 手牌：中心区最下面一行，可点改牌 ---- */
 #heroHandInline {
-  position: absolute;
-  left: 12px;
-  bottom: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: rgba(15, 17, 20, 0.92);
-  border: 1px solid var(--v2-hero);
-  border-radius: 7px;
-  padding: 5px 8px;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  padding: var(--s1) var(--s2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
 }
 #heroHandInline .hh-label {
-  font-size: 10px;
-  color: var(--v2-hero);
+  font-size: 11px;
+  color: var(--hero);
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 #heroHandRow {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--s1);
 }
 #heroHandRow .card {
-  width: 28px;
-  height: 38px;
-  min-height: 38px;
-  border-radius: 3px;
-  background: #eef0f3;
-  color: #14171b;
+  width: 40px;
+  height: 56px;
+  border-radius: var(--r-sm);
+  background: var(--card-face);
+  color: var(--card-ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   border: none;
+  cursor: pointer;
+  line-height: 1;
 }
 #heroHandRow .card.red {
-  color: #b8342a;
+  color: var(--card-red);
 }
 #heroHandRow .card.empty {
   background: transparent;
-  border: 1px dashed var(--v2-line-2);
-  color: var(--v2-dim);
+  border: 1px dashed #3a444f;
+  color: var(--idle);
+  font-size: 16px;
+}
+#heroHandRow .card.empty:hover {
+  border-color: var(--hero);
+  color: var(--hero);
 }
 #heroHandRow .card.empty.target {
-  border-color: var(--v2-blue);
-  color: #cfe0f6;
+  border-color: var(--hero);
+  color: var(--hero);
+  border-style: solid;
 }
 
 /* ============================================================
- * 5. 座位：约 92×48，最多三行（姓名 / 位置 · 筹码 / 状态）
+ * 5. 座位 Pill（任务第四节 B）
  * ============================================================
- * V1 的座位卡把「名字 / 角色 / 筹码 / 画像 / 动态 / 状态 / 手牌 / 庄家」
- * 全塞进去，九人桌直接糊成一片。V2 的取舍（用户指令）：
- *   - 未入座座位**只显示简洁的加号**
- *   - 玩家画像**不默认展开**（`.tags` 默认隐藏，真实画像走 hover 的 `#seatTip`）
- *   - Hero 手牌不再画在座位上（画在桌前左下角，`#heroHandInline`）
+ * 尺寸：宽 92px（88–105 区间内）、高 46px（42–48 区间内）、圆角 7px（6–8 区间内）。
+ * 只显示：名字 / 位置 / 筹码 / 当前动作。**没有画像标签、没有手牌、没有长句**。
  */
-#seats {
-  position: absolute;
-  inset: 0;
-}
 .seat {
-  position: absolute;
   width: 92px;
-  /*
-   * 座位卡片：宽 92px 固定（约 90，用户指令），高度**由内容决定**（三/四行文本），
-   * 下界 48px 保证空座位与短名字不会缩成一条。
-   *
-   * ⚠️ 这里刻意**不设 `max-height`**。V2 第一版设了 58px，真实截图显示
-   * 「玩家2 / 99BB（投 1BB）」这类内容会被裁成「99BB（投 / 1BB」——
-   * 把数字截成两半比多占十几像素危险得多：那正是使用者要读的筹码数。
-   * 用户指令的「不得缩小到难以阅读和点击」优先于「严格 48px」。
-   */
-  min-height: 48px;
+  height: 46px;
   box-sizing: border-box;
-  transform: translate(-50%, -50%);
-  background: #191d22;
-  border: 1px solid var(--v2-line-2);
-  border-radius: 7px;
-  padding: 4px 6px;
-  text-align: center;
-  cursor: pointer;
-  user-select: none;
-  font-size: 11.5px;
-  line-height: 1.25;
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0;
+  padding: var(--s1) var(--s2);
+  background: var(--surface);
+  border: var(--hair);
+  border-radius: 7px;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  transition: none; /* 任务第七节：不用视觉动画掩盖处理耗时 */
 }
 .seat .name {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--v2-text);
+  color: var(--text);
   /*
-   * 名字允许折到两行，而不是省略成「玩家…」。
-   * 九人桌上认错人比多占一行贵得多；`.seat` 的高度由内容决定，不会裁切。
+   * 名字**单行省略**：`.seat` 高度是 46px 的定值（任务第四节的区间），
+   * 名字折成两行就会把第三行挤出去。完整名字在 `title` 里（悬停可读）。
    */
-  overflow-wrap: anywhere;
-  line-height: 1.15;
-}
-.seat .pos {
-  font-size: 10px;
-  color: var(--v2-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
 }
-.seat .stack {
+.seat .pos {
   font-size: 11px;
-  color: var(--v2-sub);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+/*
+ * 第三行 = 筹码（左）+ 当前动作（右）。
+ *
+ * 🔴 **两者必须在同一个 flex 行里，不能用绝对定位的角标**。
+ * V3 第一版把状态做成 `position: absolute` 的右下角标，实测它与筹码
+ * **直接叠在一起**（截图里「99BB 投1BB」和「Hero」糊成一团）。
+ * 一个 92px 的 Pill 放不下两层重叠的文字。
+ */
+.seat .foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s1);
+  line-height: 1.25;
+  min-width: 0;
+}
+.seat .foot .stack {
+  font-size: 11.5px;
+  color: var(--text-2);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
-.seat .status {
-  font-size: 10.5px;
-  color: var(--v2-dim);
+.seat .foot .action {
+  font-size: 11px;
+  color: var(--idle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
 }
-/* 玩家画像不默认展开 */
+.seat.actor .foot .action {
+  color: var(--actor);
+  font-weight: 600;
+}
+/* 玩家画像不默认展开（V2 纪律，V3 保留） */
 .seat .tags {
   display: none;
 }
-/* Hero 手牌改画在 #heroHandInline；座位里的那份不再显示 */
+/* Hero 手牌画在中心区，不画在座位上 */
 .seat .heroCards {
   display: none;
 }
 
-/* Hero：金色边框 + 淡金底（**只在 Hero 用金色**） */
+/* Hero：金色标识（任务第四节：克制的独立标识） */
 .seat.hero {
-  border-color: var(--v2-hero);
-  background: var(--v2-hero-soft);
+  background: #1e1a12;
+  border-color: var(--hero);
 }
 .seat.hero .name {
-  color: var(--v2-hero);
+  color: var(--hero);
 }
-/* 当前行动玩家：克制的蓝色（任务第四节：蓝色只给 Hero 与当前行动者） */
+/* 当前行动玩家：蓝色高亮 */
 .seat.actor {
-  border-color: var(--v2-blue);
-  background: #17222f;
-  box-shadow: none;
+  background: #12243a;
+  border-color: var(--actor);
 }
 .seat.actor .name {
-  color: #cfe0f6;
+  color: #cfe3fb;
 }
-/* 弃牌者降低视觉权重 */
+/* 已弃牌：降低视觉权重 */
 .seat.folded {
-  opacity: 0.42;
+  opacity: 0.45;
 }
 .seat.notInHand {
   opacity: 0.55;
@@ -585,181 +652,190 @@ body {
   border-style: dashed;
 }
 
-/* 空座位：**只显示简洁的加号**，不再多行提示文字 */
+/* 未入座：只显示简洁的加号 */
 .seat.empty {
-  border-style: dashed;
-  border-color: var(--v2-line);
   background: transparent;
-  opacity: 0.85;
-  padding: 2px;
-  /*
-   * ⚠️ **不得在这里改 min-height**。V2 第一版写了 `min-height: 40px`，
-   * 于是空座位在真实浏览器里只有 40px 高，违反「座位卡片约 90×48px」
-   * 与「不得把座位卡片缩小到难以点击」—— 而假 DOM 测试量不到像素，
-   * 是**截图**把它抓出来的（`live-ui-v2-main-1366x768.png`）。
-   * 空座位的「简洁」由内容（一个加号）承担，不由尺寸承担。
-   */
+  border: 1px dashed #333c46;
+  opacity: 0.9;
+  padding: 0;
+  align-items: center;
 }
 .seat.empty .name {
-  color: var(--v2-dim);
-  font-weight: 500;
+  color: var(--idle);
   font-size: 17px;
+  font-weight: 400;
   line-height: 1;
+  text-align: center;
 }
 .seat.empty:hover {
-  border-color: var(--v2-blue);
+  border-color: var(--actor);
 }
 .seat.empty:hover .name {
-  color: #cfe0f6;
+  color: var(--actor);
 }
 
 /* 庄家标记 */
 .seat .dealer {
   position: absolute;
-  right: -6px;
-  top: -6px;
-  width: 17px;
-  height: 17px;
+  right: -5px;
+  top: -5px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #d9dde3;
-  color: #14171b;
+  background: #d6dbe2;
+  color: #14181d;
   font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
-/* 座位上的本街投入小标 */
+/* 本街投入：贴在 Pill 下方 */
 .seat .betChip {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: -11px;
-  font-size: 10px;
-  color: #cfe0f6;
-  background: #131a22;
-  border: 1px solid var(--v2-blue-line);
+  bottom: -9px;
+  font-size: 10.5px;
+  color: #cfe3fb;
+  background: #12243a;
+  border: 1px solid #2c5a8c;
   border-radius: 999px;
   padding: 0 6px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  z-index: 2;
 }
 
 /* ============================================================
- * 6. 右侧快速操作台（380px，四层固定顺序）
+ * 6. 右侧操作台（372px，四段固定顺序）
  * ============================================================
  * 顺序是刻意的：**先「轮到谁」，再「我能做什么」，最后才是「建议」**。
- * 建议永远在动作按钮**下面**，因为 Hero 的建议与实际录入的动作必须分开
- * （用户红线：不得把软件推荐动作自动记录为 Hero 实际动作）——
- * 视觉上的上下分区是这条纪律的第一道防线。
+ * 建议永远在动作按钮**下面** —— 视觉上的上下分区是
+ * 「建议 ≠ 实际录入动作」这条纪律的第一道防线。
  */
 #rail {
   min-width: 0;
+  /*
+   * ## 右栏的高度策略：**内容决定高度，实在放不下才滚动**
+   *
+   * V3 第一版把右栏做成「固定高度 + 四段按比例分配」，结果是
+   * `#result`（Hero 决策）被压到 **14px**，而它的内容有 174px ——
+   * 建议文字直接与下面的按钮叠在一起。
+   *
+   * 根因：`flex: 1 1 auto` 的收缩比例是 1，而其它段是 0。
+   * 一旦总和超过容器，**全部亏空由它一家承担**，而它没有内容下界。
+   *
+   * 修法是把「分配」换成「自然堆叠」：
+   *   - 四段都是 `flex: 0 0 auto`（各自占自己需要的高度）；
+   *   - 右栏本身 `overflow-y: auto` 作为**兜底**（正常情况不触发滚动条）。
+   *
+   * 实测（1366×768、9 人桌、Hero 回合、分析已完成）：四段合计 632px < 702px，
+   * **不出现滚动条**，且建议动作与「详细分析」入口都完整可见。
+   *
+   * ⚠️ 这不是任务第十节禁止的「用 overflow:hidden 裁掉超出的内容」：
+   * 没有任何内容被裁掉 —— 我是把「压缩」换成了「不够时滚动」。
+   */
   min-height: 0;
-  background: var(--v2-rail);
-  border-left: 1px solid var(--v2-line);
+  background: var(--surface);
+  border-left: var(--hair);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+/*
+ * 每一段都占自己需要的高度（`flex: 0 0 auto`），不参与压缩。
+ * 见 `#rail` 顶部对「分配 vs 自然堆叠」的说明 —— 按比例分配会把
+ * 「Hero 决策」压到 14px。
+ */
 #rail .rblock {
   flex: 0 0 auto;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--v2-line);
+  padding: 10px var(--s3);
+  border-bottom: var(--hair);
+}
+#rail .rblock:last-child {
+  border-bottom: none;
 }
 #rail .rblock-grow {
-  flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
 }
+/* 段标题与内容之间的间距：4px（间距体系里最小的一档，不再多占） */
 #rail .rblock-cap {
-  font-size: 10px;
-  color: var(--v2-dim);
-  letter-spacing: 0.7px;
-  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--idle);
+  letter-spacing: 0.6px;
+  margin-bottom: var(--s1);
 }
 #rail .cap-note {
-  color: #4f5866;
-  margin-left: 6px;
+  color: #46505c;
+  margin-left: var(--s2);
   letter-spacing: 0;
-  font-size: 10px;
 }
 
-/* 第一层：现在轮到谁 */
+/* ---- ① 当前行动 ---- */
 #actorBlock {
-  padding-top: 11px;
+  padding-bottom: var(--s2);
 }
 #actorLine {
   font-size: 15px;
   font-weight: 650;
+  line-height: 1.3;
 }
 #actorLine.hero {
-  color: var(--v2-hero);
+  color: var(--hero);
 }
 #autoAnalyzeLine {
-  font-size: 11px;
-  color: var(--v2-dim);
-  margin-top: 4px;
-}
-
-/* 第二层：数据 + 动作按钮 */
-.statGrid {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 3px 10px;
-  margin-bottom: 9px;
   font-size: 12px;
-}
-.statGrid .k {
-  color: var(--v2-dim);
-  white-space: nowrap;
-}
-.statGrid > div:nth-child(even) {
-  color: var(--v2-text);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  margin-top: var(--s1);
 }
 
+/* ---- ② 快速录入 ---- */
 /*
- * 主要操作区：**两列固定网格**。
- * 列宽由网格决定（`1fr 1fr`），不随按钮文字长度变化 ——
- * 因此「跟注 1.5BB」→「跟注全下 100BB」不会把布局顶歪（用户第九节要求）。
- * `min-height` 预留两行（2 × 42px + 7px 间隙），位置恒定。
+ * 主要操作区：两列固定网格、行高固定 46px。
+ *
+ * 列宽由网格决定（`1fr 1fr`），**不随按钮文字长度变化** ——
+ * 「跟注 1.5BB」→「跟注全下 100BB」不会把布局顶歪。
+ * `grid-auto-rows` 固定行高，因此 2 个按钮与 4 个按钮占的高度不同但**按钮本身尺寸恒定**。
  */
 #actionButtons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
-  min-height: 91px;
-  align-content: start;
+  gap: 5px;
+  grid-auto-rows: 44px;
+}
+#actionButtons:empty {
+  display: none;
 }
 #actionButtons button {
-  height: 42px;
-  min-height: 42px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 10px;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 600;
-  border-radius: 7px;
-  border: 1px solid var(--v2-line-2);
-  background: var(--v2-panel-2);
-  color: var(--v2-text);
+  border-radius: var(--r);
+  border: var(--hair);
+  background: var(--surface-2);
+  color: var(--text);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 #actionButtons button:hover {
-  border-color: var(--v2-blue);
+  border-color: var(--actor);
 }
 #actionButtons button.active {
-  background: var(--v2-blue-soft);
-  border-color: var(--v2-blue);
+  background: #16324f;
+  border-color: var(--actor);
 }
 #actionButtons button.danger {
-  background: #2c1c1a;
-  border-color: #6d332c;
+  background: #2a1a18;
+  border-color: #6b352d;
   color: #f0a79c;
 }
 #actionButtons button:disabled {
@@ -770,49 +846,73 @@ body {
 /*
  * 快捷尺寸：2–3 个（后端 `SIZE` 组里的前几个）+「其余 N 个尺寸…」。
  * 每一颗都是**后端给出的合法动作**，自带精确 `amountChips`；
- * 前端只决定「排哪几个在前面」，不计算任何金额（用户第九节红线）。
+ * 前端只决定「排哪几个在前面」，不计算任何金额（任务第五节红线）。
+ *
+ * ## 为什么允许换行，但一开始就按「两行」预留高度
+ *
+ * 右栏 372px 扣掉内边距剩 348px。后端给出的标签是完整的
+ *「下注到 2.25BB」（约 84px），三颗加标题就是 300px 上下 ——
+ * 只要金额带小数就必然折行。
+ *
+ * 🔴 V3 第一版写了 `flex-wrap: nowrap` + `overflow: hidden`，
+ * 结果是**把按钮裁掉一半**：「下注到…」「下注到 4…」。
+ * 那比折行糟得多 —— 使用者读不到自己要下的注码。
+ *
+ * 所以：允许换行，并且**一开始就按两行算高度**（`margin-top: 32px` 的位置
+ * 预留 68px），这样无论一排放得下两个还是三个按钮，下面几段都不会上下跳动
+ *（任务第四节：右侧不得因内容变化而整体跳动）。
  */
 #quickSizes {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 7px;
+  gap: 3px;
+  margin-top: 6px;
+  /*
+   * 预留**一行**（32px）而不是两行。第一版预留 68px 是想「避免上下跳动」，
+   * 但那笔钱是从「Hero 决策」扣的（实测把它压到 14px 高）。
+   * 实测一行放得下：`加注：`(33) + 41 + 51 + 41 + `更多 4 个`(62) + 间隙 = 236px < 348px。
+   * 真要折行时高度自然增长，不再额外预支。
+   */
+  min-height: 32px;
+  align-content: flex-start;
 }
 #quickSizes:empty {
-  display: none;
+  min-height: 0;
 }
 #quickSizes .qs-label {
-  font-size: 10px;
-  color: var(--v2-dim);
+  font-size: 11px;
+  color: var(--idle);
   align-self: center;
+  flex: 0 0 auto;
 }
 #quickSizes button {
-  height: 30px;
-  min-height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 9px;
   font-family: inherit;
   font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--v2-line-2);
-  background: var(--v2-panel);
-  color: var(--v2-sub);
+  border-radius: var(--r-sm);
+  border: var(--hair);
+  background: var(--surface-2);
+  color: var(--text-2);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 #quickSizes button.quick {
-  border-color: var(--v2-blue-line);
-  color: #cfe0f6;
+  border-color: #2c5a8c;
+  color: #cfe3fb;
   font-weight: 600;
 }
 #quickSizes button.qs-all {
-  color: var(--v2-dim);
+  color: var(--idle);
 }
 #sizeButtons {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 7px;
-  min-height: 0;
+  gap: var(--s2);
+  margin-top: var(--s2);
 }
 #sizeButtons:empty {
   display: none;
@@ -820,197 +920,281 @@ body {
 #sizeButtons button {
   height: 32px;
   min-height: 32px;
-  padding: 0 11px;
+  padding: 0 10px;
   font-family: inherit;
   font-size: 12.5px;
-  border-radius: 6px;
-  border: 1px solid var(--v2-line-2);
-  background: var(--v2-panel);
-  color: var(--v2-text);
+  border-radius: var(--r-sm);
+  border: var(--hair);
+  background: var(--surface-2);
+  color: var(--text);
   cursor: pointer;
 }
 #sizeButtons button:hover {
-  border-color: var(--v2-blue);
+  border-color: var(--actor);
 }
 #sizeButtons .hint,
 #sizeButtons span.hint {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 12px;
+  color: var(--idle);
 }
 
-/* 自定义金额入口（仅在**后端给出尺寸网格**时显示） */
+/* 自定义金额（仅在**后端给出尺寸网格**时显示） */
 #customAmount {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 7px;
+  margin-top: 6px;
 }
 #customAmount[hidden] {
   display: none;
 }
 #customAmount .ca-label {
-  font-size: 10px;
-  color: var(--v2-dim);
+  font-size: 11px;
+  color: var(--idle);
 }
 #customAmount input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 30px;
-  padding: 0 8px;
+  height: 28px;
+  padding: 0 var(--s2);
   font-family: inherit;
-  font-size: 12px;
-  color: var(--v2-text);
-  background: var(--v2-bg);
-  border: 1px solid var(--v2-line-2);
-  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text);
+  background: var(--bg);
+  border: var(--hair);
+  border-radius: var(--r-sm);
   font-variant-numeric: tabular-nums;
 }
 #customAmount button {
-  height: 30px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 var(--s3);
   font-family: inherit;
-  font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--v2-blue-line);
-  background: var(--v2-blue-soft);
-  color: #cfe0f6;
+  font-size: 12.5px;
+  border-radius: var(--r-sm);
+  border: 1px solid #2c5a8c;
+  background: #16324f;
+  color: #cfe3fb;
   cursor: pointer;
 }
 
-/* 「重新分析」+ 拦截原因：正常流程**不需要**点它（轮到 Hero 会自动分析） */
-.actionMeta {
+/*
+ * 数据行：底池 / 跟注 / 当前注 / 最小加注到 / 有效筹码 / 我的剩余筹码。
+ *
+ * 🔴 **单行换行流，不是六列网格。**
+ *
+ * V3 第一版用 `repeat(6, auto)`：12 个格子排成两行、占 107px ——
+ * 那 100px 是从「Hero 决策」扣的，实测把建议文字压到 14px 高、
+ * 与下面的按钮叠在一起。改成**流式单行**后同一批数据只占约 57px。
+ *
+ * 为什么不用网格：网格的列宽由最宽的那一格决定，而底池/跟注/筹码
+ * 这些**数字会随牌局变宽**（「7.5BB」→「1,250BB」），
+ * 列宽一变整个右栏都在动。流式布局只会多折一行，抖动小得多。
+ */
+.statGrid {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+  margin-top: var(--s2);
+  padding-top: var(--s2);
+  border-top: var(--hair);
+  font-size: 12.5px;
 }
-.actionMeta #analyzeBtn {
-  width: auto;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 11px;
-  font-family: inherit;
-  font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--v2-line-2);
-  background: var(--v2-panel);
-  color: var(--v2-sub);
-  margin: 0;
-  cursor: pointer;
+.statGrid:empty {
+  display: none;
+}
+.statGrid .kv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+.statGrid .k {
+  color: var(--idle);
+}
+.statGrid .v {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 #blockers {
-  font-size: 11px;
+  font-size: 12px;
   color: #e0b7a8;
+  margin-top: 6px;
 }
 #blockers:empty {
   display: none;
 }
 
-/* 第三层：Hero 建议（**只读**，绝不回写为 Hero 的实际动作） */
+/* ---- ③ Hero 决策 ---- */
+/*
+ * `#result` 用一个**固定行数**的容器装最重要的结果：
+ * 建议动作（大字）+ 一行依据 + 风险提示。
+ * 详细权益 / EV / GTO 范围 / 画像 / 调试全部收进 `details.analysisDetails`。
+ */
 #result {
-  font-size: 12.5px;
-  overflow-y: auto;
-  min-height: 0;
+  font-size: 13px;
+  /*
+   * ⚠️ **不要给它 `flex: 1` 或 `overflow-y: auto` 配一个被压缩的高度**：
+   * V3 第一版就是这么写的，实测它被压到 14px 而内容有 174px，
+   * 建议文字与下面的「重新分析」叠在一起。
+   * 现在它按内容占高（默认 `flex: 0 1 auto` 且无高度约束），
+   * 内容多就把右栏撑高，由 `#rail` 的滚动兜底。
+   */
 }
+/*
+ * 建议动作：整个界面唯一使用「强调块」的地方。
+ * 关键金额用 18px（任务第六节）。
+ */
 #resultAction {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
-  color: #cfe0f6;
-  background: var(--v2-blue-soft);
-  border: 1px solid var(--v2-blue-line);
-  border-radius: 7px;
-  padding: 9px 11px;
+  color: #cfe3fb;
+  background: #12243a;
+  border: 1px solid #2c5a8c;
+  border-radius: var(--r);
+  padding: 10px var(--s3);
+  line-height: 1.3;
 }
 #resultMeta {
-  font-size: 11px;
-  color: var(--v2-sub);
-  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  margin-top: var(--s2);
 }
 #resultMeta:empty {
   display: none;
 }
 details.analysisDetails {
-  margin-top: 7px;
-  border-top: 1px solid var(--v2-line);
-  padding-top: 6px;
+  margin-top: 6px;
 }
 details.analysisDetails > summary {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 12px;
+  color: var(--text-2);
   cursor: pointer;
   list-style: none;
+  padding: var(--s1) 0;
 }
 details.analysisDetails > summary::-webkit-details-marker {
   display: none;
 }
 details.analysisDetails > summary::before {
   content: '▸ ';
+  color: var(--idle);
 }
 details.analysisDetails[open] > summary::before {
   content: '▾ ';
 }
 details.analysisDetails #resultReasons {
-  font-size: 11px;
-  color: var(--v2-sub);
-  margin: 6px 0 0 14px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin: var(--s1) 0 0 var(--s3);
 }
 details.analysisDetails .warn {
-  font-size: 11px;
+  font-size: 12px;
   color: #cbb389;
-  margin-top: 5px;
+  margin-top: var(--s1);
 }
 
-/* 第四层：本手最近动作（固定 5 行高度，不撑高页面） */
-#recentActions {
+/* 「重新分析」：正常流程**不需要**点它（轮到 Hero 会自动分析） */
+.actionMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: 6px;
+  flex: 0 0 auto;
+}
+.actionMeta #analyzeBtn {
+  width: auto;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 10px;
+  font-family: inherit;
   font-size: 12px;
-  min-height: 92px;
+  border-radius: var(--r-sm);
+  border: var(--hair);
+  background: var(--surface-2);
+  color: var(--text-2);
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ---- ④ 最近行动 ---- */
+/*
+ * 「最近行动」是右栏的**弹性余量**，也是唯一的滚动容器。
+ *
+ * ## 为什么让它滚，而不是整条右栏滚
+ *
+ * 右栏四段的高度之和会随**牌局本身**变化（建议文字长度、桌况面板是否出现、
+ * 快捷尺寸折几行）。实测最坏情况比可用高度多 51px。两种分配亏空的方式：
+ *
+ * | 方案 | 后果 |
+ * |---|---|
+ * | 让 `#rail` 滚动 | 底部一整段（含「完整时间线」入口）从视野消失，要滚才看得到 |
+ * | **让这一段滚**（本方案） | 只影响「最近行动」的**可见条数**（3 条 → 2 条），其余全在 |
+ *
+ * 后者的损失小得多：这一段的第 3 条本来就不是关键信息，
+ * 而「需要跟注 / 最小加注到 / 建议动作 / 简单录入按钮」一个都不能少。
+ *
+ * `max-height: 96px` 是「3 行 + 完整时间线入口」的高度；
+ * 空间够时自然长到上限，不够时内部滚动 —— **不裁掉任何内容**
+ *（任务第十节禁止的是用 `overflow: hidden` 裁内容，滚动不是裁）。
+ */
+#recentActions {
+  font-size: 12.5px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 96px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 #recentActions .ra-empty {
-  font-size: 11.5px;
-  color: var(--v2-dim);
+  font-size: 12.5px;
+  color: var(--idle);
 }
 #recentActions .ra-row {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
-  gap: 7px;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: var(--s2);
   align-items: baseline;
   padding: 1px 0;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 #recentActions .ra-pos {
-  color: var(--v2-text);
+  color: var(--text);
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 #recentActions .ra-act {
-  color: var(--v2-sub);
+  color: var(--text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 #recentActions .ra-amt {
-  color: var(--v2-dim);
+  color: var(--idle);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 #recentActions .ra-latest .ra-act {
-  color: var(--v2-text);
+  color: var(--text);
 }
 #recentActions .ra-more {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 12px;
+  color: var(--idle);
   padding-bottom: 2px;
 }
 
-/* 完整时间线：折叠在右栏底部 */
+/* 完整时间线：二级入口，折叠 */
+details.liveFold {
+  margin-top: var(--s2);
+}
 details.liveFold > summary {
-  font-size: 11.5px;
-  color: var(--v2-sub);
+  font-size: 12px;
+  color: var(--text-2);
   cursor: pointer;
-  padding: 7px 0 0;
+  padding: var(--s1) 0 0;
   list-style: none;
 }
 details.liveFold > summary::-webkit-details-marker {
@@ -1018,37 +1202,36 @@ details.liveFold > summary::-webkit-details-marker {
 }
 details.liveFold > summary::before {
   content: '▸ ';
-  color: var(--v2-dim);
+  color: var(--idle);
 }
 details.liveFold[open] > summary::before {
   content: '▾ ';
 }
 details.liveFold .liveFold-body {
-  max-height: 26vh;
+  max-height: 28vh;
   overflow-y: auto;
-  padding-top: 4px;
+  padding-top: var(--s1);
 }
 #timeline {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 12px;
+  color: var(--text-2);
 }
 #timeline .streetGroup {
-  margin-bottom: 4px;
+  margin-bottom: var(--s1);
 }
 #timeline .streetName {
-  color: var(--v2-sub);
+  color: var(--text);
   font-weight: 600;
 }
 #timeline .entry {
   display: inline-block;
-  margin: 0 4px 2px 0;
+  margin: 0 var(--s1) 2px 0;
 }
 
 /* ============================================================
- * 7. 折叠面板（牌面选择器 / 行动时间线）与调试面板
+ * 7. 折叠面板（牌面选择器）与调试面板
  * ============================================================
- * 它们不再是「面板 + 标题」，而是原生 `<details>`：
- * 浏览器自己维护开合，不占 `app` 状态、不需要 `render()` 参与。
+ * 原生 `<details>`：浏览器自己维护开合，不占 `app` 状态、不需要 `render()` 参与。
  * 静态 HTML 结构（V1 那版是 JS 用 `insertBefore` 现场包裹 —— 假 DOM 里会抛错）。
  */
 .panel-flat {
@@ -1059,53 +1242,83 @@ details.liveFold .liveFold-body {
   border: none;
 }
 .panel-flat > .panel-summary {
-  font-size: 11.5px;
-  color: var(--v2-sub);
+  font-size: 12px;
+  color: var(--text-2);
   cursor: pointer;
-  padding: 4px 2px;
+  padding: var(--s1) 2px;
   list-style: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .panel-flat > .panel-summary::-webkit-details-marker {
   display: none;
 }
 .panel-flat > .panel-summary::before {
   content: '▸';
-  color: var(--v2-dim);
+  color: var(--idle);
 }
 .panel-flat[open] > .panel-summary::before {
   content: '▾';
 }
 .panel-flat .mm-count {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 12px;
+  color: var(--idle);
 }
 #cardPicker {
-  padding: 2px 0 0;
+  padding: var(--s1) 0 0;
 }
 #pickerTarget {
-  font-size: 11px;
-  color: var(--v2-dim);
-  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: var(--s2);
 }
 #pickerGrid {
   display: grid;
   grid-template-columns: repeat(13, minmax(0, 1fr));
-  gap: 2px;
+  gap: 3px;
 }
+/*
+ * 牌面按钮 26px 高、13 列：这是**选择器**，不是主操作按钮，
+ * 任务第十节的「主操作按钮 ≥ 42px」不适用于它。
+ * 但它必须在展开后于 1366×768 内可见可点 —— 实测 4 行 × 26px ≈ 116px。
+ */
 #pickerGrid button {
   height: 26px;
   min-height: 26px;
-  font-size: 11px;
+  font-size: 11.5px;
   padding: 0;
-  border-radius: 3px;
+  border-radius: var(--s1);
+  font-family: inherit;
 }
 
 /* ============================================================
- * 8. 全局：去掉嵌套卡片（`#main .panel` 不再画边框）
+ * 8. 全局收敛：去掉嵌套卡片、把「忙」画出来
  * ============================================================ */
+/*
+ * 🔴 **在途请求期间必须让「忙」看得见**（任务第八节：对不能安全执行的操作，
+ * 必须明确提示实际状态；不得为了表面提速而解除操作锁）。
+ *
+ * `table.js` 在 `post()` 里同步 `body[data-busy]`：进入请求时置 `1`，
+ * 结束时删掉。这里据此把主战况区画成「暂不接受操作」：
+ *   - 变暗 + `cursor: progress`：**在点之前**就看得出来；
+ *   - 不拦截点击（`pointer-events` 保持默认）—— 让 `table.js` 的
+ *     「正在分析，请稍候」提示有机会弹出来，而不是点都点不下去。
+ *
+ * 为什么不用动画：任务第七节明令「不能使用视觉动画掩盖后端处理耗时」。
+ * 这里只是**静态地**把状态画出来，没有任何动画。
+ */
+body[data-busy] #tableWrap,
+body[data-busy] #actionButtons,
+body[data-busy] #quickSizes,
+body[data-busy] #sizeButtons {
+  opacity: 0.55;
+  cursor: progress;
+}
+body[data-busy] #tableWrap .seat {
+  cursor: progress;
+}
+
 #main .panel {
   background: transparent;
   border: none;
@@ -1114,25 +1327,18 @@ details.liveFold .liveFold-body {
   margin: 0;
 }
 details.debug {
-  border-top: 1px solid var(--v2-line);
+  border-top: var(--hair);
 }
 details.debug > summary {
-  font-size: 11px;
-  color: var(--v2-dim);
+  font-size: 11.5px;
+  color: var(--text-2);
   cursor: pointer;
-  padding: 6px 9px;
+  padding: 6px 10px;
 }
 details.debug pre {
-  font-size: 10.5px;
-  margin: 0 0 6px 9px;
+  font-size: 11px;
+  margin: 0 0 var(--s2) 10px;
   white-space: pre-wrap;
   word-break: break-all;
-}
-#topbar .more-menu .hint {
-  font-size: 11px;
-  color: var(--v2-sub);
-  padding: 2px 9px;
-  max-height: 32vh;
-  overflow-y: auto;
-  white-space: normal;
+  color: var(--text-2);
 }

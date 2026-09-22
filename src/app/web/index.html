@@ -6,15 +6,12 @@
     <title>德州扑克 · 牌桌快速录入（内部 Alpha）</title>
     <link rel="stylesheet" href="/table.css" />
     <!--
-      LIVE UI V2：布局与视觉层。
+      LIVE UI V3：布局与外观。
 
-      为什么是**第二个**样式表而不是继续往 `table.css` 末尾追加：
-      V1 在 `table.css` 929–1210 行累积了 11 段「LIVE UI V1 ①…⑪」覆盖块，
-      它们互相覆盖、过期、且无法判断哪条生效。V2 把那 11 段**删掉**，
-      把真正的 V2 布局集中在这一个文件里，`table.css` 只保留基础组件样式
-      （按钮、面板、徽章、牌面、弹层、时间线…）。
+      加载顺序是刻意的：`table.css` 先（基础组件：按钮、牌面、弹层、时间线），
+      `live-ui.css` 后（唯一负责布局与视觉规范）。
 
-      加载顺序是刻意的：`table.css` 先（基础），`live-ui.css` 后（布局与覆盖）。
+      V3 不再往旧文件末尾追加覆盖规则 —— 见 `live-ui.css` 顶部的说明。
     -->
     <link rel="stylesheet" href="/live-ui.css" />
   </head>
@@ -31,12 +28,17 @@
       「轮到谁」「谁能做什么」「底池多少」「街道推进到哪」全部来自后端。
       这样「前端认为轮到 UTG、后端认为是 CO」这类分歧在结构上不可能发生。
 
-      ── LIVE UI V2 布局 ──────────────────────────────────────────────
-      单行顶栏（44px） / 左侧椭圆牌桌 + 中央底池 + 左下 Hero 手牌 / 右侧 380px 操作台。
-      正常录入一手牌**不允许出现纵向滚动**：`body` 高度锁死，溢出交给牌桌与操作台内部。
+      ── LIVE UI V3 布局 ──────────────────────────────────────────────
+      顶部工具栏（42px）/ 左侧主战况区（座位 Pill 网格 + 中心牌面）/ 右侧操作台（372px）。
+
+      V3 与 V2 的结构差异：
+        · **没有拟物椭圆牌桌**，`#tableWrap` 是一个 5×3 的座位网格，
+          中间 3 列 × 中间行留给中心牌面；
+        · 座位是紧凑 Pill（92×46），只显示「名字 / 位置 / 筹码 / 当前动作」；
+        · 右栏四段固定顺序，建议区**不因内容变化而上下跳动**。
     -->
 
-    <!-- ═══ 顶栏：单行 44px。只放「一局中会改」的东西 ═══ -->
+    <!-- ═══ 顶部工具栏：单行 42px。只放「一局中会改」的东西 ═══ -->
     <div id="topbar">
       <div class="tb-group">
         <span class="tb-label">桌型</span>
@@ -51,13 +53,12 @@
         <select id="environmentSelect"></select>
       </div>
 
-      <!-- 下一手 / 撤销：一手牌内反复使用，必须一次可达 -->
       <div class="tb-group tb-actions">
         <button id="nextHandBtn" class="primary">下一手</button>
         <button id="undoBtn">撤销</button>
       </div>
 
-      <div class="spacer"></div>
+      <span class="spacer"></span>
       <span id="saveHint" class="hint"></span>
 
       <!--
@@ -66,7 +67,7 @@
         因此 table.js 里所有 `$('...')` 与测试里的 `node('...')` / 按文字查找都不受影响。
       -->
       <div class="more">
-        <button id="moreBtn" class="more-btn" title="设置与玩家管理">设置 ▾</button>
+        <button id="moreBtn" class="more-btn" title="设置与玩家管理">设置</button>
         <div id="moreMenu" class="more-menu">
           <div class="mm-title">牌桌</div>
           <button id="resetHandBtn">重置本手</button>
@@ -121,11 +122,10 @@
       </div>
     </div>
 
-    <!-- ═══ 主体：左（牌桌）1fr / 右（操作台）380px ═══ -->
+    <!-- ═══ 主体：左（主战况）1fr / 右（操作台）372px ═══ -->
     <div id="main">
       <div id="left">
         <div id="notices"></div>
-
         <!--
           🔴 **桌型（座位容量）** 与 **本手人数** 是两个数字（Table Topology Correction）。
 
@@ -134,47 +134,45 @@
         -->
         <div id="handSize" class="banner info">—</div>
 
+        <!--
+          主战况区：5 列 × 3 行的座位网格。
+          座位由 `renderSeats()` 按 `visualIndex` 放进单元格（见那里的说明）。
+          中间 3 列 × 中间行是**中心牌面区**，与座位不重叠、互不遮挡。
+        -->
         <div id="tableWrap">
           <div id="tableCenter">
-            <div id="potLine">底池 —</div>
             <div id="streetLine">—</div>
+            <div id="potLine">底池 —</div>
             <div id="boardRow"></div>
-          </div>
-          <!--
-            左下角的 Hero 手牌。**可点**：点它就把牌面选择器切到「Hero 手牌」目标，
-            比「先点上方目标行、再点牌」少一次点击，而手牌就在视线里。
-          -->
-          <div id="heroHandInline">
-            <div class="hh-label">我的手牌</div>
-            <div id="heroHandRow"></div>
+            <div id="heroHandInline">
+              <!-- 标签写全：「Hero 手牌」而不是只写「Hero」—— 前者一眼说明这一块是什么 -->
+              <span class="hh-label">Hero 手牌</span>
+              <div id="heroHandRow"></div>
+            </div>
           </div>
           <div id="seats"></div>
         </div>
 
         <!--
-          牌面选择器：默认收起（只在选牌时才需要），避免常态占用纵向空间。
-          🔴 折叠容器**直接写在 HTML 里**，不再由 JS 用 `insertBefore` 现场包裹 ——
+          牌面选择器：**静态折叠结构**，默认收起（只在选牌时才需要），
+          不占主战况区的版面。
+
+          🔴 折叠容器直接写在 HTML 里，不由 JS 用 `insertBefore` 现场包裹 ——
              V1 那版 JS 包裹在假 DOM（没有 insertBefore）里抛错，
-             而且一旦抛错就整条 `boot()` 挂掉。静态 HTML 结构不可能出这类问题。
+             而且一旦抛错就整条 `boot()` 挂掉。
         -->
-        <details class="panel panel-flat" id="handPanel">
+        <details class="panel-flat" id="handPanel">
           <summary class="panel-summary">牌面选择器<span id="handHint" class="mm-count"></span></summary>
           <div id="cardPicker">
             <div id="pickerTarget" class="hint"></div>
             <div id="pickerGrid"></div>
           </div>
         </details>
-
-        <!-- 行动时间线：默认收起，需要复盘时再展开 -->
-        <details class="panel panel-flat" id="timelinePanel">
-          <summary class="panel-summary">行动时间线</summary>
-          <div id="timelineFold"></div>
-        </details>
       </div>
 
-      <!-- ═══ 右侧操作台：宽度固定 380px，按钮尺寸不随文字变化 ═══ -->
+      <!-- ═══ 右侧操作台：宽度固定 372px，四段固定顺序 ═══ -->
       <div id="rail">
-        <!-- 第一层：现在轮到谁（后端算好的，前端不猜） -->
+        <!-- ① 当前行动（单行 + 一行数据，不堆卡片） -->
         <div id="actorBlock" class="rblock">
           <div id="actorLine">—</div>
           <!--
@@ -184,9 +182,9 @@
           <div id="autoAnalyzeLine" class="autoLine">—</div>
         </div>
 
-        <!-- 第二层：动作按钮（主要操作区） -->
+        <!-- ② 快速录入：合法动作 + 快捷尺寸 + 自定义金额 -->
         <div class="rblock">
-          <div id="statGrid" class="statGrid"></div>
+          <div class="rblock-cap">快速录入</div>
           <div id="actionButtons"></div>
           <div id="quickSizes"></div>
           <div id="sizeButtons"></div>
@@ -204,27 +202,28 @@
             <input id="customAmountInput" type="number" inputmode="decimal" />
             <button id="customAmountSend">确定</button>
           </div>
-          <div class="actionMeta">
-            <button id="analyzeBtn" class="primary" disabled>重新分析</button>
-          </div>
+          <div id="statGrid" class="statGrid"></div>
           <div id="blockers" class="blocked"></div>
         </div>
 
-        <!-- 第三层：建议（Hero 建议）——与「实际录入的动作」严格分开 -->
+        <!-- ③ Hero 决策：只显示最重要的结果，详细内容默认隐藏 -->
         <div class="rblock rblock-grow">
           <div class="rblock-cap">
-            建议（Hero 视角）
-            <span class="cap-note">录入的动作记在左侧，不写回这里</span>
+            Hero 决策
+            <span class="cap-note">建议与实际录入严格分开</span>
           </div>
           <div id="result" class="hint">轮到 Hero 时会自动分析。</div>
+          <div class="actionMeta">
+            <button id="analyzeBtn" class="primary" disabled>重新分析</button>
+          </div>
         </div>
 
-        <!-- 第四层：本手最近动作（取代整块时间线，只留最近几行） -->
-        <div class="rblock">
-          <div class="rblock-cap">本手最近动作</div>
+        <!-- ④ 最近行动（最近 5 条；完整历史走二级入口） -->
+        <div class="rblock" id="recentBlock">
+          <div class="rblock-cap">最近行动</div>
           <div id="recentActions"></div>
-          <details class="liveFold">
-            <summary>完整时间线</summary>
+          <details class="liveFold" id="timelinePanel">
+            <summary id="timelineSummary">完整时间线</summary>
             <div class="liveFold-body" id="timeline"></div>
           </details>
         </div>

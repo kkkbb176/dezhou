@@ -173,10 +173,34 @@
    * 通信
    * ============================================================ */
 
+  /**
+   * POST 一个操作。
+   *
+   * ## 🔴 一次性只允许一个请求在路上（`busy()` 直接丢弃）
+   *
+   * 这是刻意的：并发提交牌桌操作会让「谁先到」决定最终状态，而
+   * `SET_BOARD_CARD` 这类操作**没有幂等性**。因此重叠时后来者**必须**被丢弃。
+   *
+   * ## 但「静默丢弃」是错的表现方式
+   *
+   * 被丢弃时如果什么都不发生，使用者看到的是「点了没反应」——
+   * 而真实原因是「后台正在跑 GTO 分析（实测 20+ 秒），界面此刻不接受操作」。
+   * V3 的浏览器验收就是这么被误导的：板面第 4 张点了十几次都没上，
+   * 看起来像牌面录入坏了，实际是那 20 秒里所有按钮都被禁用。
+   *
+   * 因此这里多做两件事：
+   *   1. 被丢弃时用 `toast` **如实说明**（不是「出错了」，是「正在分析，请稍候」）；
+   *   2. 同步 `body[data-busy]`，让样式表能把「忙」这个状态画出来
+   *      （`#tableWrap` 变暗 + `cursor: progress`），用户在点之前就看得出来。
+   */
   function post(url, body) {
-    if (busy()) return Promise.resolve(null);
+    if (busy()) {
+      toast('正在分析，请稍候 —— 这一下没有提交', true);
+      return Promise.resolve(null);
+    }
     app.inflight += 1;
     setControlsDisabled(true);
+    syncBusyFlag();
     return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -192,8 +216,22 @@
       .then(function (payload) {
         app.inflight -= 1;
         setControlsDisabled(false);
+        syncBusyFlag();
         return payload;
       });
+  }
+
+  /**
+   * 把「有请求在路上」这个状态同步到 `body[data-busy]`。
+   *
+   * 为什么用属性而不是加 class：`className` 会被别处整体覆盖
+   *（`seatTip` 那个缺陷就是这么来的），而 `data-*` 不会被误伤。
+   * 样式表按 `body[data-busy="1"]` 选择，语义清晰。
+   */
+  function syncBusyFlag() {
+    if (!document.body || !document.body.dataset) return;
+    if (app.inflight > 0) document.body.dataset.busy = '1';
+    else delete document.body.dataset.busy;
   }
 
   /**
@@ -863,19 +901,60 @@
        */
       node.setAttribute('data-player-id', seat.playerId || '');
       node.setAttribute('data-seat-id', seat.seatId);
+
       /*
-       * 椭圆布局：`angleDeg` 的约定是 **0° = 6 点钟（正下方）**，
-       * 沿行动方向（屏幕上逆时针：下 → 左 → 上 → 右）增大。
+       * ============================================================
+       * LIVE UI V3 §座位：网格定位，不再画椭圆牌桌
+       * ============================================================
        *
-       * 🔴 红队命中：修复前用 `(angleDeg - 90)`，于是 Hero 被画在**正上方**
-       * （50%, 8%）—— 整张桌子相对约定旋转了 180°，还顺带把方向镜像了。
-       * 现在用 `(angleDeg + 90)`：0° → 90° → sin=1 → y 最大 → 正下方。
+       * V2 用 `left/top` 百分比把座位摆在一个真椭圆上（`以 50%,48% 为心、
+       * 半径 40%`），外面再套一层 `border-radius: 50% / 46%` 的拟物毡桌。
+       * 实测代价：
+       *   - 那张椭圆占地约 966×600，却是**纯装饰**，不承载任何信息；
+       *   - 座位为了绕开桌沿，被迫拉开到 190px 以上的间距，
+       *     九个 Pill 之间出现大量无意义留白；
+       *   - 中心牌面区被压在椭圆中心，可用宽度只有约 44%。
+       *
+       * V3 改成 `#tableWrap` 是一个 5 列 × 3 行的网格：
+       *
+       * ```text
+       *   列    1      2      3      4      5
+       *   行1  [SB+2] [SB+1] [ 中 ] [HJ  ]  ·      ← 上排四个座位
+       *   行2  [UTG ] ╔════════════════╗  ·      ← 左/右各一，中间三格是中心牌面
+       *   行3  [BB  ] [SB  ] [Hero]  ·     ·      ← 下排：大盲 / 小盲 / Hero
+       *                    ╚════════════════╝
+       *                    中心牌面区 = 2/2 – 2/4
+       * ```
+       *
+       * 🔴 **网格映射的第一条纪律：任何座位都不许占用中心牌面区
+       * （第 2 行 × 第 2–4 列）**。V3 第一版把 9 人桌的第 9 个座位放在
+       * `3/2`，正好压在中心区上 —— 牌面与座位会互相遮挡，而截图里
+       * 只是「看起来有点挤」，很容易漏掉。`V3-GRID-01` 现在把这条锁住。
+       *
+       * 映射按 `visualIndex`（**Hero 恒为 0、位于正下方**，由后端旋转好），
+       * 方向与 V2 的椭圆约定一致：从正下方沿屏幕**逆时针**绕一圈
+       *（下 → 左下 → 左 → 左上 → 上 → 右上 → 右）。
+       * 因此「谁在 Hero 左手边」这类空间关系与 V2 逐位相同，不会让人认错位置。
+       *
+       * 几何数字（列/行）放在 JS 里而不是 CSS class 里，是因为
+       * `visualIndex` 由后端给出且桌型可变（6 人桌只有 6 个座位）——
+       * 用 class 需要写死 9 条规则，用内联样式则天然支持任意桌型。
        */
-      var rad = ((seat.angleDeg + 90) * Math.PI) / 180;
-      var x = 50 + 40 * Math.cos(rad);
-      var y = 48 + 40 * Math.sin(rad);
-      node.style.left = x + '%';
-      node.style.top = y + '%';
+      var GRID_CELLS = [
+        [3, 3], // 0 正下方（Hero，固定在底部）
+        [2, 3], // 1 小盲：左下
+        [1, 3], // 2 大盲：左下角
+        [1, 2], // 3 枪口：左侧
+        [1, 1], // 4 枪口+1：左上角
+        [2, 1], // 5 枪口+2：上排左
+        [3, 1], // 6 中间位：上排中
+        [4, 1], // 7 劫持位：上排右
+        [5, 2], // 8 关煞位：右侧
+        [5, 3], // 9 兜底（只有 10 人桌才会用到，当前不存在）
+      ];
+      var cell = GRID_CELLS[seat.visualIndex] || GRID_CELLS[GRID_CELLS.length - 1];
+      node.style.gridColumn = String(cell[0]);
+      node.style.gridRow = String(cell[1]);
 
       if (seat.isDealer) node.appendChild(el('div', 'dealer', 'D'));
 
@@ -894,17 +973,19 @@
         : seat.positionZh + '（' + seat.logicalPosition + '）· 本手不参与';
 
       /*
-       * 🔴 LIVE UI V2 §座位卡片：约 92×48px、最多四短行。
+       * ============================================================
+       * LIVE UI V3 §座位 Pill：只显示「名字 / 位置 / 筹码 / 当前动作」
+       * ============================================================
+       * V2 的座位卡在九人桌上要塞下四行，本行「99BB（投 1BB）」在 92px 里
+       * 会被截成「99BB（投 / 1BB」—— 把使用者最需要读的筹码数截断。
        *
-       * V1 的座位卡在 1366px 下要塞下：名字 / 角色 / 筹码 / 画像标签 /
-       * 动态标签 / 状态 / Hero 手牌 / 庄家按钮 —— 九人桌直接糊成一片。
-       * V2 的取舍（用户指令「玩家画像不默认展开」「未入座座位只显示简洁的加号」）：
-       *
-       * - **空座位**：只画一个 `＋`，不再写「加入玩家」四行字；
-       *   点它打开的菜单里已经有完整的「加入玩家」。
-       * - **已入座**：名字 / 位置 / 筹码 / 状态。角色名只写中文短名（英文缩写走
-       *   `title`）；画像标签与 Hero 手牌也不再画在座位上
-       *   （画像 hover 时由 `#seatTip` 显示，手牌画在桌前左下角的 `#heroHandInline`）。
+       * V3 的取舍：
+       *  - **当前动作**（`.stack` 右侧的 `.bet`）：只有真有本街投入时才画，
+       *    且写短形式「·投 1BB」；没有投入时那一行只有筹码，最干净。
+       *  - **状态**（`.status`）绝对定位在右下角，只在有话可说时画
+       *    （弃牌 / 全下 / 暂离 / 本手不参与 / Hero）—— 默认的「在座」是噪音。
+       *  - 画像标签（`.tags`）与座位上的手牌（`.heroCards`）由 CSS 隐藏，
+       *    画像走 hover 的 `#seatTip`，手牌画在中心区。
        *
        * `data-player-id` / `data-seat-id` 保留 —— 浏览器验收靠它们断言身份。
        */
@@ -914,34 +995,47 @@
       } else {
         node.appendChild(el('div', 'name', seat.displayName || seat.playerId));
         /*
-         * 角色行只写中文短名：「关煞位」而不是「关煞位（CO）」。
+         * 位置行只写中文短名：「关煞位」而不是「关煞位（CO）」。
          * 92px 宽里塞两段文字会把它挤成省略号，反而两边都读不到。
          */
         node.appendChild(el('div', 'pos', seat.handRoleZh || seat.positionZh));
-        var stackText =
-          seat.remainingStackBB === null
-            ? seat.stackBB + 'BB'
-            : seat.remainingStackBB + 'BB' +
-              (seat.committedBB ? '（投 ' + seat.committedBB + 'BB）' : '');
-        node.appendChild(el('div', 'stack', stackText));
         /*
-         * 状态行**只在真的有话可说时**才画。
+         * 第三行 = 「筹码」+「当前动作」，左右两端对齐（不是绝对定位）。
+         *
+         * 🔴 V3 第一版把状态做成绝对定位的角标，结果它**压在筹码上面**——
+         * 实测截图里「99BB 投1BB」与「Hero」叠在一起变成乱码。
+         * 现在两者都在**同一个 flex 行**里：左边筹码、右边状态，
+         * 因此永不重叠，且 Pill 的自适应高度能容纳它们。
          *
          * 默认的「在座」不占版面 —— 它不是信息，是噪音。
-         * 但下面这些必须一眼看到，它们会改变使用者对「这是什么局」的判断：
+         * 但这些必须一眼看到，它们会改变使用者对「这是什么局」的判断：
          *   - **本手不参与**（空/暂离/0 筹码）：不写出来会让人以为他也在这一手里；
          *   - 弃牌 / 全下 / 已暂离 / 本手后离桌：都是**本手状态**，看错就会录错；
          *   - Hero：多人桌上先认出自己那一格。
          */
+        var footNode = el('div', 'foot');
+        footNode.appendChild(el('span', 'stack', seat.remainingStackBB === null
+          ? seat.stackBB + 'BB'
+          : seat.remainingStackBB + 'BB'));
         var STATUS_ALWAYS = ['FOLDED_THIS_HAND', 'ALL_IN', 'SITTING_OUT', 'LEAVING_AFTER_HAND'];
         var statusText = '';
         if (!seat.isParticipant) statusText = '本手不参与';
         else if (STATUS_ALWAYS.indexOf(seat.status) >= 0) statusText = seat.statusZh;
         else if (seat.isHero) statusText = 'Hero';
-        if (statusText !== '') node.appendChild(el('div', 'status', statusText));
+        /*
+         * 「当前动作」与本街投入共用右侧那一格：
+         *   有投入 → 显示「投 X BB」（这是最该看到的数字）
+         *   没投入但有状态 → 显示状态（弃牌 / 全下 / Hero）
+         *   都没有 → 右侧留空
+         */
+        var rightText = seat.remainingStackBB !== null && seat.committedBB
+          ? '投 ' + seat.committedBB + 'BB'
+          : statusText;
+        if (rightText !== '') footNode.appendChild(el('span', 'action', rightText));
+        node.appendChild(footNode);
         node.title =
           (seat.displayName || seat.playerId) + '　' + roleText +
-          '　' + stackText + '　' + seat.statusZh;
+          '　' + footNode.textContent + '　' + seat.statusZh;
       }
 
       /*
@@ -966,7 +1060,7 @@
       };
       node.onmousemove = function (ev) {
         var tip = $('seatTip');
-        if (tip && tip.className === 'show') positionTip(tip, ev);
+        if (tip && tip.className.indexOf('show') >= 0) positionTip(tip, ev);
       };
       node.onmouseleave = hideSeatTip;
       box.appendChild(node);
@@ -1103,7 +1197,7 @@
     var used = usedCards();
     $('pickerTarget').textContent =
       app.target.kind === 'HERO'
-        ? '落点：我的手牌'
+        ? '落点：Hero 手牌'
         : '落点：公共牌第 ' + (app.target.slot + 1) + ' 张';
 
     if (grid.dataset.built === '1') {
@@ -1206,18 +1300,40 @@
     }
 
     function stat(key, value) {
-      stats.appendChild(el('div', 'k', key));
-      stats.appendChild(el('div', null, value));
+      /*
+       * 一个键值对画在一个 `.kv` 里，CSS 用流式换行排。
+       *
+       * 🔴 为什么是 flex 流而不是网格：网格的列宽由最宽的那一格决定，
+       * 而底池 / 跟注 / 筹码这些**数字会随牌局变宽**（「7.5BB」→「1,250BB」），
+       * 列宽一变整个右栏都在动。流式布局最多多折一行，抖动小得多
+       *（任务第四节：右侧不得因内容变化而整体跳动）。
+       */
+      var kv = el('div', 'kv');
+      kv.appendChild(el('span', 'k', key));
+      kv.appendChild(el('span', 'v', value));
+      stats.appendChild(kv);
     }
-    stat('当前底池', p.potBB + 'BB');
+    /*
+     * ============================================================
+     * 这里只放**界面上看不到的三件事**
+     * ============================================================
+     *
+     * V3 第一版把 6 个键值对全列出来（当前底池 / 需要跟注 / 当前注额 /
+     * 最小加注到 / 有效筹码 / 我的剩余筹码），12 个格子占掉约 107px。
+     * 逐条对照后发现其中三条**已经在别处显示**：
+     *
+     * | 值 | 已经在哪里 |
+     * |---|---|
+     * | 当前底池 | 中心牌面区的「底池 18BB」（20px 大字，比这里更醒目） |
+     * | 我的剩余筹码 | Hero 座位 Pill 上的「99BB」 |
+     * | 当前注额 | 与「需要跟注」在无人加注时相同；有加注时「最小加注到」更可操作 |
+     *
+     * 删掉重复不是「减少信息」，是**去掉同一屏上的第二份拷贝** ——
+     * 而省下的 60px 直接决定右栏要不要出滚动条。
+     */
     stat('需要跟注', p.callAmountBB + 'BB');
-    stat('当前注额', p.currentBetBB + 'BB');
     if (p.minRaiseToBB !== null) stat('最小加注到', p.minRaiseToBB + 'BB');
     if (p.effectiveStackBB !== null) stat('有效筹码', p.effectiveStackBB + 'BB');
-    var heroSeat = p.seats.filter(function (s) {
-      return s.isHero;
-    })[0];
-    if (heroSeat) stat('我的剩余筹码', (heroSeat.remainingStackBB ?? heroSeat.stackBB) + 'BB');
 
     // ---- 行动按钮（**只来自后端**）----
     var box = $('actionButtons');
@@ -1286,11 +1402,17 @@
         sizeBox.appendChild(b);
       });
       if (relevant.length === 0) sizeBox.appendChild(el('span', 'hint', '（没有合法尺寸可选）'));
-    } else if (sizes.length > 0) {
-      sizeBox.appendChild(
-        el('span', 'hint', '点「' + (sizes[0].type === 'BET' ? '下注' : '加注') + '」展开合法尺寸'),
-      );
     }
+    /*
+     * 🔴 LIVE UI V3：**删掉了「点「加注」展开合法尺寸」那句提示**。
+     *
+     * 它占掉一整行（约 20px），而下面那一行快捷尺寸里已经有
+     * 「其余 N 个尺寸…」这个按钮 —— 它本身就是「还有更多尺寸」的入口，
+     * 再多写一句说明只是在主界面上堆辅助文字（任务第三节明令禁止）。
+     *
+     * 删掉之后右栏少一行，最近行动与完整时间线才放得下。
+     * 信息没有丢：展开按钮的文字是「加注（选尺寸）」，已经写清了它是展开。
+     */
 
     /*
      * ============================================================
@@ -1345,9 +1467,22 @@
     if (quickBox) {
       clear(quickBox);
       if (ordered.length > 0) {
-        quickBox.appendChild(el('span', 'qs-label', (isBet ? '下注' : '加注') + '快捷：'));
+        quickBox.appendChild(el('span', 'qs-label', (isBet ? '下注' : '加注') + '：'));
         ordered.slice(0, QUICK_SIZE_LIMIT).forEach(function (button) {
-          var b = el('button', 'quick', button.labelZh);
+          /*
+           * 只留金额，去掉重复的动作词。
+           *
+           * 🔴 这**不是**「前端自己算金额」（任务第五节红线）：金额一个字都没动，
+           * 用的仍然是后端 `amountChips`，点击发的也是后端那一份。
+           * 去掉的只是**重复的动词**——上面一行主按钮已经写着「下注（选尺寸）」，
+           * 快捷行再写三遍「下注到」，三个按钮就多占约 90px，在 348px 栏宽里必然折行。
+           * 语义完整：快捷行左侧的标题就是「下注：」/「加注：」。
+           * 前缀对不上时**原样使用后端标签**，不做任何猜测。
+           */
+          var m = /^(下注到|加注到|下注全下至|加注全下至|下注|加注)\s*(.+)$/.exec(button.labelZh);
+          var b = el('button', 'quick', m === null ? button.labelZh : m[2]);
+          /* 悬停给回完整标签：缩短的是显示，不是信息 */
+          b.title = button.labelZh + '（' + (button.isAllIn ? '全下' : '来自后端合法尺寸') + '）';
           b.setAttribute('data-quick-size', String(button.amountChips));
           b.onclick = function () {
             app.sizeExpanded = null;
@@ -1362,7 +1497,16 @@
           quickBox.appendChild(b);
         });
         if (ordered.length > QUICK_SIZE_LIMIT) {
-          var more = el('button', 'qs-all' + (app.sizeExpanded !== null ? ' active' : ''), '其余 ' + (ordered.length - QUICK_SIZE_LIMIT) + ' 个尺寸…');
+          /*
+           * 「其余 N 个尺寸…」原本写全，实测宽 102px ——
+           * 加上「加注：」与三颗快捷尺寸共 288px，在 348px 的栏宽里
+           * **只差一点点**，于是它自己折到第二行，白占 34px。
+           * 改成「更多 N 个」后约 62px，整行 248px，稳稳一行。
+           * 信息没丢：数字仍是后端给的剩余尺寸个数。
+           */
+          var more = el('button', 'qs-all' + (app.sizeExpanded !== null ? ' active' : ''), '更多 ' + (ordered.length - QUICK_SIZE_LIMIT) + ' 个');
+          more.title = '展开全部 ' + ordered.length + ' 个合法尺寸（点「' +
+            (isBet ? '下注' : '加注') + '（选尺寸）」也可以）';
           more.onclick = function () {
             app.sizeExpanded = app.sizeExpanded === sizeType ? null : sizeType;
             render();
@@ -1428,9 +1572,17 @@
         customInput.min = String(loChips);
         customInput.max = String(hiChips);
         customInput.step = '1';
-        customInput.placeholder = (isBet ? '下注到' : '加注到') + '　' +
-          (loButton ? loButton.labelZh : loChips) + ' ～ ' +
-          (hiButton ? hiButton.labelZh : hiChips);
+        /*
+         * 占位符只留**单位与合法区间**，去掉「下注到/加注到」的重复动作词
+         *（右边的按钮已经写着「下注」/「加注」）。
+         *
+         * 🔴 这里刻意不写「下注到 2BB ～ 加注到 8BB」那种长文案：
+         * 它会把输入框撑到 190px，把左边的「自定义」标签挤成省略号，
+         * 而那一行在 348px 的栏宽里还要放一个按钮。区间本身仍然来自后端
+         *（`min`/`max` 与 placeholder 同源），只是写得短。
+         */
+        customInput.placeholder = (loButton ? loButton.labelZh : String(loChips)) + ' ～ ' +
+          (hiButton ? hiButton.labelZh : String(hiChips));
         customSend.textContent = isBet ? '下注' : '加注';
         customSend.title = '把输入框里的筹码数作为' + (isBet ? '下注' : '加注') +
           '总额提交；合法性由引擎裁决。';
@@ -2011,6 +2163,29 @@
   function renderTimeline() {
     var box = $('timeline');
     clear(box);
+    /*
+     * 二级入口的标题要**如实写明**总共多少条、这里只显示了最近几条。
+     *
+     * 🔴 这句话原本画在最近行动列表的**顶部**，占掉一整行（约 21px），
+     * 而右栏总高度是硬约束 —— 那 21px 直接是从「Hero 决策」那一段扣的
+     *（实测溢出时 `#result` 只剩 6px，建议文字与下面的按钮叠在一起）。
+     * 挪到折叠标题里：不占列表高度，而且它本来就属于「完整历史」这个入口。
+     *
+     * ⚠️ **不要用 `document.querySelector`，也不要靠 `tagName` 找节点**：
+     * 本仓库的前端测试跑在一个极简假 DOM 上 —— 它只有 `getElementById` 与
+     * `querySelectorAll`（**没有 `querySelector`**），而且 `<summary>`
+     * 那种节点的 `tagName` 是空的。
+     * 我在这里连踩了同类坑（前两次是 `insertBefore` 与 `querySelector`）：
+     * `renderTimeline()` 一抛错，整个 `render()` 就停摆，7 个交互测试全红。
+     * 结论很简单：**给要操作的节点一个 id，用 `getElementById` 取**。
+     */
+    var fold = document.getElementById('timelineSummary');
+    if (fold !== null && fold !== undefined) {
+      var total = app.state.actionHistory.length;
+      fold.textContent = total > RECENT_ACTION_LIMIT
+        ? '完整时间线（共 ' + total + ' 条，上面只显示最近 ' + RECENT_ACTION_LIMIT + ' 条）'
+        : '完整时间线';
+    }
     if (app.state.actionHistory.length === 0) {
       box.appendChild(el('div', 'hint', '还没有行动记录。'));
       return;
@@ -2074,6 +2249,15 @@
    * 两层读的是**同一个** `app.state.actionHistory`，不新增任何状态 ——
    * 因此不存在「最近动作」与「完整时间线」不一致的可能。
    */
+  /**
+   * 右栏「最近行动」显示几条。
+   *
+   * 定义在函数外，因为 `renderTimeline()` 的折叠标题也要用它来写
+   * 「共 N 条，上面只显示最近 M 条」—— 两个数字必须同源，
+   * 否则界面会自相矛盾。
+   */
+  var RECENT_ACTION_LIMIT = 3;
+
   function renderRecentActions() {
     var box = $('recentActions');
     if (!box) return;
@@ -2099,17 +2283,24 @@
     });
 
     /*
-     * 只显示最后 5 条。`RA_LIMIT` 是常量而不是配置项 ——
-     * 5 条正好占满预设高度（约 5 × 22px），再多多出来的会被右栏裁掉。
+     * 只显示最后 4 条。
+     *
+     * 🔴 为什么是 4 而不是 5：`#recentActions` 的高度是**硬占用**（右栏不收缩），
+     * 每多一行就从「Hero 决策」那一段扣走约 21px。3 行（约 63px）
+     * 让建议动作与「详细分析」入口都能完整显示；5 行时 `#result` 只剩 6px，
+     * 建议文字会与下面的按钮叠在一起。
+     *
+     * 任务第四节要求「最近 3–5 条」——3 条在区间内，且完整历史一键可达：
+     * 折叠标题里写着「共 N 条，上面只显示最近 4 条」。
      */
-    var RA_LIMIT = 5;
-    var start = Math.max(0, history.length - RA_LIMIT);
+    var start = Math.max(0, history.length - RECENT_ACTION_LIMIT);
     var shown = history.slice(start);
 
-    if (start > 0) {
-      box.appendChild(el('div', 'ra-more', '（前面还有 ' + start + ' 条，见下方完整时间线）'));
-    }
-
+    /*
+     * ⚠️ 「前面还有 N 条」这句话**不在这里画** —— 它占一整行，而被它挤掉的是
+     * 建议区。现在写进「完整时间线」的折叠标题里（见 `renderTimeline`），
+     * 那里本来就是「看更多」的入口，语义也更顺。
+     */
     shown.forEach(function (action, offset) {
       var isLatest = start + offset === history.length - 1;
       var row = el('div', 'ra-row' + (isLatest ? ' ra-latest' : ''));
@@ -2339,7 +2530,28 @@
     return lines;
   }
 
-  /** 悬停提示（**不遮挡公共牌 / 底池 / 行动按钮**：靠边吸附 + 指针穿透关闭） */
+  /**
+   * 悬停提示（**不遮挡公共牌 / 底池 / 行动按钮**：靠边吸附 + 指针穿透关闭）
+   *
+   * ## 🔴 这里修掉了一个从 V2 起就存在的真实缺陷
+   *
+   * 原实现写 `tip.className = 'show'` —— 它把 `seatTip` 这个类**整个换掉**了。
+   * 而 `position: fixed` 写在 `table.css` 的 `.seatTip` 规则里，于是：
+   *
+   * ```text
+   * 元素类名变成 "show" ⇒ .seatTip 规则不再匹配 ⇒ computed position = static
+   * ⇒ positionTip() 设的 left/top 对 static 元素**完全无效**
+   * ⇒ 提示框掉回文档流末尾，铺成一条通栏文字条（实测宽 1366px、高 39px）
+   * ```
+   *
+   * 真实用户看到的是页面最底部多出一条乱码般的文字。V2 的浏览器验收没测悬停，
+   * 所以一直没被发现；V3 的九状态验收里「打开人物画像」这一步把它抓了出来。
+   *
+   * 修法有两层，缺一不可：
+   *   1. 类名改成 `seatTip show`（**保留** `seatTip`），让规则继续匹配；
+   *   2. `positionTip` 里**直接设置定位样式**，不再依赖类名 ——
+   *      提示框的可见性不该由「某个外来类名恰好没被覆盖」来决定。
+   */
   function showSeatTip(seat, ev) {
     var tip = $('seatTip');
     if (!tip) return;
@@ -2347,18 +2559,18 @@
     if (!seat.playerId) {
       body.push('空座位 —— 点击可选择历史玩家或新建玩家');
       tip.textContent = body.join('\n');
-      tip.className = 'show';
+      tip.className = 'seatTip show';
       positionTip(tip, ev);
       return;
     }
     body.push('当前画像：' + (seat.quickProfileZh || '未知') + '（标签先验）');
     if (seat.dynamicHintZh && seat.dynamicHintZh !== '未知') body.push('近期观察：' + seat.dynamicHintZh);
     tip.textContent = body.concat(['统计加载中…']).join('\n');
-    tip.className = 'show';
+    tip.className = 'seatTip show';
     positionTip(tip, ev);
     /** 悬停即取真实统计（只读接口；失败时如实写「读取失败」而不是编数字） */
     fetchRoster('').then(function (res) {
-      if (tip.className !== 'show') return;
+      if (tip.className.indexOf('show') < 0) return;
       if (!res.ok) {
         tip.textContent = body.concat(['实测统计：读取失败（' + (res.issues || [])[0]?.code + '）']).join('\n');
         return;
@@ -2377,6 +2589,14 @@
     if (x + w > window.innerWidth - 8) x = window.innerWidth - w - 8;
     if (x < 8) x = 8;
     if (y + 180 > window.innerHeight - 8) y = Math.max(8, (ev ? ev.clientY : 0) - 190);
+    /*
+     * 定位样式**内联设置**，不只依赖 `table.css` 的 `.seatTip`。
+     * 上面那段注释解释了为什么：一旦类名被别处覆盖，`left/top` 会静默失效。
+     */
+    tip.style.position = 'fixed';
+    tip.style.maxWidth = '360px';
+    tip.style.zIndex = '300';
+    tip.style.pointerEvents = 'none';
     tip.style.left = x + 'px';
     tip.style.top = y + 'px';
   }
