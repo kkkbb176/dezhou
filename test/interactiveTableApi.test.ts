@@ -87,7 +87,9 @@ test('HTTP：静态资源可访问，且页面不引用任何策略逻辑', asyn
   await withServer(async (server) => {
     for (const [path, needle] of [
       ['/', 'table.js'],
+      ['/', 'live-ui.css'],
       ['/table.css', '--felt'],
+      ['/live-ui.css', '#tableWrap'],
       ['/table.js', 'sendOp'],
     ] as const) {
       const res = await fetch(`${server.url}${path}`);
@@ -96,12 +98,26 @@ test('HTTP：静态资源可访问，且页面不引用任何策略逻辑', asyn
       assert.ok(text.includes(needle), `${path} 应当包含 ${needle}`);
     }
 
+    /*
+     * 🔴 新增样式表必须以 `text/css` 发出，而不是 `text/javascript`。
+     *
+     * 修复前 `webServer.ts` 是「`url === '/table.css'` 就发 CSS，**否则一律发 JS**」，
+     * 于是 `/live-ui.css` 会被当成 JS 发出 —— 浏览器直接拒绝应用样式表，
+     * 页面能打开、样式全丢，而服务端日志里没有任何异常。
+     */
+    const css = await fetch(`${server.url}/live-ui.css`);
+    assert.equal(css.headers.get('content-type'), 'text/css; charset=utf-8');
+    const js = await fetch(`${server.url}/table.js`);
+    assert.equal(js.headers.get('content-type'), 'text/javascript; charset=utf-8');
+    /* 白名单之外的一律 404，不能变成任意文件读取 */
+    const bad = await fetch(`${server.url}/package.json`);
+    assert.equal(bad.status, 404, '静态资源必须走白名单');
+
     // 前端**不得**出现「自己判断轮到谁 / 自己算合法动作」的痕迹。
     //
     // ⚠️ 匹配的是**函数调用**（`name(`）而不是裸子串：
     //    `preview.minRaiseToBB` 是一个合法的**展示字段**，
     //    而 `minRaiseTo(` 才意味着前端自己实现了规则。
-    const js = await (await fetch(`${server.url}/table.js`)).text();
     for (const forbidden of [
       'postflopOrder(',
       'preflopOrder(',
@@ -113,7 +129,7 @@ test('HTTP：静态资源可访问，且页面不引用任何策略逻辑', asyn
       'playerIdOfPosition(',
     ]) {
       assert.ok(
-        !js.includes(forbidden),
+        !(await (await fetch(`${server.url}/table.js`)).text()).includes(forbidden),
         `前端不得调用规则函数 ${forbidden} —— 那意味着它复制了状态机（规范第 29 条）`,
       );
     }
@@ -275,6 +291,118 @@ test('§76 竞态：迟到的旧版本请求不得覆盖新状态', async () => 
       issues[0]!.message.includes('不会被回退'),
       `拒绝信息必须说明「界面不会被回退」，实际：${issues[0]!.message}`,
     );
+  });
+});
+
+/* ============================================================
+ * 🔴 真实浏览器验收抓出的缺陷（LIVE UI V2 轮）
+ * ============================================================ */
+
+test('🔴 新牌桌只有 Hero 在座时选牌：必须是 200 + 落在状态里，绝不能 500', async () => {
+  /*
+   * ## 这个缺陷的真实表现
+   *
+   * 「新建牌桌 → 选 Hero 两张手牌 → 再把人加进来」是**最常见的开局顺序**。
+   * 修复前这条路径必挂：
+   *
+   * ```text
+   * POST /api/table { op: SET_HERO_CARD, card: 'As' }
+   * → 500 {"ok":false,...,"message":"服务端异常：handTopologySeats:
+   *         本手至少需要 2 名参与者（收到 1）"}
+   * ```
+   *
+   * 界面上表现为「**手牌点了没反应**」——没有红条、没有提示，只有 500。
+   *
+   * ## 为什么会漏到现在
+   *
+   * 所有既有测试与 `test/helpers/tableJsHarness.ts` 的 `seatAll()` 都在
+   * **建桌后立刻把座位填满**，因此「只有 Hero 在座」这个中间态从没被测过。
+   * 是 1366×768 真实浏览器验收（`D:\德州-audit-20260922\verify-live-ui-v2.ts`）
+   * 抓出来的。
+   *
+   * ## 两处成因，各自锁定
+   *
+   * | 层 | 成因 | 修复 |
+   * |---|---|---|
+   * | `seatLifecycle.recomputeHandActive` | 只看「有没有牌」就宣布本手开始 ⇒ `commit()` 冻结拓扑 ⇒ `handTopologySeats` 对 1 人抛错 | 补上「≥ 2 名参与者」条件 |
+   * | `tableApi` 自洽检查 | 把「有 Hero 手牌」当成「本手已开始」，把**正常中间态**判成自相矛盾并整包拒绝 | 判据改为**公共牌或行动记录** |
+   */
+  await withServer(async (server) => {
+    for (const tableSize of [9, 6] as const) {
+      const created = await post(server, '/api/table', { tableSize, heroPosition: 'BTN' });
+      assert.equal(created['ok'], true, `建 ${tableSize} 人桌必须成功`);
+      let state = created['state'] as PokerTableState;
+
+      /* 前提：建桌时只有 Hero 在座（这正是缺陷的触发条件） */
+      const occupied = state.seats.filter((s) => s.playerId !== null);
+      assert.equal(occupied.length, 1, `前提：建桌时应当只有 Hero 在座（${tableSize} 人桌）`);
+
+      for (const card of ['As', 'Kd']) {
+        const res = await fetch(`${server.url}/api/table`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state, op: { kind: 'SET_HERO_CARD', card } }),
+        });
+        assert.equal(
+          res.status,
+          200,
+          `只有 Hero 在座时选牌必须是 200（不是 5xx）—— ${tableSize} 人桌选 ${card}`,
+        );
+        const payload = (await res.json()) as Json;
+        assert.equal(
+          payload['ok'],
+          true,
+          `选 ${card} 必须被接受，实际：${JSON.stringify(payload['issues'])}`,
+        );
+        state = payload['state'] as PokerTableState;
+      }
+
+      assert.equal(state.heroCards.length, 2, '两张手牌必须真的落在状态里');
+      assert.deepEqual([...state.heroCards], ['As', 'Kd']);
+      /*
+       * 而且**本手还没开始** —— 「一张牌 + 一个座位」不构成一局牌。
+       * 这条同时锁住：不得为了绕过 500 而伪造一个 1 人拓扑。
+       */
+      assert.equal(state.handActive, false, '只有 1 名参与者时本手不得算作已开始');
+      assert.equal(state.handTopology, null, '只有 1 名参与者时不得冻结本手拓扑');
+    }
+  });
+});
+
+test('🔴 补齐第二个人之后，同一手牌局必须立刻正常开始（修复不能只挡住错误）', async () => {
+  await withServer(async (server) => {
+    const created = await post(server, '/api/table', { tableSize: 6, heroPosition: 'BTN' });
+    let state = created['state'] as PokerTableState;
+
+    for (const card of ['As', 'Kd']) {
+      const payload = await post(server, '/api/table', {
+        state,
+        op: { kind: 'SET_HERO_CARD', card },
+      });
+      assert.equal(payload['ok'], true);
+      state = payload['state'] as PokerTableState;
+    }
+    assert.equal(state.handActive, false, '前提：此刻只有 Hero');
+
+    /* 加第二个人 —— 本手应当**立刻**成为一手真正的牌 */
+    const added = await post(server, '/api/table', {
+      state,
+      op: { kind: 'ADD_PLAYER', seatId: seatOfPosition(state, Position.BB)!.seatId },
+    });
+    assert.equal(added['ok'], true, `加入第二个人必须成功：${JSON.stringify(added['issues'])}`);
+    state = added['state'] as PokerTableState;
+
+    assert.equal(state.handActive, true, '有 2 名参与者 + 手牌 ⇒ 本手开始');
+    assert.notEqual(state.handTopology, null, '本手开始时必须冻结拓扑');
+    assert.equal(state.handTopology!.participantSeatIds.length, 2);
+    assert.equal(
+      state.handTopology!.buttonSeatId,
+      seatOfPosition(state, Position.BTN)!.seatId,
+      '单挑时 Button 仍然是他自己那个座位',
+    );
+
+    /* 而且预选的两张手牌**没有丢** —— 修复前若为了绕过异常而清空手牌，这里会红 */
+    assert.deepEqual([...state.heroCards], ['As', 'Kd'], '预选的手牌必须保留');
   });
 });
 

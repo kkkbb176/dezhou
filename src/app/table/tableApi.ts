@@ -431,12 +431,27 @@ function validateCore(raw: unknown, issues: TableIssue[]): TableCore | null {
     const boardCards: string[] = Array.isArray(board) ? (board as string[]) : [];
     const handActive = raw['handActive'] === true;
 
-    // 「本手未开始」与「已经有手牌/公共牌/行动记录」不能同时成立
-    if (!handActive && (historyList.length > 0 || cards.length > 0 || boardCards.length > 0)) {
+    /*
+     * 「本手未开始」与「已经有**进行中**的痕迹」不能同时成立。
+     *
+     * 🔴 判据是**公共牌或行动记录**，不是「有没有 Hero 手牌」。
+     *
+     * 为什么必须这样区分（真实 500 修复后的第二道坎）：新牌桌只有 Hero 在座时，
+     * 使用者会先把两张手牌选好，_再_去把其他人加进来。
+     * 那一刻的状态是「手牌 2 张 + `handActive=false`」——**完全合理**，
+     * 因为「≥ 2 人」才成局，牌摆在桌上但这一手还没开始。
+     *
+     * 若把「有手牌」当成「本手已开始」，这条自洽检查会把**正常操作**判成
+     * 「状态自相矛盾」并整包拒绝 —— 界面表现同样是「点了没反应」。
+     * 公共牌与行动记录则不可能在成局之前出现（前者要按顺序填、后者要真的轮到人），
+     * 因此它们才是「本手确实在进行」的可靠痕迹。
+     */
+    const hasProgression = boardCards.length > 0 || historyList.length > 0;
+    if (!handActive && hasProgression) {
       issues.push({
         code: 'INTERNAL_ERROR',
         message:
-          'handActive=false 但已经有手牌/公共牌/行动记录 —— 状态自相矛盾' +
+          'handActive=false 但已经有公共牌/行动记录 —— 状态自相矛盾' +
           `（手牌 ${cards.length} 张 / 公共牌 ${boardCards.length} 张 / 行动 ${historyList.length} 条）`,
       });
     }

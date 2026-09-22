@@ -44,6 +44,7 @@ import {
   angleOfVisualIndex,
   freezeTopology,
   logicalSeatOrder,
+  participantSeatsOf,
   seatById,
   seatIdOfPosition,
   seatOfPosition,
@@ -91,12 +92,30 @@ export function commit(prev: PokerTableState, next: TableCore): PokerTableState 
    * 于是「本手开始后拓扑不再变化」成为一条**结构性**性质：
    * 任何操作路径都绕不过 `commit`，因此绕不过这条规则。
    */
+  /*
+   * 🔴 `handActive` 必须在这里**重算**，而不是只在「改牌面」的操作里算。
+   *
+   * 为什么：`handActive` 的判据包含「本手参与者 ≥ 2」，而参与者会因为
+   * `ADD_PLAYER` / `CLEAR_SEAT` / `SIT_OUT` / `SET_TABLE_SIZE` 变化 ——
+   * 那些操作路径里没人会去重算它。真实表现是：
+   *
+   * ```text
+   * 新建牌桌（只有 Hero）→ 选好两张手牌（handActive=false，正确）
+   * → 加入第二个人 → handActive 仍然是 false
+   * ⇒ 引擎拿不到本手拓扑，轮到谁都不知道，界面停在「本手还没开始」
+   * ```
+   *
+   * 把重算放在 `commit` —— **唯一的写入口** —— 之后，这条性质成为结构性的：
+   * 任何操作路径都绕不过它，因此不可能出现「参与者够了但本手没开始」。
+   * 这与 `handTopology` 的冻结/解冻是同一个理由（见上面那段注释）。
+   */
+  const recomputed: TableCore = { ...next, handActive: recomputeHandActive(next) };
   const normalized: TableCore =
-    next.handActive && next.handTopology === null
-      ? { ...next, handTopology: freezeTopology(next, next.handsCompleted + 1) }
-      : !next.handActive && next.handTopology !== null
-        ? { ...next, handTopology: null }
-        : next;
+    recomputed.handActive && recomputed.handTopology === null
+      ? { ...recomputed, handTopology: freezeTopology(recomputed, recomputed.handsCompleted + 1) }
+      : !recomputed.handActive && recomputed.handTopology !== null
+        ? { ...recomputed, handTopology: null }
+        : recomputed;
 
   if (JSON.stringify(snapshot) === JSON.stringify(normalized)) return prev;
   const undo = [snapshot, ...prev.undo].slice(0, MAX_UNDO_DEPTH);
@@ -202,8 +221,52 @@ export function positionFolded(state: TableCore, position: Position): boolean {
  * 因为冻结的 Poker Core 已经把这些人发进牌局了，中途改绑定会
  * 破坏底池与行动台账。
  */
+/**
+ * 本手是否已经开始（由**牌面状态**推导）。
+ *
+ * ## 🔴 为什么必须带「至少 2 名参与者」这个条件
+ *
+ * 修复前这里只看「有没有牌」：
+ *
+ * ```ts
+ * return state.heroCards.length > 0 || state.board.length > 0 || state.actionHistory.length > 0;
+ * ```
+ *
+ * 于是**新建牌桌后直接选 Hero 手牌会 500** —— 实测（`POST /api/table` 真实请求）：
+ *
+ * ```text
+ * 建桌（只有 Hero 在座）→ SET_HERO_CARD As
+ * → {"ok":false,"stage":"SERVER","issues":[{"code":"INTERNAL_ERROR",
+ *     "message":"服务端异常：handTopologySeats: 本手至少需要 2 名参与者（收到 1）"}]}
+ * ```
+ *
+ * 链路是：`handActive = true` ⇒ `commit()` 冻结本手拓扑（`freezeTopology`）
+ * ⇒ `handTopologySeats` 对 n < 2 抛错 ⇒ 整个写请求 500。
+ * 使用者看到的现象是「**手牌点了没反应**」，而且连点两次都一样。
+ *
+ * 为什么以前没被发现：所有既有测试都在**建桌后立刻把座位填满**
+ *（`test/helpers/tableJsHarness.ts` 的 `seatAll()`），因此从来没测过
+ * 「只有 Hero 在座时选牌」。这条是**真实浏览器验收**抓出来的。
+ *
+ * ## 修法为什么选在这里，而不是给 `handTopologySeats` 加 try/catch
+ *
+ * `handTopologySeats` 要求「≥ 2 人」本身是对的 —— 一个人不成局，
+ * 让它静默返回一个假拓扑，下游会拿它算出假角色、假盲注，错得更远。
+ * 真正错的是**判定条件**：「一张牌 + 一个座位」不构成一手牌。
+ * 把条件补全，问题在源头消失，且 `handActive` 的语义变成
+ * 「本手确实已经成为一局牌」。
+ *
+ * 牌仍然存在 `heroCards` 里，界面上照常显示 —— 只是本手还没开始，
+ * 界面会如实显示「本手还没开始（先给至少 2 个座位加入玩家）」。
+ */
 function recomputeHandActive(state: TableCore): boolean {
-  return state.heroCards.length > 0 || state.board.length > 0 || state.actionHistory.length > 0;
+  const hasCards = state.heroCards.length > 0 || state.board.length > 0 || state.actionHistory.length > 0;
+  if (!hasCards) return false;
+  /*
+   * 参与者口径与 `tableAdapter` 的 `staffingProblems` / `participantSeatsOf`
+   * 完全一致 —— 不另立一套「够不够人」的规则。
+   */
+  return participantSeatsOf(state).length >= 2;
 }
 
 /* ============================================================

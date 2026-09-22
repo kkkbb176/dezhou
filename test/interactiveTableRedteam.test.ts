@@ -568,9 +568,33 @@ test('RT：伪造 / 自相矛盾的状态必须被服务器拒绝', () => {
       { kind: 'SET_HERO_CARD', card: 'Kd' },
     ),
   );
+  /*
+   * 🔴 **「本手已在进行」的判据是公共牌 / 行动记录，不是「有没有 Hero 手牌」。**
+   *
+   * 为什么（LIVE UI V2 轮修复，见 `tableApi.ts` 里那段注释）：
+   * 新牌桌只有 Hero 在座时，使用者会先选好两张手牌、再把其他人加进来。
+   * 那一刻的状态是「手牌 2 张 + `handActive=false`」——**完全合理**。
+   * 若把「有手牌」当成矛盾，这条自洽检查会把正常操作整包拒绝，
+   * 界面表现是「手牌点了没反应」。
+   *
+   * 因此这条用例要真的带上「行动记录」才是矛盾；
+   * 下面另有一条用例专门锁住「只有手牌、没有行动」必须**被接受**。
+   */
+  /*
+   * 用一个**必定合法**的动作造出行动记录：开局第一个行动的人弃牌。
+   * （不用 CALL —— 它的合法金额取决于底池与盲注，写死数字会让这条
+   *  「自洽性检查」的用例变成一个「动作合法性」的用例，跑偏。）
+   */
+  const withAction = must(
+    applyTableOp(withCards, {
+      kind: 'ACT',
+      action: { type: 'FOLD' },
+    }),
+  );
 
   const cases: readonly (readonly [string, unknown])[] = [
-    ['handActive=false 但已有手牌与行动', { ...withCards, handActive: false }],
+    ['handActive=false 但已有行动记录', { ...withAction, handActive: false }],
+    ['handActive=false 但已有公共牌', { ...withCards, board: ['7c', '2d', '3h'], handActive: false }],
     ['handActive=true 但一切皆空', { ...createTable({ tableSize: 6 }), handActive: true }],
     [
       '两个座位绑同一个 playerId',
