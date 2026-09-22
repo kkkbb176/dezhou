@@ -134,6 +134,15 @@ const ELEMENT_IDS: readonly string[] = [
   'boardRow', 'seats', 'handPanel', 'heroHandRow', 'handHint', 'cardPicker',
   'pickerTarget', 'pickerGrid', 'timeline', 'actorLine', 'statGrid',
   'actionButtons', 'sizeButtons', 'analyzeBtn', 'blockers', 'result', 'limits',
+  /* LIVE UI V2：右栏「本手最近动作」（`renderRecentActions()` 用 `$()` 取） */
+  'recentActions',
+  /*
+   * LIVE UI V2：顶栏「设置 ▾」菜单。`table.js` 用 `getElementById` 取它们，
+   * 取不到就静默跳过（假 DOM 里没有 `addEventListener`，绑不上事件）——
+   * 因此它们**不是**必须项，但登记之后「控件是否被卡在 disabled」这类断言
+   * 才有地方可测（真实缺陷：重叠请求会把按钮永久禁用）。
+   */
+  'moreBtn', 'moreMenu',
   'debugSeats', 'debugMath', 'debugInput', 'debugFingerprint', 'debugDecision',
   'overlay', 'modal', 'toast',
   'autoAnalyzeLine', 'autoAnalyzeBadge', 'modeButtons',
@@ -261,6 +270,20 @@ export type TableJsHarness = {
   /** 让**下一次** `/api/analyze` 挂起，直到 release() */
   deferNextAnalyze(): { release: () => void; released: () => boolean };
   setAnalyzePayload(payload: unknown): void;
+  /**
+   * 取 `table.js` 自己挂出来的验收钩子 `window.__dshTest`（只读）。
+   *
+   * 🔴 **为什么测试需要它**：`app` 是 IIFE 私有变量，只从 DOM 读是无法回答
+   * 「服务端给的建议有没有被当成 Hero 的实际动作写进牌局」这类问题的 ——
+   * DOM 上「建议区显示加注」与「动作历史里有加注」看起来可以一模一样，
+   * 而这两件事的正确性要求**正好相反**（建议只能显示，不能落库）。
+   *
+   * 返回 `null` 表示钩子没挂上（那本身就是一种失败，调用方应断言）。
+   */
+  exposedTest(): {
+    app: Record<string, unknown>;
+    render: () => void;
+  } | null;
 };
 
 export type HarnessOptions = {
@@ -673,6 +696,11 @@ export async function createTableJsHarness(options: HarnessOptions = {}): Promis
     },
     setAnalyzePayload: (payload: unknown) => {
       analyzePayload = payload;
+    },
+    exposedTest: () => {
+      const hook = (windowStub as Record<string, unknown>)['__dshTest'];
+      if (hook === null || hook === undefined) return null;
+      return hook as { app: Record<string, unknown>; render: () => void };
     },
   };
 }

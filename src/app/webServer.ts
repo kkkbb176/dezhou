@@ -390,9 +390,24 @@ async function handleRequest(
       return;
     }
 
-    // ---- 静态资源（无构建步骤：浏览器直接拿 TS 之外的纯 JS/CSS）----
-    if (method === 'GET' && (url === '/table.css' || url === '/table.js')) {
-      const asset = readAsset(url === '/table.css' ? 'table.css' : 'table.js');
+    /*
+     * ---- 静态资源（无构建步骤：浏览器直接拿 TS 之外的纯 JS/CSS）----
+     *
+     * 🔴 **白名单 + 扩展名决定 Content-Type**，而不是 `url` 里带不带 `css`。
+     * LIVE UI V2 新增 `live-ui.css` 时，旧写法（`url === '/table.css' ? 'table.css'
+     * : 'table.js'`）会把它**当成 JS 发出去**，浏览器直接拒绝应用样式表 ——
+     * 页面能打开、样式全丢，而且不报错到服务端日志里。
+     * 白名单同时保证这里不会变成任意文件读取。
+     */
+    const ASSET_TYPES: Record<string, string> = {
+      '/table.css': 'text/css; charset=utf-8',
+      '/live-ui.css': 'text/css; charset=utf-8',
+      '/gto.css': 'text/css; charset=utf-8',
+      '/table.js': 'text/javascript; charset=utf-8',
+      '/gto.js': 'text/javascript; charset=utf-8',
+    };
+    if (method === 'GET' && ASSET_TYPES[url] !== undefined) {
+      const asset = readAsset(url.slice(1));
       if (asset === null) {
         sendJson(res, 404, {
           ok: false,
@@ -402,8 +417,7 @@ async function handleRequest(
         return;
       }
       res.writeHead(200, {
-        'Content-Type':
-          url === '/table.css' ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+        'Content-Type': ASSET_TYPES[url],
         'Content-Length': Buffer.byteLength(asset, 'utf8'),
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
@@ -424,26 +438,11 @@ async function handleRequest(
       return;
     }
 
-    if (method === 'GET' && (url === '/gto.css' || url === '/gto.js')) {
-      const asset = readAsset(url === '/gto.css' ? 'gto.css' : 'gto.js');
-      if (asset === null) {
-        sendJson(res, 404, {
-          ok: false,
-          stage: 'REQUEST',
-          issues: [{ code: 'NOT_FOUND', message: `找不到资源：${url}` }],
-        });
-        return;
-      }
-      res.writeHead(200, {
-        'Content-Type':
-          url === '/gto.css' ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
-        'Content-Length': Buffer.byteLength(asset, 'utf8'),
-        'Cache-Control': 'no-store',
-        'X-Content-Type-Options': 'nosniff',
-      });
-      res.end(asset);
-      return;
-    }
+    /*
+     * `/gto.css` / `/gto.js` 的分支已删除 —— 它们现在由上面的 `ASSET_TYPES`
+     * 白名单统一处理。同一件事只留一处实现（V1 的教训：同一条规则写两遍，
+     * 改一处忘一处，然后「奇怪地只在新文件上失效」）。
+     */
 
     if (method === 'GET' && url === '/api/health') {
       sendJson(res, 200, {

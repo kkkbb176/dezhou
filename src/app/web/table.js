@@ -443,15 +443,51 @@
    * 渲染
    * ============================================================ */
 
+  /**
+   * 在途请求期间禁用全部控件 —— **必须可重入**。
+   *
+   * ## 🔴 为什么需要「可重入」这条要求
+   *
+   * 原实现是「进：记下原来的 disabled → 置 true；出：按记下的值还原」。
+   * 只要**两个请求重叠**，第二次进入时看到的 `disabled` 已经是 `true`，
+   * 于是它把「原本可用」记成「原本不可用」；两个请求都结束时，
+   * 最后一次还原把按钮**永久**留在 `disabled = true`。
+   *
+   * 这不是理论问题。真实浏览器验收（`live-ui-v2-verify.json`）量到：
+   *
+   * ```text
+   * 菜单按钮诊断: {"btnDisabled":true, "spyFired":false, ...}
+   * ```
+   *
+   * —— 界面上「设置」按钮看着正常、点下去毫无反应，而且**再也不会恢复**。
+   * 触发条件很常见：`scheduleAutoAnalyze()` 的 debounce 到点发一次
+   * `/api/analyze`，使用者同时按下动作按钮发了 `/api/table`。
+   *
+   * ## 修法
+   *
+   * 用一个哨兵值标记「这个禁用是**我**加的」：
+   *   - 进入时只记录一次（已经有哨兵就不再记）；
+   *   - 退出时只还原带哨兵的那些。
+   * 于是无论进入多少次，只要退出次数对得上，状态就回到原样。
+   */
+  var DISABLED_BY_BUSY = 'busy';
+
   function setControlsDisabled(disabled) {
     var nodes = document.querySelectorAll('button, select, input');
     for (var i = 0; i < nodes.length; i += 1) {
       var node = nodes[i];
+      var marker = node.dataset ? node.dataset.prevDisabled : undefined;
       if (disabled) {
-        node.dataset.prevDisabled = node.disabled ? '1' : '0';
+        /* 已经是我禁用的：不要覆盖最初的记录（幂等） */
+        if (marker === DISABLED_BY_BUSY) continue;
+        if (node.dataset) node.dataset.prevDisabled = node.disabled ? '1' : DISABLED_BY_BUSY;
         node.disabled = true;
-      } else if (node.dataset.prevDisabled !== undefined) {
-        node.disabled = node.dataset.prevDisabled === '1';
+      } else if (marker !== undefined) {
+        /*
+         * 只还原「我禁用的」：`'1'` 表示它本来就是禁用的（保持禁用）；
+         * 哨兵表示它本来可用（恢复可用）。两条都不可能把可用按钮留成禁用。
+         */
+        node.disabled = marker === '1';
         delete node.dataset.prevDisabled;
       }
     }
@@ -609,6 +645,7 @@
     renderPicker();
     renderActorPanel();
     renderTimeline();
+    renderRecentActions();
     renderDebug();
     updateActionDisabled();
     renderModal();
@@ -645,11 +682,19 @@
         .positions.indexOf(p.value) >= 0;
     });
     positions.forEach(function (p) {
-      var b = el(
-        'button',
-        app.state.heroPosition === p.value ? 'active' : '',
-        p.labelZh + '（' + p.value + '）',
-      );
+      /*
+       * 🔴 LIVE UI V2 §顶栏：按钮上只写**中文短名**，英文代号走 `title`。
+       *
+       * 原来写「枪口+1（UTG1）」——九人桌 9 颗按钮实测把顶栏撑到 1700px 以上，
+       * 1366 视口下右半边（「下一手 / 撤销 / 设置」）直接被裁掉，
+       * 而 `#topbar { overflow: hidden }` 不会给任何提示。
+       * 这是截图（`live-ui-v2-main-1366x768.png`）发现的，不是测试发现的 ——
+       * 假 DOM 量不到宽度。
+       *
+       * 取舍：`labelZh` 已经很短（`枪口位` / `关煞位`），去掉括号里的代号省约 40%。
+       * **信息没有丢**：代号在悬停提示、在座位卡、在调试面板里都有。
+       */
+      var b = el('button', app.state.heroPosition === p.value ? 'active' : '', p.labelZh);
       /*
        * 🔴 **座位对调语义**（2026-09）：目标座位上如果有人，两个人是**交换座位**
        * 而不是「把对方顶掉」。筹码跟着座位走（谁都没有被吞掉筹码）。
@@ -658,7 +703,7 @@
        * 而不知道「对面那个人去哪了」（旧实现是把人解绑，盘面上直接消失）。
        */
       b.title =
-        '把 Hero 放到 ' + p.value + '（牌桌视图会旋转，Hero 固定在底部）。' +
+        '把 Hero 放到 ' + p.value + '（' + p.labelZh + '）—— 牌桌视图会旋转，Hero 固定在底部。' +
         '那个座位上如果有人，会与 Hero **对调座位**；筹码留在各自座位上。';
       b.onclick = function () {
         sendOp({ kind: 'SET_HERO_POSITION', position: p.value });
@@ -848,32 +893,67 @@
         ? seat.handRoleZh + '（' + seat.handRole + '）'
         : seat.positionZh + '（' + seat.logicalPosition + '）· 本手不参与';
 
+      /*
+       * 🔴 LIVE UI V2 §座位卡片：约 92×48px、最多四短行。
+       *
+       * V1 的座位卡在 1366px 下要塞下：名字 / 角色 / 筹码 / 画像标签 /
+       * 动态标签 / 状态 / Hero 手牌 / 庄家按钮 —— 九人桌直接糊成一片。
+       * V2 的取舍（用户指令「玩家画像不默认展开」「未入座座位只显示简洁的加号」）：
+       *
+       * - **空座位**：只画一个 `＋`，不再写「加入玩家」四行字；
+       *   点它打开的菜单里已经有完整的「加入玩家」。
+       * - **已入座**：名字 / 位置 / 筹码 / 状态。角色名只写中文短名（英文缩写走
+       *   `title`）；画像标签与 Hero 手牌也不再画在座位上
+       *   （画像 hover 时由 `#seatTip` 显示，手牌画在桌前左下角的 `#heroHandInline`）。
+       *
+       * `data-player-id` / `data-seat-id` 保留 —— 浏览器验收靠它们断言身份。
+       */
       if (!seat.playerId) {
-        node.appendChild(el('div', 'name', '+ 加入玩家'));
-        node.appendChild(el('div', 'pos', roleText));
+        node.appendChild(el('div', 'name', '＋'));
+        node.title = seat.positionZh + '　空座位（点击可加入玩家）';
       } else {
         node.appendChild(el('div', 'name', seat.displayName || seat.playerId));
-        node.appendChild(el('div', 'pos', roleText));
+        /*
+         * 角色行只写中文短名：「关煞位」而不是「关煞位（CO）」。
+         * 92px 宽里塞两段文字会把它挤成省略号，反而两边都读不到。
+         */
+        node.appendChild(el('div', 'pos', seat.handRoleZh || seat.positionZh));
         var stackText =
           seat.remainingStackBB === null
             ? seat.stackBB + 'BB'
             : seat.remainingStackBB + 'BB' +
-              (seat.committedBB ? '（本街已投 ' + seat.committedBB + 'BB）' : '');
+              (seat.committedBB ? '（投 ' + seat.committedBB + 'BB）' : '');
         node.appendChild(el('div', 'stack', stackText));
+        /*
+         * 状态行**只在真的有话可说时**才画。
+         *
+         * 默认的「在座」不占版面 —— 它不是信息，是噪音。
+         * 但下面这些必须一眼看到，它们会改变使用者对「这是什么局」的判断：
+         *   - **本手不参与**（空/暂离/0 筹码）：不写出来会让人以为他也在这一手里；
+         *   - 弃牌 / 全下 / 已暂离 / 本手后离桌：都是**本手状态**，看错就会录错；
+         *   - Hero：多人桌上先认出自己那一格。
+         */
+        var STATUS_ALWAYS = ['FOLDED_THIS_HAND', 'ALL_IN', 'SITTING_OUT', 'LEAVING_AFTER_HAND'];
+        var statusText = '';
+        if (!seat.isParticipant) statusText = '本手不参与';
+        else if (STATUS_ALWAYS.indexOf(seat.status) >= 0) statusText = seat.statusZh;
+        else if (seat.isHero) statusText = 'Hero';
+        if (statusText !== '') node.appendChild(el('div', 'status', statusText));
+        node.title =
+          (seat.displayName || seat.playerId) + '　' + roleText +
+          '　' + stackText + '　' + seat.statusZh;
+      }
+
+      /*
+       * 玩家画像：**不默认展开**。`tags` 只在有内容时生成，
+       * 且由 `live-ui.css` 默认 `display:none`；真实画像走 hover 的 `#seatTip`。
+       * 这里仍然生成它，是为了不切断已有的 DOM 契约（验收脚本按 `.tags` 找）。
+       */
+      if (seat.playerId) {
         var tags = [];
         if (seat.quickProfileZh && seat.quickProfileZh !== '未知') tags.push(seat.quickProfileZh);
         if (seat.dynamicHintZh && seat.dynamicHintZh !== '未知') tags.push('动态:' + seat.dynamicHintZh);
         if (tags.length > 0) node.appendChild(el('div', 'tags', tags.join(' · ')));
-        node.appendChild(el('div', 'status', seat.isHero ? 'Hero · ' + seat.statusZh : seat.statusZh));
-
-        if (seat.isHero && app.state.heroCards.length > 0) {
-          var row = el('div', 'heroCards');
-          app.state.heroCards.forEach(function (code) {
-            var info = cardLabel(code);
-            row.appendChild(el('span', 'card small' + (info.red ? ' red' : ''), info.text));
-          });
-          node.appendChild(row);
-        }
       }
 
       node.onclick = function () {
@@ -948,6 +1028,20 @@
     }
   }
 
+  /**
+   * 打开左下角的牌面选择器（如果它是收起的）。
+   *
+   * 🔴 **能力检测**：假 DOM（`test/helpers/tableJsHarness.ts`）里的节点没有
+   * `open` 属性也没有 `classList`，直接赋值在假 DOM 里是无害的，但**读**它
+   * 不能假设存在。这里只在「确认能拿到元素」时才操作，且全部是赋值，不调用方法 ——
+   * V1 两次因为 `insertBefore` / `querySelector` 不存在把整条 `render()` 弄挂，
+   * 这里从写法上避免同类事故。
+   */
+  function openPickerIfCollapsed() {
+    var picker = document.getElementById('handPanel');
+    if (picker && picker.open !== true) picker.open = true;
+  }
+
   function renderHand() {
     var row = $('heroHandRow');
     clear(row);
@@ -967,18 +1061,30 @@
       } else {
         var isTarget = app.target.kind === 'HERO';
         var empty = el('div', 'card empty' + (isTarget ? ' target' : ''), '＋');
+        empty.title = '点这里 → 选 Hero 手牌';
         empty.style.cursor = 'pointer';
         empty.onclick = function () {
           app.target = { kind: 'HERO' };
+          openPickerIfCollapsed();
           render();
         };
         row.appendChild(empty);
       }
     }
-    $('handHint').textContent =
-      app.state.heroCards.length === 2
-        ? '手牌已选好。点已选的牌可以取消。'
-        : '点下方牌面选牌（已选的 ' + app.state.heroCards.length + ' / 2 张）';
+    /*
+     * LIVE UI V2：手牌提示从「一整行说明」压成面板标题右侧的短状态。
+     *
+     * 旧文案是「点下方牌面选牌（已选的 0 / 2 张）」—— 它是**说明**，
+     * 而这一行在 V2 里要腾给牌桌。现在只留「已选 0/2」这种状态量，
+     * 说明文字挂在 `#heroHandRow` 的 `title` 上（悬停可读）。
+     */
+    var handLabel = app.state.heroCards.length === 2 ? '已选好' :
+      '已选 ' + app.state.heroCards.length + '/2';
+    $('handHint').textContent = handLabel;
+    var handLabelNode = $('heroHandRow');
+    handLabelNode.title = app.state.heroCards.length === 2
+      ? '手牌已选好。点已选的牌可以取消。'
+      : '点这里的空位，或点下方展开的牌面，即可选 Hero 手牌。';
   }
 
   function usedCards() {
@@ -1038,6 +1144,17 @@
     if (app.target.kind === 'HERO') {
       sendOp({ kind: 'SET_HERO_CARD', card: code }).then(function (ok) {
         if (!ok) return;
+        /*
+         * 🔴 LIVE UI V2：Hero 两张手牌选满后**自动收起**牌面选择器。
+         *
+         * 它占 4 行 × 13 列 ≈ 165px，而选完手牌之后**整手牌都不会再用它**
+         *（公共牌只有 5 张，且实战里公共牌是发出来的、不需要手点）。
+         * 不收起的话它会一直挤着牌桌 —— 实测 1366×768 下表格区高度差 100px 以上。
+         *
+         * 这是「能收的收起来」而不是「藏功能」：面板标题还在，
+         * 点一下就能重新展开，`#handPanel`/`#cardPicker` 的 id 与事件都没动。
+         */
+        closePickerIfDone();
         autoAdvanceTarget();
       });
       return;
@@ -1047,6 +1164,13 @@
       if (!ok) return;
       autoAdvanceTarget();
     });
+  }
+
+  /** 选满两张 Hero 手牌后收起牌面选择器（能力检测：假 DOM 里没有 `open`） */
+  function closePickerIfDone() {
+    if (!app.state || app.state.heroCards.length < 2) return;
+    var picker = document.getElementById('handPanel');
+    if (picker && picker.open === true) picker.open = false;
   }
 
   /** 选完一张后自动把落点移到下一个空位（把点击数降到最低） */
@@ -1197,45 +1321,131 @@
      * 其余仍可通过点「加注（选尺寸）」用完整列表 —— **没有减少任何可选项**。
      */
     var QUICK_SIZE_LIMIT = 3;
+    /*
+     * LIVE UI V2：`#quickSizes` 现在是 `index.html` 里的**静态节点**（V1 是
+     * 运行时用 `insertBefore` 造出来的）。因此这里不再有创建分支 ——
+     * 少一处 DOM 能力依赖，就少一次「假 DOM 里 `insertBefore` 不存在把
+     * `render()` 弄挂」的机会。`$()` 拿不到时直接跳过，不抛错。
+     *
+     * ⚠️ 排序结果 `ordered` 与 `sizeType` **必须声明在这里**（两个 if 分支之外）：
+     * 下面「自定义金额」那一段要用它们。V2 第一版把它们写在 `else {}` 里，
+     * 于是 `sizes` 非空、但 `#quickSizes` 缺失时 `ordered[0]` 就是 `undefined`，
+     * 一取 `.type` 就抛 `TypeError` —— 而这会从 `renderActorPanel()` 一路
+     * 冒到 `render()`，**整页停止渲染**。空数组同样是这个雷，所以下面每处
+     * 取值都先判长度。
+     */
+    var ordered = sizes.slice().sort(function (x, y) {
+      return (x.amountChips === undefined ? 0 : x.amountChips) -
+        (y.amountChips === undefined ? 0 : y.amountChips);
+    });
+    var sizeType = ordered.length > 0 ? ordered[0].type : null;
+    var isBet = sizeType === 'BET';
+
     var quickBox = $('quickSizes');
-    if (quickBox === null) {
-      quickBox = el('div', null, '');
-      quickBox.id = 'quickSizes';
-      /* 插在 #actionButtons 之后，与主行动按钮同区，位置固定 */
-      if (box.parentNode !== null && box.parentNode !== undefined) {
-        if (typeof box.parentNode.insertBefore === 'function') box.parentNode.insertBefore(quickBox, box.nextSibling);
-        else box.parentNode.appendChild(quickBox);
+    if (quickBox) {
+      clear(quickBox);
+      if (ordered.length > 0) {
+        quickBox.appendChild(el('span', 'qs-label', (isBet ? '下注' : '加注') + '快捷：'));
+        ordered.slice(0, QUICK_SIZE_LIMIT).forEach(function (button) {
+          var b = el('button', 'quick', button.labelZh);
+          b.setAttribute('data-quick-size', String(button.amountChips));
+          b.onclick = function () {
+            app.sizeExpanded = null;
+            sendOp({
+              kind: 'ACT',
+              action: {
+                type: button.type,
+                ...(button.amountChips !== undefined ? { amountChips: button.amountChips } : {}),
+              },
+            });
+          };
+          quickBox.appendChild(b);
+        });
+        if (ordered.length > QUICK_SIZE_LIMIT) {
+          var more = el('button', 'qs-all' + (app.sizeExpanded !== null ? ' active' : ''), '其余 ' + (ordered.length - QUICK_SIZE_LIMIT) + ' 个尺寸…');
+          more.onclick = function () {
+            app.sizeExpanded = app.sizeExpanded === sizeType ? null : sizeType;
+            render();
+          };
+          quickBox.appendChild(more);
+        }
       }
     }
-    clear(quickBox);
-    if (sizes.length > 0) {
-      var ordered = sizes.slice().sort(function (x, y) {
-        return (x.amountChips === undefined ? 0 : x.amountChips) - (y.amountChips === undefined ? 0 : y.amountChips);
-      });
-      var isBet = ordered[0].type === 'BET';
-      quickBox.appendChild(el('span', 'qs-label', (isBet ? '下注' : '加注') + '快捷：'));
-      ordered.slice(0, QUICK_SIZE_LIMIT).forEach(function (button) {
-        var b = el('button', 'quick', button.labelZh);
-        b.setAttribute('data-quick-size', String(button.amountChips));
-        b.onclick = function () {
+
+    /*
+     * ============================================================
+     * LIVE UI V2：自定义金额入口
+     * ============================================================
+     *
+     * ## 为什么必须有它
+     *
+     * 后端给的尺寸网格是**几个整档**（约 1/2 池、2/3 池、1 池…）。
+     * 实战里「我要加到 37BB」是个真实需求，而网格里没有 37。
+     * 没有这个入口，用户只能从网格里挑一个近似值 —— 那是**录入错误**，
+     * 而录入的数据会被写进决策日志与玩家历史，错误会一路传下去。
+     *
+     * ## 为什么这不是「前端自己算加注合法性」（用户红线）
+     *
+     * 本函数**一个数字都不算**：
+     * - 只在后端给出 `SIZE` 组（即 BET / RAISE 是合法动作）时才显示；
+     * - `min` / `max` / `placeholder` 取自后端已算好的 `minRaiseToBB` /
+     *   `allInToBB` / 尺寸网格的最小最大项；
+     * - 点「确定」直接把 `amountChips` 发出去，**不预判合法性** ——
+     *   非法就由引擎拒绝，`sendOp` 把 `ILLEGAL_ACTION` 的原文弹出来。
+     */
+    var customBox = document.getElementById('customAmount');
+    var customInput = document.getElementById('customAmountInput');
+    var customSend = document.getElementById('customAmountSend');
+    if (customBox && customInput && customSend) {
+      var canSize = ordered.length > 0 && sizeType !== null;
+      customBox.hidden = !canSize;
+      if (canSize) {
+        var sizeAmounts = ordered
+          .map(function (b) {
+            return b.amountChips === undefined ? null : b.amountChips;
+          })
+          .filter(function (v) {
+            return v !== null;
+          });
+        var loChips = Math.min.apply(null, sizeAmounts);
+        var hiChips = Math.max.apply(null, sizeAmounts);
+        /*
+         * 提示文字直接用**后端自己的按钮文案**，不在这里做 BB 换算：
+         * `amountBB` 由后端 `toBB()` 统一格式化（含尾数处理），
+         * 前端再用 `chips / bigBlind` 算一遍就会有两套舍入规则。
+         */
+        var loButton = ordered.filter(function (b) {
+          return b.amountChips === loChips;
+        })[0];
+        var hiButton = ordered.filter(function (b) {
+          return b.amountChips === hiChips;
+        })[0];
+        /*
+         * `min` / `max` 只是**输入框的提示与步进**（原生 number input 的行为），
+         * 不是合法性判据 —— 用户仍然可以把值改到范围外，由后端拒绝。
+         * 这正是我们要的：界面上没有第二套规则。
+         */
+        customInput.min = String(loChips);
+        customInput.max = String(hiChips);
+        customInput.step = '1';
+        customInput.placeholder = (isBet ? '下注到' : '加注到') + '　' +
+          (loButton ? loButton.labelZh : loChips) + ' ～ ' +
+          (hiButton ? hiButton.labelZh : hiChips);
+        customSend.textContent = isBet ? '下注' : '加注';
+        customSend.title = '把输入框里的筹码数作为' + (isBet ? '下注' : '加注') +
+          '总额提交；合法性由引擎裁决。';
+        customSend.onclick = function () {
+          var raw = customInput.value;
+          if (raw === '' || raw === null || raw === undefined) return;
+          var chips = Number(raw);
+          if (!isFinite(chips)) return;
           app.sizeExpanded = null;
+          customInput.value = '';
           sendOp({
             kind: 'ACT',
-            action: {
-              type: button.type,
-              ...(button.amountChips !== undefined ? { amountChips: button.amountChips } : {}),
-            },
+            action: { type: sizeType, amountChips: chips },
           });
         };
-        quickBox.appendChild(b);
-      });
-      if (ordered.length > QUICK_SIZE_LIMIT) {
-        var more = el('button', 'qs-all' + (app.sizeExpanded !== null ? ' active' : ''), '其余 ' + (ordered.length - QUICK_SIZE_LIMIT) + ' 个尺寸…');
-        more.onclick = function () {
-          app.sizeExpanded = app.sizeExpanded === ordered[0].type ? null : ordered[0].type;
-          render();
-        };
-        quickBox.appendChild(more);
       }
     }
 
@@ -1841,6 +2051,80 @@
         group.appendChild(el('span', 'entry', text));
       });
       box.appendChild(group);
+    });
+  }
+
+  /**
+   * ============================================================
+   * LIVE UI V2：右侧操作台的「本手最近动作」
+   * ============================================================
+   *
+   * ## 为什么要有它
+   *
+   * V1 把整条行动时间线放在**左列下方**（`#timeline`），于是：
+   *
+   * - 1366×768 下它把牌桌往下推，需要滚动才能看到；
+   * - 而录入时真正需要的不是「全部历史」，是「刚刚发生了什么，轮到我了没有」。
+   *
+   * V2 把它拆成两层：
+   *
+   * - **右侧最近 5 条**（本函数）：录入时始终可见，一眼看完；
+   * - **完整时间线**：折叠在右栏底部（`#timeline`），需要复盘时展开。
+   *
+   * 两层读的是**同一个** `app.state.actionHistory`，不新增任何状态 ——
+   * 因此不存在「最近动作」与「完整时间线」不一致的可能。
+   */
+  function renderRecentActions() {
+    var box = $('recentActions');
+    if (!box) return;
+    clear(box);
+
+    var history = app.state.actionHistory || [];
+    if (history.length === 0) {
+      box.appendChild(el('div', 'ra-empty', '还没有行动记录。'));
+      return;
+    }
+
+    var streetZh = {};
+    (app.meta ? app.meta.streets : []).forEach(function (s) {
+      streetZh[s.value] = s.labelZh;
+    });
+    var positionZh = {};
+    (app.meta ? app.meta.positions : []).forEach(function (p) {
+      positionZh[p.value] = p.labelZh;
+    });
+    var actionZh = {};
+    (app.meta ? app.meta.actionTypes : []).forEach(function (x) {
+      actionZh[x.value] = x.labelZh;
+    });
+
+    /*
+     * 只显示最后 5 条。`RA_LIMIT` 是常量而不是配置项 ——
+     * 5 条正好占满预设高度（约 5 × 22px），再多多出来的会被右栏裁掉。
+     */
+    var RA_LIMIT = 5;
+    var start = Math.max(0, history.length - RA_LIMIT);
+    var shown = history.slice(start);
+
+    if (start > 0) {
+      box.appendChild(el('div', 'ra-more', '（前面还有 ' + start + ' 条，见下方完整时间线）'));
+    }
+
+    shown.forEach(function (action, offset) {
+      var isLatest = start + offset === history.length - 1;
+      var row = el('div', 'ra-row' + (isLatest ? ' ra-latest' : ''));
+      row.appendChild(el('span', 'ra-pos', positionZh[action.position] || action.position));
+      row.appendChild(el('span', 'ra-act', actionZh[action.type] || action.type));
+      var amount = '';
+      if (action.amountBB !== undefined && action.type !== 'FOLD' && action.type !== 'CHECK') {
+        amount = action.type === 'CALL' ? action.amountBB + 'BB' : '到 ' + action.amountBB + 'BB';
+      }
+      row.appendChild(el('span', 'ra-amt', amount));
+      row.setAttribute('data-street', action.street || 'PREFLOP');
+      row.title = (streetZh[action.street] || action.street || '') + '　' +
+        (positionZh[action.position] || action.position) + '　' +
+        (actionZh[action.type] || action.type) + (amount ? ' ' + amount : '');
+      box.appendChild(row);
     });
   }
 
@@ -2745,95 +3029,99 @@
 
   /**
    * ============================================================
-   * LIVE UI V1：把**低频区域**折起来（最小 DOM 变更，幂等）
+   * LIVE UI V2：设置菜单（顶栏「设置 ▾」）
    * ============================================================
    *
-   * ## 为什么折叠而不是删掉
+   * ## 为什么要有它
    *
-   * 任务第五节要求「保留现有 GTO、人物画像、决策分析及调试能力，
-   * 但**不默认占用主界面**」。所以它们是**收起来**，不是移除。
+   * V1 把 12 个按钮排在一行顶栏里，1366px 下已经挤到没有呼吸空间，
+   * 而其中「新牌桌 / 重置本手 / 清空其他玩家 / GTO 范围 / 说明 / 调试」
+   * 是**一局用不到一次**的低频操作。V2 把它们收进一个下拉菜单，
+   * 顶栏只留「一局中会改的」：桌型、Hero 位置、盲注单位、下一手、撤销。
    *
-   * ## 折叠哪一块（实测依据）
+   * ## 为什么是原生 `<details>` 而不是自己维护开合状态
    *
-   * 1366×768 下文档高 1028px（要滚 2 屏）。逐块量高度后，最该收的是
-   * **牌面选择器（52 张牌 ≈ 183px）** —— 它只在开局选 Hero 手牌时用一次。
+   * 同 V1 折叠面板的理由：在 `app` 里加一个 `menuOpen` 字段就要在 `render()`
+   * 里同步它，而 `render()` 每录一个动作都跑 —— 那是没必要的耦合。
+   * 但这里用的是 `<button>` + `hidden` 属性，因为菜单里已经有 `<details>`
+   * （说明 / 调试），嵌套 `<details>` 的点击行为在各浏览器里不一致。
    *
-   * ## 为什么用原生 `<details>`
+   * ## ⚠️ 假 DOM 能力检测（第二次踩同一个坑）
    *
-   * 在 `app` 里加一个 `collapsed` 字段就要在 `render()` 里同步它，
-   * 而 `render()` 每录一个动作都跑 —— 那是没必要的耦合。
-   * 原生 `<details>` 由浏览器维护开合，**不占 app 状态、不需要 render 参与**。
+   * 前端测试跑在极简假 DOM 上，它**没有** `querySelector`、`insertBefore`、
+   * 也没有 `addEventListener`。V1 两次因为这个整条 `boot()` 挂掉。
+   * 所以这里：
    *
-   * ## ⚠️ 第一版把布局弄坏了，这里记录原因
-   *
-   * 第一版为了「把兄弟内容一起收进去」，写了
-   * `while (parent.firstChild) details.appendChild(parent.firstChild)`
-   * —— 它把**整个父容器的子节点**都搬进 details。于是：
-   *
-   * - `#handPanel` 的标题与内容被搬走 ⇒ 面板只剩 40px，Hero 手牌看不见了；
-   * - 生成一个 `summary` 为空的嵌套 details；
-   * - 折叠看着"生效"，实际收错了东西。
-   *
-   * 现在改成**只移动目标元素自己**，插回原位置，父容器与兄弟都不动。
+   * - 只用 `appendChild` / `getElementById` / 直接属性赋值；
+   * - 事件绑定前检查 `typeof x.addEventListener === 'function'`；
+   * - 关闭菜单靠 `document.addEventListener('click')`，同样先做能力检测。
    */
-  function setupCollapsiblePanels() {
-    /** 把 id 元素本身包进 <details>；open 决定默认是否展开 */
-    function wrap(id, summaryText, open) {
-      var target = document.getElementById(id);
-      if (!target) return;
-      if (target.parentNode && target.parentNode.classList &&
-          target.parentNode.classList.contains('collapsible-body')) return; /* 幂等 */
+  function setupSettingsMenu() {
+    var btn = document.getElementById('moreBtn');
+    var menu = document.getElementById('moreMenu');
+    if (!btn || !menu) return;
 
-      var details = document.createElement('details');
-      details.className = 'collapsible';
-      if (open === true) details.open = true;
-
-      var summary = document.createElement('summary');
-      summary.textContent = summaryText;
-      details.appendChild(summary);
-
-      var body = document.createElement('div');
-      body.className = 'collapsible-body';
-
-      /*
-       * ⚠️ **必须对 DOM 能力做检测**，不能直接用 `insertBefore`。
-       *
-       * 本仓库的前端测试跑在一个**极简假 DOM** 上（`test/helpers/tableJsHarness.ts`），
-       * 它只实现了 `appendChild` / `removeChild`，**没有** `insertBefore`。
-       * 第一版这里直接调 `target.parentNode.insertBefore(...)`，于是在假 DOM 里：
-       *
-       * ```text
-       * TypeError: Cannot read properties of null (reading 'insertBefore')
-       *   at wrap → setupCollapsiblePanels → boot
-       * ```
-       *
-       * `boot()` 一抛错，**整个表格初始化就停了** ⇒ `newTableModal` 的 8 个测试
-       * 全部失败。也就是说：一处非核心的渐进增强，把主流程弄挂了。
-       *
-       * 真浏览器里 `insertBefore` 存在，走它（details 插在原位置，顺序不变）；
-       * 否则退化为 `removeChild` + `appendChild`（假 DOM 足够用）。
-       */
-      var parent = target.parentNode;
-      if (parent === null || parent === undefined) return;
-      if (typeof parent.insertBefore === 'function') {
-        parent.insertBefore(details, target);
-      } else {
-        if (typeof parent.appendChild === 'function') parent.appendChild(details);
-        else return;
-      }
-      if (typeof parent.removeChild === 'function') parent.removeChild(target);
-      body.appendChild(target);
-      details.appendChild(body);
+    /*
+     * 菜单里点任何按钮都关掉菜单 —— 否则点完「新牌桌」菜单还盖在牌桌上，
+     * 下一次点击会落在菜单上而不是牌桌。
+     */
+    function close() {
+      menu.hidden = true;
+      btn.className = 'more-btn';
+      btn.textContent = '设置 ▾';
+    }
+    function open() {
+      menu.hidden = false;
+      btn.className = 'more-btn open';
+      btn.textContent = '设置 ▴';
     }
 
-    /* 牌面选择器：默认收起（开局需要时点开） */
-    wrap('cardPicker', '牌面选择器（点开选 Hero 手牌 / 公共牌）', false);
-    /* 说明：默认收起（它原本占 216px，比建议区还高） */
-    wrap('limits', '说明与限制（点开查看）', false);
+    if (typeof btn.addEventListener !== 'function') return;
+
+    /*
+     * 🔴 **打开菜单的那一次点击必须被拦住，不能冒泡到 document。**
+     *
+     * 否则就是「点一下打开、同一次点击又把菜单关掉」—— 真实表现是
+     * 「点「设置」没反应」。这条是**浏览器验收截图**抓出来的：
+     * `live-ui-v2-menu-1366x768.png` 与主界面截图逐字节相同。
+     *
+     * 两个细节都要做对：
+     *   - 用 `stopImmediatePropagation`（若可用）而不只是 `stopPropagation`：
+     *     前者连**同一元素上其它监听器**也拦住，语义上更接近「这一下就是我的」；
+     *   - 菜单内部的点击同样要拦，否则点「新牌桌」会先把菜单关掉，
+     *     虽然结果看起来对，但顺序变成「先关菜单再开弹层」，容易在
+     *     以后加入异步逻辑时出现闪烁。
+     */
+    function swallow(event) {
+      if (!event) return;
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+      else if (typeof event.stopPropagation === 'function') event.stopPropagation();
+    }
+
+    btn.addEventListener('click', function (event) {
+      swallow(event);
+      if (menu.hidden) open();
+      else close();
+    });
+    menu.addEventListener('click', function (event) {
+      swallow(event);
+      /*
+       * 只有点到「动作按钮」才关：点 `<summary>`（说明 / 调试）时菜单要留着，
+       * 否则用户刚展开调试数据，菜单就自己收了。
+       */
+      var target = event.target;
+      var tag = target && target.tagName ? String(target.tagName).toLowerCase() : '';
+      if (tag === 'button') close();
+    });
+    document.addEventListener('click', function () {
+      if (!menu.hidden) close();
+    });
+
+    close(); /* 默认收起 */
   }
 
   function boot() {
-    setupCollapsiblePanels();
+    setupSettingsMenu();
     bindTopbar();
     /*
      * 「GTO 范围」入口。

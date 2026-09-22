@@ -240,6 +240,10 @@ test('F-01（CRITICAL）：分析成功之后，渲染函数必须**跑到底**�
     'boardRow', 'seats', 'handPanel', 'heroHandRow', 'handHint', 'cardPicker',
     'pickerTarget', 'pickerGrid', 'timeline', 'actorLine', 'statGrid',
     'actionButtons', 'sizeButtons', 'analyzeBtn', 'blockers', 'result', 'limits',
+    /* LIVE UI V2：右栏「本手最近动作」（`renderRecentActions()` 用 `$()` 取） */
+    'recentActions',
+    /* LIVE UI V2：顶栏设置菜单（用 `getElementById` 取，见 harness 里的说明） */
+    'moreBtn', 'moreMenu',
     'debugSeats', 'debugMath', 'debugInput', 'debugFingerprint', 'debugDecision',
     'overlay', 'modal', 'toast',
   ];

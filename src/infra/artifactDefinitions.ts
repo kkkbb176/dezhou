@@ -1122,9 +1122,53 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」',
   },
   {
+    path: 'test/liveUiV2.test.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      'LIVE UI V2 的**界面与交互回归锁**变化 → ' +
+      '「空座位只显示加号且仍可点开真实座位菜单」「最近动作最多 5 条并如实说明前面还有几条」' +
+      '「🔴 服务端的建议绝不能被当成 Hero 的实际动作写进牌局」「切到录入历史必须收起旧建议」' +
+      '「主要动作按钮 ≥ 42px / 座位卡片 92×48 / 顶栏 44px 与右栏 380px」' +
+      '「🔴 body 锁死纵向滚动」「🔴 不用大面积绿色毡面与任何渐变」「蓝色只给 Hero 与当前行动者」' +
+      '「右栏顺序必须是行动者→动作→建议→最近动作」「table.css 里 V1 的 11 段覆盖块必须消失」' +
+      '「index.html 必须在其后加载 live-ui.css」「代码里不得再用 insertBefore」' +
+      '「重叠请求结束后控件必须复原」这些保证发生变化；' +
+      '删掉任何一条断言都等于放弃对应的界面纪律',
+  },
+  {
+    path: 'reports/LIVE_UI_V2_GIT_AND_MERGE.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'LIVE UI V2 的**分支状态与双电脑合并注意事项**变化 → ' +
+      '「哪些文件必然冲突、哪些只是追加、合并后必须复验哪几条命令、' +
+      '出现某类症状时先查哪一行代码」的书面基准发生变化；' +
+      '它同时记录了本轮修复的三个产品缺陷在合并后可能被回退掉的**具体代码位置**',
+  },
+  {
+    path: 'reports/LIVE_UI_V2_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'LIVE UI V2 交付报告变化 → 「界面到底长什么样、多少像素、点几下、多快、' +
+      '以及本轮从真实浏览器里抓出了哪三个产品缺陷」的书面基准发生变化；' +
+      '它同时记录了三处**由截图而非测试发现**的缺陷（选牌 500 / 自洽检查误判 / 控件永久禁用）' +
+      '与它们的回归锁位置，改动它等于改变对「这一轮究竟改了什么」的判断',
+  },
+  {
     path: 'src/app/web/table.css',
     category: ManifestCategory.DECISION,
     impact: '牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）',
+  },
+  {
+    path: 'src/app/web/live-ui.css',
+    category: ManifestCategory.DECISION,
+    impact:
+      'LIVE UI V2 布局与外观的唯一来源（顶栏 44px / 左椭圆牌桌 / 右 380px 操作台）变化 → ' +
+      '**实战录入时的可见信息与可点击区域发生变化**；' +
+      '🔴 它同时承担三条界面纪律的视觉实现：' +
+      '(1) **不用大面积绿色毡面**、蓝色只给 Hero 与当前行动者；' +
+      '(2) 主操作按钮 ≥ 42px、座位卡片 ≥ 90×48px（不得为塞进一屏而缩小到难以点击）；' +
+      '(3) 1366×768 下正常录入一手牌**不出现纵向滚动**；' +
+      '改这里等于改变「使用者一眼能看到什么」，而看不清当前行动者与合法动作会直接导致录入错误',
   },
   {
     path: 'test/interactiveTable.test.ts',

@@ -56,8 +56,16 @@ async function clearVillains(harness: TableJsHarness): Promise<void> {
 
 /** 通过座位菜单加入一名玩家（真实按钮，不是直接发 op） */
 function addOneViaSeatMenu(harness: TableJsHarness): void {
-  const seatNode = harness.node('seats').children.find(
-    (n) => deepText(n).includes('+ 加入玩家'),
+  /*
+   * 🔴 LIVE UI V2：空座位不再写「+ 加入玩家」四行字，**只画一个 `＋`**
+   * （用户指令：「未入座座位只显示简洁的加号，不再显示多行提示文字」）。
+   *
+   * 这里改成按 **`.empty` class** 找座位，而不是按文案找 ——
+   * 这样以后再改文案也不会把测试改坏，而 `.empty` 是渲染逻辑的真实契约
+   * （`renderSeats()` 里 `if (!seat.playerId) classes.push('empty')`）。
+   */
+  const seatNode = harness.node('seats').children.find((n) =>
+    String(n.className).split(/\s+/).includes('empty'),
   );
   assert.ok(seatNode !== undefined, '必须有一个空座位可点');
   seatNode!.onclick!();

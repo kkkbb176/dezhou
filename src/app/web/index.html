@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>德州扑克 · 牌桌快速录入（内部 Alpha）</title>
     <link rel="stylesheet" href="/table.css" />
+    <!--
+      LIVE UI V2：布局与视觉层。
+
+      为什么是**第二个**样式表而不是继续往 `table.css` 末尾追加：
+      V1 在 `table.css` 929–1210 行累积了 11 段「LIVE UI V1 ①…⑪」覆盖块，
+      它们互相覆盖、过期、且无法判断哪条生效。V2 把那 11 段**删掉**，
+      把真正的 V2 布局集中在这一个文件里，`table.css` 只保留基础组件样式
+      （按钮、面板、徽章、牌面、弹层、时间线…）。
+
+      加载顺序是刻意的：`table.css` 先（基础），`live-ui.css` 后（布局与覆盖）。
+    -->
+    <link rel="stylesheet" href="/live-ui.css" />
   </head>
   <body>
     <!--
@@ -18,51 +30,100 @@
 
       「轮到谁」「谁能做什么」「底池多少」「街道推进到哪」全部来自后端。
       这样「前端认为轮到 UTG、后端认为是 CO」这类分歧在结构上不可能发生。
+
+      ── LIVE UI V2 布局 ──────────────────────────────────────────────
+      单行顶栏（44px） / 左侧椭圆牌桌 + 中央底池 + 左下 Hero 手牌 / 右侧 380px 操作台。
+      正常录入一手牌**不允许出现纵向滚动**：`body` 高度锁死，溢出交给牌桌与操作台内部。
     -->
 
+    <!-- ═══ 顶栏：单行 44px。只放「一局中会改」的东西 ═══ -->
     <div id="topbar">
-      <div class="group">
-        <span class="label">桌型</span>
+      <div class="tb-group">
+        <span class="tb-label">桌型</span>
         <span id="tableSizeButtons" class="position-buttons"></span>
       </div>
-      <div class="group">
-        <span class="label">Hero</span>
+      <div class="tb-group">
+        <span class="tb-label">Hero</span>
         <span id="heroPositionButtons" class="position-buttons"></span>
       </div>
-      <div class="group">
-        <span class="label">环境</span>
+      <div class="tb-group">
+        <span class="tb-label">盲注</span>
         <select id="environmentSelect"></select>
       </div>
-      <div class="group">
-        <span class="label">模式</span>
-        <!--
-          AUTO ANALYZE 的唯一模式开关。
 
-          - **当前决策**：正常打牌。轮到 Hero 且信息齐备 → 自动分析，不用点按钮。
-          - **录入历史**：补录过去已经发生的动作。**永不自动分析**，
-            已显示的建议会先被收起来（否则一条过期的建议会误导正在补录的人）。
-
-          默认「当前决策」，且 `新牌桌 / 下一手` 都会重置回它。
-        -->
-        <span id="modeButtons" class="position-buttons"></span>
-        <span id="autoAnalyzeBadge" class="badge">自动分析：开启</span>
-      </div>
-      <div class="group">
+      <!-- 下一手 / 撤销：一手牌内反复使用，必须一次可达 -->
+      <div class="tb-group tb-actions">
         <button id="nextHandBtn" class="primary">下一手</button>
-        <button id="resetHandBtn">重置本手</button>
         <button id="undoBtn">撤销</button>
-        <button id="newTableBtn" class="danger">新牌桌</button>
-        <button id="fillSeatsBtn">一键加入玩家</button>
-        <button id="clearVillainsBtn">清空其他玩家</button>
       </div>
-      <div class="group" style="margin-left: auto">
-        <button id="gotoGtoBtn">GTO 范围</button>
-        <span id="saveHint" class="hint"></span>
+
+      <div class="spacer"></div>
+      <span id="saveHint" class="hint"></span>
+
+      <!--
+        设置菜单：低频操作收进来（新牌桌 / 重置本手 / 玩家管理 / GTO / 说明 / 调试）。
+        这些按钮的 **id 与文字都没变**，只是外面多了一层可折叠容器，
+        因此 table.js 里所有 `$('...')` 与测试里的 `node('...')` / 按文字查找都不受影响。
+      -->
+      <div class="more">
+        <button id="moreBtn" class="more-btn" title="设置与玩家管理">设置 ▾</button>
+        <div id="moreMenu" class="more-menu">
+          <div class="mm-title">牌桌</div>
+          <button id="resetHandBtn">重置本手</button>
+          <button id="newTableBtn" class="danger">新牌桌</button>
+          <div class="mm-title">玩家</div>
+          <button id="fillSeatsBtn">一键加入玩家</button>
+          <button id="clearVillainsBtn">清空其他玩家</button>
+          <div class="mm-title">模式</div>
+          <!--
+            AUTO ANALYZE 的唯一模式开关。
+
+            - **当前决策**：正常打牌。轮到 Hero 且信息齐备 → 自动分析，不用点按钮。
+            - **录入历史**：补录过去已经发生的动作。**永不自动分析**，
+              已显示的建议会先被收起来（否则一条过期的建议会误导正在补录的人）。
+
+            默认「当前决策」，且 `新牌桌 / 下一手` 都会重置回它。
+          -->
+          <span id="modeButtons" class="position-buttons"></span>
+          <span id="autoAnalyzeBadge" class="badge">自动分析：开启</span>
+          <div class="mm-title">其他</div>
+          <button id="gotoGtoBtn">GTO 范围</button>
+          <details class="mm-details">
+            <summary>系统说明</summary>
+            <div class="hint" id="limits"></div>
+          </details>
+          <details class="mm-details">
+            <summary>调试数据</summary>
+            <div class="mm-debug">
+              <details class="debug">
+                <summary>当前行动者 / 逻辑位置 / 视觉位置 / playerId 绑定</summary>
+                <pre id="debugSeats">—</pre>
+              </details>
+              <details class="debug">
+                <summary>底池 / 筹码 / 街道</summary>
+                <pre id="debugMath">—</pre>
+              </details>
+              <details class="debug">
+                <summary>实际提交的 ManualHandInput（送进 Alpha Pipeline 的就是它）</summary>
+                <pre id="debugInput">—</pre>
+              </details>
+              <details class="debug">
+                <summary>后端重放出的状态指纹</summary>
+                <pre id="debugFingerprint">—</pre>
+              </details>
+              <details class="debug">
+                <summary>引擎候选 / 动态 Shadow / 版本</summary>
+                <pre id="debugDecision">—</pre>
+              </details>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
 
+    <!-- ═══ 主体：左（牌桌）1fr / 右（操作台）380px ═══ -->
     <div id="main">
-      <div>
+      <div id="left">
         <div id="notices"></div>
 
         <!--
@@ -73,94 +134,98 @@
         -->
         <div id="handSize" class="banner info">—</div>
 
-        <div class="panel" style="padding: 0; background: transparent; border: none">
-          <div id="tableWrap">
-            <div id="tableCenter">
-              <div id="potLine">底池 —</div>
-              <div id="streetLine">—</div>
-              <div id="boardRow"></div>
-            </div>
-            <div id="seats"></div>
+        <div id="tableWrap">
+          <div id="tableCenter">
+            <div id="potLine">底池 —</div>
+            <div id="streetLine">—</div>
+            <div id="boardRow"></div>
           </div>
+          <!--
+            左下角的 Hero 手牌。**可点**：点它就把牌面选择器切到「Hero 手牌」目标，
+            比「先点上方目标行、再点牌」少一次点击，而手牌就在视线里。
+          -->
+          <div id="heroHandInline">
+            <div class="hh-label">我的手牌</div>
+            <div id="heroHandRow"></div>
+          </div>
+          <div id="seats"></div>
         </div>
 
-        <div class="panel" id="handPanel" style="margin-top: 12px">
-          <div>
-            <h2>我的手牌</h2>
-            <div id="heroHandRow"></div>
-            <div class="hint" id="handHint" style="margin-top: 6px">点下方牌面选牌</div>
-          </div>
+        <!--
+          牌面选择器：默认收起（只在选牌时才需要），避免常态占用纵向空间。
+          🔴 折叠容器**直接写在 HTML 里**，不再由 JS 用 `insertBefore` 现场包裹 ——
+             V1 那版 JS 包裹在假 DOM（没有 insertBefore）里抛错，
+             而且一旦抛错就整条 `boot()` 挂掉。静态 HTML 结构不可能出这类问题。
+        -->
+        <details class="panel panel-flat" id="handPanel">
+          <summary class="panel-summary">牌面选择器<span id="handHint" class="mm-count"></span></summary>
           <div id="cardPicker">
-            <h2>牌面（点一次即可）</h2>
-            <div id="pickerTarget" class="hint" style="margin-bottom: 6px"></div>
+            <div id="pickerTarget" class="hint"></div>
             <div id="pickerGrid"></div>
           </div>
-        </div>
+        </details>
 
-        <div class="panel" style="margin-top: 12px">
-          <h2>行动时间线</h2>
-          <div id="timeline"></div>
-        </div>
+        <!-- 行动时间线：默认收起，需要复盘时再展开 -->
+        <details class="panel panel-flat" id="timelinePanel">
+          <summary class="panel-summary">行动时间线</summary>
+          <div id="timelineFold"></div>
+        </details>
       </div>
 
-      <div>
-        <div class="panel">
-          <h2>当前行动</h2>
+      <!-- ═══ 右侧操作台：宽度固定 380px，按钮尺寸不随文字变化 ═══ -->
+      <div id="rail">
+        <!-- 第一层：现在轮到谁（后端算好的，前端不猜） -->
+        <div id="actorBlock" class="rblock">
           <div id="actorLine">—</div>
           <!--
             自动分析状态条。**必须始终可见**（规范：「禁止用户猜测到底有没有开始分析」）。
             文案由后端算好的 `preview.decision.state` 决定，前端不做判断。
           -->
           <div id="autoAnalyzeLine" class="autoLine">—</div>
-          <div class="statGrid" id="statGrid"></div>
+        </div>
+
+        <!-- 第二层：动作按钮（主要操作区） -->
+        <div class="rblock">
+          <div id="statGrid" class="statGrid"></div>
           <div id="actionButtons"></div>
+          <div id="quickSizes"></div>
           <div id="sizeButtons"></div>
           <!--
-            ⚠️ 正常流程**不需要**点这个按钮 —— 轮到 Hero 时会自动分析。
-            它只用于：手动重试 / 调试 / 用户主动刷新。
+            自定义金额入口。仅在**后端给出尺寸网格**（即下注 / 加注是合法动作）时显示。
 
-            🔴 LIVE UI V1：把它与「尺寸提示」并排放进 `.actionMeta`，
-            而不是各占一行 —— 实测两行合计约 52px，并排后只占约 30px。
-            `#analyzeBtn` 的 id 与事件绑定**没有变化**，只是外层多了一个 flex 容器，
-            因此 table.js 里所有 `$('analyzeBtn')` 的取用保持原样。
+            🔴 合法性**完全由后端裁决**：
+            - `min` / `max` / `placeholder` 全部来自后端已算好的
+              `minRaiseToBB` / `allInToBB` / 尺寸网格，前端不推导任何边界；
+            - 前端不判断「这个数够不够最小加注」，直接把 `amountChips` 发出去，
+              非法就由引擎返回 `ILLEGAL_ACTION`，`sendOp` 会把它弹成红条提示。
           -->
+          <div id="customAmount" hidden>
+            <span class="ca-label">自定义</span>
+            <input id="customAmountInput" type="number" inputmode="decimal" />
+            <button id="customAmountSend">确定</button>
+          </div>
           <div class="actionMeta">
             <button id="analyzeBtn" class="primary" disabled>重新分析</button>
           </div>
           <div id="blockers" class="blocked"></div>
         </div>
 
-        <div class="panel" style="margin-top: 12px">
-          <h2>建议</h2>
+        <!-- 第三层：建议（Hero 建议）——与「实际录入的动作」严格分开 -->
+        <div class="rblock rblock-grow">
+          <div class="rblock-cap">
+            建议（Hero 视角）
+            <span class="cap-note">录入的动作记在左侧，不写回这里</span>
+          </div>
           <div id="result" class="hint">轮到 Hero 时会自动分析。</div>
         </div>
 
-        <div class="panel" style="margin-top: 12px">
-          <h2>说明</h2>
-          <div class="hint" id="limits"></div>
-        </div>
-
-        <div class="panel" style="margin-top: 12px">
-          <h2>调试</h2>
-          <details class="debug">
-            <summary>当前行动者 / 逻辑位置 / 视觉位置 / playerId 绑定</summary>
-            <pre id="debugSeats">—</pre>
-          </details>
-          <details class="debug">
-            <summary>底池 / 筹码 / 街道</summary>
-            <pre id="debugMath">—</pre>
-          </details>
-          <details class="debug">
-            <summary>实际提交的 ManualHandInput（送进 Alpha Pipeline 的就是它）</summary>
-            <pre id="debugInput">—</pre>
-          </details>
-          <details class="debug">
-            <summary>后端重放出的状态指纹</summary>
-            <pre id="debugFingerprint">—</pre>
-          </details>
-          <details class="debug">
-            <summary>引擎候选 / 动态 Shadow / 版本</summary>
-            <pre id="debugDecision">—</pre>
+        <!-- 第四层：本手最近动作（取代整块时间线，只留最近几行） -->
+        <div class="rblock">
+          <div class="rblock-cap">本手最近动作</div>
+          <div id="recentActions"></div>
+          <details class="liveFold">
+            <summary>完整时间线</summary>
+            <div class="liveFold-body" id="timeline"></div>
           </details>
         </div>
       </div>
