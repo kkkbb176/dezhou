@@ -304,19 +304,20 @@ npm run verify
 | `origin/main` | `7dffffc` |
 | 另一个 worktree | `D:\德州-worktrees\opportunity-model-v1` @ `a91967d` |
 
-### 本轮的三个阶段提交（都在 `dev-computer-a` 上）
+### 本轮的四个提交（都在 `dev-computer-a` 上）
 
 | 提交 | 内容 |
 |---|---|
 | `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
 | `cb87df9` | `feat(ui)`：LIVE UI V2 —— 椭圆牌桌 + 右侧 380px 操作台 + 44px 单行顶栏 |
 | `a950861` | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项 |
+| `ab13edf` | `docs(ui)`：把最终的 Git 状态（已推送并核实）写进两份报告 |
 
 ### 推送与核实（`git ls-remote` 实测）
 
 ```text
-本地 HEAD                    : a950861ca3744c9c7fcd8a71905add678123ed53
-refs/heads/dev-computer-a    : a950861ca3744c9c7fcd8a71905add678123ed53   ✔ 一致
+本地 HEAD                    : ab13edf1476a75b0d69e972a5f2980a82f81ab4b
+refs/heads/dev-computer-a    : ab13edf1476a75b0d69e972a5f2980a82f81ab4b   ✔ 一致
 refs/heads/main              : 7dffffc965116c0a688d3357244624153def6a52   ✔ 未触碰
 ```
 

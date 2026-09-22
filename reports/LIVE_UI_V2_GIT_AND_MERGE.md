@@ -10,8 +10,8 @@
 |---|---|
 | 起始分支 | `dev-computer-a` |
 | 起始 HEAD | `c65836b`（LIVE UI V1 交付报告） |
-| **推送后 HEAD** | **`a950861`** |
-| `origin/dev-computer-a` | **`a950861`（已推送并核实一致）** |
+| **推送后 HEAD** | **`ab13edf`** |
+| `origin/dev-computer-a` | **`ab13edf`（已推送并核实一致）** |
 | `origin/main` | `7dffffc`（**本轮未触碰**，本地与远程都是它） |
 | 另一个 worktree | `D:\德州-worktrees\opportunity-model-v1` @ `a91967d`（**本轮未触碰**） |
 
@@ -21,7 +21,8 @@
 |---|---|
 | `d79369b` | `fix(table)`：三个由真实浏览器验收抓出的产品缺陷 + 回归锁 |
 | `cb87df9` | `feat(ui)`：LIVE UI V2 布局与交互 |
-| `a950861` | `docs(ui)`：交付报告 + 本文件 |
+| `a950861` | `docs(ui)`：交付报告 + 分支状态与双电脑合并注意事项 |
+| `ab13edf` | `docs(ui)`：把最终的 Git 状态写进两份报告 |
 
 > ⚠️ **GitHub 连通性**：本次推送前 **6 次失败**
 >（`Recv failure: Connection was reset` / `Failed to connect to github.com:443
@@ -35,7 +36,7 @@
 - ✅ 未强推、未硬重置、未 `git clean`；
 - ✅ 每完成一个可验证阶段独立提交（3 个提交，每个都可单独回退）；
 - ✅ 只上传了 `dev-computer-a`，并用 `git ls-remote` 核实远程 SHA 与本地一致
-  （`a950861ca3744c9c7fcd8a71905add678123ed53`）。
+  （`ab13edf1476a75b0d69e972a5f2980a82f81ab4b`）。
 
 ---
 
