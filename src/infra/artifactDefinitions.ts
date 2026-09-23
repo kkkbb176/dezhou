@@ -1155,6 +1155,26 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '与它们的回归锁位置，改动它等于改变对「这一轮究竟改了什么」的判断',
   },
   {
+    path: 'reports/LIVE_UI_V3_REPORT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      'LIVE UI V3 交付报告变化 → 「V3 与 V2 在布局、视觉规范、操作次数上到底差在哪里」' +
+      '的书面基准发生变化；它记录了 9 张真实浏览器截图对应的九种状态、' +
+      '「不再绘制牌桌」这个结构性决定的实测数据（顶栏 42 / 右栏 372 / 座位 92×46 / 无纵向滚动 / 右栏无滚动条），' +
+      '以及右栏「按比例分配 → 自然堆叠」的取舍过程与仍未修的 5 项',
+  },
+  {
+    path: 'reports/LIVE_V3_AUTO_ANALYZE_AUDIT.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '自动分析链路性能审计变化 → 「为什么自动分析慢、慢在哪一段、' +
+      '哪三条是真的缺陷、哪四种常见猜测经实测并不成立」的书面基准发生变化；' +
+      '🔴 它记录了本轮最重要的两个实测事实：**瓶颈不在 GTO 求解器而在后端自身的权益枚举**' +
+      '（`walkRunout`/`evaluateSeven`，翻牌 context 1385–1560 ms 而 decide 只有 1–2 ms），' +
+      '以及**单线程 Node 被同步计算阻塞**（慢 analyze 期间 `/api/table` 从 12 ms 涨到 2791 ms）；' +
+      '同时给出三套待确认的修复方案与各自的兼容性/回归测试计划，改动它等于改变对根因的判断',
+  },
+  {
     path: 'src/app/web/table.css',
     category: ManifestCategory.DECISION,
     impact: '牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）',
@@ -1163,12 +1183,15 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     path: 'src/app/web/live-ui.css',
     category: ManifestCategory.DECISION,
     impact:
-      'LIVE UI V2 布局与外观的唯一来源（顶栏 44px / 左椭圆牌桌 / 右 380px 操作台）变化 → ' +
+      'LIVE UI V3 布局与视觉规范的**唯一来源**（顶栏 42px / 座位 5×3 网格 / 右 372px 操作台 / ' +
+      '9 个语义色令牌 / 4 档间距）变化 → ' +
       '**实战录入时的可见信息与可点击区域发生变化**；' +
-      '🔴 它同时承担三条界面纪律的视觉实现：' +
-      '(1) **不用大面积绿色毡面**、蓝色只给 Hero 与当前行动者；' +
-      '(2) 主操作按钮 ≥ 42px、座位卡片 ≥ 90×48px（不得为塞进一屏而缩小到难以点击）；' +
-      '(3) 1366×768 下正常录入一手牌**不出现纵向滚动**；' +
+      '🔴 它同时承担四条界面纪律的视觉实现：' +
+      '(1) **不绘制拟物椭圆牌桌**（`#tableWrap` 的背景/边线/圆角/阴影全部归零）、不用大面积绿色毡面、' +
+      '蓝色只给 Hero 与当前行动者；' +
+      '(2) 主操作按钮 42–46px、座位 Pill 88–105×42–48（不得为塞进一屏而缩小到难以点击）；' +
+      '(3) 1366×768 下正常录入一手牌**不出现纵向滚动**，右栏四段自然堆叠不出现滚动条；' +
+      '(4) 在途请求期间用 `body[data-busy]` 把「忙」画出来（不得用动画掩盖耗时）；' +
       '改这里等于改变「使用者一眼能看到什么」，而看不清当前行动者与合法动作会直接导致录入错误',
   },
   {
