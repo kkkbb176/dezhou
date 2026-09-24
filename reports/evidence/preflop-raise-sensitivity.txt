@@ -10,52 +10,52 @@
   reRaiseValueFloor       = 0.25
 
 --- 1. 默认参数下的起点输出（生产管线 `analyzeManualHand`） ---
-  AA    建议 RAISE     100BB｜候选 EV(raise-to) 4BB:438.0 4.5BB:447.8 6BB:451.4 7.5BB:463.1 9BB:476.0 12BB:503.3 100BB:955.2
-  AKs   建议 RAISE       6BB｜候选 EV(raise-to) 4BB:339.2 4.5BB:358.0 6BB:369.5 7.5BB:367.3 9BB:366.4 12BB:366.5 100BB:267.7
-  QQ    建议 RAISE     100BB｜候选 EV(raise-to) 4BB:382.0 4.5BB:393.8 6BB:408.1 7.5BB:418.9 9BB:424.9 12BB:435.1 100BB:602.3
-  76s   建议 RAISE     7.5BB｜候选 EV(raise-to) 4BB:220.5 4.5BB:260.9 6BB:312.1 7.5BB:316.2 9BB:308.0 12BB:287.7 100BB:-133.8
-  Q9o   建议 RAISE     7.5BB｜候选 EV(raise-to) 4BB:229.2 4.5BB:261.9 6BB:318.1 7.5BB:329.5 9BB:324.8 12BB:312.4 100BB:0.7
+  AA    建议 RAISE     100BB｜候选 EV(raise-to) 4BB:415.3 4.5BB:438.1 6BB:457.9 7.5BB:462.2 9BB:470.4 12BB:498.1 100BB:952.5
+  AKs   建议 RAISE     7.5BB｜候选 EV(raise-to) 4BB:292.1 4.5BB:309.6 6BB:350.7 7.5BB:352.1 9BB:349.6 12BB:349.3 100BB:260.1
+  QQ    建议 RAISE     100BB｜候选 EV(raise-to) 4BB:349.3 4.5BB:365.4 6BB:392.7 7.5BB:404.4 9BB:415.5 12BB:429.7 100BB:597.4
+  76s   建议 RAISE       9BB｜候选 EV(raise-to) 4BB:124.9 4.5BB:151.5 6BB:239.7 7.5BB:274.2 9BB:285.5 12BB:271.4 100BB:-144.4
+  Q9o   建议 RAISE       9BB｜候选 EV(raise-to) 4BB:144.5 4.5BB:162.5 6BB:237.2 7.5BB:281.9 9BB:302.1 12BB:294.3 100BB:-8.7
 
 --- 2. 权益采样误差：换随机种子（同一份输入、同一套参数） ---
     说明：每个尺寸的条件权益是 6,000 次蒙特卡洛估计（与 U1 同口径）。
     若不同种子给出不同建议 ⇒ 该节点的结论落在采样噪声之内。
   AA    RAISE@100 | RAISE@100 | RAISE@100 | RAISE@100 | RAISE@100   （五个种子一致）
-  AKs   RAISE@6 | RAISE@6 | RAISE@6 | RAISE@6 | RAISE@6   （五个种子一致）
+  AKs   RAISE@7.5 | RAISE@7.5 | RAISE@6 | RAISE@7.5 | RAISE@7.5   ← ⚠️ 种子改变了建议
   QQ    RAISE@100 | RAISE@100 | RAISE@100 | RAISE@100 | RAISE@100   （五个种子一致）
-  76s   RAISE@7.5 | RAISE@7.5 | RAISE@7.5 | RAISE@7.5 | RAISE@7.5   （五个种子一致）
-  Q9o   RAISE@7.5 | RAISE@7.5 | RAISE@7.5 | RAISE@7.5 | RAISE@7.5   （五个种子一致）
+  76s   RAISE@9 | RAISE@9 | RAISE@9 | RAISE@9 | RAISE@9   （五个种子一致）
+  Q9o   RAISE@9 | RAISE@9 | RAISE@9 | RAISE@9 | RAISE@9   （五个种子一致）
 
---- 3a. 继续门槛余量 `continueMargin`（默认 0.12） ---
+--- 3a. 继续门槛余量 `continueMargin`（生产默认见上方） ---
     它决定「他跟不跟」：门槛 = 价格 + 余量。
     下表 = 每个 margin 下、每个手牌节点的**最高 EV 尺寸**（EV 单位：筹码；底池 400）。
     margin  AA                    AKs                   QQ                    76s                   Q9o                   
-    0.00    100.0BB EV 1981.7     100.0BB EV 623.5      100.0BB EV 1244.2     4.0BB EV 129.4        4.0BB EV 170.2        
-    0.06    100.0BB EV 1253.3     9.0BB EV 393.8        100.0BB EV 862.8      12.0BB EV 208.8       12.0BB EV 205.9       
-    0.09    100.0BB EV 1120.1     7.5BB EV 384.2        100.0BB EV 771.7      12.0BB EV 245.4       12.0BB EV 255.0       
-    0.12    100.0BB EV 1026.8     7.5BB EV 376.0        100.0BB EV 688.2      9.0BB EV 276.8        12.0BB EV 287.5       
-    0.18    100.0BB EV 955.2      9.0BB EV 366.4        100.0BB EV 602.3      7.5BB EV 310.7        9.0BB EV 324.8        
-    0.24    100.0BB EV 875.1      7.5BB EV 373.9        100.0BB EV 514.6      6.0BB EV 335.7        6.0BB EV 345.9        
+    0.00    100.0BB EV 1975.9     100.0BB EV 607.6      100.0BB EV 1233.2     4.0BB EV 36.9         4.5BB EV 84.5         
+    0.06    100.0BB EV 1249.2     12.0BB EV 392.7       100.0BB EV 856.2      12.0BB EV 113.9       9.0BB EV 102.9        
+    0.09    100.0BB EV 1116.6     12.0BB EV 370.1       100.0BB EV 766.2      12.0BB EV 178.0       12.0BB EV 174.2       
+    0.12    100.0BB EV 1023.6     9.0BB EV 360.7        100.0BB EV 683.0      12.0BB EV 226.3       12.0BB EV 239.0       
+    0.18    100.0BB EV 952.5      6.0BB EV 348.5        100.0BB EV 597.4      9.0BB EV 274.5        12.0BB EV 288.9       
+    0.24    100.0BB EV 872.6      7.5BB EV 354.8        100.0BB EV 509.9      7.5BB EV 306.9        7.5BB EV 320.5        
 
 --- 4. 再加注闸门 `reRaiseGate`（默认 0.44） ---
     它决定「他会不会 4Bet」（进而决定被再加注分支的权重与收益）。
     gate    AA                    AKs                   QQ                    76s                   Q9o                   
-    0.30    100.0BB EV 955.2 rr0% 6.0BB EV 368.6 rr7%   100.0BB EV 602.3 rr0% 7.5BB EV 315.6 rr7%   7.5BB EV 327.8 rr7%   
-    0.38    100.0BB EV 955.2 rr0% 6.0BB EV 368.0 rr7%   100.0BB EV 602.3 rr0% 7.5BB EV 319.5 rr7%   7.5BB EV 329.9 rr7%   
-    0.44    100.0BB EV 955.2 rr0% 6.0BB EV 369.5 rr7%   100.0BB EV 602.3 rr0% 7.5BB EV 316.2 rr6%   7.5BB EV 329.5 rr6%   
-    0.52    100.0BB EV 955.2 rr0% 6.0BB EV 365.5 rr6%   100.0BB EV 602.3 rr0% 7.5BB EV 319.8 rr6%   7.5BB EV 328.0 rr6%   
-    0.60    100.0BB EV 955.2 rr0% 6.0BB EV 369.0 rr6%   100.0BB EV 602.3 rr0% 7.5BB EV 317.8 rr6%   7.5BB EV 330.3 rr6%   
-    0.70    100.0BB EV 955.2 rr0% 6.0BB EV 366.2 rr4%   100.0BB EV 602.3 rr0% 7.5BB EV 320.6 rr5%   7.5BB EV 329.1 rr4%   
+    0.30    100.0BB EV 952.5 rr0% 7.5BB EV 350.6 rr7%   100.0BB EV 597.4 rr0% 9.0BB EV 284.5 rr7%   9.0BB EV 299.6 rr7%   
+    0.38    100.0BB EV 952.5 rr0% 7.5BB EV 349.9 rr7%   100.0BB EV 597.4 rr0% 9.0BB EV 289.5 rr7%   9.0BB EV 302.5 rr7%   
+    0.44    100.0BB EV 952.5 rr0% 7.5BB EV 352.1 rr7%   100.0BB EV 597.4 rr0% 9.0BB EV 285.5 rr6%   9.0BB EV 302.1 rr6%   
+    0.52    100.0BB EV 952.5 rr0% 6.0BB EV 347.6 rr6%   100.0BB EV 597.4 rr0% 9.0BB EV 290.2 rr6%   9.0BB EV 300.4 rr6%   
+    0.60    100.0BB EV 952.5 rr0% 7.5BB EV 352.4 rr6%   100.0BB EV 597.4 rr0% 9.0BB EV 287.9 rr6%   9.0BB EV 303.7 rr6%   
+    0.70    100.0BB EV 952.5 rr0% 7.5BB EV 350.0 rr4%   100.0BB EV 597.4 rr0% 9.0BB EV 291.9 rr5%   9.0BB EV 303.3 rr4%   
 
 --- 5. 开池尺寸 × 筹码深度（默认参数） ---
     开池/深度       AA                    AKs                   QQ                    76s                   Q9o                   
-    开 2BB       100.0BB EV 909.1      5.0BB EV 322.4        100.0BB EV 555.1      6.0BB EV 275.0        8.0BB EV 284.9        
-    开 2.5BB     100.0BB EV 955.2      6.0BB EV 369.5        100.0BB EV 602.3      7.5BB EV 316.2        7.5BB EV 329.5        
-    开 3BB       100.0BB EV 1001.4     6.0BB EV 414.8        100.0BB EV 649.6      8.0BB EV 356.0        8.0BB EV 368.3        
-    开 4BB       100.0BB EV 1093.8     9.0BB EV 510.8        100.0BB EV 744.1      12.0BB EV 433.4       12.0BB EV 454.9       
-    20BB 深      20.0BB EV 505.5       6.0BB EV 369.5        20.0BB EV 440.3       7.5BB EV 316.2        7.5BB EV 329.5        
-    40BB 深      40.0BB EV 609.0       6.0BB EV 369.5        40.0BB EV 469.7       7.5BB EV 316.2        7.5BB EV 329.5        
-    100BB 深     100.0BB EV 955.2      6.0BB EV 369.5        100.0BB EV 602.3      7.5BB EV 316.2        7.5BB EV 329.5        
-    200BB 深     200.0BB EV 1532.3     6.0BB EV 369.5        200.0BB EV 823.4      7.5BB EV 316.2        7.5BB EV 329.5        
+    开 2BB       100.0BB EV 907.2      6.0BB EV 310.8        100.0BB EV 551.8      8.0BB EV 256.2        8.0BB EV 271.6        
+    开 2.5BB     100.0BB EV 952.5      7.5BB EV 352.1        100.0BB EV 597.4      9.0BB EV 285.5        9.0BB EV 302.1        
+    开 3BB       100.0BB EV 997.7      12.0BB EV 391.1       100.0BB EV 643.0      12.0BB EV 311.5       12.0BB EV 334.4       
+    开 4BB       100.0BB EV 1088.2     15.0BB EV 479.3       100.0BB EV 734.2      15.0BB EV 368.8       15.0BB EV 396.2       
+    20BB 深      20.0BB EV 502.2       7.5BB EV 352.1        20.0BB EV 435.1       9.0BB EV 285.5        9.0BB EV 302.1        
+    40BB 深      40.0BB EV 606.2       7.5BB EV 352.1        40.0BB EV 464.7       9.0BB EV 285.5        9.0BB EV 302.1        
+    100BB 深     100.0BB EV 952.5      7.5BB EV 352.1        100.0BB EV 597.4      9.0BB EV 285.5        9.0BB EV 302.1        
+    200BB 深     200.0BB EV 1529.6     7.5BB EV 352.1        200.0BB EV 818.4      9.0BB EV 285.5        9.0BB EV 302.1        
 
 --- 6. 强度阶梯（可独立复算；只有序关系有意义） ---
     AA   1.0000

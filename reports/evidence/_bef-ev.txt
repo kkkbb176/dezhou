@@ -1,0 +1,10 @@
+=== CALLING_STATION pot= 350 ===
+   BET_SMALL amt= 116.67 betEV= 268.7015 deltaVsCheck= 112.1673 score= 0.6602
+   BET_MEDIUM amt= 233.33 betEV= 267.5522 deltaVsCheck= 111.0180 score= 0.6586
+   BET_LARGE amt= 350.00 betEV= 262.6698 deltaVsCheck= 106.1356 score= 0.6516
+  checkTree.kind= HEURISTIC_ONE_STREET checkEV= 156.5342
+=== VERY_TIGHT pot= 350 ===
+   BET_SMALL amt= 116.67 betEV= 268.3586 deltaVsCheck= 112.7208 score= 0.6610
+   BET_MEDIUM amt= 233.33 betEV= 268.9561 deltaVsCheck= 113.3183 score= 0.6619
+   BET_LARGE amt= 350.00 betEV= 268.7215 deltaVsCheck= 113.0836 score= 0.6615
+  checkTree.kind= HEURISTIC_ONE_STREET checkEV= 155.6378

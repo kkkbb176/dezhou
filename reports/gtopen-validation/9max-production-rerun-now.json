@@ -1,0 +1,676 @@
+{
+  "httpStatus": 200,
+  "result": {
+    "ok": true,
+    "viewModel": {
+      "actionZh": "建议：全下",
+      "sizeZh": "加注至 4000 筹码（40.0BB，本街累计；本注即全下）｜本次再投入 3900 筹码（39.0BB）",
+      "confidenceZh": "中低",
+      "classificationZh": "边缘决策",
+      "reasonsZh": [
+        "整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.55 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）",
+        "加注： 40.0BB。**翻前加注响应模型 EV** = 1405.52 筹码 vs 跟注 311.55 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 53.1% / 跟 46.9% / 再加注 0.0%（价格 0.4658，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现",
+        "当前底池赔率需要 27.3% 权益"
+      ],
+      "allReasonsZh": [
+        "整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.55 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）",
+        "加注： 40.0BB。**翻前加注响应模型 EV** = 1405.52 筹码 vs 跟注 311.55 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 53.1% / 跟 46.9% / 再加注 0.0%（价格 0.4658，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现",
+        "当前底池赔率需要 27.3% 权益",
+        "对当前对手范围（整体 / 到达范围）估计权益约 83.9%",
+        "跟注 在**可比较 EV 的动作**里明显占优（EV 差 311.55 筹码，相当于底池的 77.9% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）",
+        "牌局环境「低级别线上」提供了 5 条方向参考（无幅度，仅方向）"
+      ],
+      "warningsZh": [
+        "抽水模型：未计入（本项目尚无 Rake Engine，EV 为未计抽水口径）"
+      ],
+      "actionable": true,
+      "debug": {
+        "math": [
+          {
+            "label": "底池",
+            "value": "400 筹码（4.00BB）"
+          },
+          {
+            "label": "可争夺量（跟注后）",
+            "value": "550 筹码（5.50BB）　← 门槛与 EV 用的是这个数"
+          },
+          {
+            "label": "跟注需要",
+            "value": "150 筹码（1.50BB）"
+          },
+          {
+            "label": "本街已投入",
+            "value": "100 筹码（1.00BB）"
+          },
+          {
+            "label": "本次再投入",
+            "value": "3900 筹码（39.0BB）　← 真正要从筹码里再拿出的部分"
+          },
+          {
+            "label": "加注后的本街总额",
+            "value": "4000 筹码（40.0BB）　← 含本街已投入；**本注即全下**"
+          },
+          {
+            "label": "我的剩余筹码",
+            "value": "3900 筹码（39.0BB）"
+          },
+          {
+            "label": "有效筹码",
+            "value": "3750 筹码（37.5BB）"
+          },
+          {
+            "label": "SPR",
+            "value": "9.38"
+          },
+          {
+            "label": "底池赔率",
+            "value": "27.3%"
+          },
+          {
+            "label": "所需权益",
+            "value": "27.3%"
+          },
+          {
+            "label": "所需权益口径",
+            "value": "单层门槛（权益 ≥ 所需权益 ⇔ 跟注不亏）"
+          },
+          {
+            "label": "对手下注范围权益",
+            "value": "—（本节点没有可用的下注范围 ⇒ 跟注 EV 与加注门槛回落用整体范围权益）"
+          },
+          {
+            "label": "整体范围权益（仅参考）",
+            "value": "83.92%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）"
+          },
+          {
+            "label": "权益来源",
+            "value": "蒙特卡洛（20,000 次，±0.5%）"
+          },
+          {
+            "label": "跟注 EV（节点增量口径）",
+            "value": "311.55 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算"
+          },
+          {
+            "label": "当前牌力",
+            "value": "起手牌：大对子（翻牌前评估，非成手牌力）"
+          },
+          {
+            "label": "抽水模型",
+            "value": "未计入"
+          }
+        ],
+        "legalActionsZh": [
+          "弃牌",
+          "跟注",
+          "加注",
+          "全下"
+        ],
+        "candidates": [
+          {
+            "actionZh": "弃牌",
+            "sizeZh": "—",
+            "evZh": "0.00 筹码",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "跟注",
+            "sizeZh": "1.50BB",
+            "evZh": "311.55 筹码",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "4.00BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "4.50BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "6.00BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "7.50BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "9.00BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "12.0BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          },
+          {
+            "actionZh": "加注",
+            "sizeZh": "40.0BB",
+            "evZh": "—（依赖弃牌率，本项目无可信估计）",
+            "feasibleZh": "数学可行"
+          }
+        ],
+        "baseDecisionZh": "加注",
+        "adjustedDecisionZh": "加注",
+        "decisionBasis": [
+          {
+            "label": "决策依据",
+            "value": "SUPPORTED_ACTION_PRIORITY"
+          },
+          {
+            "label": "依据说明",
+            "value": "来源 = SUPPORTED_ACTION_PRIORITY —— RAISE：MODEL_EV EV 1405.52 筹码，边际 CLEAR_CALL_OVER_FOLD（清晰）；RAISE vs CALL：各自模型的 EV 差 1093.98 筹码，容差带 ±27.50 ⇒ 跨动作比较**已做**（不是只和弃牌比过）"
+          }
+        ],
+        "consistency": [
+          {
+            "label": "一致性检查",
+            "value": "通过（动作 / 指标 / 解释属于同一体系）"
+          }
+        ],
+        "shadow": [
+          {
+            "label": "动作发生变化",
+            "value": "否"
+          },
+          {
+            "label": "尺寸发生变化",
+            "value": "否"
+          },
+          {
+            "label": "置信度发生变化",
+            "value": "否"
+          },
+          {
+            "label": "动态层置信度",
+            "value": "0.00"
+          },
+          {
+            "label": "幅度来源",
+            "value": "HEURISTIC"
+          },
+          {
+            "label": "动态是否被允许翻转动作",
+            "value": "否"
+          },
+          {
+            "label": "说明",
+            "value": "动态层状态 UNKNOWN（置信度 0.00），不构成调整依据"
+          }
+        ],
+        "postflop": [
+          {
+            "label": "翻后决策链",
+            "value": "—（翻牌前不适用）"
+          }
+        ],
+        "mathDominance": [
+          {
+            "label": "是否存在数学明显占优动作",
+            "value": "是"
+          },
+          {
+            "label": "EV 差",
+            "value": "311.546 筹码"
+          },
+          {
+            "label": "EV 差占底池",
+            "value": "77.89%"
+          },
+          {
+            "label": "阈值来源",
+            "value": "HEURISTIC_THRESHOLD"
+          },
+          {
+            "label": "阈值",
+            "value": "15.0%"
+          },
+          {
+            "label": "说明",
+            "value": "跟注 在**可比较 EV 的动作**里明显占优（EV 差 311.55 筹码，相当于底池的 77.9% ≥ 阈值 15%）—— 低置信度的动态观察不允许翻转它（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）"
+          }
+        ],
+        "range": [
+          {
+            "label": "针对对手",
+            "value": "枪口位"
+          },
+          {
+            "label": "来源类型",
+            "value": "EMPIRICAL"
+          },
+          {
+            "label": "来源可信度",
+            "value": "0.55"
+          },
+          {
+            "label": "正权重组合数",
+            "value": "1225 / 1326（92.4%）——**仅表示非零**；求解器范围通常覆盖全部组合，此数不反映范围宽窄"
+          },
+          {
+            "label": "有效组合数 1/Σp²",
+            "value": "99.2（等效宽度；占正权重组合的 8.1%）"
+          },
+          {
+            "label": "熵",
+            "value": "6.81 bit"
+          },
+          {
+            "label": "是否塌缩",
+            "value": "否"
+          },
+          {
+            "label": "来源说明",
+            "value": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.022315679063904595（目标 0.05）。✅ **已通过准入：BR gap 0.022316 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。"
+          },
+          {
+            "label": "更新轨迹",
+            "value": "（无更新，直接使用先验）"
+          }
+        ],
+        "player": [
+          {
+            "label": "标签",
+            "value": "UNKNOWN"
+          },
+          {
+            "label": "实测手数",
+            "value": "0"
+          },
+          {
+            "label": "可信度",
+            "value": "0.50"
+          },
+          {
+            "label": "是否中性化（样本不足）",
+            "value": "是"
+          },
+          {
+            "label": "说明",
+            "value": "没有该玩家的实测数据，也没有手选画像 —— 玩家层不提供任何调整（视作信息缺失，不视作数据不可信）"
+          }
+        ],
+        "profileRange": [
+          {
+            "label": "画像 → 范围",
+            "value": "—（本局没有画像 / 近期倾向）"
+          }
+        ],
+        "decisionMargin": [
+          {
+            "label": "决策边际",
+            "value": "明显优于弃牌（**仅**已证明 CALL > FOLD，未比较加注）"
+          },
+          {
+            "label": "边际作用域",
+            "value": "CROSS_ACTION（已有其他动作带着自己的量化 EV 参与同一零点比较）"
+          },
+          {
+            "label": "边际判据",
+            "value": "真实跟注 EV 311.55 筹码 vs 工程容差带 ±27.50"
+          },
+          {
+            "label": "模型置信度（另一个量）",
+            "value": "—（翻前不适用）"
+          },
+          {
+            "label": "边际说明",
+            "value": "真实跟注 EV = 311.55 筹码 vs 工程容差带 ±27.50 （= 0.05 × 可争夺量 550.00）⇒ CLEAR_CALL_OVER_FOLD。作用域 CROSS_ACTION：另有 1 个动作带着自己的量化 EV 参与了同一零点比较。⚠️ 容差带是**工程容差**，不是统计误差，也不自动翻转动作。"
+          }
+        ],
+        "betDecision": [
+          {
+            "label": "下注决策模型",
+            "value": "—（面对下注 / 翻前 / 拿不到对手范围）"
+          }
+        ],
+        "preflopIso": [
+          {
+            "label": "隔离加注模型",
+            "value": "—（本节点不是「面对跛入且无人加注」的翻前节点）"
+          }
+        ],
+        "preflopRaise": [
+          {
+            "label": "翻前加注模型",
+            "value": "**翻前加注事实包**（PREFLOP_RAISE_FACTS_V1 / 响应模型 PREFLOP_RAISE_RESPONSE_V1）：单挑、共 7 个合法尺寸拥有**各自**的响应概率、条件范围与 EV｜到达范围 1225 组合（solver.preflop-range.92c86ed73aa0856df8479b5c7635e1469f48f1e8）｜零点 = 弃牌 ≡ 0，单位 = 筹码｜⚠️ 被再加注分支只展开 FOLD / CALL（**未展开 Hero 的 5Bet**）"
+          },
+          {
+            "label": "模型 / 范围来源",
+            "value": "PREFLOP_RAISE_FACTS_V1 ｜ 响应模型 PREFLOP_RAISE_RESPONSE_V1 ｜ 证据等级 HEURISTIC_STRUCTURAL ｜ 资金口径契约 NODE_INCREMENTAL_CHIPS_V2"
+          },
+          {
+            "label": "位置 / 筹码（来自真实桌型与行动顺序）",
+            "value": "Hero BB vs UTG｜底池 400.00｜我跟注需 150.00｜我剩余 3900.00｜跟注后 SPR 6.82｜最小加注到 400.00｜全下到 4000.00"
+          },
+          {
+            "label": "到达范围（他的，按行动历史条件化）",
+            "value": "1225 组合｜质量 1.0000｜来源 solver.preflop-range.92c86ed73aa0856df8479b5c7635e1469f48f1e8"
+          },
+          {
+            "label": "逐尺寸 EV（零点 = 弃牌 ≡ 0，单位 = 筹码）",
+            "value": "4.0BB→444.75｜4.5BB→488.58｜6.0BB→624.22｜7.5BB→704.12｜9.0BB→701.88｜12.0BB→839.56｜40.0BB→1405.52（全下）"
+          },
+          {
+            "label": "逐尺寸响应（他弃／跟／再加注）",
+            "value": "4.0BB：弃 0.7% / 跟 65.3% / 再加 34.0%｜需权益 0.1765；4.5BB：弃 0.8% / 跟 65.2% / 再加 34.0%｜需权益 0.2105；6.0BB：弃 1.8% / 跟 64.2% / 再加 34.0%｜需权益 0.2800；7.5BB：弃 17.6% / 跟 48.3% / 再加 34.0%｜需权益 0.3226；9.0BB：弃 41.6% / 跟 24.3% / 再加 34.0%｜需权益 0.3514；12.0BB：弃 46.0% / 跟 20.0% / 再加 34.0%｜需权益 0.3878；40.0BB：弃 53.1% / 跟 46.9% / 再加 0.0%｜需权益 0.4658"
+          },
+          {
+            "label": "条件权益（每一支各一份，不许混用）",
+            "value": "4.0BB：对跟注桶 86.1%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；4.5BB：对跟注桶 86.1%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；6.0BB：对跟注桶 86.8%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；7.5BB：对跟注桶 86.1%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；9.0BB：对跟注桶 81.3%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；12.0BB：对跟注桶 79.5%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；40.0BB：对跟注桶 80.1%（MONTE_CARLO，6000 次）｜对再加注桶 —"
+          },
+          {
+            "label": "资金口径（我投入／被跟注／他补／终池／退回）",
+            "value": "4.0BB：我新增 300.00、被跟注 300.00、他补 150.00、终池 850.00、退回 0.00；4.5BB：我新增 350.00、被跟注 350.00、他补 200.00、终池 950.00、退回 0.00；6.0BB：我新增 500.00、被跟注 500.00、他补 350.00、终池 1250.00、退回 0.00；7.5BB：我新增 650.00、被跟注 650.00、他补 500.00、终池 1550.00、退回 0.00；9.0BB：我新增 800.00、被跟注 800.00、他补 650.00、终池 1850.00、退回 0.00；12.0BB：我新增 1100.00、被跟注 1100.00、他补 950.00、终池 2450.00、退回 0.00；40.0BB：我新增 3900.00、被跟注 3900.00、他补 3750.00、终池 8050.00、退回 0.00（他跟平即全下）"
+          },
+          {
+            "label": "被再加注分支（只展开 Hero 的 FOLD / CALL）",
+            "value": "4.0BB：他再加到 550.00（最小合法 550.00）⇒ Hero 弃牌 -300.00 / 跟注 469.71 ⇒ 取 **469.71**（CALL）｜我再跟需 150.00；4.5BB：他再加到 650.00（最小合法 650.00）⇒ Hero 弃牌 -350.00 / 跟注 529.66 ⇒ 取 **529.66**（CALL）｜我再跟需 200.00；6.0BB：他再加到 950.00（最小合法 950.00）⇒ Hero 弃牌 -500.00 / 跟注 709.51 ⇒ 取 **709.51**（CALL）｜我再跟需 350.00；7.5BB：他再加到 1250.00（最小合法 1250.00）⇒ Hero 弃牌 -650.00 / 跟注 889.36 ⇒ 取 **889.36**（CALL）｜我再跟需 500.00；9.0BB：他再加到 1550.00（最小合法 1550.00）⇒ Hero 弃牌 -800.00 / 跟注 1069.21 ⇒ 取 **1069.21**（CALL）｜我再跟需 650.00；12.0BB：他再加到 2150.00（最小合法 2150.00）⇒ Hero 弃牌 -1100.00 / 跟注 1428.91 ⇒ 取 **1428.91**（CALL）｜我再跟需 950.00；40.0BB：不产出再加注分支（权益不可得 ⇒ 该支按下界计）"
+          },
+          {
+            "label": "未支持（必须与上面的数字一起读）",
+            "value": "① 被再加注分支**只**比较 Hero 的 FOLD / CALL —— **Hero 的 5Bet 应对未展开**（heroFiveBetExpanded = false）；② 非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌）；③ 全下分支没有后续街 ⇒ 精确；④ 多人池 / 身后有人未行动时**不产出**本事实包（不按单挑偷偷计算）；⑤ 抽水 NOT_APPLIED（本项目无 Rake Engine）"
+          },
+          {
+            "label": "模型假设（逐条）",
+            "value": "响应概率是**结构性先验**（他的到达范围 + 起手牌强度阶梯 + 价格 + 画像倍率），**未经统计校准**；零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）；他弃牌 ⇒ 我赢下完整底池 currentPot；他跟注 ⇒ 终池 finalPot（引擎分层口径，含退回修正）；⚠️ **非全下**时 `EqVsRaiseCallRange` 是「打到摊牌、后续街不再下注」的**终止近似** —— 权益已枚举未来公共牌，但**未模拟**后续街的下注/过牌/弃牌 ⇒ 不是真实完整 EV，也不是严格下界；✅ **全下**（我全下或他跟注即全下）时没有后续街 ⇒ 该分支的摊牌权益与收益是**精确**的；被再加注分支只展开 Hero 的 FOLD / CALL；**Hero 的 5Bet 应对未展开**（`heroFiveBetExpanded = false`）；再加注尺寸由**真实行动状态**推导（最小完整加注 vs 他的全下上限），不用固定倍数；RAKE = NOT_APPLIED（本项目无 Rake Engine ⇒ 全部 EV **未计抽水**）；身后还有玩家未行动时**不产出**本事实包（不按单挑偷偷计算）"
+          }
+        ],
+        "multiwayBetDecision": [
+          {
+            "label": "多人联合树",
+            "value": "—（单挑节点，或拿不到全部对手的可达范围）"
+          }
+        ],
+        "decisionSource": [
+          {
+            "label": "动作来源（decisionSource）",
+            "value": "SUPPORTED_ACTION_PRIORITY —— 受支持动作优先（量化 EV + 清晰边际，低质量证据不得覆盖）"
+          },
+          {
+            "label": "优先级 / 是否可覆盖",
+            "value": "优先级 4｜证据类型 MODEL_EV｜可覆盖其他证据 否｜证据范围 RAISE_MODEL_EV"
+          },
+          {
+            "label": "主推荐动作",
+            "value": "RAISE（最终动作 RAISE）"
+          },
+          {
+            "label": "备选动作（不是最终动作）",
+            "value": "FOLD｜EXACT｜EV 0.00｜SUPPORTED_CANDIDATE；CALL｜PROXY_EV｜EV 311.55｜SUPPORTED_CANDIDATE"
+          },
+          {
+            "label": "证据 FOLD",
+            "value": "EXACT｜EV 0.00｜边际 MARGINAL｜启发式分 0.00｜置信度 1.00"
+          },
+          {
+            "label": "证据 CALL",
+            "value": "PROXY_EV｜EV 311.55｜边际 CLEAR_CALL_OVER_FOLD｜启发式分 0.00｜置信度 0.95"
+          },
+          {
+            "label": "证据 RAISE",
+            "value": "MODEL_EV｜EV 1405.52｜边际 CLEAR_CALL_OVER_FOLD｜启发式分 0.00｜置信度 0.70｜升级条件：⚠️ EV 已是**模型 EV**（面对加注的响应模型），但两组先验系数（强度阶梯 / 加注份额）**未经统计校准**，再加注分支按**摊牌终止近似**计入（未模拟后续街行动 ⇒ 该 EV 偏低，且**不构成**对真实牌局 EV 的严格下界）；RAKE 未实现"
+          },
+          {
+            "label": "来源说明",
+            "value": "RAISE：MODEL_EV EV 1405.52 筹码，边际 CLEAR_CALL_OVER_FOLD（清晰）；RAISE vs CALL：各自模型的 EV 差 1093.98 筹码，容差带 ±27.50 ⇒ 跨动作比较**已做**（不是只和弃牌比过）"
+          }
+        ],
+        "environment": [
+          {
+            "label": "环境",
+            "value": "低级别线上"
+          },
+          {
+            "label": "方向建议条数",
+            "value": "5"
+          },
+          {
+            "label": "方向建议",
+            "value": "RANGE_WIDTH CONTEXT_DEPENDENT（env.low-stakes-online-directional-only，可信度 0.35）；BLUFF_LIKELIHOOD DECREASE（env.low.bluff-frequency-down，可信度 0.3）；CALL_LIKELIHOOD INCREASE（env.low.calling-tendency-up，可信度 0.3）；BLUFF_LIKELIHOOD CONTEXT_DEPENDENT（priority.individual-over-environment，可信度 0.95）；RANGE_WIDTH CONTEXT_DEPENDENT（profile.nit-and-maniac-most-valuable-reads，可信度 0.3）"
+          },
+          {
+            "label": "未映射的目标",
+            "value": "env.low.multiway-value-threshold-up→MULTIWAY_VALUE_THRESHOLD"
+          },
+          {
+            "label": "街道不适用",
+            "value": "profile.preflop-type-does-not-predict-postflop(FLOP)；env.low.river-bluff-tendency-down(RIVER)；env.low.thin-value-up(RIVER)；env.low.passive-large-aggression-credibility-up(RIVER)"
+          },
+          {
+            "label": "个体数据 vs 环境先验",
+            "value": "ENVIRONMENT —— 没有该玩家的实测数据，采用环境先验（人群倾向）"
+          },
+          {
+            "label": "是否存在未验证幅度",
+            "value": "否"
+          }
+        ],
+        "dynamic": [
+          {
+            "label": "是否计算",
+            "value": "是"
+          },
+          {
+            "label": "状态",
+            "value": "UNKNOWN"
+          },
+          {
+            "label": "状态来源",
+            "value": "OBSERVED_BEHAVIOR"
+          },
+          {
+            "label": "偏离分",
+            "value": "0"
+          },
+          {
+            "label": "动态层置信度",
+            "value": "0.00"
+          },
+          {
+            "label": "Tilt 概率",
+            "value": "0.00"
+          },
+          {
+            "label": "方向调整",
+            "value": "（无）"
+          },
+          {
+            "label": "解释",
+            "value": "近期机会数不足以对任何单项指标下结论（最多的一项仅 0 次，合计 2 次分散在多项指标上）"
+          }
+        ],
+        "timing": [
+          {
+            "label": "parse",
+            "value": "0.0 ms"
+          },
+          {
+            "label": "validate",
+            "value": "0.0 ms"
+          },
+          {
+            "label": "context",
+            "value": "238.0 ms"
+          },
+          {
+            "label": "decide",
+            "value": "0.0 ms"
+          },
+          {
+            "label": "viewmodel",
+            "value": "0.0 ms"
+          },
+          {
+            "label": "total",
+            "value": "238.0 ms"
+          }
+        ],
+        "degradations": [],
+        "versions": [
+          {
+            "label": "decision",
+            "value": "1.0.7"
+          },
+          {
+            "label": "context",
+            "value": "1.0.1"
+          },
+          {
+            "label": "math",
+            "value": "1.0.1"
+          },
+          {
+            "label": "rangeSource",
+            "value": "EMPIRICAL"
+          }
+        ]
+      }
+    },
+    "decision": {
+      "action": "RAISE",
+      "sizeChips": 4000,
+      "sizeBB": 40,
+      "confidence": 0.4,
+      "band": "MEDIUM_LOW",
+      "classification": "MARGINAL",
+      "actionable": true
+    },
+    "tableDynamics": {
+      "mode": "SHADOW",
+      "status": "NOT_APPLICABLE",
+      "summaryZh": "仅牌桌路径支持桌况分析",
+      "observing": true,
+      "tableConfidence": 0,
+      "confidenceZh": "样本不足",
+      "handsObserved": 0,
+      "recordsUsed": 0,
+      "dimensions": [],
+      "relevantPlayers": [],
+      "adjustments": [],
+      "comparison": null,
+      "appliedChanges": [],
+      "dynamicsDigest": "n/a",
+      "reasonZh": "本次是**表单路径**（没有座位与人数事实）⇒ 不做桌况调整",
+      "coverageZh": "（不适用）",
+      "logIssueZh": null,
+      "modeZh": "影子模式（只对比，不影响正式建议）"
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "EMPIRICAL",
+        "sourceZh": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.022315679063904595（目标 0.05）。✅ **已通过准入：BR gap 0.022316 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。",
+        "sourceKindZh": "经验数据（有依据，但未达「已验证」标准）",
+        "fromSolver": true,
+        "confidence": 0.55,
+        "supportSize": 1225,
+        "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+        "effectiveComboCount": 99.21326329457348,
+        "normalizedEntropy": 0.6640410875301761,
+        "collapsed": false,
+        "gtoOutcomeState": "SOLVED",
+        "gtoReasonZh": null,
+        "gtoPending": false
+      }
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "SOLVER_RANGE",
+      "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+      "elapsedMs": 2,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVED",
+          "fromSolver": true,
+          "cacheSource": "persistent",
+          "reasonZh": null
+        }
+      ],
+      "background": [
+        {
+          "cacheKey": "c134d931a",
+          "thingZh": "9 人桌 枪口位 开池",
+          "state": "DONE",
+          "iterationZh": "12 次迭代，BR gap 0.022316"
+        }
+      ],
+      "warnings": [],
+      "reasons": []
+    },
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "h867c0ff5",
+      "timings": {
+        "parse": 0,
+        "validate": 0,
+        "context": 238,
+        "decide": 0,
+        "viewmodel": 0,
+        "total": 238
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": []
+    }
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "generatedAt": "2026-09-23T09:22:08.375Z",
+  "elapsedMs": 228,
+  "httpStatus": 200,
+  "gtoStatus": {
+    "enabled": true,
+    "state": "SOLVER_RANGE",
+    "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "elapsedMs": 3,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVED",
+        "fromSolver": true,
+        "cacheSource": "persistent",
+        "reasonZh": null
+      }
+    ],
+    "background": [],
+    "warnings": [],
+    "reasons": []
+  },
+  "rangeProvenance": [
+    {
+      "positionZh": "枪口位",
+      "sourceKind": "EMPIRICAL",
+      "sourceZh": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.021029559081906044（目标 0.05）。✅ **已通过准入：BR gap 0.021030 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。",
+      "sourceKindZh": "经验数据（有依据，但未达「已验证」标准）",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+      "effectiveComboCount": 94.05598021718555,
+      "normalizedEntropy": 0.656490709211,
+      "collapsed": false,
+      "gtoOutcomeState": "SOLVED",
+      "gtoReasonZh": null,
+      "gtoPending": false
+    }
+  ],
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "decision": {
+    "action": "RAISE",
+    "sizeChips": 10000,
+    "sizeBB": 100,
+    "confidence": 0.4,
+    "band": "MEDIUM_LOW",
+    "classification": "MARGINAL",
+    "actionable": true
+  },
+  "preflopRaise": [
+    {
+      "label": "翻前加注模型",
+      "value": "**翻前加注事实包**（PREFLOP_RAISE_FACTS_V1 / 响应模型 PREFLOP_RAISE_RESPONSE_V1）：单挑、共 7 个合法尺寸拥有**各自**的响应概率、条件范围与 EV｜到达范围 1225 组合（solver.preflop-range.92c86ed73aa0856df8479b5c7635e1469f48f1e8）｜零点 = 弃牌 ≡ 0，单位 = 筹码｜⚠️ 被再加注分支只展开 FOLD / CALL（**未展开 Hero 的 5Bet**）"
+    },
+    {
+      "label": "模型 / 范围来源",
+      "value": "PREFLOP_RAISE_FACTS_V1 ｜ 响应模型 PREFLOP_RAISE_RESPONSE_V1 ｜ 证据等级 HEURISTIC_STRUCTURAL ｜ 资金口径契约 NODE_INCREMENTAL_CHIPS_V2"
+    },
+    {
+      "label": "位置 / 筹码（来自真实桌型与行动顺序）",
+      "value": "Hero BB vs UTG｜底池 400.00｜我跟注需 150.00｜我剩余 9900.00｜跟注后 SPR 17.73｜最小加注到 400.00｜全下到 10000.00"
+    },
+    {
+      "label": "到达范围（他的，按行动历史条件化）",
+      "value": "1225 组合｜质量 1.0000｜来源 solver.preflop-range.92c86ed73aa0856df8479b5c7635e1469f48f1e8"
+    },
+    {
+      "label": "逐尺寸 EV（零点 = 弃牌 ≡ 0，单位 = 筹码）",
+      "value": "4.0BB→446.74｜4.5BB→488.91｜6.0BB→620.05｜7.5BB→703.35｜9.0BB→717.01｜12.0BB→865.39｜100.0BB→3212.99（全下）"
+    },
+    {
+      "label": "逐尺寸响应（他弃／跟／再加注）",
+      "value": "4.0BB：弃 0.7% / 跟 63.8% / 再加 35.5%｜需权益 0.1765；4.5BB：弃 0.8% / 跟 63.7% / 再加 35.5%｜需权益 0.2105；6.0BB：弃 1.5% / 跟 62.9% / 再加 35.5%｜需权益 0.2800；7.5BB：弃 14.4% / 跟 50.1% / 再加 35.5%｜需权益 0.3226；9.0BB：弃 39.4% / 跟 25.1% / 再加 35.5%｜需权益 0.3514；12.0BB：弃 44.0% / 跟 20.5% / 再加 35.5%｜需权益 0.3878；100.0BB：弃 51.1% / 跟 48.9% / 再加 0.0%｜需权益 0.4863"
+    },
+    {
+      "label": "条件权益（每一支各一份，不许混用）",
+      "value": "4.0BB：对跟注桶 86.4%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；4.5BB：对跟注桶 86.0%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；6.0BB：对跟注桶 86.0%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；7.5BB：对跟注桶 84.4%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；9.0BB：对跟注桶 82.0%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；12.0BB：对跟注桶 81.1%（MONTE_CARLO，6000 次）｜对再加注桶 80.0%（MONTE_CARLO，6000 次）；100.0BB：对跟注桶 80.1%（MONTE_CARLO，6000 次）｜对再加注桶 —"
+    },
+    {
+      "label": "资金口径（我投入／被跟注／他补／终池／退回）",
+      "value": "4.0BB：我新增 300.00、被跟注 300.00、他补 150.00、终池 850.00、退回 0.00；4.5BB：我新增 350.00、被跟注 350.00、他补 200.00、终池 950.00、退回 0.00；6.0BB：我新增 500.00、被跟注 500.00、他补 350.00、终池 1250.00、退回 0.00；7.5BB：我新增 650.00、被跟注 650.00、他补 500.00、终池 1550.00、退回 0.00；9.0BB：我新增 800.00、被跟注 800.00、他补 650.00、终池 1850.00、退回 0.00；12.0BB：我新增 1100.00、被跟注 1100.00、他补 950.00、终池 2450.00、退回 0.00；100.0BB：我新增 9900.00、被跟注 9900.00、他补 9750.00、终池 20050.00、退回 0.00（他跟平即全下）"
+    },
+    {
+      "label": "被再加注分支（只展开 Hero 的 FOLD / CALL）",
+      "value": "4.0BB：他再加到 550.00（最小合法 550.00）⇒ Hero 弃牌 -300.00 / 跟注 469.71 ⇒ 取 **469.71**（CALL）｜我再跟需 150.00；4.5BB：他再加到 650.00（最小合法 650.00）⇒ Hero 弃牌 -350.00 / 跟注 529.66 ⇒ 取 **529.66**（CALL）｜我再跟需 200.00；6.0BB：他再加到 950.00（最小合法 950.00）⇒ Hero 弃牌 -500.00 / 跟注 709.51 ⇒ 取 **709.51**（CALL）｜我再跟需 350.00；7.5BB：他再加到 1250.00（最小合法 1250.00）⇒ Hero 弃牌 -650.00 / 跟注 889.36 ⇒ 取 **889.36**（CALL）｜我再跟需 500.00；9.0BB：他再加到 1550.00（最小合法 1550.00）⇒ Hero 弃牌 -800.00 / 跟注 1069.21 ⇒ 取 **1069.21**（CALL）｜我再跟需 650.00；12.0BB：他再加到 2150.00（最小合法 2150.00）⇒ Hero 弃牌 -1100.00 / 跟注 1428.91 ⇒ 取 **1428.91**（CALL）｜我再跟需 950.00；100.0BB：不产出再加注分支（权益不可得 ⇒ 该支按下界计）"
+    },
+    {
+      "label": "未支持（必须与上面的数字一起读）",
+      "value": "① 被再加注分支**只**比较 Hero 的 FOLD / CALL —— **Hero 的 5Bet 应对未展开**（heroFiveBetExpanded = false）；② 非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌）；③ 全下分支没有后续街 ⇒ 精确；④ 多人池 / 身后有人未行动时**不产出**本事实包（不按单挑偷偷计算）；⑤ 抽水 NOT_APPLIED（本项目无 Rake Engine）"
+    },
+    {
+      "label": "模型假设（逐条）",
+      "value": "响应概率是**结构性先验**（他的到达范围 + 起手牌强度阶梯 + 价格 + 画像倍率），**未经统计校准**；零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）；他弃牌 ⇒ 我赢下完整底池 currentPot；他跟注 ⇒ 终池 finalPot（引擎分层口径，含退回修正）；⚠️ **非全下**时 `EqVsRaiseCallRange` 是「打到摊牌、后续街不再下注」的**终止近似** —— 权益已枚举未来公共牌，但**未模拟**后续街的下注/过牌/弃牌 ⇒ 不是真实完整 EV，也不是严格下界；✅ **全下**（我全下或他跟注即全下）时没有后续街 ⇒ 该分支的摊牌权益与收益是**精确**的；被再加注分支只展开 Hero 的 FOLD / CALL；**Hero 的 5Bet 应对未展开**（`heroFiveBetExpanded = false`）；再加注尺寸由**真实行动状态**推导（最小完整加注 vs 他的全下上限），不用固定倍数；RAKE = NOT_APPLIED（本项目无 Rake Engine ⇒ 全部 EV **未计抽水**）；身后还有玩家未行动时**不产出**本事实包（不按单挑偷偷计算）"
+    }
+  ],
+  "preflopRaiseChoice": null,
+  "math": [
+    {
+      "label": "底池",
+      "value": "400 筹码（4.00BB）"
+    },
+    {
+      "label": "可争夺量（跟注后）",
+      "value": "550 筹码（5.50BB）　← 门槛与 EV 用的是这个数"
+    },
+    {
+      "label": "跟注需要",
+      "value": "150 筹码（1.50BB）"
+    },
+    {
+      "label": "本街已投入",
+      "value": "100 筹码（1.00BB）"
+    },
+    {
+      "label": "本次再投入",
+      "value": "9900 筹码（99.0BB）　← 真正要从筹码里再拿出的部分"
+    },
+    {
+      "label": "加注后的本街总额",
+      "value": "10000 筹码（100.0BB）　← 含本街已投入；**本注即全下**"
+    },
+    {
+      "label": "我的剩余筹码",
+      "value": "9900 筹码（99.0BB）"
+    },
+    {
+      "label": "有效筹码",
+      "value": "9750 筹码（97.5BB）"
+    },
+    {
+      "label": "SPR",
+      "value": "24.38"
+    },
+    {
+      "label": "底池赔率",
+      "value": "27.3%"
+    },
+    {
+      "label": "所需权益",
+      "value": "27.3%"
+    },
+    {
+      "label": "所需权益口径",
+      "value": "单层门槛（权益 ≥ 所需权益 ⇔ 跟注不亏）"
+    },
+    {
+      "label": "对手下注范围权益",
+      "value": "—（本节点没有可用的下注范围 ⇒ 跟注 EV 与加注门槛回落用整体范围权益）"
+    },
+    {
+      "label": "整体范围权益（仅参考）",
+      "value": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）"
+    },
+    {
+      "label": "权益来源",
+      "value": "蒙特卡洛（20,000 次，±0.5%）"
+    },
+    {
+      "label": "跟注 EV（节点增量口径）",
+      "value": "311.63 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算"
+    },
+    {
+      "label": "当前牌力",
+      "value": "起手牌：大对子（翻牌前评估，非成手牌力）"
+    },
+    {
+      "label": "抽水模型",
+      "value": "未计入"
+    }
+  ],
+  "meta": {
+    "computedPot": 400,
+    "claimedPot": null,
+    "inputHash": "he4b46f48",
+    "timings": {
+      "parse": 0,
+      "validate": 0,
+      "context": 194,
+      "decide": 3,
+      "viewmodel": 10,
+      "total": 207
+    },
+    "layeredPot": {
+      "total": 400,
+      "contested": 250,
+      "main": 250,
+      "sideTotal": 0,
+      "returned": {},
+      "returnedTotal": 0,
+      "pendingUnmatched": {
+        "seat_UTG": 150
+      },
+      "pendingTotal": 150,
+      "roundClosed": false,
+      "scope": "LEDGER_LAYERED",
+      "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+      "events": [
+        {
+          "id": "PREFLOP|LAYER|-|250|layer0",
+          "kind": "LAYER",
+          "street": "PREFLOP",
+          "playerId": null,
+          "playerLabelZh": "主池",
+          "amount": 250,
+          "final": true,
+          "sequence": 0,
+          "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+        },
+        {
+          "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+          "kind": "PENDING_UNMATCHED",
+          "street": "PREFLOP",
+          "playerId": "seat_UTG",
+          "playerLabelZh": null,
+          "amount": 150,
+          "final": false,
+          "sequence": 1,
+          "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        }
+      ],
+      "duplicateEventIds": [],
+      "hasLayering": false,
+      "hasPendingUnmatched": true,
+      "linesZh": [
+        "主池 250（含已弃牌者投入 50），2 家有资格",
+        "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+      ]
+    },
+    "warnings": []
+  }
+}

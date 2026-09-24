@@ -1,0 +1,1560 @@
+{
+  "generatedAt": "2026-09-22T09:19:24.560Z",
+  "solverUrl": "http://127.0.0.1:3747",
+  "budgetMs": 600000,
+  "before": {
+    "cacheDir": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache",
+    "cacheDirExists": true,
+    "cacheFiles": [],
+    "solverDir": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\solver-cache",
+    "solverDirExists": true,
+    "solverFiles": [],
+    "solverUrl": "http://127.0.0.1:3747"
+  },
+  "isolatedSolverStatusBefore": {
+    "state": "idle",
+    "gpu": false,
+    "gpu_note": "",
+    "iteration": 0,
+    "exploit_chips": 0,
+    "exploit_pct": 0,
+    "elapsed_secs": 0,
+    "history": [],
+    "tree": null,
+    "spot_request": null,
+    "error": ""
+  },
+  "isolatedSessionBefore": null,
+  "first": {
+    "httpStatus": 200,
+    "elapsedMs": 248,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "decision": {
+      "action": "RAISE",
+      "sizeChips": 10000,
+      "sizeBB": 100,
+      "confidence": 0.3,
+      "band": "MEDIUM_LOW",
+      "classification": "MARGINAL",
+      "actionable": true
+    },
+    "equity": "83.42%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "308.80 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "308.80 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "BACKGROUND_SOLVING",
+      "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+      "elapsedMs": 2,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVING",
+          "fromSolver": false,
+          "cacheSource": null,
+          "reasonZh": null
+        }
+      ],
+      "background": [
+        {
+          "cacheKey": "c7348fc89",
+          "thingZh": "9 人桌 枪口位 开池",
+          "state": "RUNNING",
+          "iterationZh": "正在求解"
+        }
+      ],
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ],
+      "reasons": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "HEURISTIC",
+        "fromSolver": false,
+        "confidence": 0.3,
+        "supportSize": 239,
+        "effectiveComboCount": 152.32943191550063,
+        "normalizedEntropy": 0.9461023926239274,
+        "gtoOutcomeState": "SOLVING",
+        "gtoReasonZh": null
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 1,
+        "context": 216,
+        "decide": 3,
+        "viewmodel": 12,
+        "total": 232
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    }
+  },
+  "second": {
+    "httpStatus": 200,
+    "elapsedMs": 183,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "decision": {
+      "action": "RAISE",
+      "sizeChips": 10000,
+      "sizeBB": 100,
+      "confidence": 0.4,
+      "band": "MEDIUM_LOW",
+      "classification": "MARGINAL",
+      "actionable": true
+    },
+    "equity": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "311.63 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "311.63 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "SOLVER_RANGE",
+      "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+      "elapsedMs": 0,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVED",
+          "fromSolver": true,
+          "cacheSource": "memory",
+          "reasonZh": null
+        }
+      ],
+      "background": [
+        {
+          "cacheKey": "c7348fc89",
+          "thingZh": "9 人桌 枪口位 开池",
+          "state": "DONE",
+          "iterationZh": "12 次迭代，BR gap 0.021030"
+        }
+      ],
+      "warnings": [],
+      "reasons": []
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "EMPIRICAL",
+        "fromSolver": true,
+        "confidence": 0.55,
+        "supportSize": 1225,
+        "effectiveComboCount": 94.05598021718555,
+        "normalizedEntropy": 0.656490709211,
+        "gtoOutcomeState": "SOLVED",
+        "gtoReasonZh": null
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 0,
+        "context": 181,
+        "decide": 0,
+        "viewmodel": 0,
+        "total": 181
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "finalBackground": {
+    "cacheKey": "c7348fc89",
+    "thingZh": "9 人桌 枪口位 开池",
+    "state": "DONE",
+    "iterationZh": "12 次迭代，BR gap 0.021030"
+  },
+  "timeline": [
+    {
+      "event": "first-analyze-response",
+      "atMs": 248,
+      "httpStatus": 200,
+      "elapsedMs": 248,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-1",
+      "atMs": 987,
+      "httpStatus": 200,
+      "elapsedMs": 224,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-2",
+      "atMs": 1697,
+      "httpStatus": 200,
+      "elapsedMs": 207,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-3",
+      "atMs": 2408,
+      "httpStatus": 200,
+      "elapsedMs": 208,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-4",
+      "atMs": 3113,
+      "httpStatus": 200,
+      "elapsedMs": 203,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-5",
+      "atMs": 3824,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-6",
+      "atMs": 4540,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-7",
+      "atMs": 5247,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-8",
+      "atMs": 5954,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-9",
+      "atMs": 6669,
+      "httpStatus": 200,
+      "elapsedMs": 203,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-10",
+      "atMs": 7373,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-11",
+      "atMs": 8082,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-12",
+      "atMs": 8793,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-13",
+      "atMs": 9499,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-14",
+      "atMs": 10198,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-15",
+      "atMs": 10906,
+      "httpStatus": 200,
+      "elapsedMs": 203,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-16",
+      "atMs": 11626,
+      "httpStatus": 200,
+      "elapsedMs": 216,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-17",
+      "atMs": 12335,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-18",
+      "atMs": 13061,
+      "httpStatus": 200,
+      "elapsedMs": 213,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-19",
+      "atMs": 13770,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-20",
+      "atMs": 14482,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-21",
+      "atMs": 15202,
+      "httpStatus": 200,
+      "elapsedMs": 215,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-22",
+      "atMs": 15898,
+      "httpStatus": 200,
+      "elapsedMs": 195,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-23",
+      "atMs": 16602,
+      "httpStatus": 200,
+      "elapsedMs": 197,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-24",
+      "atMs": 17305,
+      "httpStatus": 200,
+      "elapsedMs": 197,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-25",
+      "atMs": 18009,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-26",
+      "atMs": 18707,
+      "httpStatus": 200,
+      "elapsedMs": 196,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-27",
+      "atMs": 19412,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-28",
+      "atMs": 20113,
+      "httpStatus": 200,
+      "elapsedMs": 197,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-29",
+      "atMs": 20816,
+      "httpStatus": 200,
+      "elapsedMs": 196,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-30",
+      "atMs": 21519,
+      "httpStatus": 200,
+      "elapsedMs": 197,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-31",
+      "atMs": 22224,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-32",
+      "atMs": 22926,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-33",
+      "atMs": 23630,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-34",
+      "atMs": 24354,
+      "httpStatus": 200,
+      "elapsedMs": 219,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-35",
+      "atMs": 25080,
+      "httpStatus": 200,
+      "elapsedMs": 223,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-36",
+      "atMs": 25806,
+      "httpStatus": 200,
+      "elapsedMs": 224,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-37",
+      "atMs": 26524,
+      "httpStatus": 200,
+      "elapsedMs": 218,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-38",
+      "atMs": 27239,
+      "httpStatus": 200,
+      "elapsedMs": 212,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-39",
+      "atMs": 27956,
+      "httpStatus": 200,
+      "elapsedMs": 209,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-40",
+      "atMs": 28682,
+      "httpStatus": 200,
+      "elapsedMs": 214,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-41",
+      "atMs": 29392,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-42",
+      "atMs": 30092,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-43",
+      "atMs": 30795,
+      "httpStatus": 200,
+      "elapsedMs": 198,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-44",
+      "atMs": 31493,
+      "httpStatus": 200,
+      "elapsedMs": 193,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-45",
+      "atMs": 32209,
+      "httpStatus": 200,
+      "elapsedMs": 205,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-46",
+      "atMs": 32923,
+      "httpStatus": 200,
+      "elapsedMs": 212,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-47",
+      "atMs": 33661,
+      "httpStatus": 200,
+      "elapsedMs": 226,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-48",
+      "atMs": 34382,
+      "httpStatus": 200,
+      "elapsedMs": 211,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-49",
+      "atMs": 35097,
+      "httpStatus": 200,
+      "elapsedMs": 203,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-50",
+      "atMs": 35794,
+      "httpStatus": 200,
+      "elapsedMs": 196,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-51",
+      "atMs": 36494,
+      "httpStatus": 200,
+      "elapsedMs": 193,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-52",
+      "atMs": 37198,
+      "httpStatus": 200,
+      "elapsedMs": 194,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-53",
+      "atMs": 37914,
+      "httpStatus": 200,
+      "elapsedMs": 207,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-54",
+      "atMs": 38632,
+      "httpStatus": 200,
+      "elapsedMs": 203,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-55",
+      "atMs": 39362,
+      "httpStatus": 200,
+      "elapsedMs": 226,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-56",
+      "atMs": 40063,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-57",
+      "atMs": 40774,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-58",
+      "atMs": 41485,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-59",
+      "atMs": 42194,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-60",
+      "atMs": 42899,
+      "httpStatus": 200,
+      "elapsedMs": 199,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-61",
+      "atMs": 43611,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-62",
+      "atMs": 44320,
+      "httpStatus": 200,
+      "elapsedMs": 202,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-63",
+      "atMs": 45033,
+      "httpStatus": 200,
+      "elapsedMs": 206,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-64",
+      "atMs": 45739,
+      "httpStatus": 200,
+      "elapsedMs": 202,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-65",
+      "atMs": 46456,
+      "httpStatus": 200,
+      "elapsedMs": 207,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-66",
+      "atMs": 47180,
+      "httpStatus": 200,
+      "elapsedMs": 221,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-67",
+      "atMs": 47890,
+      "httpStatus": 200,
+      "elapsedMs": 206,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-68",
+      "atMs": 48596,
+      "httpStatus": 200,
+      "elapsedMs": 202,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-69",
+      "atMs": 49307,
+      "httpStatus": 200,
+      "elapsedMs": 205,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-70",
+      "atMs": 50025,
+      "httpStatus": 200,
+      "elapsedMs": 215,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-71",
+      "atMs": 50752,
+      "httpStatus": 200,
+      "elapsedMs": 215,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-72",
+      "atMs": 51465,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-73",
+      "atMs": 52175,
+      "httpStatus": 200,
+      "elapsedMs": 202,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-74",
+      "atMs": 52881,
+      "httpStatus": 200,
+      "elapsedMs": 201,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-75",
+      "atMs": 53612,
+      "httpStatus": 200,
+      "elapsedMs": 222,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-76",
+      "atMs": 54317,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-77",
+      "atMs": 55026,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-78",
+      "atMs": 55745,
+      "httpStatus": 200,
+      "elapsedMs": 209,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-79",
+      "atMs": 56464,
+      "httpStatus": 200,
+      "elapsedMs": 219,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-80",
+      "atMs": 57169,
+      "httpStatus": 200,
+      "elapsedMs": 197,
+      "foregroundState": "SOLVER_RANGE",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "DONE",
+        "iterationZh": "12 次迭代，BR gap 0.021030"
+      },
+      "cacheFiles": [
+        {
+          "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\index.json",
+          "bytes": 727,
+          "sha256": "949AA47527A55EE2FFDCA86A43F222E43FFC337AE0AE67C35F7A2C4A01A7936D"
+        },
+        {
+          "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\strategy\\c7348fc89.json",
+          "bytes": 84418,
+          "sha256": "284A76315FE5370AE624073BB2CA7C1AE5AAC1ACBCAD3BB15CB460043E196F5D"
+        }
+      ]
+    },
+    {
+      "event": "post-solve-analyze-response",
+      "atMs": 57353,
+      "httpStatus": 200,
+      "elapsedMs": 183,
+      "foregroundState": "SOLVER_RANGE",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "DONE",
+        "iterationZh": "12 次迭代，BR gap 0.021030"
+      },
+      "cacheFiles": [
+        {
+          "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\index.json",
+          "bytes": 727,
+          "sha256": "949AA47527A55EE2FFDCA86A43F222E43FFC337AE0AE67C35F7A2C4A01A7936D"
+        },
+        {
+          "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\strategy\\c7348fc89.json",
+          "bytes": 84418,
+          "sha256": "284A76315FE5370AE624073BB2CA7C1AE5AAC1ACBCAD3BB15CB460043E196F5D"
+        }
+      ]
+    }
+  ],
+  "after": {
+    "cacheFiles": [
+      {
+        "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\index.json",
+        "bytes": 727,
+        "sha256": "949AA47527A55EE2FFDCA86A43F222E43FFC337AE0AE67C35F7A2C4A01A7936D"
+      },
+      {
+        "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\strategy\\c7348fc89.json",
+        "bytes": 84418,
+        "sha256": "284A76315FE5370AE624073BB2CA7C1AE5AAC1ACBCAD3BB15CB460043E196F5D"
+      }
+    ],
+    "solverFiles": []
+  },
+  "targetFile": {
+    "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\strategy\\c7348fc89.json",
+    "bytes": 84418,
+    "sha256": "284A76315FE5370AE624073BB2CA7C1AE5AAC1ACBCAD3BB15CB460043E196F5D"
+  }
+}

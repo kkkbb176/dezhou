@@ -1,0 +1,190 @@
+src\viewmodels\decisionViewModel.ts:129:  preflopRaise: readonly { label: string; value: string }[];
+src\viewmodels\decisionViewModel.ts:1068:    preflopRaise: (() => {
+src\viewmodels\decisionViewModel.ts:1069:      const pr = d.preflopRaise ?? null;
+src\infra\artifactDefinitions.ts:443:     * 🔴 阶段 B 补登记（`reports/PREFLOP_RAISE_DECISION_V1.md`）：
+src\infra\artifactDefinitions.ts:447:    path: 'src/app/manualInput/preflopRaiseResponse.ts',
+src\infra\artifactDefinitions.ts:456:    path: 'src/app/manualInput/preflopRaiseFacts.ts',
+src\infra\artifactDefinitions.ts:462:      '改动必须同步 `test/preflopRaiseDecision.test.ts`（独立复算）与 ' +
+src\infra\artifactDefinitions.ts:463:      '`test/preflopRaiseE2E.test.ts`（端到端一致性）',
+src\infra\artifactDefinitions.ts:702:    path: 'test/preflopRaiseCashflow.test.ts',
+src\infra\artifactDefinitions.ts:1399:    path: 'reports/PREFLOP_RAISE_DECISION_V1.md',
+test\gtoScenarioIsolation.test.ts:477:     * **纯展示**字段 `preflopRaise`（翻前加注事实包的逐尺寸证据）后，这条
+src\domain\decision\decision.types.ts:38:import type { PreflopRaiseFacts } from '../../app/manualInput/preflopRaiseFacts.ts';
+src\domain\decision\decision.types.ts:1090:  preflopRaise?: PreflopRaiseFacts | null;
+src\domain\decision\decision.types.ts:1277:  preflopRaise?: PreflopRaiseFacts | null;
+src\app\decision\decisionEngine.ts:77:  evaluatePreflopRaiseModel,
+src\app\decision\decisionEngine.ts:78:  preflopRaiseSizeFactsOf,
+src\app\decision\decisionEngine.ts:79:  type PreflopRaiseFacts,
+src\app\decision\decisionEngine.ts:80:} from '../manualInput/preflopRaiseFacts.ts';
+src\app\decision\decisionEngine.ts:238:export type PreflopRaiseChoice = {
+src\app\decision\decisionEngine.ts:251:export function choosePreflopRaiseCandidate(input: {
+src\app\decision\decisionEngine.ts:252:  readonly facts: PreflopRaiseFacts | null | undefined;
+src\app\decision\decisionEngine.ts:259:}): PreflopRaiseChoice {
+src\app\decision\decisionEngine.ts:261:  const empty: PreflopRaiseChoice = Object.freeze({
+src\app\decision\decisionEngine.ts:273:    const usable = evaluatePreflopRaiseModel({
+src\app\decision\decisionEngine.ts:318:   * 这不是放行：那个全下仍然必须**自带模型 EV**（`evaluatePreflopRaiseModel`
+src\app\decision\decisionEngine.ts:1757:      preflopRaiseChoice?: PreflopRaiseChoice | null;
+src\app\decision\decisionEngine.ts:2167:      /** 翻前加注候选的选择结果（`choosePreflopRaiseCandidate` 的输出；供诊断） */
+src\app\decision\decisionEngine.ts:2168:      let preflopRaiseChoice: PreflopRaiseChoice | null = null;
+src\app\decision\decisionEngine.ts:2192:       * 只对**翻前加注事实包**（`context.preflopRaise`，阶段 B 的模型）生效。
+src\app\decision\decisionEngine.ts:2197:        const preflopFacts = context.preflopRaise ?? null;
+src\app\decision\decisionEngine.ts:2208:          const size = preflopRaiseSizeFactsOf(preflopFacts, c.sizeChips);
+src\app\decision\decisionEngine.ts:2212:        const choice = choosePreflopRaiseCandidate({
+src\app\decision\decisionEngine.ts:2218:        preflopRaiseChoice = choice;
+src\app\decision\decisionEngine.ts:2282:         * `preflopRaise.sizes` 覆盖**尺寸网格里的每一个合法尺寸**，
+src\app\decision\decisionEngine.ts:2287:        const preflopFacts = context.preflopRaise ?? null;
+src\app\decision\decisionEngine.ts:2289:        const evalResult = evaluatePreflopRaiseModel({
+src\app\decision\decisionEngine.ts:2297:              code: 'PREFLOP_RAISE_EV_UNAVAILABLE',
+src\app\decision\decisionEngine.ts:2307:        const size = preflopRaiseSizeFactsOf(preflopFacts, raiseCandidate.sizeChips);
+src\app\decision\decisionEngine.ts:2565:              const fromPreflop = context.preflopRaise ?? null;
+src\app\decision\decisionEngine.ts:2568:                  .filter((s) => evaluatePreflopRaiseModel({
+src\app\decision\decisionEngine.ts:2587:          preflopRaiseChoice,
+src\app\decision\decisionEngine.ts:2799:         * 现在翻前优先取 `context.preflopRaise` 里**该尺寸**的事实。
+src\app\decision\decisionEngine.ts:2805:          context.preflopRaise === null || context.preflopRaise === undefined || raiseCandidate === null
+src\app\decision\decisionEngine.ts:2807:            : preflopRaiseSizeFactsOf(context.preflopRaise, raiseCandidate.sizeChips);
+src\app\decision\decisionEngine.ts:2821:                modelNoteZh: 'PREFLOP_RAISE_RESPONSE_V1',
+src\app\decision\decisionEngine.ts:3732:      preflopRaiseChoice?: PreflopRaiseChoice | null;
+src\app\decision\decisionEngine.ts:4015:   * （见 `choosePreflopRaiseCandidate`）。它必须是一条**显式理由**，
+src\app\decision\decisionEngine.ts:4022:  const preflopRaiseChoice = evidenceOut?.raiseShape?.preflopRaiseChoice ?? null;
+src\app\decision\decisionEngine.ts:4023:  if (preflopRaiseChoice !== null && preflopRaiseChoice.protectionApplied) {
+src\app\decision\decisionEngine.ts:4026:      textZh: `⚠️ **偏离最高模型 EV**：${preflopRaiseChoice.protectionNoteZh ?? ''}`,
+src\app\decision\decisionEngine.ts:4029:        bestEvSizeChips: preflopRaiseChoice.bestEVSizeChips ?? 'NONE',
+src\app\decision\decisionEngine.ts:4030:        bestEV: preflopRaiseChoice.bestEV === null
+src\app\decision\decisionEngine.ts:4032:          : Number(preflopRaiseChoice.bestEV.toFixed(6)),
+src\app\decision\decisionEngine.ts:4333:    preflopRaise: context.preflopRaise ?? null,
+src\app\manualInput\contextBuilder.ts:193:  buildPreflopRaiseFacts,
+src\app\manualInput\contextBuilder.ts:195:  type PreflopRaiseFacts,
+src\app\manualInput\contextBuilder.ts:196:} from './preflopRaiseFacts.ts';
+src\app\manualInput\contextBuilder.ts:4971:   * 🔴 三条硬边界（全部由 `buildPreflopRaiseFacts` 内部判定并给出原因）：
+src\app\manualInput\contextBuilder.ts:4978:  const preflopRaiseFacts: PreflopRaiseFacts | null = (() => {
+src\app\manualInput\contextBuilder.ts:4987:    const built = buildPreflopRaiseFacts({
+src\app\manualInput\contextBuilder.ts:5074:    ...(preflopRaiseFacts !== null ? { preflopRaise: preflopRaiseFacts } : {}),
+src\app\manualInput\preflopRaiseFacts.ts:16: * 他弃牌 / 跟注 / 再加注 的概率   （由 buildPreflopRaiseResponse 产出）
+src\app\manualInput\preflopRaiseFacts.ts:71:  PREFLOP_RAISE_RESPONSE_MODEL_VERSION,
+src\app\manualInput\preflopRaiseFacts.ts:72:  buildPreflopRaiseResponse,
+src\app\manualInput\preflopRaiseFacts.ts:74:  type PreflopRaiseResponse,
+src\app\manualInput\preflopRaiseFacts.ts:75:  type PreflopRaiseTuning,
+src\app\manualInput\preflopRaiseFacts.ts:76:} from './preflopRaiseResponse.ts';
+src\app\manualInput\preflopRaiseFacts.ts:82:export const PREFLOP_RAISE_FACTS_VERSION = 'PREFLOP_RAISE_FACTS_V1';
+src\app\manualInput\preflopRaiseFacts.ts:96:export type PreflopRaiseSizeFacts = {
+src\app\manualInput\preflopRaiseFacts.ts:155:export type PreflopRaiseFacts = {
+src\app\manualInput\preflopRaiseFacts.ts:156:  readonly kind: 'PREFLOP_RAISE_FACTS';
+src\app\manualInput\preflopRaiseFacts.ts:189:  readonly sizes: readonly PreflopRaiseSizeFacts[];
+src\app\manualInput\preflopRaiseFacts.ts:199:export const PreflopRaiseSkipReason = {
+src\app\manualInput\preflopRaiseFacts.ts:209:export type PreflopRaiseSkipReason =
+src\app\manualInput\preflopRaiseFacts.ts:210:  (typeof PreflopRaiseSkipReason)[keyof typeof PreflopRaiseSkipReason];
+src\app\manualInput\preflopRaiseFacts.ts:212:export const PREFLOP_RAISE_SKIP_ZH: Readonly<Record<PreflopRaiseSkipReason, string>> = Object.freeze({
+src\app\manualInput\preflopRaiseFacts.ts:227:export type PreflopRaiseFactsBuild =
+src\app\manualInput\preflopRaiseFacts.ts:228:  | { readonly ok: true; readonly facts: PreflopRaiseFacts }
+src\app\manualInput\preflopRaiseFacts.ts:229:  | { readonly ok: false; readonly reason: PreflopRaiseSkipReason; readonly noteZh: string };
+src\app\manualInput\preflopRaiseFacts.ts:235:export type BuildPreflopRaiseFactsInput = {
+src\app\manualInput\preflopRaiseFacts.ts:272:  readonly tuning?: PreflopRaiseTuning;
+src\app\manualInput\preflopRaiseFacts.ts:279:export function buildPreflopRaiseFacts(input: BuildPreflopRaiseFactsInput): PreflopRaiseFactsBuild {
+src\app\manualInput\preflopRaiseFacts.ts:282:  const skip = (reason: PreflopRaiseSkipReason): PreflopRaiseFactsBuild => ({
+src\app\manualInput\preflopRaiseFacts.ts:285:    noteZh: `翻前加注 EV 不适用：${PREFLOP_RAISE_SKIP_ZH[reason]}`,
+src\app\manualInput\preflopRaiseFacts.ts:288:  if (state.street !== 'PREFLOP') return skip(PreflopRaiseSkipReason.NOT_PREFLOP);
+src\app\manualInput\preflopRaiseFacts.ts:289:  if (hero.holeCards === null || hero.holeCards.length !== 2) return skip(PreflopRaiseSkipReason.HERO_NO_CARDS);
+src\app\manualInput\preflopRaiseFacts.ts:290:  if (legal.callCost <= 0 || state.currentBet <= 0) return skip(PreflopRaiseSkipReason.NO_CALL_COST);
+src\app\manualInput\preflopRaiseFacts.ts:299:  if (input.playersRemainingToAct > 0) return skip(PreflopRaiseSkipReason.PLAYERS_BEHIND);
+src\app\manualInput\preflopRaiseFacts.ts:302:  if (activeOpponents.length === 0) return skip(PreflopRaiseSkipReason.NO_OPPONENT);
+src\app\manualInput\preflopRaiseFacts.ts:303:  if (activeOpponents.length !== 1) return skip(PreflopRaiseSkipReason.NOT_HEADS_UP);
+src\app\manualInput\preflopRaiseFacts.ts:304:  if (activeOpponents[0]!.id !== opponent.id) return skip(PreflopRaiseSkipReason.NOT_HEADS_UP);
+src\app\manualInput\preflopRaiseFacts.ts:306:  if (input.arrivalEntries.length === 0) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+src\app\manualInput\preflopRaiseFacts.ts:309:  if (!(pot0 > 0)) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+src\app\manualInput\preflopRaiseFacts.ts:326:  if (arrivalComboCount === 0 || !(arrivalMass > 0)) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+src\app\manualInput\preflopRaiseFacts.ts:337:  if (grid.length === 0) return skip(PreflopRaiseSkipReason.NO_GRID);
+src\app\manualInput\preflopRaiseFacts.ts:339:  const sizes: PreflopRaiseSizeFacts[] = [];
+src\app\manualInput\preflopRaiseFacts.ts:360:  if (sizes.length === 0) return skip(PreflopRaiseSkipReason.NO_GRID);
+src\app\manualInput\preflopRaiseFacts.ts:375:  const facts: PreflopRaiseFacts = Object.freeze({
+src\app\manualInput\preflopRaiseFacts.ts:376:    kind: 'PREFLOP_RAISE_FACTS' as const,
+src\app\manualInput\preflopRaiseFacts.ts:377:    version: PREFLOP_RAISE_FACTS_VERSION,
+src\app\manualInput\preflopRaiseFacts.ts:378:    modelVersion: PREFLOP_RAISE_RESPONSE_MODEL_VERSION,
+src\app\manualInput\preflopRaiseFacts.ts:405:      `**翻前加注事实包**（${PREFLOP_RAISE_FACTS_VERSION} / 响应模型 ${PREFLOP_RAISE_RESPONSE_MODEL_VERSION}）：` +
+src\app\manualInput\preflopRaiseFacts.ts:450:  tuning?: PreflopRaiseTuning;
+src\app\manualInput\preflopRaiseFacts.ts:451:}): PreflopRaiseSizeFacts | null {
+src\app\manualInput\preflopRaiseFacts.ts:497:   * ## 保留的公式与恒等式（`test/preflopRaiseCashflow.test.ts` 锁定）
+src\app\manualInput\preflopRaiseFacts.ts:541:  const response: PreflopRaiseResponse | null = buildPreflopRaiseResponse({
+src\app\manualInput\preflopRaiseFacts.ts:604:  const reraiseBranchKind: PreflopRaiseSizeFacts['reraiseBranchKind'] =
+src\app\manualInput\preflopRaiseFacts.ts:754:export type PreflopRaiseModelEvaluation = {
+src\app\manualInput\preflopRaiseFacts.ts:778:export function evaluatePreflopRaiseModel(input: {
+src\app\manualInput\preflopRaiseFacts.ts:779:  readonly facts: PreflopRaiseFacts | null | undefined;
+src\app\manualInput\preflopRaiseFacts.ts:783:}): PreflopRaiseModelEvaluation {
+src\app\manualInput\preflopRaiseFacts.ts:811:export function preflopRaiseSizeFactsOf(
+src\app\manualInput\preflopRaiseFacts.ts:812:  facts: PreflopRaiseFacts | null | undefined,
+src\app\manualInput\preflopRaiseFacts.ts:814:): PreflopRaiseSizeFacts | null {
+src\app\web\table.js:1784:             * 数据来自 `decisionViewModel.debug.preflopRaise`（由 `preflopRaise`
+src\app\web\table.js:1787:            preflopRaise:
+src\app\web\table.js:1789:                ? app.analysis.viewModel.debug.preflopRaise
+src\app\manualInput\preflopRaiseResponse.ts:75:export const PREFLOP_RAISE_RESPONSE_MODEL_VERSION = 'PREFLOP_RAISE_RESPONSE_V1';
+src\app\manualInput\preflopRaiseResponse.ts:84:export const PREFLOP_RAISE_CASHFLOW_CONTRACT = 'NODE_INCREMENTAL_CHIPS_V2' as const;
+src\app\manualInput\preflopRaiseResponse.ts:232: * 它随模型一起导出，并在 `reports/PREFLOP_RAISE_DECISION_V1.md` 第 5 节
+src\app\manualInput\preflopRaiseResponse.ts:265: *（`reports/PREFLOP_RAISE_DECISION_V1.md` 的第 5 节）。
+src\app\manualInput\preflopRaiseResponse.ts:289:export type PreflopRaiseTuning = {
+src\app\manualInput\preflopRaiseResponse.ts:303:export const PREFLOP_RAISE_TUNING: PreflopRaiseTuning = Object.freeze({
+src\app\manualInput\preflopRaiseResponse.ts:329:export type PreflopRaiseResponseBucket = 'FOLD' | 'CALL' | 'RERAISE';
+src\app\manualInput\preflopRaiseResponse.ts:331:export type PreflopRaiseResponse = {
+src\app\manualInput\preflopRaiseResponse.ts:364:export function buildPreflopRaiseResponse(input: {
+src\app\manualInput\preflopRaiseResponse.ts:375:  readonly tuning?: PreflopRaiseTuning;
+src\app\manualInput\preflopRaiseResponse.ts:376:}): PreflopRaiseResponse | null {
+src\app\manualInput\preflopRaiseResponse.ts:377:  const tuning = input.tuning ?? PREFLOP_RAISE_TUNING;
+src\app\manualInput\preflopRaiseResponse.ts:496:      `他面对加注（**${PREFLOP_RAISE_RESPONSE_MODEL_VERSION}**，结构性先验、未经统计校准）：` +
+src\app\manualInput\preflopRaiseResponse.ts:671:export const PREFLOP_RAISE_POSITION_NOTE =
+test\preflopAllInGuard.test.ts:213:     *（`preflopRaiseFacts.ts` / `preflopRaiseResponse.ts`），
+test\preflopAllInGuard.test.ts:227:    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+test\preflopAllInGuard.test.ts:254:    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+test\preflopAllInGuard.test.ts:342:   * 阶段 B 把翻前加注 EV 建出来了（`preflopRaiseResponse.ts`），
+test\preflopAllInGuard.test.ts:395:    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+test\preflopAllInGuard.test.ts:571:    const pr = (run.diag['preflopRaise'] ?? null) as Diag | null;
+test\preflopRaiseDecision.test.ts:46:  buildPreflopRaiseResponse,
+test\preflopRaiseDecision.test.ts:51:  type PreflopRaiseResponse,
+test\preflopRaiseDecision.test.ts:52:} from '../src/app/manualInput/preflopRaiseResponse.ts';
+test\preflopRaiseDecision.test.ts:54:  buildPreflopRaiseFacts,
+test\preflopRaiseDecision.test.ts:55:  evaluatePreflopRaiseModel,
+test\preflopRaiseDecision.test.ts:57:  PREFLOP_RAISE_SKIP_ZH,
+test\preflopRaiseDecision.test.ts:59:  type PreflopRaiseFacts,
+test\preflopRaiseDecision.test.ts:60:} from '../src/app/manualInput/preflopRaiseFacts.ts';
+test\preflopRaiseDecision.test.ts:220:): { ok: true; facts: PreflopRaiseFacts } | { ok: false; reason: string; noteZh: string } {
+test\preflopRaiseDecision.test.ts:224:  const built = buildPreflopRaiseFacts({
+test\preflopRaiseDecision.test.ts:240:function mustFacts(state: GameState, options: Parameters<typeof factsOf>[1] = {}): PreflopRaiseFacts {
+test\preflopRaiseDecision.test.ts:303:  const built = buildPreflopRaiseResponse({
+test\preflopRaiseDecision.test.ts:344:  const build = (villainAdd: number, finalPot: number): PreflopRaiseResponse => {
+test\preflopRaiseDecision.test.ts:345:    const r = buildPreflopRaiseResponse({
+test\preflopRaiseDecision.test.ts:380:  const normal = buildPreflopRaiseResponse({ ...common, heroIsAllIn: false, villainIsAllInByCall: false })!;
+test\preflopRaiseDecision.test.ts:381:  const heroAllIn = buildPreflopRaiseResponse({ ...common, heroIsAllIn: true, villainIsAllInByCall: false })!;
+test\preflopRaiseDecision.test.ts:382:  const villainAllIn = buildPreflopRaiseResponse({ ...common, heroIsAllIn: false, villainIsAllInByCall: true })!;
+test\preflopRaiseDecision.test.ts:607:  const okEval = evaluatePreflopRaiseModel({
+test\preflopRaiseDecision.test.ts:615:  const bogus = evaluatePreflopRaiseModel({
+test\preflopRaiseDecision.test.ts:624:  const nonRaise = evaluatePreflopRaiseModel({
+test\preflopRaiseDecision.test.ts:632:  const forged = { ...facts, cashflowContract: 'NODE_INCREMENTAL_CHIPS_V1' } as PreflopRaiseFacts;
+test\preflopRaiseDecision.test.ts:633:  const rejected = evaluatePreflopRaiseModel({
+test\preflopRaiseDecision.test.ts:690:  for (const [key, value] of Object.entries(PREFLOP_RAISE_SKIP_ZH)) {
+test\preflopRaiseDecision.test.ts:894:   * `buildPreflopRaiseResponse` 的**声明输入里没有底牌字段**：
+test\preflopRaiseDecision.test.ts:905:  const build = (): PreflopRaiseResponse =>
+test\preflopRaiseDecision.test.ts:906:    buildPreflopRaiseResponse({
+test\preflopRaiseDecision.test.ts:931:  const other = buildPreflopRaiseResponse({
+test\preflopRaiseDecision.test.ts:1023:      const expectedResponse = buildPreflopRaiseResponse({
+test\preflopRaiseCashflow.test.ts:8: * `preflopRaiseFacts.ts` 曾经用
+test\preflopRaiseCashflow.test.ts:45:import { buildPreflopRaiseFacts } from '../src/app/manualInput/preflopRaiseFacts.ts';
+test\preflopRaiseCashflow.test.ts:140:  const built = buildPreflopRaiseFacts({
+test\preflopRaiseE2E.test.ts:6: * ## 与 `preflopRaiseDecision.test.ts` 的分工
+test\preflopRaiseE2E.test.ts:10: * | `preflopRaiseDecision.test.ts` | 模型层 | 响应概率、条件范围、EV 算智、退回口径是否**正确** |
+test\preflopRaiseE2E.test.ts:17: * 2. **披露自洽**：诊断快照里的 `preflopRaise` 必须包含**每个**合法尺寸，
+test\preflopRaiseE2E.test.ts:194:  const pr = run.diagnostics['preflopRaise'] as Record<string, any> | null;
+test\preflopRaiseE2E.test.ts:213:  assert.equal(pr['version'], 'PREFLOP_RAISE_FACTS_V1');
+test\preflopRaiseE2E.test.ts:214:  assert.equal(pr['modelVersion'], 'PREFLOP_RAISE_RESPONSE_V1');
+test\preflopRaiseE2E.test.ts:224:    const pr = run.diagnostics['preflopRaise'] as Record<string, any> | null;
+test\preflopRaiseE2E.test.ts:239:      assert.equal(data['responseModel'], 'PREFLOP_RAISE_RESPONSE_V1', '必须声明用的是哪个响应模型');
+test\preflopRaiseE2E.test.ts:255:  const pr = run.diagnostics['preflopRaise'] as Record<string, any>;
+test\preflopRaiseE2E.test.ts:281:  const pr = run.diagnostics['preflopRaise'] as Record<string, any>;
+test\preflopRaiseE2E.test.ts:403:  const oopFacts = oop.diagnostics['preflopRaise'] as Record<string, any> | null;
+test\preflopRaiseE2E.test.ts:431:    sb.diagnostics['preflopRaise'] ?? null,
+test\preflopRaiseE2E.test.ts:492:    run.diagnostics['preflopRaise'] ?? null,
+test\preflopRaiseE2E.test.ts:511:    const pr = run.diagnostics['preflopRaise'] as Record<string, any> | null;
+test\preflopRaiseE2E.test.ts:539:    run.diagnostics['preflopRaise'] ?? null,
+test\preflopRaiseE2E.test.ts:568:  const sa = (a.diagnostics['preflopRaise'] as Record<string, any>)['sizes'] as readonly Record<string, any>[];
+test\preflopRaiseE2E.test.ts:569:  const sb = (b.diagnostics['preflopRaise'] as Record<string, any>)['sizes'] as readonly Record<string, any>[];
+test\preflopRaiseE2E.test.ts:609:  const rows = (dbg['preflopRaise'] ?? []) as readonly { label: string; value: string }[];
+test\preflopRaiseE2E.test.ts:648:  const pr = dg['preflopRaise'] as Record<string, any>;
+test\preflopRaiseE2E.test.ts:649:  assert.equal(pr['version'], 'PREFLOP_RAISE_FACTS_V1');
+test\preflopRaiseE2E.test.ts:650:  assert.equal(pr['modelVersion'], 'PREFLOP_RAISE_RESPONSE_V1');
+test\riverRaiseDecisionV2.test.ts:277:      'PREFLOP_RAISE_RESPONSE_V1',

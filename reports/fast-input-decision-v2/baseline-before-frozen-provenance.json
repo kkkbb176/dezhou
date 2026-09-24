@@ -1,0 +1,10 @@
+{
+  "createdAt": "2026-09-24T04:33:15.389Z",
+  "originalMetadata": "baseline-before-metadata.json",
+  "restoredFromHead": [
+    "src/app/table/table.types.ts",
+    "src/app/table/tablePreview.ts"
+  ],
+  "allRecordedNonWebSourceHashesMatch": true,
+  "note": "Frozen source copy reconstructs clean-at-start table files changed concurrently during raw fixture capture. Production files were not changed."
+}

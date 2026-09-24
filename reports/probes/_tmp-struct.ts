@@ -1,0 +1,11 @@
+import { analyzeManualHand } from '../../src/app/alphaPipeline.ts';
+import { loadKnowledgeBaseOrThrow } from '../../src/domain/knowledge/knowledgeLoader.ts';
+const RULES = loadKnowledgeBaseOrThrow().allRules();
+const OPTIONS = { rules: RULES, asOf: 1_757_000_000_000, writeLog: false };
+const F = (position) => ({ position, type: 'FOLD' });
+const spot = (profile) => ({ tableSize:9, heroPosition:'BTN', heroCards:['Kd','Th'], board:['Ts','7c','3h'], street:'FLOP', effectiveStackBB:100, seatStacksBB:{UTG:100,BTN:100,BB:100}, actionHistory:[{position:'UTG',type:'CALL',amountBB:1},F('UTG1'),F('UTG2'),F('LJ'),F('HJ'),F('CO'),{position:'BTN',type:'CALL',amountBB:1},F('SB'),{position:'BB',type:'CHECK'},{position:'BB',type:'CHECK',street:'FLOP'},{position:'UTG',type:'CHECK',street:'FLOP'}], environment:'MID_LOW_STAKES', villain:{quickProfile:profile,dynamicHint:'UNKNOWN'} });
+const r = analyzeManualHand(spot('CALLING_STATION'), OPTIONS);
+console.log('ok=', r.ok);
+console.log('keys=', Object.keys(r));
+console.log('adviceKeys=', r.postflopAdvice ? Object.keys(r.postflopAdvice) : 'none');
+console.log(JSON.stringify(r, (k,v)=> typeof v==='number' && !Number.isFinite(v)?String(v):v).slice(0,3000));

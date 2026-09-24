@@ -1,0 +1,30 @@
+[
+  {
+    "at": "2026-09-24T04:58:41.286Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1790225921285.682,
+        "url": "http://127.0.0.1:59218/favicon.ico",
+        "networkRequestId": "90256.12"
+      }
+    }
+  },
+  {
+    "at": "2026-09-24T04:58:44.061Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1790225924060.937,
+        "url": "http://127.0.0.1:51516/favicon.ico",
+        "networkRequestId": "90256.25"
+      }
+    }
+  }
+]

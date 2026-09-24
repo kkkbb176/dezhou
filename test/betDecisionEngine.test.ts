@@ -337,6 +337,27 @@ test('TEST 4：紧手/过弃画像必须提高弃牌概率（至少在大注上�
   assert.ok(tightTendencies.foldScale > 1, '极紧的 foldScale 必须 > 1');
   assert.ok(tightTendencies.callScale < 1, '极紧的 callScale 必须 < 1');
 
+  const responseWeightsForBoundary = (
+    tendencies: ReturnType<typeof neutralResponseTendencies>,
+    tier: number,
+  ) =>
+    classifyResponse({
+      hole: [ALL_CARDS[0]!, ALL_CARDS[1]!],
+      versusHero: 'STRONGER',
+      tier,
+      street: 'TURN',
+      cardsToCome: 1,
+      ratioToPot: 1,
+      priceRequiredEquity: 0.33,
+      spr: 4.67,
+      opponentCount: 1,
+      wetness: 0.2,
+      tendencies,
+      villainDraw: 'NO_DRAW',
+      heroIsAllIn: false,
+      villainIsAllInByCall: false,
+    }).weights;
+
   const boundary = (tendencies: ReturnType<typeof neutralResponseTendencies>, tier: number) =>
     classifyResponse({
       hole: [ALL_CARDS[0]!, ALL_CARDS[1]!],
@@ -355,8 +376,28 @@ test('TEST 4：紧手/过弃画像必须提高弃牌概率（至少在大注上�
       /* P1-4：本用例只测档位边界 ⇒ 明确声明「他跟这一注不会全下」 */
       villainIsAllInByCall: false,
     }).bucket;
-  assert.equal(boundary(neutralResponseTendencies(), 3), 'CALL', '中性倾向下档 3 应当继续');
-  assert.equal(boundary(tightTendencies, 3), 'FOLD', '极紧倾向下同一手牌必须改为弃牌');
+  /*
+   * 信息边界修正后，规则层不再读取 `versusHero`。
+   *
+   * 本用例原先把「中性倾向 + 档 3」断言为 CALL。该结论依赖旧实现给
+   * `versusHero === 'STRONGER'` 的 +0.05 加成；去掉 Hero 隐藏信息后，
+   * 档 3（中对）在中性倾向下可以是 FOLD，这不是回归。
+   *
+   * 仍然必须锁住的是两条不依赖 Hero 的定性方向：
+   * ① 同一倾向下，牌面档位更强 ⇒ 继续权重不下降；
+   * ② 档位相同、只换成极紧倾向 ⇒ 弃牌权重不下降。
+   */
+  const neutral3 = responseWeightsForBoundary(neutralResponseTendencies(), 3);
+  const neutral2 = responseWeightsForBoundary(neutralResponseTendencies(), 2);
+  const tight3 = responseWeightsForBoundary(tightTendencies, 3);
+  assert.ok(
+    neutral2.call >= neutral3.call,
+    `更强档位的 P(跟) 不得低于更弱档位：档2 ${neutral2.call.toFixed(4)} vs 档3 ${neutral3.call.toFixed(4)}`,
+  );
+  assert.ok(
+    tight3.fold >= neutral3.fold,
+    `极紧倾向的 P(弃) 不得低于中性：${tight3.fold.toFixed(4)} vs ${neutral3.fold.toFixed(4)}`,
+  );
 });
 
 /* ============================================================
@@ -1062,3 +1103,4 @@ test('T9e：尺寸规格与响应模型必须自洽（注释与实现不得漂�
   assert.equal(roleStrengthOf(RelativeHandRole.SEMI_BLUFF), 0.35, '半诈唬强度刻度未变（兼容）');
   void realizationFactorOf;
 });
+

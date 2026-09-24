@@ -604,6 +604,40 @@ test('GTO-QUAL-01：没有数据 → UNAVAILABLE；求解失败 → FAILED（质
   assert.notEqual(gradeGtoQuality(evidence({ hasStrategy: false })).quality, GtoQuality.LOW_CONVERGENCE);
 });
 
+test('GTO-QUAL-01b：缺稳定性证据但已达标时，低收敛摘要必须可生成（回归：reachedTarget 泄漏）', () => {
+  /*
+   * 复现 2026-09-23 的 9MAX 首次求解故障：
+   * 求解器已完成 12 次迭代并且 gap 已低于目标，但没有重复求解稳定性证据，
+   * 因此运行质量降为 LOW_CONVERGENCE。此时 qualitySummaryZh 仍要区分
+   * 「已达标但没有稳定性证据」与「真的未达标」。
+   *
+   * 旧实现把 gradeGtoQuality 的局部变量 reachedTarget 泄漏给了独立函数，
+   * 一走 LOW_CONVERGENCE 分支就抛 ReferenceError，后台任务因此被标记 FAILED，
+   * 已收敛结果不落盘。
+   */
+  const verdict = gradeGtoQuality(
+    evidence({
+      tableSize: 9,
+      totalSeats: 9,
+      learningSeats: 9,
+      iterations: 12,
+      iterationsRequested: 12,
+      stopReason: 'target_reached',
+      brGapTotal: 0.02102956,
+      targetGap: 0.05,
+      stability: null,
+    }),
+  );
+  assert.equal(verdict.quality, GtoQuality.LOW_CONVERGENCE);
+  assert.ok(
+    verdict.summaryZh.includes('已达到本次收敛目标'),
+    `低收敛摘要必须保留达标事实，实际：${verdict.summaryZh}`,
+  );
+  assert.ok(
+    verdict.summaryZh.includes('缺少重复求解稳定性证据'),
+    `低收敛摘要必须解释降级原因，实际：${verdict.summaryZh}`,
+  );
+});
 test('GTO-QUAL-02：近似模型是天花板 —— 即使 gap 极小、迭代极多也到不了 USABLE 以上', () => {
   const verdict = gradeGtoQuality(
     evidence({ brGapTotal: 1e-9, iterations: 10_000, stopReason: 'target_reached' }),

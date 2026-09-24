@@ -44,6 +44,18 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '（四种结论定义 / 八条强制规则 / 九行报告格式）',
   },
   {
+    path: 'reports/DECISION_CORRECTNESS_BASELINE_V1.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '决策正确性修复与基线验收的唯一收口报告变化 → 资金流/信息边界/画像消费/实时保护的验收结论与仍未解决项必须同步更新；' +
+      '它缺失或过期时，不得声称本轮修复已通过基线验收',
+  },
+  {
+    path: 'reports/FAST_INPUT_DECISION_UI_V2.md',
+    category: ManifestCategory.REPORT,
+    impact: '快速录入 UI V2 的真实浏览器、性能、计算一致性与未覆盖项验收报告；证据不足时不得宣称完成。',
+  },
+  {
     path: 'reports/UNCERTAINTY_REGISTER.md',
     category: ManifestCategory.REPORT,
     impact:
@@ -1126,6 +1138,15 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     category: ManifestCategory.DECISION,
     impact: '牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）',
   },
+  { path: 'src/app/web/fast-input.js', category: ManifestCategory.DECISION, impact: '快速录入的金额精度、固定动作与快捷键保护；所有合法边界来自后端，不包含策略规则。' },
+  { path: 'src/app/web/fast-ui.css', category: ManifestCategory.DECISION, impact: '快速录入桌面布局与小窗口可达性。' },
+  { path: 'src/app/analysisScheduler.ts', category: ManifestCategory.DECISION, impact: '分析工作线程的有界调度及实际取消；不改变计算参数。' },
+  { path: 'src/app/analysisWorker.ts', category: ManifestCategory.DECISION, impact: '原有计算入口的线程边界。' },
+  { path: 'src/app/analysisWork.ts', category: ManifestCategory.DECISION, impact: '正式分析与既有影子分析的原样调用。' },
+  { path: 'src/app/mutationMemo.ts', category: ManifestCategory.DECISION, impact: '传输重试回执，避免已保存行动因响应丢失被重复记录。' },
+  { path: 'test/fastAmountInput.test.ts', category: ManifestCategory.REPORT, impact: '金额精度与非法输入回归。' },
+  { path: 'test/fastInputContract.test.ts', category: ManifestCategory.REPORT, impact: '精确筹码、34BB 最低加注及短码合法动作回归。' },
+  { path: 'test/analysisScheduling.test.ts', category: ManifestCategory.REPORT, impact: '真实 CPU 分析期间继续录入、取消与幂等重试回归。' },
   {
     path: 'test/interactiveTable.test.ts',
     category: ManifestCategory.DECISION,

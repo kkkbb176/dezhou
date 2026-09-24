@@ -607,6 +607,34 @@ export type DecisionReadiness = {
   groups: readonly { zh: string; items: readonly string[] }[];
 };
 
+/** Exact chips for amount entry; legacy BB display fields may be rounded. */
+export type TableAmountInput = {
+  bigBlindChips: number;
+  chipUnit: 1;
+  potChips: number;
+  currentBetChips: number;
+  /** Current actor's commitment on this street, not total hand commitment. */
+  committedChips: number;
+  remainingChips: number;
+  /** Incremental cost of calling, including a short all-in call. */
+  callChips: number;
+  callIsAllIn: boolean;
+  /** Normal floors; an engine-authorized short all-in may be below them. */
+  minBetChips: number;
+  minRaiseToChips: number;
+  allInToChips: number;
+  canBet: boolean;
+  canRaise: boolean;
+  /** Presentation of the existing size grid, not new decision candidates. */
+  quickAmounts: readonly {
+    type: 'BET' | 'RAISE';
+    labelZh: string;
+    toChips: number;
+    isAllIn: boolean;
+    explanationZh: string;
+  }[];
+};
+
 export type TablePreview = {
   ok: boolean;
   tableId: string;
@@ -651,6 +679,8 @@ export type TablePreview = {
   minBetBB: number | null;
   minRaiseToBB: number | null;
   allInToBB: number | null;
+  /** Unavailable without a valid current actor; optional for older consumers. */
+  amountInput?: TableAmountInput | null;
   /** 当前行动者的合法动作按钮（含尺寸展开项） */
   actionButtons: readonly TableActionButton[];
   legalActionTypes: readonly ManualActionType[];

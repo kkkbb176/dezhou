@@ -1,0 +1,218 @@
+{
+  "generatedAt": "2026-09-24T04:59:37.307Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:61415",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-1CwSY3",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-FdgSEP",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": true,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 0,
+    "failed": 1
+  },
+  "results": [
+    {
+      "name": "cached supported nodes repeated real browser analysis",
+      "pass": false,
+      "evidence": "AssertionError [ERR_ASSERTION]: Disabled target #amountInput\n\ntrue !== false\n\n    at click (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:158:10)\n    at async text (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:171:3)\n    at async act (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:205:29)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:515:5\n    at async suite (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:220:9)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:507:3"
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 60.16859999999997
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#heroPositionButtons button",
+      "elapsedMs": 74.49059999999986
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "cached supported nodes repeated real browser analysis",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.800000011920929,
+          "ok": true,
+          "at": 1790225976220
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.300000011920929,
+          "at": 1790225976280
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.300000011920929,
+          "at": 1790225976297
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.399999976158142,
+          "ok": true,
+          "requestId": "t1:0:1790225976283:1",
+          "at": 1790225976299
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.300000011920929,
+          "at": 1790225976346
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.400000035762787,
+          "ok": true,
+          "requestId": "t1:1:1790225976333:2",
+          "at": 1790225976348
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 1.399999976158142,
+          "at": 1790225976780
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.699999988079071,
+          "at": 1790225976813
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.099999964237213,
+          "ok": true,
+          "requestId": "t1:2:1790225976798:3",
+          "at": 1790225976815
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 7,
+          "at": 1790225977247
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 16,
+          "at": 1790225977263
+        }
+      ]
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.800000011920929,
+          "ok": true,
+          "at": 1790225976220
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.300000011920929,
+          "at": 1790225976280
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.300000011920929,
+          "at": 1790225976297
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.399999976158142,
+          "ok": true,
+          "requestId": "t1:0:1790225976283:1",
+          "at": 1790225976299
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.300000011920929,
+          "at": 1790225976346
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.400000035762787,
+          "ok": true,
+          "requestId": "t1:1:1790225976333:2",
+          "at": 1790225976348
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 1.399999976158142,
+          "at": 1790225976780
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.699999988079071,
+          "at": 1790225976813
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.099999964237213,
+          "ok": true,
+          "requestId": "t1:2:1790225976798:3",
+          "at": 1790225976815
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 7,
+          "at": 1790225977247
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 16,
+          "at": 1790225977263
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-cache\\failure-cached-supported-nodes-repeated-real-browser-analysis.png"
+  ]
+}

@@ -1,0 +1,9 @@
+file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab-9max.mts:48
+  const math = vm.debug.math;
+                  ^
+
+TypeError: Cannot read properties of undefined (reading 'debug')
+    at pick (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab-9max.mts:48:19)
+    at file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab-9max.mts:73:13
+
+Node.js v24.19.0

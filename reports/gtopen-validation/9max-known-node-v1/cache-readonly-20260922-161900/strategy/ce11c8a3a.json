@@ -1,0 +1,6096 @@
+{
+  "storeVersion": "gto-strategy-store-v1",
+  "cacheKey": "ce11c8a3a",
+  "scenarioHash": "g96ed8962",
+  "treeId": "t77a7bc8b",
+  "solveFingerprint": "s9397e56f",
+  "scenario": {
+    "kind": "VS_OPEN",
+    "gameType": "CASH",
+    "tableSize": 6,
+    "effectiveStackBB": 50,
+    "heroPosition": "BB",
+    "villainPosition": "BTN",
+    "actionHistory": [
+      {
+        "position": "UTG",
+        "kind": "FOLD",
+        "sizeBB": null
+      },
+      {
+        "position": "HJ",
+        "kind": "FOLD",
+        "sizeBB": null
+      },
+      {
+        "position": "CO",
+        "kind": "FOLD",
+        "sizeBB": null
+      },
+      {
+        "position": "BTN",
+        "kind": "RAISE",
+        "sizeBB": 2.5
+      },
+      {
+        "position": "SB",
+        "kind": "FOLD",
+        "sizeBB": null
+      }
+    ],
+    "raiseSizesBB": [
+      2.5
+    ],
+    "blinds": {
+      "sbBB": 0.5,
+      "bbBB": 1,
+      "anteBB": 0
+    },
+    "heroAlreadyActed": false
+  },
+  "solve": {
+    "engine": "gtopen",
+    "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+    "solverVersion": null,
+    "openSizesBB": [
+      2.5
+    ],
+    "raiseMults": [
+      3
+    ],
+    "maxRaises": 2,
+    "limp": false,
+    "addAllin": true,
+    "rakePct": 0,
+    "rakeCap": 0,
+    "realization": "static",
+    "multiwayEquityModel": "coupled_deck_v1",
+    "iterations": 40,
+    "targetGap": 0.2,
+    "checkEvery": 20,
+    "enginePositions": [
+      "UTG",
+      "HJ",
+      "CO",
+      "BTN",
+      "SB",
+      "BB"
+    ],
+    "posts": [
+      0,
+      0,
+      0,
+      0,
+      0.5,
+      1
+    ],
+    "ante": 0
+  },
+  "range": {
+    "actorPosition": "BB",
+    "actionMenu": [
+      {
+        "kind": "FOLD",
+        "sizeBB": null,
+        "rawLabel": "Fold"
+      },
+      {
+        "kind": "CALL",
+        "sizeBB": 2.5,
+        "rawLabel": "Call 2.5"
+      },
+      {
+        "kind": "RAISE",
+        "sizeBB": 7.5,
+        "rawLabel": "3-bet 7.5"
+      },
+      {
+        "kind": "ALL_IN",
+        "sizeBB": 50,
+        "rawLabel": "All-in 50"
+      }
+    ],
+    "hands": [
+      {
+        "hand": "22",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00049828354,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6078781,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0009188659,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.3907048,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "32o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.5342509,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.46466672,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00076723885,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00031508174,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "42o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.4771006,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5217556,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007666145,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0003771943,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "52o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.42501453,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5737366,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007677807,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00048104837,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "62o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.51265395,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.486307,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007644017,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00027459586,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "72o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.59890735,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.4001124,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.000761253,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00021899903,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "82o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.54156786,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.4574359,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.000765302,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00023094319,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "92o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.5459661,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.45313737,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00071171747,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00018484758,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.50115764,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.4980698,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00062465295,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00014788088,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.40812552,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5911439,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00057813205,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00015247795,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.13872504,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8602085,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00057020725,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00049624953,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.021529036,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9774813,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00057146186,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0004181729,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0015391443,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9968319,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006683349,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00096059113,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "32s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.116166964,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8783299,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00078939804,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.004713812,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "33",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00008473242,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6786499,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0012755716,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.31998977,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "43o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.32770455,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6705251,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007738788,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009964313,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "53o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.24509896,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.7527826,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007757216,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.001342702,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "63o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.36210674,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.63667357,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00077114446,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00044848304,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "73o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.45265114,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5462935,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00076821365,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00028716619,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "83o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.5412347,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.45777252,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00076422206,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0002286038,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "93o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.49614263,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5029989,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00067987526,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00017864196,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.44955033,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5497167,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00059013494,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0001428248,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.34058744,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6587019,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005492924,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00016141318,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.099086165,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.89971566,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054808636,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0006500603,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.017918337,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98096544,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055099174,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00056521,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0012849618,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.99706364,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006123238,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0010391081,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "42s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.07973864,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.91209954,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00079014007,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0073717143,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "43s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.03737859,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8199907,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0008012073,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.14182949,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "44",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00022095766,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.77392054,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.025742628,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.20011586,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "54o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.07625799,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.91880393,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007827049,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0041553834,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "64o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.13724563,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8606264,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007773654,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0013506063,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "74o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.24478792,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.7539467,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007748579,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0004905374,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "84o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.3569266,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6420388,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.000741145,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00029347415,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "94o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.46573982,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5334292,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006575598,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00017337433,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.34854633,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6507512,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005574186,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00014512024,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.19842188,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8008433,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054312113,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00019165374,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.06075541,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9377879,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005408802,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009158301,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.014443176,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98425275,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054563046,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0007584003,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00097264524,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9969741,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00071684096,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0013363829,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "52s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.05905551,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.93081427,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00079303223,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.009337108,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "53s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.029528948,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.7958244,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00080529373,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.17384136,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "54s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.016923456,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5294539,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0008335883,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.4527891,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "55",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0001370744,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.020830704,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9775674,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0014648235,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "65o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.053319104,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9419201,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00078704505,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.003973729,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "75o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.076546885,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9211073,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00078052096,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0015652742,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "85o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.10474097,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8940509,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00069837086,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0005098427,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "95o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.20614228,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.79301834,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00060855114,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00023087692,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.31853116,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6807882,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054622284,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00013437029,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.11158314,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8875927,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005402057,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0002839494,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.047800165,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9503488,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005387156,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0013123419,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.011224235,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98749125,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054205774,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00074241403,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0006858005,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9966082,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0011453388,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.001560671,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "62s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.096120834,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9001782,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007868026,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.002914206,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "63s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.045704708,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9454797,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007978145,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.008017739,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "64s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.022704838,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8311378,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0008185522,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.14533885,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "65s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0129549345,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.61076546,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0008596748,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.37541988,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "66",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0030684501,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9959978,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009224248,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "76o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.03323691,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9628839,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007471022,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0031320718,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "86o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.03780238,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9606362,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006664591,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00089493813,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "96o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.04848861,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9504258,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005760488,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00050958124,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.060386755,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9388459,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054358545,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00022380643,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.088775985,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9104975,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054021226,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00018635928,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.035785675,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.962772,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005369406,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009053784,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.008189364,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.990765,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054134,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0005043094,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00034327927,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.99850345,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006382999,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0005149314,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "72s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.15483415,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8435038,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00078319455,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00087887,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "73s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.06238724,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.93348557,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007933103,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.003333835,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "74s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.031415924,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96068144,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007989849,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.007103721,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "75s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.015014493,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.927962,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00077700353,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.05624641,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "76s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.008512755,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.7397547,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007504446,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.25098214,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "77",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0016659521,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9964064,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0019163768,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "87o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.019829907,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9768567,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006301921,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0026831666,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "97o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.024745712,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9737292,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055213366,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009729772,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.028635738,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96999377,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005396701,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0008308596,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.036803924,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96200967,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005347176,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00065174256,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.029599573,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96909535,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053096976,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0007741,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0057465727,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9932471,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005401791,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.000466143,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000067798705,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9990603,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0004974521,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00037444846,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "82s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.095799886,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.90226144,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007775673,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0011611147,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "83s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.08578455,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.912488,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007570902,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0009703895,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "84s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.03553516,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9598085,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007244729,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0039318074,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "85s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.017777683,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9736367,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.000690882,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.007894786,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "86s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.009270954,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9694461,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00066223217,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.020620624,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "87s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0063480064,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8452317,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006319031,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.14778845,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "88",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.00031432253,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9942559,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0054184687,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "98o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0133363055,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98461956,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054745964,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0014967304,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.01525378,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9829082,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053448044,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0013036137,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.017412212,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9810555,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005307587,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0010015231,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.013767177,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9844602,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00052554253,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0012471337,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0033539552,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9956618,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005447552,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.00043942448,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0006719321,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9692839,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.029325362,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0007188295,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "92s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.070407405,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.92773247,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00068762014,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0011724734,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "93s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.05305695,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.94432944,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006567017,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0019569488,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "94s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.04491191,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9523591,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0006319939,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.002097112,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "95s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.021085173,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9724205,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00058751396,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0059067807,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "96s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.011264148,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.97905886,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005686345,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.009108271,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "97s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0071624275,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.97545487,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055920915,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.016823482,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "98s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0050215516,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9081827,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055806775,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.086237654,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "99",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0000112917805,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0000112917805,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9870246,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.012952803,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.008963485,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9854645,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053128996,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0050406996,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00918517,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9860148,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005286314,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0042713378,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0067813643,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9898725,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005290895,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0028170233,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0009709778,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9981487,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005672056,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0003131503,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0003555288,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.031988025,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9670934,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0005630834,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.047611352,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.94872046,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00059904467,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0030691277,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.036508698,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9586357,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005638791,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0042917808,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.02749381,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9677848,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005503764,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.004170974,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.025142936,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96947455,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.000546475,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.004835999,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.013335085,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9789391,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054616964,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0071796845,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00779082,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9739826,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054451264,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.01768212,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0054004528,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9074972,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054223934,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.08656001,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "T9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0033539068,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.408759,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005430709,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.587344,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "TT",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.94583076,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.05414666,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "JTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.004244171,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96647656,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005407374,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.028738517,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "QTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0025770296,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98955065,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055646827,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.007315837,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00013768846,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.99883205,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00060414086,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0004261186,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "ATo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0015390615,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.99768794,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0007617511,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0331537,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.96114725,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055521645,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0051438315,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.027379103,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.966,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005490783,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.006071791,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.021070976,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.97166467,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054385775,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.006720465,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.01768847,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9743393,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005398723,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0074323094,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.016240735,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.97694194,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005419673,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.006275301,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.009079174,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9768602,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053948606,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0135210855,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.006183717,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8959797,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005363386,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.09730022,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "J9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0034709226,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.5295916,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005370804,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.46640033,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "JTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0013637765,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.09132265,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005673031,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.9067463,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "JJ",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291778,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291778,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.4012902,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.5986872,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "QJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.001515891,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9823682,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0007325607,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.015383396,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0000112917805,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9936357,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0051560802,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0011969438,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0011404016,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9973444,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.001503975,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.020202374,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9685049,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055452564,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.010738175,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.017329656,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9612509,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054889783,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.020870525,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.013662364,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9649858,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054260914,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.020809231,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.011423624,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9530064,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00054103805,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.035029013,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.009605153,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9718908,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053892366,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.01796509,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.008748242,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9636214,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00053469057,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.027095705,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.005156017,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9493466,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005304578,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.044966903,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "Q9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0025825656,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.6679385,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005422457,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.32893676,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "QTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0009122544,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.23219113,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.001110487,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.7657861,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "QJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0009611366,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.11023189,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0033969297,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.8854101,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "QQ",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00040869432,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.99956876,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KQo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00012269474,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.10076756,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.8980026,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0011070913,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AQo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9962541,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0037233653,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.007208943,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98532367,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005661947,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0069012153,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0064697294,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98569345,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055900455,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0072776885,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.005423165,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.98651296,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00055418373,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.007509734,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.004624446,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9862557,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005529151,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.008566984,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0033175629,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9878357,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005547818,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.008291989,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.002242036,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9895052,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0005583353,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0076944004,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0014037318,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.99379545,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00063561415,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0041651498,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "K9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00075181306,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9911898,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0018177173,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.006240743,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00033949365,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.97105175,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.016712934,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.01189579,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00011265877,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.17872408,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.80536366,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.015799616,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KQs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0028602357,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.99183667,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0052917935,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "KK",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00015651212,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.9998209,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AKo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9236729,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.07630451,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0009773726,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9643868,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0030850426,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.03155078,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0010215587,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9356412,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.0046590585,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.058678236,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0010992833,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9095557,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.006846027,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.082499035,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0011554727,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.8984246,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.015100503,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.085319445,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0011657174,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.9747338,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.017100118,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.007000301,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0004440824,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.89020145,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.10582076,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0035337107,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00025926356,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.03199802,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9667051,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0010376575,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "A9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000077516605,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.0036433008,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9955395,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0007396644,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "ATs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.00076698995,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9978686,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0013532116,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291779,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.00017714073,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.99775344,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.0020581507,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AQs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291778,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291778,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.9907547,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.009222624,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AKs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.00001129178,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.8382627,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.16171476,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      },
+      {
+        "hand": "AA",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.000011291777,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "CALL",
+            "sizeBB": 2.5,
+            "frequency": 0.000011291777,
+            "evBB": null,
+            "rawLabel": "Call 2.5"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 7.5,
+            "frequency": 0.00015805216,
+            "evBB": null,
+            "rawLabel": "3-bet 7.5"
+          },
+          {
+            "kind": "ALL_IN",
+            "sizeBB": 50,
+            "frequency": 0.99981934,
+            "evBB": null,
+            "rawLabel": "All-in 50"
+          }
+        ]
+      }
+    ],
+    "potBB": 4,
+    "reachable": true,
+    "unavailableReason": null
+  },
+  "solveMeta": {
+    "brGapTotal": 0.11288998394350344,
+    "seatGaps": [],
+    "seatEvs": [],
+    "stopReason": "target_gap",
+    "solverState": "done",
+    "iterationsCompleted": 40,
+    "iterationsRequested": 40,
+    "targetGap": 0.2,
+    "solveDurationMs": 65510,
+    "multiwayEquityModel": "coupled_deck_v1",
+    "realizationNote": "",
+    "gpu": false
+  },
+  "quality": "LOW_CONVERGENCE",
+  "qualitySummaryZh": "低收敛：BR gap 之和 0.112890，迭代 40 次。频率是**未收敛快照**，不可当作均衡。",
+  "qualityReasonsZh": [
+    "求解器返回了真实策略：40 次迭代，停止原因 target_gap。",
+    "达到本次设定的收敛目标：BR gap 之和 0.11288998 < 0.2。⚠️ 这个目标只对**同一棵树**有意义（跨桌型/跨动作树的 gap 不可比）。",
+    "迭代 40 次，已达到 6 人桌的预算下限 40 次。",
+    "🔴 求解器使用**近似延续模型**：它收敛的是建模后的收益，不是真实扑克。因此本结果的等级**上限是「近似策略」**，无论收敛多好都不会更高。"
+  ],
+  "qualityBlockersZh": [
+    "**没有实测过该场景的重复求解稳定性** —— 没有证据就不给高等级（这是刻意的）。"
+  ],
+  "approximationFlags": {
+    "approximateModel": true,
+    "notConverged": false,
+    "multiwayContinuation": true,
+    "compressedPrecision": false,
+    "fromCache": false,
+    "notes": [
+      "GTOpen 的翻前使用「近似延续模型」：它求解的是建模后的延续收益，不是完整的翻牌后博弈（源码 crates/solver/src/preflop/mod.rs 文件头自述）。",
+      "本场景有 6 名玩家：3 人以上的底池使用 coupled_deck_v1（1024 个确定性潜在强度样本），不是真实共同发牌，也不代表完整的多人翻牌后求解。",
+      "169 类机会模型忽略联合去牌效应：范围越窄、重叠越多，误差越大。",
+      "本次动作树被刻意压缩（开池 2.5BB、再加注 3×、加注上限 2 次、跛入 关闭），以便在纯 CPU 上跑完。**因此没有跛入频率**；且更细的尺寸菜单会给出不同的频率。"
+    ]
+  },
+  "source": {
+    "kind": "SOLVER",
+    "engine": "gtopen",
+    "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+    "solverVersion": null,
+    "endpoint": "http://127.0.0.1:3737"
+  },
+  "createdAt": "2026-09-15T15:00:12.125Z",
+  "fingerprintLines": [
+    "场景 6MAX / 50BB / Hero=BB",
+    "问题 VS_OPEN",
+    "前序 UTG 弃牌 → HJ 弃牌 → CO 弃牌 → BTN RAISE→2.5BB → SB 弃牌",
+    "求解 开池 [2.5] · 再加注 [3]× · 加注上限 2 · 跛入 关闭 · 全下 提供",
+    "引擎 gtopen @ 92c86ed · 多路权益模型 coupled_deck_v1",
+    "预算 迭代 40 · 目标 gap 0.2 · 检查间隔 20",
+    "盲注 SB 0.5 / BB 1 / 前注 0",
+    "座位 UTG → HJ → CO → BTN → SB → BB · 下注 [0,0,0,0,0.5,1]",
+    "键 scenario=g96ed8962 · tree=t77a7bc8b · cache=ce11c8a3a · solve=s9397e56f"
+  ],
+  "unavailableFields": [
+    "evBB（逐动作 EV）—— GTOpen 的翻前节点接口不返回逐手牌、逐动作的 EV；只有状态接口给出逐座位总 EV",
+    "sourceVersion（求解器版本）—— GTOpen 没有版本端点，能力接口只返回能力布尔值",
+    "equity（权益）—— GTOpen 内部有权益表，但没有对外的权益查询接口"
+  ]
+}

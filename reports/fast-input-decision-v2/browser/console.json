@@ -1,0 +1,58 @@
+[
+  {
+    "at": "2026-09-24T05:07:30.488Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1790226450488.895,
+        "url": "http://127.0.0.1:59155/favicon.ico",
+        "networkRequestId": "77868.12"
+      }
+    }
+  },
+  {
+    "at": "2026-09-24T05:08:12.794Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+        "timestamp": 1790226492794.752,
+        "url": "http://127.0.0.1:59155/api/table",
+        "networkRequestId": "77868.202"
+      }
+    }
+  },
+  {
+    "at": "2026-09-24T05:08:50.076Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+        "timestamp": 1790226530076.385,
+        "url": "http://127.0.0.1:59155/api/table",
+        "networkRequestId": "77868.241"
+      }
+    }
+  },
+  {
+    "at": "2026-09-24T05:09:02.955Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1790226542955.194,
+        "url": "http://127.0.0.1:57965/favicon.ico",
+        "networkRequestId": "77868.307"
+      }
+    }
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "hook": true,
+  "title": "德州扑克 · 牌桌快速录入（内部 Alpha）",
+  "gtoVisible": false,
+  "solverVisible": false,
+  "admissionVisible": false,
+  "nineMaxVisible": true,
+  "actionVisible": false,
+  "effectiveWidthVisible": false,
+  "rangeExcerpt": [
+    "⚠️ 还没有任何人进池时（例如翻牌前第一个行动）没有对手范围可算权益，此时会如实返回「信息不足」—— 等有人跟注/加注后再分析即可。"
+  ],
+  "screenshot": "D:/德州决策/reports/gtopen-validation/known-node-readonly-20260922-round4/browser-proof.png"
+}

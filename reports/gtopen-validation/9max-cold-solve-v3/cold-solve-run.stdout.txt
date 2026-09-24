@@ -1,0 +1,20 @@
+{
+  "outPath": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v3\\cold-solve-run.json",
+  "firstForeground": "BACKGROUND_SOLVING",
+  "firstBackground": {
+    "cacheKey": "c7348fc89",
+    "thingZh": "9 人桌 枪口位 开池",
+    "state": "RUNNING",
+    "iterationZh": "正在求解"
+  },
+  "finalForeground": "BACKGROUND_SOLVING",
+  "finalBackground": {
+    "cacheKey": "c7348fc89",
+    "thingZh": "9 人桌 枪口位 开池",
+    "state": "FAILED",
+    "iterationZh": null
+  },
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "cacheFiles": []
+}

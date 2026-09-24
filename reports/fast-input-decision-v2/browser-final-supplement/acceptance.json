@@ -1,0 +1,1191 @@
+{
+  "generatedAt": "2026-09-24T05:10:13.067Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:52917",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-OeJV21",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-19OALR",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": false,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 6,
+    "failed": 1
+  },
+  "results": [
+    {
+      "name": "offline action recovery preserves single action",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "layout 1366x768",
+      "pass": true,
+      "evidence": {
+        "width": 1366,
+        "height": 768,
+        "scrollWidth": 1366,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 20,
+            "y": 510.5,
+            "w": 976,
+            "h": 257.5,
+            "bottom": 768
+          },
+          {
+            "id": "rail",
+            "x": 1016,
+            "y": 58,
+            "w": 350,
+            "h": 710,
+            "bottom": 768
+          },
+          {
+            "id": "tableWrap",
+            "x": 20,
+            "y": 111,
+            "w": 976,
+            "h": 363.5,
+            "bottom": 474.5
+          },
+          {
+            "id": "amountInput",
+            "x": 110,
+            "y": 565.5,
+            "w": 758,
+            "h": 47,
+            "bottom": 612.5
+          },
+          {
+            "id": "actionButtons",
+            "x": 20,
+            "y": 687.5,
+            "w": 976,
+            "h": 48,
+            "bottom": 735.5
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout 1024x768",
+      "pass": true,
+      "evidence": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1009,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 14,
+            "y": 607,
+            "w": 666,
+            "h": 257.5,
+            "bottom": 864.5
+          },
+          {
+            "id": "rail",
+            "x": 694,
+            "y": 58,
+            "w": 315,
+            "h": 812.25,
+            "bottom": 870.25
+          },
+          {
+            "id": "tableWrap",
+            "x": 14,
+            "y": 111,
+            "w": 666,
+            "h": 460,
+            "bottom": 571
+          },
+          {
+            "id": "amountInput",
+            "x": 87,
+            "y": 662,
+            "w": 469,
+            "h": 47,
+            "bottom": 709
+          },
+          {
+            "id": "actionButtons",
+            "x": 14,
+            "y": 784,
+            "w": 666,
+            "h": 48,
+            "bottom": 832
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout 911x512",
+      "pass": true,
+      "evidence": {
+        "width": 911,
+        "height": 512,
+        "scrollWidth": 896,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 14,
+            "y": 480.59375,
+            "w": 868,
+            "h": 257.5,
+            "bottom": 738.09375
+          },
+          {
+            "id": "rail",
+            "x": 0,
+            "y": 738.09375,
+            "w": 896,
+            "h": 637.046875,
+            "bottom": 1375.140625
+          },
+          {
+            "id": "tableWrap",
+            "x": 14,
+            "y": 114.59375,
+            "w": 868,
+            "h": 330,
+            "bottom": 444.59375
+          },
+          {
+            "id": "amountInput",
+            "x": 87,
+            "y": 535.59375,
+            "w": 671,
+            "h": 47,
+            "bottom": 582.59375
+          },
+          {
+            "id": "actionButtons",
+            "x": 14,
+            "y": 657.59375,
+            "w": 868,
+            "h": 48,
+            "bottom": 705.59375
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout 390x844",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 375,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 14,
+            "y": 562.375,
+            "w": 347,
+            "h": 379.75,
+            "bottom": 942.125
+          },
+          {
+            "id": "rail",
+            "x": 0,
+            "y": 942.125,
+            "w": 375,
+            "h": 746.46875,
+            "bottom": 1688.59375
+          },
+          {
+            "id": "tableWrap",
+            "x": 14,
+            "y": 157.59375,
+            "w": 347,
+            "h": 355,
+            "bottom": 512.59375
+          },
+          {
+            "id": "amountInput",
+            "x": 14,
+            "y": 647.125,
+            "w": 242,
+            "h": 47,
+            "bottom": 694.125
+          },
+          {
+            "id": "actionButtons",
+            "x": 14,
+            "y": 784.125,
+            "w": 347,
+            "h": 103,
+            "bottom": 887.125
+          }
+        ]
+      }
+    },
+    {
+      "name": "real analysis with responsive layout and separate timings",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "player profile opens and replacement keeps explicit identity flow",
+      "pass": false,
+      "evidence": "Error: Timed out: document.querySelector(\"#modal\").textContent.includes(\"真实历史\")\n    at wait (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:144:9)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:486:5\n    at async suite (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:220:9)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:481:3"
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 67.79679999999996
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 69.31280000000015
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.85739999999987
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#retrySave",
+      "elapsedMs": 59.22370000000001
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "offline action recovery preserves single action",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.099999964237213,
+          "ok": true,
+          "at": 1790226591983
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 12.899999976158142,
+          "at": 1790226592039
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.300000011920929,
+          "at": 1790226592055
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.199999988079071,
+          "ok": true,
+          "requestId": "t1:0:1790226592042:1",
+          "at": 1790226592057
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 5.400000035762787,
+          "at": 1790226592489
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.400000035762787,
+          "at": 1790226592522
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t1:1:1790226592507:2",
+          "at": 1790226592524
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.399999976158142,
+          "at": 1790226592956
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.399999976158142,
+          "ok": true,
+          "requestId": "t1:2:1790226592947:3",
+          "at": 1790226592957
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 10.700000047683716,
+          "at": 1790226593389
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15.800000011920929,
+          "at": 1790226593405
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": false,
+          "requestId": "t1:3:1790226593390:4",
+          "at": 1790226593406
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "retrySave",
+          "frameMs": 13.600000023841858,
+          "at": 1790226593456
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.099999964237213,
+          "ok": true,
+          "requestId": "t1:3:1790226593390:4",
+          "at": 1790226593457
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 66.0898000000002
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.81269999999995
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 47.24160000000029
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 71.27509999999984
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.28470000000016
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 55.22310000000016
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.28049999999985
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.59389999999985
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.93129999999928
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.941499999999905
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.18879999999990105,
+        "prepareMs": 0.15390000000024884,
+        "computeMs": 496.3109999999997,
+        "workerMs": 658.6274999999996,
+        "totalMs": 659.7723999999998
+      },
+      "ok": true
+    },
+    {
+      "kind": "browserAnalysisVisible",
+      "elapsedMs": 754.4895000000006,
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.5,
+          "ok": true,
+          "at": 1790226593904
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790226593973
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.100000023841858,
+          "at": 1790226593989
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16,
+          "ok": true,
+          "requestId": "t2:0:1790226593974:1",
+          "at": 1790226593990
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 11.5,
+          "at": 1790226594422
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16,
+          "at": 1790226594439
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": true,
+          "requestId": "t2:1:1790226594424:2",
+          "at": 1790226594441
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.099999964237213,
+          "at": 1790226594872
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.199999988079071,
+          "ok": true,
+          "requestId": "t2:2:1790226594859:3",
+          "at": 1790226594874
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 14.100000023841858,
+          "at": 1790226595306
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15,
+          "at": 1790226595322
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.699999988079071,
+          "ok": true,
+          "requestId": "t2:3:1790226595307:4",
+          "at": 1790226595323
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 4,
+          "at": 1790226595756
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5,
+          "ok": true,
+          "requestId": "t2:4:1790226595752:5",
+          "at": 1790226595757
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 5.599999964237213,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.599999964237213,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.5,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.100000023841858,
+          "at": 1790226596205
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t2:5:1790226596189:6",
+          "at": 1790226596206
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 8.599999964237213,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.699999988079071,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.899999976158142,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.599999964237213,
+          "at": 1790226596655
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.600000023841858,
+          "ok": true,
+          "requestId": "t2:6:1790226596640:7",
+          "at": 1790226596657
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.399999976158142,
+          "at": 1790226597088
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.300000011920929,
+          "ok": true,
+          "requestId": "t2:7:1790226597078:8",
+          "at": 1790226597090
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 9.800000011920929,
+          "at": 1790226597522
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.899999976158142,
+          "ok": true,
+          "requestId": "t2:8:1790226597512:9",
+          "at": 1790226597524
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 10.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 8.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.5,
+          "at": 1790226597971
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.299999952316284,
+          "ok": true,
+          "requestId": "t2:9:1790226597957:10",
+          "at": 1790226597973
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.599999964237213,
+          "at": 1790226598405
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 662.8999999761581,
+          "renderMs": 0.9000000357627869,
+          "server": {
+            "queueMs": 0.18879999999990105,
+            "prepareMs": 0.15390000000024884,
+            "computeMs": 496.3109999999997,
+            "workerMs": 658.6274999999996,
+            "totalMs": 659.7723999999998
+          },
+          "transportAndDecodeMs": 3.127599976158308,
+          "at": 1790226599133
+        }
+      ]
+    },
+    {
+      "kind": "browserInputThroughPaint",
+      "elapsedMs": 38.571100000001024,
+      "note": "Includes CDP round trips, focus, select-all, insertText and two animation frames; not a pure browser key-to-paint metric."
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "real analysis with responsive layout and separate timings",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.5,
+          "ok": true,
+          "at": 1790226593904
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790226593973
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.100000023841858,
+          "at": 1790226593989
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16,
+          "ok": true,
+          "requestId": "t2:0:1790226593974:1",
+          "at": 1790226593990
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 11.5,
+          "at": 1790226594422
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16,
+          "at": 1790226594439
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": true,
+          "requestId": "t2:1:1790226594424:2",
+          "at": 1790226594441
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.099999964237213,
+          "at": 1790226594872
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.199999988079071,
+          "ok": true,
+          "requestId": "t2:2:1790226594859:3",
+          "at": 1790226594874
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 14.100000023841858,
+          "at": 1790226595306
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15,
+          "at": 1790226595322
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.699999988079071,
+          "ok": true,
+          "requestId": "t2:3:1790226595307:4",
+          "at": 1790226595323
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 4,
+          "at": 1790226595756
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5,
+          "ok": true,
+          "requestId": "t2:4:1790226595752:5",
+          "at": 1790226595757
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 5.599999964237213,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.599999964237213,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.5,
+          "at": 1790226596188
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.100000023841858,
+          "at": 1790226596205
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t2:5:1790226596189:6",
+          "at": 1790226596206
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 8.599999964237213,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.699999988079071,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.899999976158142,
+          "at": 1790226596639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.599999964237213,
+          "at": 1790226596655
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.600000023841858,
+          "ok": true,
+          "requestId": "t2:6:1790226596640:7",
+          "at": 1790226596657
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.399999976158142,
+          "at": 1790226597088
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.300000011920929,
+          "ok": true,
+          "requestId": "t2:7:1790226597078:8",
+          "at": 1790226597090
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 9.800000011920929,
+          "at": 1790226597522
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.899999976158142,
+          "ok": true,
+          "requestId": "t2:8:1790226597512:9",
+          "at": 1790226597524
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 10.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 8.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.5,
+          "at": 1790226597955
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.5,
+          "at": 1790226597971
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.299999952316284,
+          "ok": true,
+          "requestId": "t2:9:1790226597957:10",
+          "at": 1790226597973
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.599999964237213,
+          "at": 1790226598405
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 662.8999999761581,
+          "renderMs": 0.9000000357627869,
+          "server": {
+            "queueMs": 0.18879999999990105,
+            "prepareMs": 0.15390000000024884,
+            "computeMs": 496.3109999999997,
+            "workerMs": 658.6274999999996,
+            "totalMs": 659.7723999999998
+          },
+          "transportAndDecodeMs": 3.127599976158308,
+          "at": 1790226599133
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 8.600000023841858,
+          "at": 1790226599805
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 15.100000023841858,
+          "at": 1790226600539
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 4.700000047683716,
+          "at": 1790226601272
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 16,
+          "at": 1790226601539
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 11.800000011920929,
+          "at": 1790226601539
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 9.5,
+          "at": 1790226601539
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 71.73110000000088
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 72.22460000000137
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 45.90929999999935
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "player profile opens and replacement keeps explicit identity flow",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.399999976158142,
+          "ok": true,
+          "at": 1790226601576
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.900000035762787,
+          "at": 1790226601639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.199999988079071,
+          "at": 1790226601655
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.69999998807907,
+          "ok": true,
+          "requestId": "t3:0:1790226601640:1",
+          "at": 1790226601657
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 4,
+          "at": 1790226602088
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226602122
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.69999998807907,
+          "ok": true,
+          "requestId": "t3:1:1790226602107:2",
+          "at": 1790226602123
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 6.899999976158142,
+          "at": 1790226602555
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.300000011920929,
+          "ok": true,
+          "requestId": "t3:2:1790226602548:3",
+          "at": 1790226602557
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 10.599999964237213,
+          "at": 1790226602989
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.5,
+          "at": 1790226603006
+        }
+      ]
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.399999976158142,
+          "ok": true,
+          "at": 1790226601576
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.900000035762787,
+          "at": 1790226601639
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.199999988079071,
+          "at": 1790226601655
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.69999998807907,
+          "ok": true,
+          "requestId": "t3:0:1790226601640:1",
+          "at": 1790226601657
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 4,
+          "at": 1790226602088
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226602122
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.69999998807907,
+          "ok": true,
+          "requestId": "t3:1:1790226602107:2",
+          "at": 1790226602123
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 6.899999976158142,
+          "at": 1790226602555
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.300000011920929,
+          "ok": true,
+          "requestId": "t3:2:1790226602548:3",
+          "at": 1790226602557
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 10.599999964237213,
+          "at": 1790226602989
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.5,
+          "at": 1790226603006
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\layout-1366x768.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\layout-1024x768.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\reachable-actions-1024.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\layout-911x512.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\reachable-actions-911.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\layout-390x844.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\reachable-actions-390.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-final-supplement\\failure-player-profile-opens-and-replacement-keeps-explicit-identity-flow.png"
+  ]
+}

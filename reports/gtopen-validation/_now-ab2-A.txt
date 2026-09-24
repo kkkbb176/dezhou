@@ -1,0 +1,10 @@
+file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab2-9max.mts:43
+  const vm = j.result.viewModel;
+                      ^
+
+TypeError: Cannot read properties of undefined (reading 'viewModel')
+    at pick (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab2-9max.mts:43:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/reports/gtopen-validation/_now-ab2-9max.mts:61:19
+
+Node.js v24.19.0

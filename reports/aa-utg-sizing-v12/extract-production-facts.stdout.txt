@@ -1,0 +1,10 @@
+{
+  "outPath": "D:\\德州决策\\reports\\aa-utg-sizing-v12\\production-facts.json",
+  "httpStatus": 200,
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "prFound": false,
+  "prKeys": null,
+  "sizeCount": 0,
+  "rows": []
+}

@@ -40,8 +40,21 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { createTableJsHarness, type StubNode, type TableJsHarness } from './helpers/tableJsHarness.ts';
+
+test('NEWTABLE-00：保存结果未确认时，新建牌桌入口必须双层拒绝', () => {
+  const source = readFileSync(
+    fileURLToPath(new URL('../src/app/web/table.js', import.meta.url)),
+    'utf8',
+  );
+  assert.match(source, /function createTable\([^)]*\)\s*\{\s*if \(app\.pendingMutation\)/s,
+    'createTable 本身必须拒绝，防止旧请求重试后把旧桌复活');
+  assert.match(source, /function openNewTableModal\(\)\s*\{\s*if \(app\.pendingMutation\)/s,
+    '界面入口也必须拒绝，不能让用户误以为可换桌');
+});
 
 /* ============================================================
  * 观察工具

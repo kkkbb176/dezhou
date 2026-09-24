@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-09-24T05:11:03.096Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:59216",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-bLyXCM",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-Eq8Mau",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": false,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "name": "player profile opens and replacement keeps explicit identity flow",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 69.16680000000008
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#modal button",
+      "elapsedMs": 64.03009999999995
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "player profile opens and replacement keeps explicit identity flow",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.600000023841858,
+          "ok": true,
+          "at": 1790226662081
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 11.900000035762787,
+          "at": 1790226662137
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 12.799999952316284,
+          "at": 1790226662153
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.800000011920929,
+          "ok": true,
+          "requestId": "t1:0:1790226662141:1",
+          "at": 1790226662155
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.699999988079071,
+          "at": 1790226662603
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.899999976158142,
+          "at": 1790226662619
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:1:1790226662605:2",
+          "at": 1790226662621
+        }
+      ]
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.600000023841858,
+          "ok": true,
+          "at": 1790226662081
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 11.900000035762787,
+          "at": 1790226662137
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 12.799999952316284,
+          "at": 1790226662153
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.800000011920929,
+          "ok": true,
+          "requestId": "t1:0:1790226662141:1",
+          "at": 1790226662155
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.699999988079071,
+          "at": 1790226662603
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.899999976158142,
+          "at": 1790226662619
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:1:1790226662605:2",
+          "at": 1790226662621
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-player-final\\player-profile-and-replacement.png"
+  ]
+}

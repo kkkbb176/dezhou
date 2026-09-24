@@ -1,0 +1,14 @@
+
+> dezhou-poker-trainer@0.1.0 verify
+> npm run typecheck && npm run manifest:check && npm test
+
+
+> dezhou-poker-trainer@0.1.0 typecheck
+> tsc --noEmit
+
+
+> dezhou-poker-trainer@0.1.0 manifest:check
+> node --experimental-strip-types scripts/generateManifest.ts --check
+
+✖ 清单校验失败（1 项）：
+  [CHANGED] src/domain/postflop/betResponse.ts 内容已变化（36bf2367f64b… → 51c82e3e28cc…）。影响：下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ **所有「无人下注」节点的下注决策与尺寸选择都会变化**

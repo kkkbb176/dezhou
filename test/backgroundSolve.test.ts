@@ -382,6 +382,26 @@ test('BG-SOLVE-06：同一场景入队十次 ⇒ 只算一次', async () => {
   assert.equal(calls.count, 1, `同一场景只应求解一次，实际 ${calls.count} 次`);
 });
 
+test('BG-SOLVE-06b：不同新局面持续到来时，等待队列有上限且保留最新任务', async () => {
+  const provider = makeSlowProvider({ delayMs: 500 });
+  const queue = new BackgroundSolveQueue({ concurrency: 1, maxPending: 2 });
+  const lookup = makeFakeLookup(provider, { cached: false });
+  const scenarios = [40, 50, 60, 70].map((effectiveStackBB) => ({
+    ...realScenario(),
+    effectiveStackBB,
+  }));
+  const records = scenarios.map((scenario) => queue.submit(provider, lookup as never, scenario));
+
+  assert.equal(queue.queueDepth(), 2, '正在运行的任务之外，等待队列不得超过显式上限');
+  assert.equal(records[1]!.state, BackgroundSolveState.FAILED, '最旧的等待任务应被更新局面取代');
+  assert.equal(records[1]!.reasonKind, 'QUEUE_SUPERSEDED');
+  assert.ok(
+    records[3]!.state === BackgroundSolveState.QUEUED || records[3]!.state === BackgroundSolveState.RUNNING,
+    '最新任务必须保留，不能因为旧队列占满而丢弃',
+  );
+  queue.reset();
+});
+
 test('BG-SOLVE-07：后台走的是**会落盘**的那一层（lookupWithStats），不是裸 provider', async () => {
   /*
    * 🔴 这条测试防的是最容易犯、后果最隐蔽的一个错：

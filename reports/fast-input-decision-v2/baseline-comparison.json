@@ -1,0 +1,65 @@
+{
+  "comparedAt": "2026-09-24T04:44:07.977Z",
+  "beforeFile": "baseline-before-frozen-stable.json",
+  "fixtureComparisons": [
+    {
+      "name": "preflop-open-9max-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "preflop-open-6max-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "preflop-facing-open-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "preflop-facing-4bet-min34-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "flop-facing-bet-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "turn-facing-bet-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    },
+    {
+      "name": "river-facing-bet-ready",
+      "identical": false,
+      "decisionIdentical": true,
+      "normalizedInputIdentical": true,
+      "deterministic": true
+    }
+  ],
+  "protectedChanged": [
+    "src/infra/artifactDefinitions.ts",
+    "src/app/table/table.types.ts",
+    "src/app/table/tablePreview.ts"
+  ],
+  "allStableIdentical": false,
+  "allDecisionsIdentical": true,
+  "allNormalizedInputsIdentical": true,
+  "allRepeatDeterministic": true,
+  "legalityUnchanged": true
+}

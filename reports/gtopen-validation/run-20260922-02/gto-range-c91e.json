@@ -1,0 +1,16 @@
+{
+  "ok": false,
+  "status": "UNAVAILABLE",
+  "cause": "UNSUPPORTED",
+  "messageZh": "扩展目录里没有条目「6-UTG-RFI」—— 界面不得编造场景。",
+  "verificationZh": "未验证",
+  "approximate": false,
+  "approximationNotes": [
+    "扩展目录里没有条目「6-UTG-RFI」—— 界面不得编造场景。"
+  ],
+  "baseline": null,
+  "stats": null,
+  "quality": null,
+  "cache": null,
+  "fingerprintLines": []
+}

@@ -1,0 +1,2693 @@
+{
+  "generatedAt": "2026-09-24T05:00:30.387Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:62025",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-NLoN4d",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-1x4LZ3",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": true,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "name": "cached supported nodes repeated real browser analysis",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 45.009500000000116
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#heroPositionButtons button",
+      "elapsedMs": 74.26340000000005
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Ah\"]",
+      "elapsedMs": 64.05130000000008
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Ad\"]",
+      "elapsedMs": 46.46120000000019
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 52.495800000000145
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 61.0930000000003
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.12059999999974
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 61.73100000000068
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 62.01100000000042
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 61.304300000000694
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.8118000000004
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 61.29499999999916
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.12449999999989814,
+        "prepareMs": 13.788300000000163,
+        "computeMs": 694.8449999999993,
+        "workerMs": 879.2239,
+        "totalMs": 893.7804999999998
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.014400000000023283,
+        "prepareMs": 0.4736000000002605,
+        "computeMs": 673.7484000000004,
+        "workerMs": 843.0434999999998,
+        "totalMs": 843.9677000000001
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.011399999999412103,
+        "prepareMs": 0.3872000000001208,
+        "computeMs": 706.3696999999993,
+        "workerMs": 882.1435000000001,
+        "totalMs": 882.9904000000006
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.011899999999513966,
+        "prepareMs": 0.4161999999996624,
+        "computeMs": 702.7304000000004,
+        "workerMs": 890.6003000000001,
+        "totalMs": 891.5491999999995
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.01870000000053551,
+        "prepareMs": 0.7495999999991909,
+        "computeMs": 673.4683999999997,
+        "workerMs": 873.1890000000003,
+        "totalMs": 874.6638999999996
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.012000000000625732,
+        "prepareMs": 0.3279999999995198,
+        "computeMs": 649.6077999999998,
+        "workerMs": 809.1723999999995,
+        "totalMs": 809.9768999999997
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.015299999999115244,
+        "prepareMs": 0.4510000000009313,
+        "computeMs": 663.0805,
+        "workerMs": 821.9956999999995,
+        "totalMs": 822.9251999999997
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.01929999999993015,
+        "prepareMs": 0.7579999999998108,
+        "computeMs": 651.3907999999992,
+        "workerMs": 823.6995000000006,
+        "totalMs": 825.2785000000003
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.02659999999923457,
+        "prepareMs": 0.42400000000088767,
+        "computeMs": 648.3878999999997,
+        "workerMs": 830.0939999999991,
+        "totalMs": 831.0171000000009
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.01599999999962165,
+        "prepareMs": 0.4135000000005675,
+        "computeMs": 673.5294000000013,
+        "workerMs": 831.4496999999992,
+        "totalMs": 832.4807999999994
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.013199999999415013,
+        "prepareMs": 0.3260000000009313,
+        "computeMs": 676.6212999999989,
+        "workerMs": 847.6471000000001,
+        "totalMs": 848.7618000000002
+      },
+      "ok": true
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 69.58309999999983
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Ks\"]",
+      "elapsedMs": 68.35610000000088
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.012299999998504063,
+        "prepareMs": 0.43510000000242144,
+        "computeMs": 713.4588000000003,
+        "workerMs": 900.7543000000005,
+        "totalMs": 901.8161999999975
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.009700000002339948,
+        "prepareMs": 0.3480999999992491,
+        "computeMs": 703.1894000000029,
+        "workerMs": 890.376400000001,
+        "totalMs": 891.2943000000014
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.008400000002438901,
+        "prepareMs": 0.38739999999961583,
+        "computeMs": 685.4523999999983,
+        "workerMs": 854.2135999999991,
+        "totalMs": 855.1298999999999
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.01059999999779393,
+        "prepareMs": 0.8024000000004889,
+        "computeMs": 668.9776999999995,
+        "workerMs": 850.8458000000028,
+        "totalMs": 852.3693000000021
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.008900000000721775,
+        "prepareMs": 0.9341999999996915,
+        "computeMs": 671.8277000000016,
+        "workerMs": 830.1087999999982,
+        "totalMs": 831.5526000000027
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.03630000000339351,
+        "prepareMs": 0.3423999999977241,
+        "computeMs": 684.0485000000008,
+        "workerMs": 875.3374000000003,
+        "totalMs": 876.5627999999997
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.016400000000430737,
+        "prepareMs": 0.45829999999841675,
+        "computeMs": 710.8029999999999,
+        "workerMs": 946.9046999999991,
+        "totalMs": 948.2573000000011
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.016499999997904524,
+        "prepareMs": 0.6085000000020955,
+        "computeMs": 696.1635999999999,
+        "workerMs": 857.1847999999991,
+        "totalMs": 858.9433000000026
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.009500000000116415,
+        "prepareMs": 0.3179999999993015,
+        "computeMs": 660.9363999999987,
+        "workerMs": 834.8706999999995,
+        "totalMs": 835.8165000000008
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.008900000000721775,
+        "prepareMs": 0.33870000000024447,
+        "computeMs": 677.1133000000009,
+        "workerMs": 838.7143999999971,
+        "totalMs": 839.5926
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.014900000001944136,
+        "prepareMs": 0.6349999999983993,
+        "computeMs": 644.4084000000003,
+        "workerMs": 805.9556000000011,
+        "totalMs": 807.3947999999982
+      },
+      "ok": true
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Qh\"]",
+      "elapsedMs": 65.56370000000243
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Qd\"]",
+      "elapsedMs": 51.443999999999505
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.014900000001944136,
+        "prepareMs": 0.3025999999990745,
+        "computeMs": 662.4812999999995,
+        "workerMs": 831.7384999999995,
+        "totalMs": 832.9572000000007
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.015900000002147863,
+        "prepareMs": 0.5509999999994761,
+        "computeMs": 670.4667999999983,
+        "workerMs": 837.0385999999999,
+        "totalMs": 838.6042999999991
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.008799999999610009,
+        "prepareMs": 0.28219999999782885,
+        "computeMs": 667.1520999999993,
+        "workerMs": 823.7373000000007,
+        "totalMs": 824.6235000000015
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.015900000002147863,
+        "prepareMs": 0.3646999999982654,
+        "computeMs": 649.0638999999974,
+        "workerMs": 803.1016999999993,
+        "totalMs": 804.6209000000017
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.013999999999214197,
+        "prepareMs": 0.49060000000099535,
+        "computeMs": 751.4088000000011,
+        "workerMs": 910.9130000000005,
+        "totalMs": 912.3488000000034
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.010600000001431908,
+        "prepareMs": 0.3521999999975378,
+        "computeMs": 661.633600000001,
+        "workerMs": 824.7504999999983,
+        "totalMs": 825.8965999999964
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.009500000000116415,
+        "prepareMs": 0.27620000000024447,
+        "computeMs": 665.637999999999,
+        "workerMs": 824.5550000000003,
+        "totalMs": 825.5285000000003
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.010400000006484333,
+        "prepareMs": 0.27749999999650754,
+        "computeMs": 665.6582000000053,
+        "workerMs": 839.2761000000028,
+        "totalMs": 840.4660000000003
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.014699999999720603,
+        "prepareMs": 0.49610000000393484,
+        "computeMs": 663.4152000000031,
+        "workerMs": 820.2462999999989,
+        "totalMs": 821.7511999999988
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.010000000002037268,
+        "prepareMs": 0.2874999999985448,
+        "computeMs": 658.5320000000065,
+        "workerMs": 823.9205999999976,
+        "totalMs": 824.8171000000002
+      },
+      "ok": true
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.00969999999506399,
+        "prepareMs": 0.2778000000034808,
+        "computeMs": 642.3148999999976,
+        "workerMs": 797.6869999999981,
+        "totalMs": 798.7566999999981
+      },
+      "ok": true
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "cached supported nodes repeated real browser analysis",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.300000011920929,
+          "ok": true,
+          "at": 1790225993138
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.100000023841858,
+          "at": 1790225993196
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.199999988079071,
+          "at": 1790225993229
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.099999964237213,
+          "ok": true,
+          "requestId": "t1:0:1790225993216:1",
+          "at": 1790225993231
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 12.599999964237213,
+          "at": 1790225993279
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.600000023841858,
+          "ok": true,
+          "requestId": "t1:1:1790225993267:2",
+          "at": 1790225993281
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 16.80000001192093,
+          "at": 1790225993714
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.600000023841858,
+          "at": 1790225993729
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.100000023841858,
+          "ok": true,
+          "requestId": "t1:2:1790225993715:3",
+          "at": 1790225993731
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 4.5,
+          "at": 1790225994163
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 15.699999988079071,
+          "at": 1790225994180
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 16.19999998807907,
+          "at": 1790225994197
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.199999988079071,
+          "at": 1790225994213
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t1:3:1790225994198:4",
+          "at": 1790225994215
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.199999988079071,
+          "at": 1790225994646
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.299999952316284,
+          "ok": true,
+          "requestId": "t1:4:1790225994638:5",
+          "at": 1790225994648
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.800000011920929,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.400000035762787,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 3,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790225995096
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t1:5:1790225995082:6",
+          "at": 1790225995098
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 10.800000011920929,
+          "at": 1790225995530
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.400000035762787,
+          "ok": true,
+          "requestId": "t1:6:1790225995520:7",
+          "at": 1790225995532
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 14,
+          "at": 1790225995979
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.899999976158142,
+          "ok": true,
+          "requestId": "t1:7:1790225995966:8",
+          "at": 1790225995981
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 14.699999988079071,
+          "at": 1790225996413
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:8:1790225996399:9",
+          "at": 1790225996415
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.80000001192093,
+          "at": 1790225996862
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.80000001192093,
+          "ok": true,
+          "requestId": "t1:9:1790225996846:10",
+          "at": 1790225996864
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 3.5,
+          "at": 1790225997297
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 7.600000023841858,
+          "ok": true,
+          "requestId": "t1:10:1790225997294:11",
+          "at": 1790225997302
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 7.099999964237213,
+          "at": 1790225997746
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.899999976158142,
+          "ok": true,
+          "requestId": "t1:11:1790225997739:12",
+          "at": 1790225997748
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 8.099999964237213,
+          "at": 1790225998179
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 9.400000035762787,
+          "ok": true,
+          "requestId": "t1:12:1790225998171:13",
+          "at": 1790225998181
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790225998646
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 898.1999999880791,
+          "renderMs": 1.800000011920929,
+          "server": {
+            "queueMs": 0.12449999999989814,
+            "prepareMs": 13.788300000000163,
+            "computeMs": 694.8449999999993,
+            "workerMs": 879.2239,
+            "totalMs": 893.7804999999998
+          },
+          "transportAndDecodeMs": 4.419499988079224,
+          "at": 1790225999593
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.900000035762787,
+          "at": 1790225999629
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 848.2999999523163,
+          "renderMs": 0.7000000476837158,
+          "server": {
+            "queueMs": 0.014400000000023283,
+            "prepareMs": 0.4736000000002605,
+            "computeMs": 673.7484000000004,
+            "workerMs": 843.0434999999998,
+            "totalMs": 843.9677000000001
+          },
+          "transportAndDecodeMs": 4.332299952316134,
+          "at": 1790226000463
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 5.600000023841858,
+          "at": 1790226000513
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 886.1999999880791,
+          "renderMs": 0.7000000476837158,
+          "server": {
+            "queueMs": 0.011399999999412103,
+            "prepareMs": 0.3872000000001208,
+            "computeMs": 706.3696999999993,
+            "workerMs": 882.1435000000001,
+            "totalMs": 882.9904000000006
+          },
+          "transportAndDecodeMs": 3.2095999880784802,
+          "at": 1790226001395
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226001463
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 895.0999999642372,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.011899999999513966,
+            "prepareMs": 0.4161999999996624,
+            "computeMs": 702.7304000000004,
+            "workerMs": 890.6003000000001,
+            "totalMs": 891.5491999999995
+          },
+          "transportAndDecodeMs": 3.55079996423774,
+          "at": 1790226002343
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.19999998807907,
+          "at": 1790226002413
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 878.8999999761581,
+          "renderMs": 1.5,
+          "server": {
+            "queueMs": 0.01870000000053551,
+            "prepareMs": 0.7495999999991909,
+            "computeMs": 673.4683999999997,
+            "workerMs": 873.1890000000003,
+            "totalMs": 874.6638999999996
+          },
+          "transportAndDecodeMs": 4.2360999761585845,
+          "at": 1790226003278
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.599999964237213,
+          "at": 1790226003312
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 813.2999999523163,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.012000000000625732,
+            "prepareMs": 0.3279999999995198,
+            "computeMs": 649.6077999999998,
+            "workerMs": 809.1723999999995,
+            "totalMs": 809.9768999999997
+          },
+          "transportAndDecodeMs": 3.3230999523166247,
+          "at": 1790226004111
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226004179
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 826.3000000119209,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.015299999999115244,
+            "prepareMs": 0.4510000000009313,
+            "computeMs": 663.0805,
+            "workerMs": 821.9956999999995,
+            "totalMs": 822.9251999999997
+          },
+          "transportAndDecodeMs": 3.374800011921252,
+          "at": 1790226004990
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226005029
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 828.0999999642372,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.01929999999993015,
+            "prepareMs": 0.7579999999998108,
+            "computeMs": 651.3907999999992,
+            "workerMs": 823.6995000000006,
+            "totalMs": 825.2785000000003
+          },
+          "transportAndDecodeMs": 2.821499964236864,
+          "at": 1790226005842
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.100000023841858,
+          "at": 1790226005879
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 834.5,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.02659999999923457,
+            "prepareMs": 0.42400000000088767,
+            "computeMs": 648.3878999999997,
+            "workerMs": 830.0939999999991,
+            "totalMs": 831.0171000000009
+          },
+          "transportAndDecodeMs": 3.482899999999063,
+          "at": 1790226006699
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.399999976158142,
+          "at": 1790226006779
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 836.2000000476837,
+          "renderMs": 1.2999999523162842,
+          "server": {
+            "queueMs": 0.01599999999962165,
+            "prepareMs": 0.4135000000005675,
+            "computeMs": 673.5294000000013,
+            "workerMs": 831.4496999999992,
+            "totalMs": 832.4807999999994
+          },
+          "transportAndDecodeMs": 3.719200047684353,
+          "at": 1790226007601
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 17.400000035762787,
+          "at": 1790226007679
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 852.2000000476837,
+          "renderMs": 1.199999988079071,
+          "server": {
+            "queueMs": 0.013199999999415013,
+            "prepareMs": 0.3260000000009313,
+            "computeMs": 676.6212999999989,
+            "workerMs": 847.6471000000001,
+            "totalMs": 848.7618000000002
+          },
+          "transportAndDecodeMs": 3.4382000476834946,
+          "at": 1790226008516
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 12.699999988079071,
+          "at": 1790226008612
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 16,
+          "at": 1790226008629
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.5,
+          "at": 1790226008645
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t1:13:1790226008632:14",
+          "at": 1790226008648
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5,
+          "ok": true,
+          "requestId": "t1:14:1790226008649:15",
+          "at": 1790226008654
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 17.099999964237213,
+          "at": 1790226009096
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790226009113
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 18.19999998807907,
+          "ok": true,
+          "requestId": "t1:15:1790226009097:16",
+          "at": 1790226009116
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.899999976158142,
+          "ok": true,
+          "requestId": "t1:16:1790226009116:17",
+          "at": 1790226009121
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9,
+          "at": 1790226009546
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 905.2999999523163,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.012299999998504063,
+            "prepareMs": 0.43510000000242144,
+            "computeMs": 713.4588000000003,
+            "workerMs": 900.7543000000005,
+            "totalMs": 901.8161999999975
+          },
+          "transportAndDecodeMs": 3.4837999523188046,
+          "at": 1790226010518
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 5.900000035762787,
+          "at": 1790226010562
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 894.8000000119209,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.009700000002339948,
+            "prepareMs": 0.3480999999992491,
+            "computeMs": 703.1894000000029,
+            "workerMs": 890.376400000001,
+            "totalMs": 891.2943000000014
+          },
+          "transportAndDecodeMs": 3.5057000119195436,
+          "at": 1790226011452
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226011529
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 858.1999999880791,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.008400000002438901,
+            "prepareMs": 0.38739999999961583,
+            "computeMs": 685.4523999999983,
+            "workerMs": 854.2135999999991,
+            "totalMs": 855.1298999999999
+          },
+          "transportAndDecodeMs": 3.070099988079164,
+          "at": 1790226012372
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 2.399999976158142,
+          "at": 1790226012413
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 855.8000000119209,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.01059999999779393,
+            "prepareMs": 0.8024000000004889,
+            "computeMs": 668.9776999999995,
+            "workerMs": 850.8458000000028,
+            "totalMs": 852.3693000000021
+          },
+          "transportAndDecodeMs": 3.430700011918816,
+          "at": 1790226013268
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 8.600000023841858,
+          "at": 1790226013312
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 835.3000000119209,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.008900000000721775,
+            "prepareMs": 0.9341999999996915,
+            "computeMs": 671.8277000000016,
+            "workerMs": 830.1087999999982,
+            "totalMs": 831.5526000000027
+          },
+          "transportAndDecodeMs": 3.7474000119182165,
+          "at": 1790226014140
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 14.699999988079071,
+          "at": 1790226014212
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 880.4000000357628,
+          "renderMs": 0.7999999523162842,
+          "server": {
+            "queueMs": 0.03630000000339351,
+            "prepareMs": 0.3423999999977241,
+            "computeMs": 684.0485000000008,
+            "workerMs": 875.3374000000003,
+            "totalMs": 876.5627999999997
+          },
+          "transportAndDecodeMs": 3.8372000357630895,
+          "at": 1790226015079
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.699999988079071,
+          "at": 1790226015162
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 952.0999999642372,
+          "renderMs": 1.300000011920929,
+          "server": {
+            "queueMs": 0.016400000000430737,
+            "prepareMs": 0.45829999999841675,
+            "computeMs": 710.8029999999999,
+            "workerMs": 946.9046999999991,
+            "totalMs": 948.2573000000011
+          },
+          "transportAndDecodeMs": 3.8426999642360897,
+          "at": 1790226016100
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 11.399999976158142,
+          "at": 1790226016145
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 862,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.016499999997904524,
+            "prepareMs": 0.6085000000020955,
+            "computeMs": 696.1635999999999,
+            "workerMs": 857.1847999999991,
+            "totalMs": 858.9433000000026
+          },
+          "transportAndDecodeMs": 3.056699999997363,
+          "at": 1790226016997
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16,
+          "at": 1790226017045
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 839,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.009500000000116415,
+            "prepareMs": 0.3179999999993015,
+            "computeMs": 660.9363999999987,
+            "workerMs": 834.8706999999995,
+            "totalMs": 835.8165000000008
+          },
+          "transportAndDecodeMs": 3.183499999999185,
+          "at": 1790226017870
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.900000035762787,
+          "at": 1790226017946
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 843.1000000238419,
+          "renderMs": 1,
+          "server": {
+            "queueMs": 0.008900000000721775,
+            "prepareMs": 0.33870000000024447,
+            "computeMs": 677.1133000000009,
+            "workerMs": 838.7143999999971,
+            "totalMs": 839.5926
+          },
+          "transportAndDecodeMs": 3.5074000238419103,
+          "at": 1790226018774
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.80000001192093,
+          "at": 1790226018845
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 811.1999999880791,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.014900000001944136,
+            "prepareMs": 0.6349999999983993,
+            "computeMs": 644.4084000000003,
+            "workerMs": 805.9556000000011,
+            "totalMs": 807.3947999999982
+          },
+          "transportAndDecodeMs": 3.805199988080858,
+          "at": 1790226019641
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.100000023841858,
+          "at": 1790226019729
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.899999976158142,
+          "at": 1790226019745
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15,
+          "at": 1790226019761
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:17:1790226019747:18",
+          "at": 1790226019763
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.5,
+          "ok": true,
+          "requestId": "t1:18:1790226019763:19",
+          "at": 1790226019769
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 6.100000023841858,
+          "at": 1790226020195
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.699999988079071,
+          "at": 1790226020211
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t1:19:1790226020196:20",
+          "at": 1790226020213
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.599999964237213,
+          "ok": true,
+          "requestId": "t1:20:1790226020214:21",
+          "at": 1790226020220
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.300000011920929,
+          "at": 1790226020645
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 836.6999999880791,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.014900000001944136,
+            "prepareMs": 0.3025999999990745,
+            "computeMs": 662.4812999999995,
+            "workerMs": 831.7384999999995,
+            "totalMs": 832.9572000000007
+          },
+          "transportAndDecodeMs": 3.742799988078332,
+          "at": 1790226021542
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 8.199999988079071,
+          "at": 1790226021578
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 842.5,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.015900000002147863,
+            "prepareMs": 0.5509999999994761,
+            "computeMs": 670.4667999999983,
+            "workerMs": 837.0385999999999,
+            "totalMs": 838.6042999999991
+          },
+          "transportAndDecodeMs": 3.895700000000943,
+          "at": 1790226022413
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.5,
+          "at": 1790226022495
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 827.6000000238419,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.008799999999610009,
+            "prepareMs": 0.28219999999782885,
+            "computeMs": 667.1520999999993,
+            "workerMs": 823.7373000000007,
+            "totalMs": 824.6235000000015
+          },
+          "transportAndDecodeMs": 2.9765000238403445,
+          "at": 1790226023308
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 11.800000011920929,
+          "at": 1790226023345
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 808.0999999642372,
+          "renderMs": 1,
+          "server": {
+            "queueMs": 0.015900000002147863,
+            "prepareMs": 0.3646999999982654,
+            "computeMs": 649.0638999999974,
+            "workerMs": 803.1016999999993,
+            "totalMs": 804.6209000000017
+          },
+          "transportAndDecodeMs": 3.479099964235502,
+          "at": 1790226024143
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226024211
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 915.9000000357628,
+          "renderMs": 0.7999999523162842,
+          "server": {
+            "queueMs": 0.013999999999214197,
+            "prepareMs": 0.49060000000099535,
+            "computeMs": 751.4088000000011,
+            "workerMs": 910.9130000000005,
+            "totalMs": 912.3488000000034
+          },
+          "transportAndDecodeMs": 3.5512000357593934,
+          "at": 1790226025113
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.099999964237213,
+          "at": 1790226025161
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 829.3000000119209,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.010600000001431908,
+            "prepareMs": 0.3521999999975378,
+            "computeMs": 661.633600000001,
+            "workerMs": 824.7504999999983,
+            "totalMs": 825.8965999999964
+          },
+          "transportAndDecodeMs": 3.403400011924532,
+          "at": 1790226025976
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 9.800000011920929,
+          "at": 1790226026045
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 829,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.009500000000116415,
+            "prepareMs": 0.27620000000024447,
+            "computeMs": 665.637999999999,
+            "workerMs": 824.5550000000003,
+            "totalMs": 825.5285000000003
+          },
+          "transportAndDecodeMs": 3.4714999999996508,
+          "at": 1790226026865
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.599999964237213,
+          "at": 1790226026911
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 843.3999999761581,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.010400000006484333,
+            "prepareMs": 0.27749999999650754,
+            "computeMs": 665.6582000000053,
+            "workerMs": 839.2761000000028,
+            "totalMs": 840.4660000000003
+          },
+          "transportAndDecodeMs": 2.933999976157793,
+          "at": 1790226027739
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.600000023841858,
+          "at": 1790226027811
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 825.5,
+          "renderMs": 1.2999999523162842,
+          "server": {
+            "queueMs": 0.014699999999720603,
+            "prepareMs": 0.49610000000393484,
+            "computeMs": 663.4152000000031,
+            "workerMs": 820.2462999999989,
+            "totalMs": 821.7511999999988
+          },
+          "transportAndDecodeMs": 3.7488000000012107,
+          "at": 1790226028622
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.69999998807907,
+          "at": 1790226028662
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 828.7999999523163,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.010000000002037268,
+            "prepareMs": 0.2874999999985448,
+            "computeMs": 658.5320000000065,
+            "workerMs": 823.9205999999976,
+            "totalMs": 824.8171000000002
+          },
+          "transportAndDecodeMs": 3.9828999523160746,
+          "at": 1790226029475
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.399999976158142,
+          "at": 1790226029511
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 801.6999999880791,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.00969999999506399,
+            "prepareMs": 0.2778000000034808,
+            "computeMs": 642.3148999999976,
+            "workerMs": 797.6869999999981,
+            "totalMs": 798.7566999999981
+          },
+          "transportAndDecodeMs": 2.9432999880809803,
+          "at": 1790226030299
+        }
+      ]
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 4.300000011920929,
+          "ok": true,
+          "at": 1790225993138
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.100000023841858,
+          "at": 1790225993196
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.199999988079071,
+          "at": 1790225993229
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.099999964237213,
+          "ok": true,
+          "requestId": "t1:0:1790225993216:1",
+          "at": 1790225993231
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 12.599999964237213,
+          "at": 1790225993279
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.600000023841858,
+          "ok": true,
+          "requestId": "t1:1:1790225993267:2",
+          "at": 1790225993281
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 16.80000001192093,
+          "at": 1790225993714
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.600000023841858,
+          "at": 1790225993729
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.100000023841858,
+          "ok": true,
+          "requestId": "t1:2:1790225993715:3",
+          "at": 1790225993731
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "SUMMARY",
+          "frameMs": 4.5,
+          "at": 1790225994163
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 15.699999988079071,
+          "at": 1790225994180
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 16.19999998807907,
+          "at": 1790225994197
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.199999988079071,
+          "at": 1790225994213
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t1:3:1790225994198:4",
+          "at": 1790225994215
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.199999988079071,
+          "at": 1790225994646
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.299999952316284,
+          "ok": true,
+          "requestId": "t1:4:1790225994638:5",
+          "at": 1790225994648
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.800000011920929,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.400000035762787,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 3,
+          "at": 1790225995080
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790225995096
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t1:5:1790225995082:6",
+          "at": 1790225995098
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 10.800000011920929,
+          "at": 1790225995530
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.400000035762787,
+          "ok": true,
+          "requestId": "t1:6:1790225995520:7",
+          "at": 1790225995532
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 14,
+          "at": 1790225995979
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.899999976158142,
+          "ok": true,
+          "requestId": "t1:7:1790225995966:8",
+          "at": 1790225995981
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 14.699999988079071,
+          "at": 1790225996413
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:8:1790225996399:9",
+          "at": 1790225996415
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.80000001192093,
+          "at": 1790225996862
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.80000001192093,
+          "ok": true,
+          "requestId": "t1:9:1790225996846:10",
+          "at": 1790225996864
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 3.5,
+          "at": 1790225997297
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 7.600000023841858,
+          "ok": true,
+          "requestId": "t1:10:1790225997294:11",
+          "at": 1790225997302
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 7.099999964237213,
+          "at": 1790225997746
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.899999976158142,
+          "ok": true,
+          "requestId": "t1:11:1790225997739:12",
+          "at": 1790225997748
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 8.099999964237213,
+          "at": 1790225998179
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 9.400000035762787,
+          "ok": true,
+          "requestId": "t1:12:1790225998171:13",
+          "at": 1790225998181
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790225998646
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 898.1999999880791,
+          "renderMs": 1.800000011920929,
+          "server": {
+            "queueMs": 0.12449999999989814,
+            "prepareMs": 13.788300000000163,
+            "computeMs": 694.8449999999993,
+            "workerMs": 879.2239,
+            "totalMs": 893.7804999999998
+          },
+          "transportAndDecodeMs": 4.419499988079224,
+          "at": 1790225999593
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.900000035762787,
+          "at": 1790225999629
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 848.2999999523163,
+          "renderMs": 0.7000000476837158,
+          "server": {
+            "queueMs": 0.014400000000023283,
+            "prepareMs": 0.4736000000002605,
+            "computeMs": 673.7484000000004,
+            "workerMs": 843.0434999999998,
+            "totalMs": 843.9677000000001
+          },
+          "transportAndDecodeMs": 4.332299952316134,
+          "at": 1790226000463
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 5.600000023841858,
+          "at": 1790226000513
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 886.1999999880791,
+          "renderMs": 0.7000000476837158,
+          "server": {
+            "queueMs": 0.011399999999412103,
+            "prepareMs": 0.3872000000001208,
+            "computeMs": 706.3696999999993,
+            "workerMs": 882.1435000000001,
+            "totalMs": 882.9904000000006
+          },
+          "transportAndDecodeMs": 3.2095999880784802,
+          "at": 1790226001395
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226001463
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 895.0999999642372,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.011899999999513966,
+            "prepareMs": 0.4161999999996624,
+            "computeMs": 702.7304000000004,
+            "workerMs": 890.6003000000001,
+            "totalMs": 891.5491999999995
+          },
+          "transportAndDecodeMs": 3.55079996423774,
+          "at": 1790226002343
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.19999998807907,
+          "at": 1790226002413
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 878.8999999761581,
+          "renderMs": 1.5,
+          "server": {
+            "queueMs": 0.01870000000053551,
+            "prepareMs": 0.7495999999991909,
+            "computeMs": 673.4683999999997,
+            "workerMs": 873.1890000000003,
+            "totalMs": 874.6638999999996
+          },
+          "transportAndDecodeMs": 4.2360999761585845,
+          "at": 1790226003278
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.599999964237213,
+          "at": 1790226003312
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 813.2999999523163,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.012000000000625732,
+            "prepareMs": 0.3279999999995198,
+            "computeMs": 649.6077999999998,
+            "workerMs": 809.1723999999995,
+            "totalMs": 809.9768999999997
+          },
+          "transportAndDecodeMs": 3.3230999523166247,
+          "at": 1790226004111
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226004179
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 826.3000000119209,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.015299999999115244,
+            "prepareMs": 0.4510000000009313,
+            "computeMs": 663.0805,
+            "workerMs": 821.9956999999995,
+            "totalMs": 822.9251999999997
+          },
+          "transportAndDecodeMs": 3.374800011921252,
+          "at": 1790226004990
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226005029
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 828.0999999642372,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.01929999999993015,
+            "prepareMs": 0.7579999999998108,
+            "computeMs": 651.3907999999992,
+            "workerMs": 823.6995000000006,
+            "totalMs": 825.2785000000003
+          },
+          "transportAndDecodeMs": 2.821499964236864,
+          "at": 1790226005842
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.100000023841858,
+          "at": 1790226005879
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 834.5,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.02659999999923457,
+            "prepareMs": 0.42400000000088767,
+            "computeMs": 648.3878999999997,
+            "workerMs": 830.0939999999991,
+            "totalMs": 831.0171000000009
+          },
+          "transportAndDecodeMs": 3.482899999999063,
+          "at": 1790226006699
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.399999976158142,
+          "at": 1790226006779
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 836.2000000476837,
+          "renderMs": 1.2999999523162842,
+          "server": {
+            "queueMs": 0.01599999999962165,
+            "prepareMs": 0.4135000000005675,
+            "computeMs": 673.5294000000013,
+            "workerMs": 831.4496999999992,
+            "totalMs": 832.4807999999994
+          },
+          "transportAndDecodeMs": 3.719200047684353,
+          "at": 1790226007601
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 17.400000035762787,
+          "at": 1790226007679
+        },
+        {
+          "kind": "analysis",
+          "revision": 13,
+          "requestMs": 852.2000000476837,
+          "renderMs": 1.199999988079071,
+          "server": {
+            "queueMs": 0.013199999999415013,
+            "prepareMs": 0.3260000000009313,
+            "computeMs": 676.6212999999989,
+            "workerMs": 847.6471000000001,
+            "totalMs": 848.7618000000002
+          },
+          "transportAndDecodeMs": 3.4382000476834946,
+          "at": 1790226008516
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 12.699999988079071,
+          "at": 1790226008612
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 16,
+          "at": 1790226008629
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.5,
+          "at": 1790226008645
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t1:13:1790226008632:14",
+          "at": 1790226008648
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5,
+          "ok": true,
+          "requestId": "t1:14:1790226008649:15",
+          "at": 1790226008654
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 17.099999964237213,
+          "at": 1790226009096
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.400000035762787,
+          "at": 1790226009113
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 18.19999998807907,
+          "ok": true,
+          "requestId": "t1:15:1790226009097:16",
+          "at": 1790226009116
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.899999976158142,
+          "ok": true,
+          "requestId": "t1:16:1790226009116:17",
+          "at": 1790226009121
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9,
+          "at": 1790226009546
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 905.2999999523163,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.012299999998504063,
+            "prepareMs": 0.43510000000242144,
+            "computeMs": 713.4588000000003,
+            "workerMs": 900.7543000000005,
+            "totalMs": 901.8161999999975
+          },
+          "transportAndDecodeMs": 3.4837999523188046,
+          "at": 1790226010518
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 5.900000035762787,
+          "at": 1790226010562
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 894.8000000119209,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.009700000002339948,
+            "prepareMs": 0.3480999999992491,
+            "computeMs": 703.1894000000029,
+            "workerMs": 890.376400000001,
+            "totalMs": 891.2943000000014
+          },
+          "transportAndDecodeMs": 3.5057000119195436,
+          "at": 1790226011452
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.5,
+          "at": 1790226011529
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 858.1999999880791,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.008400000002438901,
+            "prepareMs": 0.38739999999961583,
+            "computeMs": 685.4523999999983,
+            "workerMs": 854.2135999999991,
+            "totalMs": 855.1298999999999
+          },
+          "transportAndDecodeMs": 3.070099988079164,
+          "at": 1790226012372
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 2.399999976158142,
+          "at": 1790226012413
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 855.8000000119209,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.01059999999779393,
+            "prepareMs": 0.8024000000004889,
+            "computeMs": 668.9776999999995,
+            "workerMs": 850.8458000000028,
+            "totalMs": 852.3693000000021
+          },
+          "transportAndDecodeMs": 3.430700011918816,
+          "at": 1790226013268
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 8.600000023841858,
+          "at": 1790226013312
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 835.3000000119209,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.008900000000721775,
+            "prepareMs": 0.9341999999996915,
+            "computeMs": 671.8277000000016,
+            "workerMs": 830.1087999999982,
+            "totalMs": 831.5526000000027
+          },
+          "transportAndDecodeMs": 3.7474000119182165,
+          "at": 1790226014140
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 14.699999988079071,
+          "at": 1790226014212
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 880.4000000357628,
+          "renderMs": 0.7999999523162842,
+          "server": {
+            "queueMs": 0.03630000000339351,
+            "prepareMs": 0.3423999999977241,
+            "computeMs": 684.0485000000008,
+            "workerMs": 875.3374000000003,
+            "totalMs": 876.5627999999997
+          },
+          "transportAndDecodeMs": 3.8372000357630895,
+          "at": 1790226015079
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.699999988079071,
+          "at": 1790226015162
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 952.0999999642372,
+          "renderMs": 1.300000011920929,
+          "server": {
+            "queueMs": 0.016400000000430737,
+            "prepareMs": 0.45829999999841675,
+            "computeMs": 710.8029999999999,
+            "workerMs": 946.9046999999991,
+            "totalMs": 948.2573000000011
+          },
+          "transportAndDecodeMs": 3.8426999642360897,
+          "at": 1790226016100
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 11.399999976158142,
+          "at": 1790226016145
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 862,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.016499999997904524,
+            "prepareMs": 0.6085000000020955,
+            "computeMs": 696.1635999999999,
+            "workerMs": 857.1847999999991,
+            "totalMs": 858.9433000000026
+          },
+          "transportAndDecodeMs": 3.056699999997363,
+          "at": 1790226016997
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16,
+          "at": 1790226017045
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 839,
+          "renderMs": 0.800000011920929,
+          "server": {
+            "queueMs": 0.009500000000116415,
+            "prepareMs": 0.3179999999993015,
+            "computeMs": 660.9363999999987,
+            "workerMs": 834.8706999999995,
+            "totalMs": 835.8165000000008
+          },
+          "transportAndDecodeMs": 3.183499999999185,
+          "at": 1790226017870
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.900000035762787,
+          "at": 1790226017946
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 843.1000000238419,
+          "renderMs": 1,
+          "server": {
+            "queueMs": 0.008900000000721775,
+            "prepareMs": 0.33870000000024447,
+            "computeMs": 677.1133000000009,
+            "workerMs": 838.7143999999971,
+            "totalMs": 839.5926
+          },
+          "transportAndDecodeMs": 3.5074000238419103,
+          "at": 1790226018774
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.80000001192093,
+          "at": 1790226018845
+        },
+        {
+          "kind": "analysis",
+          "revision": 17,
+          "requestMs": 811.1999999880791,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.014900000001944136,
+            "prepareMs": 0.6349999999983993,
+            "computeMs": 644.4084000000003,
+            "workerMs": 805.9556000000011,
+            "totalMs": 807.3947999999982
+          },
+          "transportAndDecodeMs": 3.805199988080858,
+          "at": 1790226019641
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.100000023841858,
+          "at": 1790226019729
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.899999976158142,
+          "at": 1790226019745
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15,
+          "at": 1790226019761
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.100000023841858,
+          "ok": true,
+          "requestId": "t1:17:1790226019747:18",
+          "at": 1790226019763
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.5,
+          "ok": true,
+          "requestId": "t1:18:1790226019763:19",
+          "at": 1790226019769
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 6.100000023841858,
+          "at": 1790226020195
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.699999988079071,
+          "at": 1790226020211
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t1:19:1790226020196:20",
+          "at": 1790226020213
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.599999964237213,
+          "ok": true,
+          "requestId": "t1:20:1790226020214:21",
+          "at": 1790226020220
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.300000011920929,
+          "at": 1790226020645
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 836.6999999880791,
+          "renderMs": 0.5999999642372131,
+          "server": {
+            "queueMs": 0.014900000001944136,
+            "prepareMs": 0.3025999999990745,
+            "computeMs": 662.4812999999995,
+            "workerMs": 831.7384999999995,
+            "totalMs": 832.9572000000007
+          },
+          "transportAndDecodeMs": 3.742799988078332,
+          "at": 1790226021542
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 8.199999988079071,
+          "at": 1790226021578
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 842.5,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.015900000002147863,
+            "prepareMs": 0.5509999999994761,
+            "computeMs": 670.4667999999983,
+            "workerMs": 837.0385999999999,
+            "totalMs": 838.6042999999991
+          },
+          "transportAndDecodeMs": 3.895700000000943,
+          "at": 1790226022413
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.5,
+          "at": 1790226022495
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 827.6000000238419,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.008799999999610009,
+            "prepareMs": 0.28219999999782885,
+            "computeMs": 667.1520999999993,
+            "workerMs": 823.7373000000007,
+            "totalMs": 824.6235000000015
+          },
+          "transportAndDecodeMs": 2.9765000238403445,
+          "at": 1790226023308
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 11.800000011920929,
+          "at": 1790226023345
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 808.0999999642372,
+          "renderMs": 1,
+          "server": {
+            "queueMs": 0.015900000002147863,
+            "prepareMs": 0.3646999999982654,
+            "computeMs": 649.0638999999974,
+            "workerMs": 803.1016999999993,
+            "totalMs": 804.6209000000017
+          },
+          "transportAndDecodeMs": 3.479099964235502,
+          "at": 1790226024143
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226024211
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 915.9000000357628,
+          "renderMs": 0.7999999523162842,
+          "server": {
+            "queueMs": 0.013999999999214197,
+            "prepareMs": 0.49060000000099535,
+            "computeMs": 751.4088000000011,
+            "workerMs": 910.9130000000005,
+            "totalMs": 912.3488000000034
+          },
+          "transportAndDecodeMs": 3.5512000357593934,
+          "at": 1790226025113
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.099999964237213,
+          "at": 1790226025161
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 829.3000000119209,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.010600000001431908,
+            "prepareMs": 0.3521999999975378,
+            "computeMs": 661.633600000001,
+            "workerMs": 824.7504999999983,
+            "totalMs": 825.8965999999964
+          },
+          "transportAndDecodeMs": 3.403400011924532,
+          "at": 1790226025976
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 9.800000011920929,
+          "at": 1790226026045
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 829,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.009500000000116415,
+            "prepareMs": 0.27620000000024447,
+            "computeMs": 665.637999999999,
+            "workerMs": 824.5550000000003,
+            "totalMs": 825.5285000000003
+          },
+          "transportAndDecodeMs": 3.4714999999996508,
+          "at": 1790226026865
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.599999964237213,
+          "at": 1790226026911
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 843.3999999761581,
+          "renderMs": 0.699999988079071,
+          "server": {
+            "queueMs": 0.010400000006484333,
+            "prepareMs": 0.27749999999650754,
+            "computeMs": 665.6582000000053,
+            "workerMs": 839.2761000000028,
+            "totalMs": 840.4660000000003
+          },
+          "transportAndDecodeMs": 2.933999976157793,
+          "at": 1790226027739
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.600000023841858,
+          "at": 1790226027811
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 825.5,
+          "renderMs": 1.2999999523162842,
+          "server": {
+            "queueMs": 0.014699999999720603,
+            "prepareMs": 0.49610000000393484,
+            "computeMs": 663.4152000000031,
+            "workerMs": 820.2462999999989,
+            "totalMs": 821.7511999999988
+          },
+          "transportAndDecodeMs": 3.7488000000012107,
+          "at": 1790226028622
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 16.69999998807907,
+          "at": 1790226028662
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 828.7999999523163,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.010000000002037268,
+            "prepareMs": 0.2874999999985448,
+            "computeMs": 658.5320000000065,
+            "workerMs": 823.9205999999976,
+            "totalMs": 824.8171000000002
+          },
+          "transportAndDecodeMs": 3.9828999523160746,
+          "at": 1790226029475
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.399999976158142,
+          "at": 1790226029511
+        },
+        {
+          "kind": "analysis",
+          "revision": 21,
+          "requestMs": 801.6999999880791,
+          "renderMs": 0.5,
+          "server": {
+            "queueMs": 0.00969999999506399,
+            "prepareMs": 0.2778000000034808,
+            "computeMs": 642.3148999999976,
+            "workerMs": 797.6869999999981,
+            "totalMs": 798.7566999999981
+          },
+          "transportAndDecodeMs": 2.9432999880809803,
+          "at": 1790226030299
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-cache-final\\cached-node-Ah-Ad.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-cache-final\\cached-node-As-Ks.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-cache-final\\cached-node-Qh-Qd.png"
+  ]
+}

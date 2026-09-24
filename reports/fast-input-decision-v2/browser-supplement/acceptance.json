@@ -1,0 +1,308 @@
+{
+  "generatedAt": "2026-09-24T04:58:58.339Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:59218",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-BPhnbC",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-yjhgDF",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": true,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 1,
+    "failed": 1
+  },
+  "results": [
+    {
+      "name": "baseline UI and V2 produce identical normalized input",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "cached supported nodes repeated real browser analysis",
+      "pass": false,
+      "evidence": "Error: Timed out: window.__dshTest.app.state.tableSize===9\n    at wait (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:144:9)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:509:66\n    at async suite (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:220:9)\n    at async file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/scripts/browser-fast-input-v2.mjs:507:3"
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 77.15809999999999
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 68.39059999999995
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 45.47119999999995
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 57.246799999999894
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.44029999999975
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 70.11820000000034
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 56.6229000000003
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 45.91640000000007
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.755300000000716
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#actionButtons button",
+      "elapsedMs": 46.36959999999999
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#actionButtons button",
+      "elapsedMs": 46.23869999999988
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#sizeButtons button",
+      "elapsedMs": 70.72710000000006
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "baseline UI and V2 produce identical normalized input",
+      "metrics": []
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 56.76249999999982
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.52219999999943
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 45.78769999999986
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "cached supported nodes repeated real browser analysis",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2,
+          "ok": true,
+          "at": 1790225926884
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.800000011920929,
+          "at": 1790225926933
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.899999976158142,
+          "at": 1790225926949
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.799999952316284,
+          "ok": true,
+          "requestId": "t3:0:1790225926934:1",
+          "at": 1790225926950
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 7.899999976158142,
+          "at": 1790225927382
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.600000023841858,
+          "at": 1790225927398
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t3:1:1790225927384:2",
+          "at": 1790225927400
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.399999976158142,
+          "at": 1790225927832
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.300000011920929,
+          "ok": true,
+          "requestId": "t3:2:1790225927823:3",
+          "at": 1790225927835
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 11.600000023841858,
+          "at": 1790225928265
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.200000047683716,
+          "at": 1790225928282
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": false,
+          "requestId": "t3:3:1790225928266:4",
+          "at": 1790225928284
+        }
+      ]
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2,
+          "ok": true,
+          "at": 1790225926884
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.800000011920929,
+          "at": 1790225926933
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.899999976158142,
+          "at": 1790225926949
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.799999952316284,
+          "ok": true,
+          "requestId": "t3:0:1790225926934:1",
+          "at": 1790225926950
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 7.899999976158142,
+          "at": 1790225927382
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.600000023841858,
+          "at": 1790225927398
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t3:1:1790225927384:2",
+          "at": 1790225927400
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.399999976158142,
+          "at": 1790225927832
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.300000011920929,
+          "ok": true,
+          "requestId": "t3:2:1790225927823:3",
+          "at": 1790225927835
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 11.600000023841858,
+          "at": 1790225928265
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.200000047683716,
+          "at": 1790225928282
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": false,
+          "requestId": "t3:3:1790225928266:4",
+          "at": 1790225928284
+        }
+      ]
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-supplement\\original-ui-comparison.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser-supplement\\failure-cached-supported-nodes-repeated-real-browser-analysis.png"
+  ]
+}

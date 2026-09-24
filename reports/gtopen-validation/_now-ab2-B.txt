@@ -1,0 +1,84 @@
+DEBUG_RESP={"ok":true,"viewModel":{"actionZh":"建议：全下","sizeZh":"加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）","confidenceZh":"中低","classificationZh":"边缘决策","reasonsZh":["整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.63 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）","加注： 100.0BB。**翻前加注响应模型 EV** = 3212.99 筹码 vs 跟注 311.63 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 51.1% / 跟 48.9% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现","当前底池赔率需要 27.3% 权益"],"allReasonsZh":["整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.63 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）","加注： 100.0BB。**翻前加注响应模型 EV** = 3212.99 筹码 vs 跟注 311.63 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 51.1% / 跟 48.9% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**
+DEBUG_RESP={"ok":true,"viewModel":{"actionZh":"建议：全下","sizeZh":"加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）","confidenceZh":"中低","classificationZh":"边缘决策","reasonsZh":["整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.63 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）","加注： 100.0BB。**翻前加注响应模型 EV** = 3212.99 筹码 vs 跟注 311.63 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 51.1% / 跟 48.9% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现","当前底池赔率需要 27.3% 权益"],"allReasonsZh":["整体范围权益（回落口径：本节点没有可用的下注范围） 83.9% 高于跟注所需 27.3%：跟注 EV = 311.63 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）","加注： 100.0BB。**翻前加注响应模型 EV** = 3212.99 筹码 vs 跟注 311.63 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 51.1% / 跟 48.9% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**
+{
+  "mode": "B",
+  "cacheDir": "(production default)",
+  "NO_RANGE": {
+    "label": "NO_RANGE",
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "confidenceZh": "中低",
+    "classificationZh": "边缘决策",
+    "equity": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "311.63 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "gtoState": "SOLVER_RANGE",
+    "gtoMsg": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "cacheSource": "persistent",
+    "prov": {
+      "positionZh": "枪口位",
+      "sourceKind": "EMPIRICAL",
+      "sourceZh": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.02115291714591222（目标 0.05）。✅ **已通过准入：BR gap 0.021153 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。",
+      "sourceKindZh": "经验数据（有依据，但未达「已验证」标准）",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+      "effectiveComboCount": 94.05598276264851,
+      "normalizedEntropy": 0.6564907113362348,
+      "collapsed": false,
+      "gtoOutcomeState": "SOLVED",
+      "gtoReasonZh": null,
+      "gtoPending": false
+    },
+    "candidates": [
+      "弃牌|—|0.00 筹码",
+      "跟注|1.50BB|311.63 筹码",
+      "加注|4.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|4.50BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|6.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|7.50BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|9.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|12.0BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|100.0BB|—（依赖弃牌率，本项目无可信估计）"
+    ]
+  },
+  "WITH_RANGE": {
+    "label": "WITH_RANGE",
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "confidenceZh": "中低",
+    "classificationZh": "边缘决策",
+    "equity": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "311.63 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "gtoState": "SOLVER_RANGE",
+    "gtoMsg": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "cacheSource": "memory",
+    "prov": {
+      "positionZh": "枪口位",
+      "sourceKind": "EMPIRICAL",
+      "sourceZh": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.02115291714591222（目标 0.05）。✅ **已通过准入：BR gap 0.021153 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。",
+      "sourceKindZh": "经验数据（有依据，但未达「已验证」标准）",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+      "effectiveComboCount": 94.05598276264851,
+      "normalizedEntropy": 0.6564907113362348,
+      "collapsed": false,
+      "gtoOutcomeState": "SOLVED",
+      "gtoReasonZh": null,
+      "gtoPending": false
+    },
+    "candidates": [
+      "弃牌|—|0.00 筹码",
+      "跟注|1.50BB|311.63 筹码",
+      "加注|4.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|4.50BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|6.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|7.50BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|9.00BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|12.0BB|—（依赖弃牌率，本项目无可信估计）",
+      "加注|100.0BB|—（依赖弃牌率，本项目无可信估计）"
+    ]
+  }
+}

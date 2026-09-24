@@ -1,0 +1,59 @@
+✔ TEST 1：转牌 A♠J♠ 半诈唬 —— 三个尺寸各有真实响应概率与 BetEV（不得结构性归零） (279.956ms)
+✔ TEST 2：翻牌与转牌必须给出不同的响应模型（未来牌数不同） (640.2937ms)
+✔ TEST 3：跟注站画像必须提高 P(跟) 且降低 P(弃)（P0-2 方向修复） (383.6179ms)
+✔ TEST 4：紧手/过弃画像必须提高弃牌概率（至少在大注上严格提高） (320.8707ms)
+✔ TEST 5：纯空气与坚果同花听的半诈唬质量 / 条件权益必须不同 (281.1912ms)
+✔ T6：同一份「对手更强」证据只允许收一次费（P0-1） (0.315ms)
+✔ T7：画像已在 range 层生效时，scorer 层必须阻断压缩乘数并如实标注 (178.693ms)
+✔ T8：三个尺寸不得再由同一个分数变换而来（§9） (441.9529ms)
+✔ T9：概率必须合法（有限、非负、和为 1），且条件范围遵守死牌过滤 (2649.7118ms)
+✔ T9b：河牌不存在未来权益（实现因子恒为 1，听牌项为 0） (189.1538ms)
+✔ T9c：EV 口径 —— 底池是下注前的底池，投入只扣一次，弃牌分支不含 Hero 权益 (0.3415ms)
+✔ T9d：多人池不得使用单挑 50% 公平基线（valuePart 与公平份额一致） (0.1925ms)
+✔ T1：同一合法金额 ⇒ 同一响应 / 同一条件范围 / 同一权益 / 同一 EV（且不再出现 118 / 177） (177.8966ms)
+✔ T2：Hero 全下 ⇒ P(加) = 0，且原本会加注的权重迁移到跟注（弃 + 跟 = 1） (168.1795ms)
+✔ T3：Hero 全下后，比 Hero 强的牌仍在跟注范围里（不会因「原本想加注」而消失） (140.2582ms)
+✔ T4：河牌 OOP 的 CHECK 不是自动摊牌（CheckEV ≠ 权益 × 底池） (168.5132ms)
+✔ T5：河牌 IP 过牌可以终止动作（check-back 摊牌），与 OOP 必须区分 (283.7613ms)
+✔ T6：Hero 过牌之后，对手下注倾向随画像方向变化（不要求动作翻转） (537.5526ms)
+✔ T7（墨菲）：极短码 / 零筹码 / 最小注约束仍然合法 (0.1249ms)
+✔ T8（墨菲）：EV 零点统一 —— CHECK / BET / ALL-IN 可直接 argmax (108.7206ms)
+✔ T9e：尺寸规格与响应模型必须自洽（注释与实现不得漂移） (0.744ms)
+✔ T1：P(all fold) = Π P(弃)；禁止平均/最大/最小/「任一弃」 (688.6841ms)
+✔ T2：CO 改成跟注站 ⇒ all-fold 不升、他自己的跟注概率上升 (1324.3299ms)
+✔ T3：同类对手从 1 家变 2 家 ⇒ all-fold 必须下降（≤ 单挑值） (549.5445ms)
+✔ T4：EqBothCall 必须 ≤ 两个单挑权益（真三人权益，不是平均） (649.6431ms)
+✔ T5：只改 primary opponent（两家画像都由逐座位给出）⇒ 多人 EV 不得变化 (1233.5015ms)
+✔ T6：每个尺寸各自计算；若两档相同必须如实标记（不得静默复用同一个桶） (575.1295ms)
+✔ T7：紧手 vs 跟注站 —— 两人的响应必须来自各自的画像 (539.276ms)
+✖ T8：单挑节点不得使用联合树，BetEV 必须等于旧单挑公式 (912.722ms)
+✔ R1：对手响应规则不得随 Hero 隐藏底牌强弱变化 (1.9072ms)
+✔ R2：Hero 过牌后的对手下注规则不得读取 versusHero (0.2491ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 30
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7372.5468
+
+✖ failing tests:
+
+test at test\multiwayBetResponse.test.ts:385:1
+✖ T8：单挑节点不得使用联合树，BetEV 必须等于旧单挑公式 (912.722ms)
+  AssertionError [ERR_ASSERTION]: 多人 EV 的证据等级必须如实标注（加注分支是启发式下界）
+      at TestContext.<anonymous> (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/test/multiwayBetResponse.test.ts:418:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

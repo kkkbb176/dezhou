@@ -1,0 +1,549 @@
+{
+  "generatedAt": "2026-09-23T03:08:03.200Z",
+  "solverUrl": "http://127.0.0.1:3758",
+  "budgetMs": 600000,
+  "before": {
+    "cacheDir": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v3\\cache",
+    "cacheDirExists": true,
+    "cacheFiles": [],
+    "solverDir": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v3\\solver-cache",
+    "solverDirExists": true,
+    "solverFiles": [],
+    "solverUrl": "http://127.0.0.1:3758"
+  },
+  "isolatedSolverStatusBefore": {
+    "state": "idle",
+    "gpu": false,
+    "gpu_note": "",
+    "iteration": 0,
+    "exploit_chips": 0,
+    "exploit_pct": 0,
+    "elapsed_secs": 0,
+    "history": [],
+    "tree": null,
+    "spot_request": null,
+    "error": ""
+  },
+  "isolatedSessionBefore": null,
+  "first": {
+    "httpStatus": 200,
+    "elapsedMs": 232,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "decision": {
+      "action": "RAISE",
+      "sizeChips": 10000,
+      "sizeBB": 100,
+      "confidence": 0.3,
+      "band": "MEDIUM_LOW",
+      "classification": "MARGINAL",
+      "actionable": true
+    },
+    "equity": "83.42%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "308.80 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "308.80 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "BACKGROUND_SOLVING",
+      "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+      "elapsedMs": 2,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVING",
+          "fromSolver": false,
+          "cacheSource": null,
+          "reasonZh": null
+        }
+      ],
+      "background": [
+        {
+          "cacheKey": "c7348fc89",
+          "thingZh": "9 人桌 枪口位 开池",
+          "state": "RUNNING",
+          "iterationZh": "正在求解"
+        }
+      ],
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ],
+      "reasons": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "HEURISTIC",
+        "fromSolver": false,
+        "confidence": 0.3,
+        "supportSize": 239,
+        "effectiveComboCount": 152.32943191550063,
+        "normalizedEntropy": 0.9461023926239274,
+        "gtoOutcomeState": "SOLVING",
+        "gtoReasonZh": null
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 1,
+        "context": 200,
+        "decide": 3,
+        "viewmodel": 10,
+        "total": 215
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    }
+  },
+  "second": {
+    "httpStatus": 200,
+    "elapsedMs": 176,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "decision": {
+      "action": "RAISE",
+      "sizeChips": 10000,
+      "sizeBB": 100,
+      "confidence": 0.3,
+      "band": "MEDIUM_LOW",
+      "classification": "MARGINAL",
+      "actionable": true
+    },
+    "equity": "83.42%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "308.80 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "308.80 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "BACKGROUND_SOLVING",
+      "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+      "elapsedMs": 0,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVE_FAILED",
+          "fromSolver": false,
+          "cacheSource": null,
+          "reasonZh": "求解器不可用（FAILED）：Not solved — UTG has no accumulated strategy at this point. Re-solve after applying the player models."
+        }
+      ],
+      "background": [
+        {
+          "cacheKey": "c7348fc89",
+          "thingZh": "9 人桌 枪口位 开池",
+          "state": "FAILED",
+          "iterationZh": null
+        }
+      ],
+      "warnings": [
+        "枪口位：GTO 计算失败 —— 求解器不可用（FAILED）：Not solved — UTG has no accumulated strategy at this point. Re-solve after applying the player models."
+      ],
+      "reasons": [
+        "枪口位：GTO 计算失败 —— 求解器不可用（FAILED）：Not solved — UTG has no accumulated strategy at this point. Re-solve after applying the player models."
+      ]
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "HEURISTIC",
+        "fromSolver": false,
+        "confidence": 0.3,
+        "supportSize": 239,
+        "effectiveComboCount": 152.32943191550063,
+        "normalizedEntropy": 0.9461023926239274,
+        "gtoOutcomeState": "SOLVE_FAILED",
+        "gtoReasonZh": "求解器不可用（FAILED）：Not solved — UTG has no accumulated strategy at this point. Re-solve after applying the player models."
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 0,
+        "context": 174,
+        "decide": 0,
+        "viewmodel": 0,
+        "total": 174
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": [
+        "枪口位：GTO 计算失败 —— 求解器不可用（FAILED）：Not solved — UTG has no accumulated strategy at this point. Re-solve after applying the player models."
+      ]
+    }
+  },
+  "finalBackground": {
+    "cacheKey": "c7348fc89",
+    "thingZh": "9 人桌 枪口位 开池",
+    "state": "FAILED",
+    "iterationZh": null
+  },
+  "timeline": [
+    {
+      "event": "first-analyze-response",
+      "atMs": 232,
+      "httpStatus": 200,
+      "elapsedMs": 232,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-1",
+      "atMs": 973,
+      "httpStatus": 200,
+      "elapsedMs": 234,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-2",
+      "atMs": 1684,
+      "httpStatus": 200,
+      "elapsedMs": 204,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-3",
+      "atMs": 2391,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-4",
+      "atMs": 3159,
+      "httpStatus": 200,
+      "elapsedMs": 258,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-5",
+      "atMs": 3936,
+      "httpStatus": 200,
+      "elapsedMs": 262,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-6",
+      "atMs": 4692,
+      "httpStatus": 200,
+      "elapsedMs": 246,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-7",
+      "atMs": 5450,
+      "httpStatus": 200,
+      "elapsedMs": 247,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-8",
+      "atMs": 6214,
+      "httpStatus": 200,
+      "elapsedMs": 254,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-9",
+      "atMs": 6906,
+      "httpStatus": 200,
+      "elapsedMs": 192,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "poll-10",
+      "atMs": 7606,
+      "httpStatus": 200,
+      "elapsedMs": 200,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "FAILED",
+        "iterationZh": null
+      },
+      "cacheFiles": []
+    },
+    {
+      "event": "post-solve-analyze-response",
+      "atMs": 7782,
+      "httpStatus": 200,
+      "elapsedMs": 176,
+      "foregroundState": "BACKGROUND_SOLVING",
+      "background": {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "FAILED",
+        "iterationZh": null
+      },
+      "cacheFiles": []
+    }
+  ],
+  "after": {
+    "cacheFiles": [],
+    "solverFiles": []
+  },
+  "targetFile": null
+}

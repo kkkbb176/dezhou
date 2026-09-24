@@ -1,0 +1,99 @@
+{
+  "mode": "B",
+  "cacheDir": "D:/德州决策/data/gto-cache",
+  "elapsedMs": 240,
+  "httpStatus": 200,
+  "ok": true,
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "confidenceZh": "中低",
+  "classificationZh": "边缘决策",
+  "decision": {
+    "action": "RAISE",
+    "sizeChips": 10000,
+    "sizeBB": 100,
+    "confidence": 0.4,
+    "band": "MEDIUM_LOW",
+    "classification": "MARGINAL",
+    "actionable": true
+  },
+  "equity": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+  "callEv": "311.63 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+  "candidates": [
+    {
+      "action": "弃牌",
+      "size": "—",
+      "ev": "0.00 筹码"
+    },
+    {
+      "action": "跟注",
+      "size": "1.50BB",
+      "ev": "311.63 筹码"
+    },
+    {
+      "action": "加注",
+      "size": "4.00BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "4.50BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "6.00BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "7.50BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "9.00BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "12.0BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    },
+    {
+      "action": "加注",
+      "size": "100.0BB",
+      "ev": "—（依赖弃牌率，本项目无可信估计）"
+    }
+  ],
+  "gtoStatus": {
+    "enabled": true,
+    "state": "SOLVER_RANGE",
+    "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "elapsedMs": 3,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVED",
+        "fromSolver": true,
+        "cacheSource": "persistent",
+        "reasonZh": null
+      }
+    ],
+    "background": [],
+    "warnings": [],
+    "reasons": []
+  },
+  "rangeProvenance": [
+    {
+      "sourceKind": "EMPIRICAL",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "effectiveComboCount": 94.05598276264851,
+      "normalizedEntropy": 0.6564907113362348
+    }
+  ]
+}

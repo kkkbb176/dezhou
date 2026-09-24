@@ -1,0 +1,21 @@
+{
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "hook": true,
+  "title": "德州扑克 · 牌桌快速录入（内部 Alpha）",
+  "beforeTextLength": 1279,
+  "afterTextLength": 2314,
+  "gtoVisible": true,
+  "solverVisible": true,
+  "admissionVisible": true,
+  "approximateVisible": true,
+  "notVerifiedVisible": false,
+  "effectiveWidthVisible": true,
+  "bad1225Label": false,
+  "actionVisible": true,
+  "rangeExcerpt": [
+    "这条建议用到的对手范围（1 家，其中 1 家来自求解器）",
+    "· 枪口位：【求解器】枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.02115291714591222（目标 0.05）。✅ **已通过准入：BR gap 0.021153 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。 ｜ 可信度 0.55｜ 正权重组合 1225（等效宽度 94.1，即 1/Σp²）",
+    "⚠️ 还没有任何人进池时（例如翻牌前第一个行动）没有对手范围可算权益，此时会如实返回「信息不足」—— 等有人跟注/加注后再分析即可。"
+  ],
+  "screenshot": "D:/德州决策/reports/gtopen-validation/known-node-readonly-20260922-round3/browser-proof.png"
+}

@@ -1,0 +1,35 @@
+✔ TEST 1：河牌同花面上一对 J —— 必须倾向过牌，且明确说明为何不是价值下注 (343.8991ms)
+✔ TEST 2：对手连跟两街 ⇒ 河牌 KQ 必须降级、且不得无理由开第三枪 (79.6675ms)
+✔ TEST 3：三人池 + 转牌高张 + 面对下注 ⇒ 弃牌必须是最高分动作，且多人惩罚生效 (556.5917ms)
+✔ TEST 4：🔴 低 SPR 下 AA 面对**压制它的窄范围**必须弃牌（防止用到达范围高估赔率） (92.7595ms)
+✔ TEST 4b：🔴 低 SPR 且**权益高于门槛**时，全下必须可达（防止过度保守） (90.6113ms)
+✖ TEST 5：🔴 跟注站面前薄价值必须提高（下注分上升 + 尺寸放大），紧手面前收紧 (3645.7585ms)
+✔ TEST 6：🔴 面对过度诈唬的对手，抓诈唬跟注必须提高（且不诈唬型必须更低） (359.9582ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5541.5591
+
+✖ failing tests:
+
+test at test\postflopRegressionCases.test.ts:366:1
+✖ TEST 5：🔴 跟注站面前薄价值必须提高（下注分上升 + 尺寸放大），紧手面前收紧 (3645.7585ms)
+  AssertionError [ERR_ASSERTION]: 画像必须真的改变尺寸选择：350 vs 350
+      at TestContext.<anonymous> (file:///D:/%E5%BE%B7%E5%B7%9E%E5%86%B3%E7%AD%96/test/postflopRegressionCases.test.ts:398:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 350,
+    expected: 350,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

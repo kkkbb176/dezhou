@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "foundPath": null,
+  "arrival": null,
+  "gtoState": "SOLVER_RANGE",
+  "provenance": [
+    {
+      "pos": "枪口位",
+      "support": 1225,
+      "eff": 94.05598021718555
+    }
+  ],
+  "rows": []
+}

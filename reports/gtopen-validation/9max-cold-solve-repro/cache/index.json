@@ -1,0 +1,23 @@
+{
+  "storeVersion": "gto-strategy-store-v1",
+  "updatedAt": "2026-09-23T03:16:12.382Z",
+  "writes": 1,
+  "entries": [
+    {
+      "cacheKey": "c7348fc89",
+      "scenarioHash": "g0d4f06d8",
+      "treeId": "t06d8712b",
+      "quality": "LOW_CONVERGENCE",
+      "engine": "gtopen",
+      "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+      "tableSize": 9,
+      "effectiveStackBB": 100,
+      "heroPosition": "UTG",
+      "kind": "RFI",
+      "createdAt": "2026-09-23T03:16:12.380Z",
+      "payloadBytes": 84522,
+      "scenarioZh": "9MAX / 100BB / UTG / RFI / 无人入池",
+      "qualityZh": "未做稳定性复核：BR gap 之和 0.021030，迭代 12 次。已达到本次收敛目标，但缺少重复求解稳定性证据，因此仍降为低收敛；频率可作近似参考，不可当作均衡。"
+    }
+  ]
+}

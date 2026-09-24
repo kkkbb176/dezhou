@@ -1,0 +1,21 @@
+=== CALLING_STATION
+sizing.gridRatio= 0.6666666666666666 target= 0.6381
+sizing.reasons= 坚果优势 0.37 ⇒ 可用更大尺寸（极化） | 多人池（2 家）⇒ 尺寸收缩 0.10 | 画像修正：尺寸 ×1.0525 | SPR 28.29 很深 ⇒ 用承诺上限 0.75 收住 | 目标 64% 底池 ⇒ 取网格里最近的 67%
+betDecision.bestSize= BET_SMALL bestAmount= 116.66666666666666
+   BET_SMALL amount 116.66666666666666 EV 268.70 score 0.6602
+   BET_MEDIUM amount 233.33333333333331 EV 267.55 score 0.6586
+   BET_LARGE amount 350 EV 262.67 score 0.6516
+=== VERY_TIGHT
+sizing.gridRatio= 0.6666666666666666 target= 0.5858
+sizing.reasons= 坚果优势 0.36 ⇒ 可用更大尺寸（极化） | 多人池（2 家）⇒ 尺寸收缩 0.10 | 画像修正：尺寸 ×0.9824999999999999 | SPR 28.29 很深 ⇒ 用承诺上限 0.75 收住 | 目标 59% 底池 ⇒ 取网格里最近的 67%
+betDecision.bestSize= BET_MEDIUM bestAmount= 233.33333333333331
+   BET_SMALL amount 116.66666666666666 EV 268.36 score 0.6610
+   BET_MEDIUM amount 233.33333333333331 EV 268.96 score 0.6619
+   BET_LARGE amount 350 EV 268.72 score 0.6615
+=== NORMAL
+sizing.gridRatio= 0.6666666666666666 target= 0.6018
+sizing.reasons= 坚果优势 0.36 ⇒ 可用更大尺寸（极化） | 多人池（2 家）⇒ 尺寸收缩 0.10 | SPR 28.29 很深 ⇒ 用承诺上限 0.75 收住 | 目标 60% 底池 ⇒ 取网格里最近的 67%
+betDecision.bestSize= BET_SMALL bestAmount= 116.66666666666666
+   BET_SMALL amount 116.66666666666666 EV 269.18 score 0.6612
+   BET_MEDIUM amount 233.33333333333331 EV 266.86 score 0.6579
+   BET_LARGE amount 350 EV 265.71 score 0.6563

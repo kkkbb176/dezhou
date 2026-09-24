@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1.0.0",
-  "generatedAt": "2026-09-21",
+  "generatedAt": "2026-09-24",
   "generator": "npm run manifest（src/infra/artifactManifest.ts）",
   "exclusions": [
     {
@@ -36,6 +36,20 @@
       "sha256": "2c842cd7aa554d9c2a08a166c5ba678ff73f505f9fbb2c8b750b981348274e5d",
       "bytes": 8666,
       "impact": "不确定修复处理规则变化 → 「无法确认根因时如何行动、如何分类结论、必须报告什么」的强制纪律发生变化（四种结论定义 / 八条强制规则 / 九行报告格式）"
+    },
+    {
+      "path": "reports/DECISION_CORRECTNESS_BASELINE_V1.md",
+      "category": "REPORT",
+      "sha256": "bb7a90ba991743138e0918e06c5baddb0659df9ab706e9d1a9f376bce00ae31d",
+      "bytes": 18384,
+      "impact": "决策正确性修复与基线验收的唯一收口报告变化 → 资金流/信息边界/画像消费/实时保护的验收结论与仍未解决项必须同步更新；它缺失或过期时，不得声称本轮修复已通过基线验收"
+    },
+    {
+      "path": "reports/FAST_INPUT_DECISION_UI_V2.md",
+      "category": "REPORT",
+      "sha256": "9ac592a3f418f2a205e82fab515a4b11db0a1f6a4394c69c6a342d8ee40f0341",
+      "bytes": 13521,
+      "impact": "快速录入 UI V2 的真实浏览器、性能、计算一致性与未覆盖项验收报告；证据不足时不得宣称完成。"
     },
     {
       "path": "reports/UNCERTAINTY_REGISTER.md",
@@ -222,8 +236,8 @@
     {
       "path": "src/domain/postflop/betResponse.ts",
       "category": "DECISION",
-      "sha256": "36bf2367f64bd0c828529a40760063c2e17db5c253d0ec8dbc7694d6f6f0e8fc",
-      "bytes": 96174,
+      "sha256": "75f66e7641472aebaf9cb94d5f4a3ab3f0162dc63e2ba16d4f21604770de14f3",
+      "bytes": 96932,
       "impact": "下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ **所有「无人下注」节点的下注决策与尺寸选择都会变化**"
     },
     {
@@ -453,22 +467,22 @@
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "08614c22184ad6eeb056efd7f7ccda40a524bc34a489f39d09764b4aa753a481",
-      "bytes": 213782,
+      "sha256": "556e308c40b25863f808861a3bf63ccd8cd578a2cccf76979fd5a0d93084b0ad",
+      "bytes": 215140,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
       "path": "src/app/manualInput/preflopRaiseResponse.ts",
       "category": "DECISION",
-      "sha256": "6686f1745b944867242b92e740ca295beea30b17cf372a7eb1cd3423ef950170",
-      "bytes": 30636,
+      "sha256": "25ec07fecd61129d70661f98650135a9b37cdeada627c892172a4d2938f1f663",
+      "bytes": 31103,
       "impact": "翻前加注响应模型变化（起手牌强度阶梯 / 继续门槛余量 `PREFLOP_CONTINUE_MARGIN` / 再加注闸门 `PREFLOP_RERAISE_GATE` / 诈唬再加注门槛）→ **他的弃/跟/再加注概率与条件范围发生变化 ⇒ 翻前每一个加注尺寸的 EV 与排名都会变**；⚠️ 该文件里的全部常数都是**未校准的结构性先验**，改动必须在报告中重新做敏感度分析"
     },
     {
       "path": "src/app/manualInput/preflopRaiseFacts.ts",
       "category": "DECISION",
-      "sha256": "971c45c703d3cdc91f5f3d9f2476907558d498fbbad8c70b379097f7c191dc24",
-      "bytes": 36750,
+      "sha256": "f6bcc38770886478359486c9f0228a0cb97bc63164586643584133784fd5f6a3",
+      "bytes": 45827,
       "impact": "翻前加注事实包变化（逐尺寸资金口径 / 被再加注分支 / 单挑与身后玩家门槛 / EV 组装）→ **翻前加注的自有 EV、可比较性门槛与「未评估动作」披露发生变化**；⚠️ 现金流必须继续走 `raiseResponse.raiseEVOf`（全项目唯一公式），改动必须同步 `test/preflopRaiseDecision.test.ts`（独立复算）与 `test/preflopRaiseE2E.test.ts`（端到端一致性）"
     },
     {
@@ -488,22 +502,22 @@
     {
       "path": "src/app/webServer.ts",
       "category": "DECISION",
-      "sha256": "c0da0687600d0930aa8359e7b97a0c8e66c74b1d551302c1a98d60f4e92451c0",
-      "bytes": 59097,
+      "sha256": "79f8a659525d1ac34bba5d424a746b3959dee2ea2db537bd90e897c744b716c6",
+      "bytes": 60641,
       "impact": "内部测试服务器变化（路由 / 请求校验 / 响应结构 / 监听范围）→ **网页入口的可用性与隐私边界发生变化**"
     },
     {
       "path": "src/app/web/index.html",
       "category": "DECISION",
-      "sha256": "a9a831750f1751a8273c511f6a07c3fd805b9c83d30daf5d1569aa1211a82001",
-      "bytes": 6625,
+      "sha256": "31ea6b783e40afbc7c10173ac406ed922159a484083979c772f266e3bee7c844",
+      "bytes": 5459,
       "impact": "中文输入表单与结果页变化 → **使用者看到的界面与输入方式发生变化**（界面不得包含任何策略判断）"
     },
     {
       "path": "src/viewmodels/decisionViewModel.ts",
       "category": "DECISION",
-      "sha256": "a6623d1f01fdddb3d46c6b03e16a189863ab59c34be86de7c53ad76e084c7f23",
-      "bytes": 72263,
+      "sha256": "40f9ab56145898de3dae8765537183110d2ef43e093fcc883af144dfcf1190ef",
+      "bytes": 72843,
       "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
     },
     {
@@ -663,8 +677,8 @@
     {
       "path": "test/newTableModal.test.ts",
       "category": "REPORT",
-      "sha256": "6837c8de556462e1996b7c06074c4af160b6c611b5cd5f3b7a1d8cd88d21cb67",
-      "bytes": 10365,
+      "sha256": "ab39cfd48087fb820ea1756746725de645ddfbf04bf59bba707260225f8f2972",
+      "bytes": 11004,
       "impact": "新建牌桌弹层测试变化 → **「桌型 / Hero 座位到底能不能选」这条防线强度发生变化**。🔴 它防的是一个真实缺陷：弹层里点桌型之后，`openNewTableModal()` 重进函数时把局部变量 `chosenSize` 重置回 `app.state`，使用者的选择当场丢失 —— 界面表现是「桌型根本选不动」，只能建出与当前桌型相同的桌子。"
     },
     {
@@ -726,15 +740,15 @@
     {
       "path": "src/app/gto/backgroundSolve.ts",
       "category": "DECISION",
-      "sha256": "9cc5e184270c63914a120b1c6122dcbfd77fb700cc4d338ba10131cecd83d6b4",
-      "bytes": 16896,
+      "sha256": "95e7b2cd36fd013f42a4a776b78e70449255a6e664ddf53e2ae183215cb9cd43",
+      "bytes": 17905,
       "impact": "🔴 **前台响应速度与 GTO 覆盖率的分离机制**变化 → 「分析要等多久」与「多久之后能用上 GTO 范围」这两件事都发生变化。⚠️ 它承载 Phase 1.3 的核心交易：前台**只读缓存、绝不求解**（冷求解实测 6 人桌 59 秒 / 9 人桌 195 秒），未命中则把场景排进后台队列，求解成功后**自动落盘**，于是第二次同样的局面直接命中 GTO 范围。把 `lookupWithStats`（会落盘）换成 `lookupScenario`（不落盘）会让「算完了但没存」—— 表现为每次重启都要重算几十分钟，且**没有任何报错**。把前台改成等待后台任务会让响应时间退化到分钟级。"
     },
     {
       "path": "test/backgroundSolve.test.ts",
       "category": "REPORT",
-      "sha256": "a2167c49735210f00cd20a3d79af3886a3eefd72f11b84b78e87feeb0e39e01c",
-      "bytes": 30170,
+      "sha256": "7ef4db691778287601f861c39001ca6d88c2c51ac43a33797bab1a18ca01b765",
+      "bytes": 31196,
       "impact": "**前台不等求解器**这条保证的防线变化 → 「1～3 秒给建议」这个核心指标的强度发生变化。🔴 它钉住三件事：① 缓存未命中时前台耗时必须是毫秒级（不得退化成等待求解）；② 同一场景只入队一次（连点十次不等于算十次）；③ 落盘路径走的是会写缓存的那一层（否则第二次查询永远还是启发式）。"
     },
     {
@@ -803,8 +817,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "33b93fee209b496ce55d8637fc386338a10b7844f471048e6f2172f06e1fe966",
-      "bytes": 179179,
+      "sha256": "78664e64cbe40b9dab02410085aec698716bbe72e5d98e1058e43a87461dab93",
+      "bytes": 179906,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -873,8 +887,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "edcf70842da35983751ebd7cbd026afcc7bc82a486e15560548ce4676eea79aa",
-      "bytes": 73869,
+      "sha256": "382476e86213561d488105c254995f67f553ceb49afe3ede61574d0f3d574949",
+      "bytes": 75876,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -929,8 +943,8 @@
     {
       "path": "src/app/table/table.types.ts",
       "category": "DECISION",
-      "sha256": "2dbdc088311b997a0c6f815c1d87c54ec256001cec8b5a1230c7494875e0071d",
-      "bytes": 28850,
+      "sha256": "61c9cbc972551b0b6b31e97727f2849f2a2b7c7df18ed44acce772b76e9b4381",
+      "bytes": 29841,
       "impact": "牌桌数据模型变化（座位状态 / 座位 / 玩家 / 牌桌状态 / 操作）→ **「Fold ≠ Leave」「Seat ≠ Player」这两条铁律的表达能力发生变化**；`SeatStatus` 少一个成员就等于把两种语义混成一种，必须同步全部生命周期测试"
     },
     {
@@ -964,8 +978,8 @@
     {
       "path": "src/app/table/tablePreview.ts",
       "category": "DECISION",
-      "sha256": "8d8167f619c77e0224ffbee660f24c684dbbe1d7c9b2b21217af5e57b13ec3ed",
-      "bytes": 41086,
+      "sha256": "ba84fe4513f4c7520feac0bc57e83e45a4388b054da84025570ed96b9fc85223",
+      "bytes": 42913,
       "impact": "牌桌预览变化（街道 / 当前行动者 / 合法动作按钮 / 底池筹码 / 座位视图 / 状态指纹）→ **使用者看到的牌局与合法动作集合发生变化**；本文件必须继续复用 `reconstruct` + `deriveLegalActions` + Poker Core 校验器，一旦自己实现规则，前端与引擎就会分叉"
     },
     {
@@ -1055,8 +1069,8 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "b49f3c368fbc78f67e5ba0a419636cd9c4acecfa12430d832ab9de6706fb67ed",
-      "bytes": 106525,
+      "sha256": "794e5efcd5eca67861695fb7b98468d4bc7af2614d2959af5906c3d9be47f039",
+      "bytes": 118618,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {
@@ -1065,6 +1079,69 @@
       "sha256": "de978750fdf4351e5fe6f60e95f57e1d9074aacbd1caa64fe7c122765513cfcc",
       "bytes": 17464,
       "impact": "牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）"
+    },
+    {
+      "path": "src/app/web/fast-input.js",
+      "category": "DECISION",
+      "sha256": "c5be9cd3de1964bc46088a709c607c06755a87a746a9bbbd0b1f7ee977a1ca07",
+      "bytes": 10894,
+      "impact": "快速录入的金额精度、固定动作与快捷键保护；所有合法边界来自后端，不包含策略规则。"
+    },
+    {
+      "path": "src/app/web/fast-ui.css",
+      "category": "DECISION",
+      "sha256": "27fc305a32df10c5c9aee1eb49d0efa8c0b7b51f4e1a0dd5301ab6d93c6aaf9a",
+      "bytes": 12500,
+      "impact": "快速录入桌面布局与小窗口可达性。"
+    },
+    {
+      "path": "src/app/analysisScheduler.ts",
+      "category": "DECISION",
+      "sha256": "29d5b7b5482b4178552b8772247a39e6f8ee7aa755f44b17e369a75138dbe81d",
+      "bytes": 5543,
+      "impact": "分析工作线程的有界调度及实际取消；不改变计算参数。"
+    },
+    {
+      "path": "src/app/analysisWorker.ts",
+      "category": "DECISION",
+      "sha256": "8e61edad8b64c655b0eab0336aec10e3acceaf588eb7682e3d1b4b59d88b5b21",
+      "bytes": 510,
+      "impact": "原有计算入口的线程边界。"
+    },
+    {
+      "path": "src/app/analysisWork.ts",
+      "category": "DECISION",
+      "sha256": "9da31d67faaa8cdf5d27672fcdc28babd4cf08506e27fed9c0a6d580a2e85fd8",
+      "bytes": 2427,
+      "impact": "正式分析与既有影子分析的原样调用。"
+    },
+    {
+      "path": "src/app/mutationMemo.ts",
+      "category": "DECISION",
+      "sha256": "fec836ea5164b2f41833b9ac94f668b425011a39d1b071040cc146093fa31240",
+      "bytes": 1370,
+      "impact": "传输重试回执，避免已保存行动因响应丢失被重复记录。"
+    },
+    {
+      "path": "test/fastAmountInput.test.ts",
+      "category": "REPORT",
+      "sha256": "0d26b11f682b563e5469bcc0b7cc7d08748295253e4a3202cd5916d5a1947d7c",
+      "bytes": 2138,
+      "impact": "金额精度与非法输入回归。"
+    },
+    {
+      "path": "test/fastInputContract.test.ts",
+      "category": "REPORT",
+      "sha256": "f703cc879de7e9ac7c1b1d96e94b8252f58934127be5b94cf25901b3c64ef6e4",
+      "bytes": 6988,
+      "impact": "精确筹码、34BB 最低加注及短码合法动作回归。"
+    },
+    {
+      "path": "test/analysisScheduling.test.ts",
+      "category": "REPORT",
+      "sha256": "0601dd1c01398cfaf72a0a42e72dd3834a3a36208de6391507e845c639aeef39",
+      "bytes": 9460,
+      "impact": "真实 CPU 分析期间继续录入、取消与幂等重试回归。"
     },
     {
       "path": "test/interactiveTable.test.ts",
@@ -1307,8 +1384,8 @@
     {
       "path": "reports/evidence/preflop-raise-sensitivity.txt",
       "category": "REPORT",
-      "sha256": "6be2b5db03137cf7b53274f9ed8e9abb9805a9349fca60ba0f309321f1b81022",
-      "bytes": 6563,
+      "sha256": "b250184f10be542866dc54949438de738a7309e4fda05f8fafdb32d951a3e179",
+      "bytes": 6570,
       "impact": "**翻前加注模型的参数敏感度原始证据**变化 → 「换 margin / gate / 开池尺寸 / 筹码深度后推荐尺寸是否移动」「换随机种子后建议是否翻转」这些实测数字发生变化；由 `scripts/rr-sensitivity.ts` 生成（可复现）"
     }
   ]

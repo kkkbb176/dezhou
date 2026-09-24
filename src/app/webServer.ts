@@ -35,7 +35,9 @@ import { fileURLToPath } from 'node:url';
 
 import { loadKnowledgeBaseOrThrow } from '../domain/knowledge/knowledgeLoader.ts';
 import type { StrategyKnowledge } from '../domain/knowledge/knowledge.types.ts';
-import { analyzeManualHand, prefetchSolverRangesForInput, queueBackgroundSolverRangesForInput, GtoRangeOutcomeState } from './alphaPipeline.ts';
+import { prefetchSolverRangesForInput, queueBackgroundSolverRangesForInput, GtoRangeOutcomeState } from './alphaPipeline.ts';
+import { AnalysisScheduler, AnalysisSchedulingError } from './analysisScheduler.ts';
+import { MutationMemo } from './mutationMemo.ts';
 import type { GtoPrefetchStatus } from './alphaPipeline.ts';
 import { BackgroundSolveState, backgroundSolveQueue, type BackgroundSolveRecord } from './gto/backgroundSolve.ts';
 import { parseManualInput, type ManualHandInput } from './manualInput/manualInput.ts';
@@ -61,12 +63,6 @@ import {
 import type { PokerTableState } from './table/table.types.ts';
 /* 🔴 PLAYER PROFILE EXPLOIT V1：服务器入口显式开启玩家历史持久化（默认 `data/`） */
 import { defaultHistoryDir, listKnownPlayers } from './table/playerHistory.ts';
-import {
-  runTableDynamicsForTable,
-  tableDynamicsModeZh,
-} from './table/tableDynamicsServer.ts';
-import { tableDynamicsModeFromEnv } from './table/tableDynamicsServer.ts';
-import { SHADOW_BUDGET_MS } from './table/tableDynamicsServer.ts';
 import { tableStateToManualHandInput } from './table/tableAdapter.ts';
 import {
   gtoCatalog,
@@ -333,8 +329,10 @@ export async function startAlphaServer(options: ServerOptions = {}): Promise<Alp
     );
   }
 
+  const runtime = { scheduler: new AnalysisScheduler(), mutations: new MutationMemo(), requests: new Map<string, AbortController>(),
+    epochs: new Map<string, { revision: number; epoch: number; token: number }>() };
   const server = createServer((req, res) => {
-    void handleRequest(req, res, rules, options, tableDeps);
+    void handleRequest(req, res, rules, options, tableDeps, runtime);
   });
 
   await new Promise<void>((resolve, reject) => {
@@ -351,10 +349,13 @@ export async function startAlphaServer(options: ServerOptions = {}): Promise<Alp
   return {
     server,
     url: `http://${host}:${actualPort}`,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
+    close: async () => {
+      for (const controller of runtime.requests.values()) controller.abort();
+      await runtime.scheduler.close();
+      await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
-      }),
+      });
+    },
   };
 }
 
@@ -364,7 +365,11 @@ async function handleRequest(
   rules: readonly StrategyKnowledge[],
   options: ServerOptions,
   tableDeps: TableApiDeps,
+  runtime: { scheduler: AnalysisScheduler; mutations: MutationMemo; requests: Map<string, AbortController>;
+    epochs: Map<string, { revision: number; epoch: number; token: number }> },
 ): Promise<void> {
+  const requestStarted = performance.now();
+  let cleanupAnalysis: (() => void) | undefined;
   try {
     const rawUrl = req.url ?? '/';
     /*
@@ -391,8 +396,8 @@ async function handleRequest(
     }
 
     // ---- 静态资源（无构建步骤：浏览器直接拿 TS 之外的纯 JS/CSS）----
-    if (method === 'GET' && (url === '/table.css' || url === '/table.js')) {
-      const asset = readAsset(url === '/table.css' ? 'table.css' : 'table.js');
+    if (method === 'GET' && ['/table.css', '/table.js', '/fast-ui.css', '/fast-input.js'].includes(url)) {
+      const asset = readAsset(url.slice(1));
       if (asset === null) {
         sendJson(res, 404, {
           ok: false,
@@ -403,7 +408,7 @@ async function handleRequest(
       }
       res.writeHead(200, {
         'Content-Type':
-          url === '/table.css' ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+          url.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
         'Content-Length': Buffer.byteLength(asset, 'utf8'),
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
@@ -452,6 +457,7 @@ async function handleRequest(
         // 让使用者能确认「服务跑的是哪个知识库版本」
         mode: 'INTERNAL_ALPHA',
         tableInput: 'INTERACTIVE',
+        analysis: runtime.scheduler.stats(),
         // GTO 是**可选**能力：这里只报告它是否启用，不影响 Alpha 自身的可用性
         gto: isGtoEnabled() ? 'ENABLED' : 'DISABLED',
       });
@@ -708,7 +714,25 @@ async function handleRequest(
         });
         return;
       }
+      const requestId = parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>).requestId : undefined;
+      if (requestId !== undefined && (typeof requestId !== 'string' || !requestId || requestId.length > 128)) {
+        sendJson(res, 400, { ok: false, issues: [{ code: 'BAD_REQUEST_ID', message: 'requestId 必须是 1～128 字符的字符串' }] });
+        return;
+      }
+      if (typeof requestId === 'string') {
+        const receipt = runtime.mutations.lookup(requestId, parsed);
+        if (receipt.kind === 'hit') { sendJson(res, 200, receipt.response); return; }
+        if (receipt.kind === 'conflict') {
+          sendJson(res, 409, { ok: false, issues: [{ code: 'REQUEST_ID_CONFLICT', message: 'requestId 已用于不同操作，请勿重用' }] });
+          return;
+        }
+      }
       const result = handleTableRequest(parsed, tableDeps);
+      if (typeof requestId === 'string') runtime.mutations.remember(requestId, parsed, result);
+      if (result.ok) {
+        runtime.requests.get(result.state.tableId)?.abort();
+        runtime.scheduler.cancel(result.state.tableId);
+      }
       sendJson(res, 200, result);
       return;
     }
@@ -742,7 +766,7 @@ async function handleRequest(
         });
         return;
       }
-      const body = parsed as { input?: unknown; table?: unknown };
+      const body = parsed as { input?: unknown; table?: unknown; modeEpoch?: unknown; requestToken?: unknown };
       let input: unknown = body.input;
       const tableRaw = body.table;
       /**
@@ -792,51 +816,101 @@ async function handleRequest(
         return;
       }
 
-      /*
-       * 🔴 **求解器范围取数**（Phase 1.3）—— 在分析**之前**做，且**只读缓存**。
-       *
-       * `analyzeManualHand` 是同步纯函数；查 GTOpen 是异步网络动作。
-       * 因此「取数据」在这里 await，「算决策」交给下面的同步调用。
-       *
-       * ## 四条纪律
-       *
-       * 1. **GTO 关闭时不发任何请求** —— 与 `/api/gto/*` 的行为一致。
-       * 2. **前台绝不求解**：只读内存 / 持久化缓存，未命中立刻回落。
-       *    实测冷求解 6 人桌 59 秒、9 人桌 195 秒 —— 让前台等它，
-       *    等于放弃「1～3 秒给建议」这个核心指标。
-       * 3. **未命中就排后台**（见下面的 `queueBackgroundSolverRangesForInput`），
-       *    求解完成后**自动落盘**，于是**第二次同样的局面直接命中 GTO 范围**。
-       * 4. **失败不阻断、不静默**：回落启发式，但原因一路带到响应里
-       *   （`gtoStatus`），使用者永远能知道「这条建议为什么不是 GTO」。
-       */
-      const gtoPrefetched = isGtoEnabled()
-        ? await prefetchSolverRangesForInput(input as ManualHandInput, {
-            gtoProvider: gtoProvider(),
-            gtoLookup: gtoCachedLookup(),
-          })
-        : {
-            ranges: {} as Record<string, never>,
-            warnings: [] as string[],
-            outcomes: [],
-            elapsedMs: 0,
-          };
+      if (tableForDynamics !== null) {
+        const revision = tableDeps.guard?.check(tableForDynamics.tableId, tableForDynamics.revision);
+        if (revision && !revision.ok) {
+          sendJson(res, 409, { ok: false, stage: 'REQUEST', issues: [{ code: 'STALE_REVISION', message: revision.message }] });
+          return;
+        }
+      }
+      const key = tableForDynamics?.tableId ?? '__manual__';
+      const epoch = typeof body.modeEpoch === 'number' && Number.isSafeInteger(body.modeEpoch) ? body.modeEpoch : 0;
+      const token = typeof body.requestToken === 'number' && Number.isSafeInteger(body.requestToken) ? body.requestToken : 0;
+      const revision = tableForDynamics?.revision ?? 0;
+      const watermark = runtime.epochs.get(key);
+      if (watermark && (revision < watermark.revision || epoch < watermark.epoch ||
+          (epoch === watermark.epoch && token > 0 && token < watermark.token))) {
+        sendJson(res, 409, { ok: false, stage: 'SCHEDULING', issues: [{ code: 'ANALYSIS_CANCELLED', message: '已收到较新的牌桌版本或模式请求，本次旧分析已丢弃' }] });
+        return;
+      }
+      runtime.epochs.set(key, { revision, epoch, token });
+      if (runtime.epochs.size > 64) runtime.epochs.delete(runtime.epochs.keys().next().value!);
+      runtime.requests.get(key)?.abort();
+      const controller = new AbortController();
+      runtime.requests.set(key, controller);
+      // req.close also fires for a fully read POST. Only response disconnect means
+      // the client abandoned analysis after sending its body.
+      const onDisconnect = () => { if (!res.writableEnded) controller.abort(); };
+      res.once('close', onDisconnect);
+      if (res.destroyed) controller.abort();
+      cleanupAnalysis = () => {
+        res.removeListener('close', onDisconnect);
+        if (runtime.requests.get(key) === controller) runtime.requests.delete(key);
+      };
+      let gtoStatus!: GtoStatusJson;
+      const scheduled = await runtime.scheduler.run(key, async () => {
 
-      /*
-       * 后台补算：**刻意不 await**。
-       *
-       * 这一步必须在响应生成**之前**发起（这样求解与渲染并行），
-       * 但绝不能等它 —— `queueBackgroundSolverRangesForInput` 返回的是
-       * 「入队状态」而不是求解结果，从类型上就杜绝了误等。
-       */
-      const background =
-        isGtoEnabled() && options.gtoBackgroundSolve !== false
-          ? queueBackgroundSolverRangesForInput(input as ManualHandInput, {
+        /*
+         * 🔴 **求解器范围取数**（Phase 1.3）—— 在分析**之前**做，且**只读缓存**。
+         *
+         * `analyzeManualHand` 是同步纯函数；查 GTOpen 是异步网络动作。
+         * 因此「取数据」在这里 await，「算决策」交给下面的同步调用。
+         *
+         * ## 四条纪律
+         *
+         * 1. **GTO 关闭时不发任何请求** —— 与 `/api/gto/*` 的行为一致。
+         * 2. **前台绝不求解**：只读内存 / 持久化缓存，未命中立刻回落。
+         *    实测冷求解 6 人桌 59 秒、9 人桌 195 秒 —— 让前台等它，
+         *    等于放弃「1～3 秒给建议」这个核心指标。
+         * 3. **未命中就排后台**（见下面的 `queueBackgroundSolverRangesForInput`），
+         *    求解完成后**自动落盘**，于是**第二次同样的局面直接命中 GTO 范围**。
+         * 4. **失败不阻断、不静默**：回落启发式，但原因一路带到响应里
+         *   （`gtoStatus`），使用者永远能知道「这条建议为什么不是 GTO」。
+         */
+        const gtoPrefetched = isGtoEnabled()
+          ? await prefetchSolverRangesForInput(input as ManualHandInput, {
               gtoProvider: gtoProvider(),
               gtoLookup: gtoCachedLookup(),
             })
-          : [];
+          : {
+              ranges: {} as Record<string, never>,
+              warnings: [] as string[],
+              outcomes: [],
+              elapsedMs: 0,
+            };
 
-      const gtoStatus = buildGtoStatusJson(gtoPrefetched, background);
+        if (controller.signal.aborted) throw new AnalysisSchedulingError('ANALYSIS_CANCELLED', '分析已取消');
+
+        /*
+         * 后台补算：**刻意不 await**。
+         *
+         * 这一步必须在响应生成**之前**发起（这样求解与渲染并行），
+         * 但绝不能等它 —— `queueBackgroundSolverRangesForInput` 返回的是
+         * 「入队状态」而不是求解结果，从类型上就杜绝了误等。
+         */
+        const background =
+          isGtoEnabled() && options.gtoBackgroundSolve !== false
+            ? queueBackgroundSolverRangesForInput(input as ManualHandInput, {
+                gtoProvider: gtoProvider(),
+                gtoLookup: gtoCachedLookup(),
+              })
+            : [];
+
+        gtoStatus = buildGtoStatusJson(gtoPrefetched, background);
+        return {
+          input: input as ManualHandInput,
+          table: tableForDynamics,
+          options: {
+            rules,
+            asOf: Date.now(),
+            ...(Object.keys(gtoPrefetched.ranges).length > 0 ? { gtoRanges: gtoPrefetched.ranges } : {}),
+            ...(options.logPath !== undefined && options.logPath !== null ? { logPath: options.logPath } : {}),
+            ...(options.logPath === null ? { writeLog: false } : {}),
+          },
+        };
+      }, controller.signal);
+      const { result, tableDynamics } = scheduled.output;
+      const serverTimings = { ...scheduled.timings, totalMs: performance.now() - requestStarted };
 
       /*
        * 🔴 **分层底池要在路由里单独算一次**（2026-09 边池轮）。
@@ -858,90 +932,16 @@ async function handleRequest(
         return gate.ok ? gate.state : null;
       })();
 
-      const result = analyzeManualHand(input as ManualHandInput, {
-        rules,
-        asOf: Date.now(),
-        ...(Object.keys(gtoPrefetched.ranges).length > 0
-          ? { gtoRanges: gtoPrefetched.ranges }
-          : {}),
-        ...(options.logPath !== undefined && options.logPath !== null
-          ? { logPath: options.logPath }
-          : {}),
-        ...(options.logPath === null ? { writeLog: false } : {}),
-      });
-
       if (!result.ok) {
         sendJson(res, 200, {
           ok: false,
           stage: result.stage,
           issues: result.issues,
           timings: result.timings,
+          serverTimings,
         });
         return;
       }
-
-      /*
-       * 🔴 **牌桌动态适应 V1（影子模式）**。
-       *
-       * ## 顺序是刻意放在这里的
-       *
-       * 1. `result` 已经算完 ⇒ **正式建议不可能被下面的调整影响**；
-       * 2. 影子里第二次调用的是**同一个** `analyzeManualHand`，
-       *    因此调整前后是同一套收益口径（`sameCashflowContract`）；
-       * 3. 任何失败（桌况算不出、历史损坏、写盘失败）都只在
-       *    `tableDynamics` 字段里如实说明，**不改 `decision`**。
-       *
-       * ⚠️ 只有**牌桌路径**才有桌况：表单路径没有座位/人数事实，
-       * 因此那里返回「不适用」而不是编一个桌况出来。
-       */
-      const tableDynamics =
-        tableForDynamics === null
-          ? {
-              mode: tableDynamicsModeFromEnv(),
-              status: 'NOT_APPLICABLE',
-              summaryZh: '仅牌桌路径支持桌况分析',
-              observing: true,
-              tableConfidence: 0,
-              confidenceZh: '样本不足',
-              handsObserved: 0,
-              recordsUsed: 0,
-              dimensions: [],
-              relevantPlayers: [],
-              adjustments: [],
-              comparison: null,
-              appliedChanges: [],
-              dynamicsDigest: 'n/a',
-              reasonZh: '本次是**表单路径**（没有座位与人数事实）⇒ 不做桌况调整',
-              coverageZh: '（不适用）',
-              logIssueZh: null,
-              modeZh: tableDynamicsModeZh(tableDynamicsModeFromEnv()),
-            }
-          : {
-              ...runTableDynamicsForTable({
-                table: tableForDynamics,
-                input: input as ManualHandInput,
-                analyze: (inp: ManualHandInput) => analyzeManualHand(inp, { rules, asOf: Date.now() }),
-                /*
-                 * 🔴 **影子预算的真实隔离**：把预算翻译成这次分析**自己的**
-                 * `DecisionDeadline`，让生产管线在它自己的检查点上中止影子计算。
-                 *
-                 * 为什么不能只在外层计时：本项目**没有** `AbortSignal` 这类外部
-                 * 取消原语，同步分析一旦开始就会跑完并占用线程 —— 那时再返回
-                 * 「超时」只是事后声明，使用者等待的时间一秒没少（授权 §五禁止）。
-                 */
-                withBudget:
-                  (analyze: (i: ManualHandInput) => unknown, ms: number) =>
-                  (i: ManualHandInput) =>
-                    analyzeManualHand(i, {
-                      rules,
-                      asOf: Date.now(),
-                      budget: { softMs: ms, hardMs: Math.round(ms * 1.6) },
-                    }),
-                historyDir: defaultHistoryDir(),
-                shadowBudgetMs: SHADOW_BUDGET_MS,
-              }).status,
-              modeZh: tableDynamicsModeZh(tableDynamicsModeFromEnv()),
-            };
 
       sendJson(res, 200, {
         ok: true,
@@ -1031,6 +1031,9 @@ async function handleRequest(
         })),
         gtoStatus,
         meta: {
+          request: { tableId: tableForDynamics?.tableId ?? null, revision: tableForDynamics?.revision ?? null,
+            modeEpoch: body.modeEpoch ?? null, requestToken: body.requestToken ?? null },
+          serverTimings,
           computedPot: result.computedPot,
           claimedPot: result.claimedPot,
           inputHash: result.log.inputHash,
@@ -1114,6 +1117,13 @@ async function handleRequest(
       issues: [{ code: 'NOT_FOUND', message: `未定义的路由：${method} ${url}` }],
     });
   } catch (error) {
+    if (res.destroyed || res.writableEnded) return;
+    if (error instanceof AnalysisSchedulingError) {
+      sendJson(res, error.code === 'ANALYSIS_BUSY' ? 503 : 409, {
+        ok: false, stage: 'SCHEDULING', issues: [{ code: error.code, message: error.message }],
+      });
+      return;
+    }
     // 请求体超限 → **413 + 可读中文**（不是 500，也不是掐断连接）
     const isTooLarge = error instanceof Error && error.name === 'BODY_TOO_LARGE';
     if (isTooLarge) {
@@ -1130,6 +1140,8 @@ async function handleRequest(
       stage: 'SERVER',
       issues: [{ code: 'INTERNAL_ERROR', message: `服务端异常：${(error as Error).message}` }],
     });
+  } finally {
+    cleanupAnalysis?.();
   }
 }
 

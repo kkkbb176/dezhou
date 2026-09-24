@@ -1,0 +1,4231 @@
+{
+  "generatedAt": "2026-09-24T05:09:05.781Z",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverUrl": "http://127.0.0.1:59155",
+  "historyDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-history-0fm5hn",
+  "profileDir": "C:\\Users\\16584\\AppData\\Local\\Temp\\dsh-fast-v2-chrome-FQGUQv",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "configuration": {
+    "actualServer": true,
+    "gtoEnabled": false,
+    "backgroundSolve": false,
+    "historyIsolated": true,
+    "decisionsLog": false,
+    "interaction": "CDP Input mouse/key/IME; read-only Runtime.evaluate; one response-stage network failure",
+    "appStateInjected": false
+  },
+  "summary": {
+    "passed": 26,
+    "failed": 0
+  },
+  "results": [
+    {
+      "name": "34 BB authoritative minimum",
+      "pass": true,
+      "evidence": {
+        "bigBlindChips": 100,
+        "potChips": 3350,
+        "currentBetChips": 2200,
+        "committedChips": 1000,
+        "remainingChips": 9000,
+        "callChips": 1200,
+        "minBetChips": 100,
+        "minRaiseToChips": 3400,
+        "allInToChips": 10000,
+        "chipUnit": 1,
+        "callIsAllIn": false,
+        "canBet": false,
+        "canRaise": true,
+        "quickAmounts": [
+          {
+            "type": "RAISE",
+            "labelZh": "101% 底池",
+            "toChips": 3400,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "3 倍",
+            "toChips": 3600,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "4 倍",
+            "toChips": 4800,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "5 倍",
+            "toChips": 6000,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "6 倍",
+            "toChips": 7200,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "8 倍",
+            "toChips": 9600,
+            "isAllIn": false,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          },
+          {
+            "type": "RAISE",
+            "labelZh": "全下",
+            "toChips": 10000,
+            "isAllIn": true,
+            "explanationZh": "倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。"
+          }
+        ]
+      }
+    },
+    {
+      "name": "raise-to minimum and action order",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "reject (empty)",
+      "pass": true,
+      "evidence": {
+        "value": "",
+        "error": "请输入金额"
+      }
+    },
+    {
+      "name": "reject -1",
+      "pass": true,
+      "evidence": {
+        "value": "-1",
+        "error": "请输入正数，不能包含负号、指数或无效字符"
+      }
+    },
+    {
+      "name": "reject 1.23456789",
+      "pass": true,
+      "evidence": {
+        "value": "1.23456789",
+        "error": "金额必须精确到 1 个筹码，不能含零碎筹码"
+      }
+    },
+    {
+      "name": "reject Infinity",
+      "pass": true,
+      "evidence": {
+        "value": "Infinity",
+        "error": "请输入正数，不能包含负号、指数或无效字符"
+      }
+    },
+    {
+      "name": "reject 99999999999999999999",
+      "pass": true,
+      "evidence": {
+        "value": "99999999999999999999",
+        "error": "金额超出可处理范围"
+      }
+    },
+    {
+      "name": "reject 33.99",
+      "pass": true,
+      "evidence": {
+        "value": "33.99",
+        "error": "最小加注到 34 BB"
+      }
+    },
+    {
+      "name": "invalid amounts and local input undo",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "quick amount fills without submitting and unit round trip",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "double click repeat and IME guards",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "card replacement clear and undo",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "all-in confirmation and undo",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "short all-in call and check follow engine",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "record and edit during real analysis then reject stale response",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "offline action recovery preserves single action",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "analysis timeout is explicit and recoverable",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "transport loss evidence",
+      "pass": true,
+      "evidence": {
+        "droppedResponse": {
+          "requestId": "t12:3:1790226530059:4",
+          "revision": 3,
+          "action": {
+            "type": "FOLD"
+          }
+        },
+        "requestIds": [
+          "t12:3:1790226530059:4",
+          "t12:3:1790226530059:4"
+        ]
+      }
+    },
+    {
+      "name": "lost committed response retry uses one requestId",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "layout 1366x768",
+      "pass": true,
+      "evidence": {
+        "width": 1366,
+        "height": 768,
+        "scrollWidth": 1366,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 20,
+            "y": 510.5,
+            "w": 976,
+            "h": 257.5,
+            "bottom": 768
+          },
+          {
+            "id": "rail",
+            "x": 1016,
+            "y": 58,
+            "w": 350,
+            "h": 710,
+            "bottom": 768
+          },
+          {
+            "id": "tableWrap",
+            "x": 20,
+            "y": 111,
+            "w": 976,
+            "h": 363.5,
+            "bottom": 474.5
+          },
+          {
+            "id": "amountInput",
+            "x": 110,
+            "y": 565.5,
+            "w": 758,
+            "h": 47,
+            "bottom": 612.5
+          },
+          {
+            "id": "actionButtons",
+            "x": 20,
+            "y": 687.5,
+            "w": 976,
+            "h": 48,
+            "bottom": 735.5
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout 1024x768",
+      "pass": true,
+      "evidence": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1009,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 14,
+            "y": 607,
+            "w": 666,
+            "h": 257.5,
+            "bottom": 864.5
+          },
+          {
+            "id": "rail",
+            "x": 694,
+            "y": 58,
+            "w": 315,
+            "h": 812.25,
+            "bottom": 870.25
+          },
+          {
+            "id": "tableWrap",
+            "x": 14,
+            "y": 111,
+            "w": 666,
+            "h": 460,
+            "bottom": 571
+          },
+          {
+            "id": "amountInput",
+            "x": 87,
+            "y": 662,
+            "w": 469,
+            "h": 47,
+            "bottom": 709
+          },
+          {
+            "id": "actionButtons",
+            "x": 14,
+            "y": 784,
+            "w": 666,
+            "h": 48,
+            "bottom": 832
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout 390x844",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 375,
+        "boxes": [
+          {
+            "id": "inputDock",
+            "x": 14,
+            "y": 562.375,
+            "w": 347,
+            "h": 379.75,
+            "bottom": 942.125
+          },
+          {
+            "id": "rail",
+            "x": 0,
+            "y": 942.125,
+            "w": 375,
+            "h": 746.46875,
+            "bottom": 1688.59375
+          },
+          {
+            "id": "tableWrap",
+            "x": 14,
+            "y": 157.59375,
+            "w": 347,
+            "h": 355,
+            "bottom": 512.59375
+          },
+          {
+            "id": "amountInput",
+            "x": 14,
+            "y": 647.125,
+            "w": 242,
+            "h": 47,
+            "bottom": 694.125
+          },
+          {
+            "id": "actionButtons",
+            "x": 14,
+            "y": 784.125,
+            "w": 347,
+            "h": 103,
+            "bottom": 887.125
+          }
+        ]
+      }
+    },
+    {
+      "name": "real analysis with responsive layout and separate timings",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "next hand and nine seat switch use real controls",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "baseline UI and V2 produce identical normalized input",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    },
+    {
+      "name": "cached supported nodes repeated real browser analysis",
+      "pass": true,
+      "evidence": "Assertions passed using real UI and server."
+    }
+  ],
+  "timings": [
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 59.79359999999997
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 54.35209999999984
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.31420000000003
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 70.5909999999999
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.176400000000285
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 50.822000000000116
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.43949999999995
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 60.994099999999435
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 47.11149999999998
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.40589999999975
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 53.61500000000069
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#undoBtn",
+      "elapsedMs": 59.07120000000032
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 70.35050000000047
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "raise-to minimum and action order",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 5.900000035762787,
+          "ok": true,
+          "at": 1790226450489
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 0.19999998807907104,
+          "at": 1790226450528
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.400000035762787,
+          "at": 1790226450561
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.100000023841858,
+          "ok": true,
+          "requestId": "t1:0:1790226450547:1",
+          "at": 1790226450563
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.100000023841858,
+          "at": 1790226450995
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.599999964237213,
+          "at": 1790226451011
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t1:1:1790226450996:2",
+          "at": 1790226451013
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 2,
+          "at": 1790226451428
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.5,
+          "ok": true,
+          "requestId": "t1:2:1790226451427:3",
+          "at": 1790226451432
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 3,
+          "at": 1790226451861
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15.800000011920929,
+          "at": 1790226451894
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t1:3:1790226451879:4",
+          "at": 1790226451896
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 10.5,
+          "at": 1790226452328
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.5,
+          "ok": true,
+          "requestId": "t1:4:1790226452318:5",
+          "at": 1790226452329
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 12.300000011920929,
+          "at": 1790226452761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.5,
+          "at": 1790226452761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.900000035762787,
+          "at": 1790226452761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.100000023841858,
+          "at": 1790226452778
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.30000001192093,
+          "ok": true,
+          "requestId": "t1:5:1790226452763:6",
+          "at": 1790226452780
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 15.600000023841858,
+          "at": 1790226453211
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 13.699999988079071,
+          "at": 1790226453211
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.600000023841858,
+          "at": 1790226453211
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.200000047683716,
+          "at": 1790226453228
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t1:6:1790226453212:7",
+          "at": 1790226453229
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 0.40000003576278687,
+          "at": 1790226453644
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 18.399999976158142,
+          "ok": true,
+          "requestId": "t1:7:1790226453644:8",
+          "at": 1790226453663
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 5.699999988079071,
+          "at": 1790226454094
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 6.699999988079071,
+          "ok": true,
+          "requestId": "t1:8:1790226454089:9",
+          "at": 1790226454096
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 6.600000023841858,
+          "at": 1790226454528
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.400000035762787,
+          "at": 1790226454528
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 3.699999988079071,
+          "at": 1790226454528
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.700000047683716,
+          "at": 1790226454544
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.599999964237213,
+          "ok": true,
+          "requestId": "t1:9:1790226454529:10",
+          "at": 1790226454546
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 8.700000047683716,
+          "at": 1790226455011
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.300000011920929,
+          "at": 1790226455011
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.900000035762787,
+          "at": 1790226455011
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.599999964237213,
+          "at": 1790226455027
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t1:10:1790226455013:11",
+          "at": 1790226455029
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "undoBtn",
+          "frameMs": 10.299999952316284,
+          "at": 1790226455461
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.199999988079071,
+          "ok": true,
+          "requestId": "t1:11:1790226455451:12",
+          "at": 1790226455463
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitChips",
+          "frameMs": 13.799999952316284,
+          "at": 1790226455911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 15.899999976158142,
+          "at": 1790226455928
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 14,
+          "at": 1790226455928
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.800000011920929,
+          "at": 1790226455928
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.900000035762787,
+          "at": 1790226455944
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.600000023841858,
+          "ok": true,
+          "requestId": "t1:12:1790226455929:13",
+          "at": 1790226455946
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 63.97430000000077
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.99399999999969
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.55619999999999
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 72.55789999999979
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 45.54370000000017
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.21609999999964
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 58.0038999999997
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 45.9971000000005
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.155399999999645
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 71.50520000000142
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "invalid amounts and local input undo",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.100000023841858,
+          "ok": true,
+          "at": 1790226456400
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.80000001192093,
+          "at": 1790226456462
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 14.600000023841858,
+          "at": 1790226456477
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.400000035762787,
+          "ok": true,
+          "requestId": "t2:0:1790226456463:1",
+          "at": 1790226456479
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 14,
+          "at": 1790226456911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226456927
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.600000023841858,
+          "ok": true,
+          "requestId": "t2:1:1790226456912:2",
+          "at": 1790226456929
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.5,
+          "at": 1790226457361
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.599999964237213,
+          "ok": true,
+          "requestId": "t2:2:1790226457345:3",
+          "at": 1790226457363
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 0.3999999761581421,
+          "at": 1790226457777
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.80000001192093,
+          "at": 1790226457811
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.5,
+          "ok": true,
+          "requestId": "t2:3:1790226457795:4",
+          "at": 1790226457813
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 3.800000011920929,
+          "at": 1790226458244
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.700000047683716,
+          "ok": true,
+          "requestId": "t2:4:1790226458241:5",
+          "at": 1790226458246
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 4.600000023841858,
+          "at": 1790226458677
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.699999988079071,
+          "at": 1790226458677
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.899999976158142,
+          "at": 1790226458677
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.700000047683716,
+          "at": 1790226458694
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.5,
+          "ok": true,
+          "requestId": "t2:5:1790226458678:6",
+          "at": 1790226458696
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.100000023841858,
+          "at": 1790226459128
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.300000011920929,
+          "at": 1790226459128
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.600000023841858,
+          "at": 1790226459128
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16,
+          "at": 1790226459144
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.099999964237213,
+          "ok": true,
+          "requestId": "t2:6:1790226459129:7",
+          "at": 1790226459146
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.300000011920929,
+          "at": 1790226459577
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.199999988079071,
+          "ok": true,
+          "requestId": "t2:7:1790226459566:8",
+          "at": 1790226459578
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 14.299999952316284,
+          "at": 1790226460011
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.600000023841858,
+          "ok": true,
+          "requestId": "t2:8:1790226459997:9",
+          "at": 1790226460013
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 16.700000047683716,
+          "at": 1790226460445
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 14.100000023841858,
+          "at": 1790226460445
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.900000035762787,
+          "at": 1790226460445
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790226460461
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.099999964237213,
+          "ok": true,
+          "requestId": "t2:9:1790226460446:10",
+          "at": 1790226460462
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 0.699999988079071,
+          "at": 1790226460893
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 15.300000011920929,
+          "at": 1790226460910
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 15.699999988079071,
+          "at": 1790226461077
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 10.599999964237213,
+          "at": 1790226461077
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 13.799999952316284,
+          "at": 1790226461244
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.399999976158142,
+          "at": 1790226461244
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 11.599999964237213,
+          "at": 1790226461244
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.899999976158142,
+          "at": 1790226461410
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.199999988079071,
+          "at": 1790226461410
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.800000011920929,
+          "at": 1790226461410
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 7.100000023841858,
+          "at": 1790226461577
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.5,
+          "at": 1790226461577
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.800000011920929,
+          "at": 1790226461577
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 4.699999988079071,
+          "at": 1790226461744
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.5,
+          "at": 1790226461744
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.300000011920929,
+          "at": 1790226461744
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 4.699999988079071,
+          "at": 1790226461911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 3.100000023841858,
+          "at": 1790226461911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.899999976158142,
+          "at": 1790226461911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1,
+          "at": 1790226461911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 0.3999999761581421,
+          "at": 1790226461911
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 55.62970000000132
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.88630000000012
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.393200000000434
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 71.70819999999912
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.137800000000425
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 71.30220000000008
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.84320000000116
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 45.855100000000675
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.15400000000045
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.104699999999866
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 70.23189999999886
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "quick amount fills without submitting and unit round trip",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.5,
+          "ok": true,
+          "at": 1790226462109
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 9.099999964237213,
+          "at": 1790226462161
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.900000035762787,
+          "at": 1790226462178
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t3:0:1790226462162:1",
+          "at": 1790226462180
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 11.900000035762787,
+          "at": 1790226462611
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226462627
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t3:1:1790226462612:2",
+          "at": 1790226462629
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.399999976158142,
+          "at": 1790226463061
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t3:2:1790226463046:3",
+          "at": 1790226463063
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 16.599999964237213,
+          "at": 1790226463494
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.19999998807907,
+          "at": 1790226463511
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.5,
+          "ok": true,
+          "requestId": "t3:3:1790226463496:4",
+          "at": 1790226463513
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 2.600000023841858,
+          "at": 1790226463944
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5,
+          "ok": true,
+          "requestId": "t3:4:1790226463942:5",
+          "at": 1790226463947
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 4.699999988079071,
+          "at": 1790226464377
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.699999988079071,
+          "at": 1790226464377
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 0.699999988079071,
+          "at": 1790226464377
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 14.800000011920929,
+          "at": 1790226464410
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.099999964237213,
+          "ok": true,
+          "requestId": "t3:5:1790226464396:6",
+          "at": 1790226464412
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 7,
+          "at": 1790226464844
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.700000047683716,
+          "at": 1790226464844
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 3.700000047683716,
+          "at": 1790226464844
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.599999964237213,
+          "at": 1790226464860
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.400000035762787,
+          "ok": true,
+          "requestId": "t3:6:1790226464845:7",
+          "at": 1790226464862
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 7.699999988079071,
+          "at": 1790226465294
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.5,
+          "ok": true,
+          "requestId": "t3:7:1790226465287:8",
+          "at": 1790226465295
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 10.100000023841858,
+          "at": 1790226465727
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11,
+          "ok": true,
+          "requestId": "t3:8:1790226465718:9",
+          "at": 1790226465729
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.5,
+          "at": 1790226466160
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.899999976158142,
+          "at": 1790226466160
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6,
+          "at": 1790226466160
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.599999964237213,
+          "at": 1790226466177
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.69999998807907,
+          "ok": true,
+          "requestId": "t3:9:1790226466161:10",
+          "at": 1790226466179
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 7.600000023841858,
+          "at": 1790226466610
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitChips",
+          "frameMs": 16.899999976158142,
+          "at": 1790226466628
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 16,
+          "at": 1790226466645
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.599999964237213,
+          "at": 1790226466661
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t3:10:1790226466646:11",
+          "at": 1790226466663
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 65.11570000000211
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.367199999996956
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.973299999997835
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "double click repeat and IME guards",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.5,
+          "ok": true,
+          "at": 1790226467114
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.30000001192093,
+          "at": 1790226467178
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15,
+          "at": 1790226467194
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t4:0:1790226467179:1",
+          "at": 1790226467196
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 9.800000011920929,
+          "at": 1790226467627
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.30000001192093,
+          "at": 1790226467644
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t4:1:1790226467629:2",
+          "at": 1790226467646
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 10.900000035762787,
+          "at": 1790226468077
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.899999976158142,
+          "ok": true,
+          "requestId": "t4:2:1790226468067:3",
+          "at": 1790226468079
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 11.300000011920929,
+          "at": 1790226468511
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15.199999988079071,
+          "at": 1790226468527
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 13.099999964237213,
+          "at": 1790226468527
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t4:3:1790226468512:4",
+          "at": 1790226468528
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 2.899999976158142,
+          "at": 1790226468828
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 0.5999999642372131,
+          "at": 1790226468828
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 15.699999988079071,
+          "at": 1790226468844
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 13.5,
+          "at": 1790226468844
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 0.40000003576278687,
+          "at": 1790226468946
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 17.100000023841858,
+          "at": 1790226468978
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 15.5,
+          "at": 1790226468978
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 14.5,
+          "at": 1790226468978
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.200000047683716,
+          "ok": true,
+          "requestId": "t4:4:1790226468965:5",
+          "at": 1790226468979
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 61.53290000000197
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.42580000000089
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.80109999999695
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Ah\"]",
+      "elapsedMs": 69.08350000000064
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#clearCardBtn",
+      "elapsedMs": 55.35009999999966
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#undoBtn",
+      "elapsedMs": 57.77779999999984
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"2c\"]",
+      "elapsedMs": 56.27639999999883
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"3d\"]",
+      "elapsedMs": 58.946399999997084
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"4h\"]",
+      "elapsedMs": 75.0183999999972
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"5s\"]",
+      "elapsedMs": 57.05749999999898
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#clearCardBtn",
+      "elapsedMs": 55.844199999999546
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "card replacement clear and undo",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.5,
+          "ok": true,
+          "at": 1790226469259
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16,
+          "at": 1790226469327
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 16,
+          "at": 1790226469344
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t5:0:1790226469329:1",
+          "at": 1790226469346
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 14,
+          "at": 1790226469777
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.799999952316284,
+          "at": 1790226469793
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.899999976158142,
+          "ok": true,
+          "requestId": "t5:1:1790226469778:2",
+          "at": 1790226469795
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 1.699999988079071,
+          "at": 1790226470211
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 2.900000035762787,
+          "ok": true,
+          "requestId": "t5:2:1790226470210:3",
+          "at": 1790226470213
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 4.099999964237213,
+          "at": 1790226470643
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15.900000035762787,
+          "at": 1790226470660
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.100000023841858,
+          "at": 1790226470677
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.299999952316284,
+          "ok": true,
+          "requestId": "t5:3:1790226470661:4",
+          "at": 1790226470679
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 2.800000011920929,
+          "ok": true,
+          "requestId": "t5:4:1790226470679:5",
+          "at": 1790226470682
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 4.399999976158142,
+          "at": 1790226471110
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "clearCardBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226471126
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t5:5:1790226471111:6",
+          "at": 1790226471128
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "closePickerBtn",
+          "frameMs": 7.199999988079071,
+          "at": 1790226471561
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "undoBtn",
+          "frameMs": 15.800000011920929,
+          "at": 1790226471577
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t5:6:1790226471562:7",
+          "at": 1790226471579
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 8.099999964237213,
+          "at": 1790226472010
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.69999998807907,
+          "at": 1790226472027
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.799999952316284,
+          "ok": true,
+          "requestId": "t5:7:1790226472011:8",
+          "at": 1790226472029
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 13.899999976158142,
+          "at": 1790226472460
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.899999976158142,
+          "at": 1790226472477
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t5:8:1790226472462:9",
+          "at": 1790226472479
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 17.19999998807907,
+          "at": 1790226472910
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16,
+          "at": 1790226472927
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": true,
+          "requestId": "t5:9:1790226472911:10",
+          "at": 1790226472928
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 4.100000023841858,
+          "at": 1790226473360
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.399999976158142,
+          "at": 1790226473376
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.399999976158142,
+          "ok": true,
+          "requestId": "t5:10:1790226473361:11",
+          "at": 1790226473378
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 3.899999976158142,
+          "at": 1790226473810
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "clearCardBtn",
+          "frameMs": 15.699999988079071,
+          "at": 1790226473827
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": true,
+          "requestId": "t5:11:1790226473811:12",
+          "at": 1790226473828
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 57.55949999999939
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 72.63530000000173
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.238900000000285
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#confirmAllin",
+      "elapsedMs": 54.42749999999796
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#undoBtn",
+      "elapsedMs": 44.89349999999831
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "all-in confirmation and undo",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.800000011920929,
+          "ok": true,
+          "at": 1790226474302
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.899999976158142,
+          "at": 1790226474360
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.600000023841858,
+          "at": 1790226474377
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t6:0:1790226474362:1",
+          "at": 1790226474378
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 2.600000023841858,
+          "at": 1790226474794
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.199999988079071,
+          "at": 1790226474827
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t6:1:1790226474812:2",
+          "at": 1790226474829
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5,
+          "at": 1790226475259
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 6.100000023841858,
+          "ok": true,
+          "requestId": "t6:2:1790226475255:3",
+          "at": 1790226475261
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 8.100000023841858,
+          "at": 1790226475694
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 15.699999988079071,
+          "at": 1790226475710
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "confirmAllin",
+          "frameMs": 15.699999988079071,
+          "at": 1790226475777
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16,
+          "ok": true,
+          "requestId": "t6:3:1790226475762:4",
+          "at": 1790226475778
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "undoBtn",
+          "frameMs": 13.700000047683716,
+          "at": 1790226476210
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.600000023841858,
+          "ok": true,
+          "requestId": "t6:4:1790226476197:5",
+          "at": 1790226476212
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 71.95729999999821
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#modal button",
+      "elapsedMs": 60.29609999999957
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 56.91150000000198
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.523700000001554
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 44.639100000000326
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 62.27969999999914
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.54290000000037
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 60.78030000000217
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 57.257799999999406
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 45.63029999999708
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 45.93359999999666
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 47.48270000000048
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 46.47899999999936
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 58.888200000001234
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "short all-in call and check follow engine",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.9000000357627869,
+          "ok": true,
+          "at": 1790226478941
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.600000023841858,
+          "at": 1790226479010
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.5,
+          "at": 1790226479027
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t8:0:1790226479012:1",
+          "at": 1790226479028
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 15,
+          "at": 1790226479460
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.900000035762787,
+          "at": 1790226479477
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.799999952316284,
+          "ok": true,
+          "requestId": "t8:1:1790226479462:2",
+          "at": 1790226479478
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.599999964237213,
+          "at": 1790226479910
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.80000001192093,
+          "ok": true,
+          "requestId": "t8:2:1790226479894:3",
+          "at": 1790226479912
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 4.5,
+          "at": 1790226480344
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790226480360
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.600000023841858,
+          "ok": true,
+          "requestId": "t8:3:1790226480345:4",
+          "at": 1790226480362
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 7.199999988079071,
+          "at": 1790226480793
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.200000047683716,
+          "ok": true,
+          "requestId": "t8:4:1790226480786:5",
+          "at": 1790226480795
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 9,
+          "at": 1790226481227
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10,
+          "ok": true,
+          "requestId": "t8:5:1790226481218:6",
+          "at": 1790226481228
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 10,
+          "at": 1790226481660
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 10.800000011920929,
+          "ok": true,
+          "requestId": "t8:6:1790226481651:7",
+          "at": 1790226481662
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 10.5,
+          "at": 1790226482093
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 11.5,
+          "ok": true,
+          "requestId": "t8:7:1790226482083:8",
+          "at": 1790226482095
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 8,
+          "at": 1790226482526
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 9,
+          "ok": true,
+          "requestId": "t8:8:1790226482518:9",
+          "at": 1790226482528
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 71.57549999999901
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 58.66670000000158
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.62629999999626
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 56.739800000003015
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.35070000000269
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.35090000000491
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.36319999999978
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.281699999999546
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.07789999999659
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 72.57339999999385
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#callAction",
+      "elapsedMs": 51.95360000000073
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#undoBtn",
+      "elapsedMs": 59.48649999999907
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Ah\"]",
+      "elapsedMs": 55.37360000000626
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "record and edit during real analysis then reject stale response",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.9000000357627869,
+          "ok": true,
+          "at": 1790226483020
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 3,
+          "at": 1790226483059
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 16.100000023841858,
+          "at": 1790226483093
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.899999976158142,
+          "ok": true,
+          "requestId": "t9:0:1790226483078:1",
+          "at": 1790226483095
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 8,
+          "at": 1790226483526
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.5,
+          "at": 1790226483544
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.69999998807907,
+          "ok": true,
+          "requestId": "t9:1:1790226483528:2",
+          "at": 1790226483545
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 8,
+          "at": 1790226483976
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 9.399999976158142,
+          "ok": true,
+          "requestId": "t9:2:1790226483968:3",
+          "at": 1790226483978
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 8.199999988079071,
+          "at": 1790226484410
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790226484426
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.200000047683716,
+          "ok": true,
+          "requestId": "t9:3:1790226484411:4",
+          "at": 1790226484428
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 8.700000047683716,
+          "at": 1790226484859
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 9.700000047683716,
+          "ok": true,
+          "requestId": "t9:4:1790226484851:5",
+          "at": 1790226484861
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 10.699999988079071,
+          "at": 1790226485293
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 8.300000011920929,
+          "at": 1790226485293
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.099999964237213,
+          "at": 1790226485293
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.5,
+          "at": 1790226485310
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t9:5:1790226485294:6",
+          "at": 1790226485311
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 14.899999976158142,
+          "at": 1790226485743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 13.199999988079071,
+          "at": 1790226485743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.299999952316284,
+          "at": 1790226485743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.100000023841858,
+          "at": 1790226485760
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.099999964237213,
+          "ok": true,
+          "requestId": "t9:6:1790226485744:7",
+          "at": 1790226485761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 0.10000002384185791,
+          "at": 1790226486176
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 18.600000023841858,
+          "ok": true,
+          "requestId": "t9:7:1790226486176:8",
+          "at": 1790226486195
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 2.900000035762787,
+          "at": 1790226486610
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.200000047683716,
+          "ok": true,
+          "requestId": "t9:8:1790226486607:9",
+          "at": 1790226486613
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 3.900000035762787,
+          "at": 1790226487044
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 2.200000047683716,
+          "at": 1790226487044
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.300000011920929,
+          "at": 1790226487044
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.799999952316284,
+          "at": 1790226487077
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.69999998807907,
+          "ok": true,
+          "requestId": "t9:9:1790226487061:10",
+          "at": 1790226487078
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 6.300000011920929,
+          "at": 1790226487510
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 11.5,
+          "at": 1790226487761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 8.800000011920929,
+          "at": 1790226487761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.600000023841858,
+          "at": 1790226487761
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "callAction",
+          "frameMs": 15,
+          "at": 1790226487776
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.699999988079071,
+          "ok": true,
+          "requestId": "t9:10:1790226487762:11",
+          "at": 1790226487778
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "undoBtn",
+          "frameMs": 16.899999976158142,
+          "at": 1790226489326
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.700000047683716,
+          "ok": true,
+          "requestId": "t9:11:1790226489310:12",
+          "at": 1790226489328
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 3.799999952316284,
+          "at": 1790226489760
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 9,
+          "at": 1790226490877
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.19999998807907,
+          "at": 1790226490893
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.30000001192093,
+          "ok": true,
+          "requestId": "t9:12:1790226490878:13",
+          "at": 1790226490895
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4,
+          "ok": true,
+          "requestId": "t9:13:1790226490896:14",
+          "at": 1790226490900
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 65.15359999999782
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 57.747199999997974
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.16609999999491
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#retrySave",
+      "elapsedMs": 59.316100000003644
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "offline action recovery preserves single action",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.600000023841858,
+          "ok": true,
+          "at": 1790226491368
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 17,
+          "at": 1790226491444
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.100000023841858,
+          "at": 1790226491460
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15.699999988079071,
+          "ok": true,
+          "requestId": "t10:0:1790226491445:1",
+          "at": 1790226491461
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 11.300000011920929,
+          "at": 1790226491893
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.299999952316284,
+          "at": 1790226491909
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.30000001192093,
+          "ok": true,
+          "requestId": "t10:1:1790226491894:2",
+          "at": 1790226491911
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.699999988079071,
+          "at": 1790226492342
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.900000035762787,
+          "ok": true,
+          "requestId": "t10:2:1790226492329:3",
+          "at": 1790226492344
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 14.199999988079071,
+          "at": 1790226492776
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.600000023841858,
+          "at": 1790226492793
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": false,
+          "requestId": "t10:3:1790226492777:4",
+          "at": 1790226492795
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "retrySave",
+          "frameMs": 16.5,
+          "at": 1790226492843
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.100000023841858,
+          "ok": true,
+          "requestId": "t10:3:1790226492777:4",
+          "at": 1790226492845
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 58.901200000000244
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 73.41030000000319
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 47.127300000000105
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 57.608100000004924
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.01090000000113
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 55.464599999999336
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.698300000003655
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.313099999999395
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.05840000000171
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 72.42610000000423
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.010799999989103526,
+        "prepareMs": 0.015599999998812564,
+        "computeMs": 496.64049999999406,
+        "workerMs": 650.5838000000076,
+        "totalMs": 650.9573999999993
+      },
+      "ok": true
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "analysis timeout is explicit and recoverable",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.100000023841858,
+          "ok": true,
+          "at": 1790226493286
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.600000023841858,
+          "at": 1790226493360
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.5,
+          "at": 1790226493376
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.899999976158142,
+          "ok": true,
+          "requestId": "t11:0:1790226493361:1",
+          "at": 1790226493378
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 17,
+          "at": 1790226493810
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226493826
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t11:1:1790226493811:2",
+          "at": 1790226493828
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.199999988079071,
+          "at": 1790226494259
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 6.300000011920929,
+          "ok": true,
+          "requestId": "t11:2:1790226494255:3",
+          "at": 1790226494261
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 7.800000011920929,
+          "at": 1790226494694
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 15.300000011920929,
+          "at": 1790226494709
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.099999964237213,
+          "ok": true,
+          "requestId": "t11:3:1790226494695:4",
+          "at": 1790226494711
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.100000023841858,
+          "at": 1790226495143
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 12.199999988079071,
+          "ok": true,
+          "requestId": "t11:4:1790226495132:5",
+          "at": 1790226495145
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 11.800000011920929,
+          "at": 1790226495576
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 8.800000011920929,
+          "at": 1790226495576
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.199999988079071,
+          "at": 1790226495576
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.5,
+          "at": 1790226495592
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t11:5:1790226495577:6",
+          "at": 1790226495594
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 13.800000011920929,
+          "at": 1790226496026
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 11.800000011920929,
+          "at": 1790226496026
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 10.699999988079071,
+          "at": 1790226496026
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16,
+          "at": 1790226496043
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.80000001192093,
+          "ok": true,
+          "requestId": "t11:6:1790226496027:7",
+          "at": 1790226496044
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 1.800000011920929,
+          "at": 1790226496459
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.800000011920929,
+          "ok": true,
+          "requestId": "t11:7:1790226496458:8",
+          "at": 1790226496463
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 4.5,
+          "at": 1790226496893
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 5.700000047683716,
+          "ok": true,
+          "requestId": "t11:8:1790226496889:9",
+          "at": 1790226496895
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 3.399999976158142,
+          "at": 1790226497326
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 1.300000011920929,
+          "at": 1790226497326
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 0.3999999761581421,
+          "at": 1790226497326
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.699999988079071,
+          "at": 1790226497359
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": true,
+          "requestId": "t11:9:1790226497344:10",
+          "at": 1790226497360
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 5.300000011920929,
+          "at": 1790226497793
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 30008.099999964237,
+          "renderMs": 1,
+          "server": null,
+          "transportAndDecodeMs": null,
+          "at": 1790226527869
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "analyzeBtn",
+          "frameMs": 15.400000035762787,
+          "at": 1790226527958
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 655.8000000119209,
+          "renderMs": 1.100000023841858,
+          "server": {
+            "queueMs": 0.010799999989103526,
+            "prepareMs": 0.015599999998812564,
+            "computeMs": 496.64049999999406,
+            "workerMs": 650.5838000000076,
+            "totalMs": 650.9573999999993
+          },
+          "transportAndDecodeMs": 4.842600011921604,
+          "at": 1790226528600
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 66.61239999999816
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 55.62540000000445
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.54710000001069
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "lost committed response retry uses one requestId",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.199999988079071,
+          "ok": true,
+          "at": 1790226528661
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.30000001192093,
+          "at": 1790226528725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.799999952316284,
+          "at": 1790226528741
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.099999964237213,
+          "ok": true,
+          "requestId": "t12:0:1790226528726:1",
+          "at": 1790226528743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 9.300000011920929,
+          "at": 1790226529175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 14.100000023841858,
+          "at": 1790226529191
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 15,
+          "ok": true,
+          "requestId": "t12:1:1790226529177:2",
+          "at": 1790226529192
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13.099999964237213,
+          "at": 1790226529624
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 14.400000035762787,
+          "ok": true,
+          "requestId": "t12:2:1790226529612:3",
+          "at": 1790226529626
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 14.699999988079071,
+          "at": 1790226530058
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.599999964237213,
+          "at": 1790226530075
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.5,
+          "ok": false,
+          "requestId": "t12:3:1790226530059:4",
+          "at": 1790226530076
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "retrySave",
+          "frameMs": 16.19999998807907,
+          "at": 1790226530175
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t12:3:1790226530059:4",
+          "at": 1790226530177
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 55.853900000001886
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 71.94170000001031
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 45.87589999999909
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 57.751699999993434
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.62380000000121
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.41790000000037
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 56.507400000002235
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.737999999997555
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 46.349600000001374
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 57.53549999999814
+    },
+    {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.011499999993247911,
+        "prepareMs": 0.018900000010035,
+        "computeMs": 483.4277000000002,
+        "workerMs": 643.4586999999883,
+        "totalMs": 643.7875000000058
+      },
+      "ok": true
+    },
+    {
+      "kind": "browserAnalysisVisible",
+      "elapsedMs": 759.1371000000072,
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.800000011920929,
+          "ok": true,
+          "at": 1790226530448
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226530508
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.099999964237213,
+          "at": 1790226530524
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.299999952316284,
+          "ok": true,
+          "requestId": "t13:0:1790226530510:1",
+          "at": 1790226530527
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 2.399999976158142,
+          "at": 1790226530941
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.30000001192093,
+          "at": 1790226530975
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.399999976158142,
+          "ok": true,
+          "requestId": "t13:1:1790226530959:2",
+          "at": 1790226530977
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 3.5,
+          "at": 1790226531407
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.600000023841858,
+          "ok": true,
+          "requestId": "t13:2:1790226531404:3",
+          "at": 1790226531409
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 3.599999964237213,
+          "at": 1790226531841
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.399999976158142,
+          "at": 1790226531858
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t13:3:1790226531842:4",
+          "at": 1790226531860
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 7.399999976158142,
+          "at": 1790226532291
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.399999976158142,
+          "ok": true,
+          "requestId": "t13:4:1790226532284:5",
+          "at": 1790226532293
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 7.899999976158142,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.599999964237213,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.800000011920929,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.899999976158142,
+          "at": 1790226532741
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t13:5:1790226532726:6",
+          "at": 1790226532743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.699999988079071,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.5,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.399999976158142,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790226533191
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t13:6:1790226533176:7",
+          "at": 1790226533192
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.699999988079071,
+          "at": 1790226533624
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.099999964237213,
+          "ok": true,
+          "requestId": "t13:7:1790226533613:8",
+          "at": 1790226533626
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 12.899999976158142,
+          "at": 1790226534058
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.799999952316284,
+          "ok": true,
+          "requestId": "t13:8:1790226534046:9",
+          "at": 1790226534059
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 13.599999964237213,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 11.800000011920929,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 10.900000035762787,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.400000035762787,
+          "at": 1790226534508
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.400000035762787,
+          "ok": true,
+          "requestId": "t13:9:1790226534492:10",
+          "at": 1790226534510
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13,
+          "at": 1790226534941
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 647.0999999642372,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.011499999993247911,
+            "prepareMs": 0.018900000010035,
+            "computeMs": 483.4277000000002,
+            "workerMs": 643.4586999999883,
+            "totalMs": 643.7875000000058
+          },
+          "transportAndDecodeMs": 3.3124999642313924,
+          "at": 1790226535649
+        }
+      ]
+    },
+    {
+      "kind": "browserInputThroughPaint",
+      "elapsedMs": 39.20549999999639,
+      "note": "Includes CDP round trips, focus, select-all, insertText and two animation frames; not a pure browser key-to-paint metric."
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "real analysis with responsive layout and separate timings",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 1.800000011920929,
+          "ok": true,
+          "at": 1790226530448
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.5,
+          "at": 1790226530508
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 15.099999964237213,
+          "at": 1790226530524
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.299999952316284,
+          "ok": true,
+          "requestId": "t13:0:1790226530510:1",
+          "at": 1790226530527
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 2.399999976158142,
+          "at": 1790226530941
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.30000001192093,
+          "at": 1790226530975
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.399999976158142,
+          "ok": true,
+          "requestId": "t13:1:1790226530959:2",
+          "at": 1790226530977
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 3.5,
+          "at": 1790226531407
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 4.600000023841858,
+          "ok": true,
+          "requestId": "t13:2:1790226531404:3",
+          "at": 1790226531409
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 3.599999964237213,
+          "at": 1790226531841
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16.399999976158142,
+          "at": 1790226531858
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.19999998807907,
+          "ok": true,
+          "requestId": "t13:3:1790226531842:4",
+          "at": 1790226531860
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 7.399999976158142,
+          "at": 1790226532291
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 8.399999976158142,
+          "ok": true,
+          "requestId": "t13:4:1790226532284:5",
+          "at": 1790226532293
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 7.899999976158142,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 5.599999964237213,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 4.800000011920929,
+          "at": 1790226532725
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.899999976158142,
+          "at": 1790226532741
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17,
+          "ok": true,
+          "requestId": "t13:5:1790226532726:6",
+          "at": 1790226532743
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 9.699999988079071,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 7.5,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 6.399999976158142,
+          "at": 1790226533175
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 15.399999976158142,
+          "at": 1790226533191
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.19999998807907,
+          "ok": true,
+          "requestId": "t13:6:1790226533176:7",
+          "at": 1790226533192
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 11.699999988079071,
+          "at": 1790226533624
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.099999964237213,
+          "ok": true,
+          "requestId": "t13:7:1790226533613:8",
+          "at": 1790226533626
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 12.899999976158142,
+          "at": 1790226534058
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.799999952316284,
+          "ok": true,
+          "requestId": "t13:8:1790226534046:9",
+          "at": 1790226534059
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 13.599999964237213,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 11.800000011920929,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 10.900000035762787,
+          "at": 1790226534491
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "raiseAction",
+          "frameMs": 16.400000035762787,
+          "at": 1790226534508
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.400000035762787,
+          "ok": true,
+          "requestId": "t13:9:1790226534492:10",
+          "at": 1790226534510
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 13,
+          "at": 1790226534941
+        },
+        {
+          "kind": "analysis",
+          "revision": 10,
+          "requestMs": 647.0999999642372,
+          "renderMs": 0.6000000238418579,
+          "server": {
+            "queueMs": 0.011499999993247911,
+            "prepareMs": 0.018900000010035,
+            "computeMs": 483.4277000000002,
+            "workerMs": 643.4586999999883,
+            "totalMs": 643.7875000000058
+          },
+          "transportAndDecodeMs": 3.3124999642313924,
+          "at": 1790226535649
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 10.300000011920929,
+          "at": 1790226536341
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "allinAction",
+          "frameMs": 4.600000023841858,
+          "at": 1790226537074
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "amountInput",
+          "frameMs": 15.400000035762787,
+          "at": 1790226537357
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 12.199999988079071,
+          "at": 1790226537357
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "input",
+          "target": "amountInput",
+          "frameMs": 9.300000011920929,
+          "at": 1790226537357
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 56.774399999994785
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 72.01400000001013
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 45.98180000000866
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 58.80429999998887
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#nextHandBtn",
+      "elapsedMs": 46.198400000008405
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 46.53379999999015
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "next hand and nine seat switch use real controls",
+      "metrics": [
+        {
+          "kind": "action-save",
+          "requestMs": 2.5,
+          "ok": true,
+          "at": 1790226537397
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 15.699999988079071,
+          "at": 1790226537457
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 16,
+          "at": 1790226537474
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.5,
+          "ok": true,
+          "requestId": "t14:0:1790226537459:1",
+          "at": 1790226537476
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "DIV",
+          "frameMs": 2.600000023841858,
+          "at": 1790226537891
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 16.80000001192093,
+          "at": 1790226537925
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 17.80000001192093,
+          "ok": true,
+          "requestId": "t14:1:1790226537909:2",
+          "at": 1790226537927
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 6.699999988079071,
+          "at": 1790226538357
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 7.900000035762787,
+          "ok": true,
+          "requestId": "t14:2:1790226538351:3",
+          "at": 1790226538359
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "unitBB",
+          "frameMs": 10.199999988079071,
+          "at": 1790226538790
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "foldAction",
+          "frameMs": 16,
+          "at": 1790226538807
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 16.900000035762787,
+          "ok": true,
+          "requestId": "t14:3:1790226538792:4",
+          "at": 1790226538809
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "nextHandBtn",
+          "frameMs": 13.199999988079071,
+          "at": 1790226539241
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.899999976158142,
+          "ok": true,
+          "requestId": "t14:4:1790226539228:5",
+          "at": 1790226539242
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "BUTTON",
+          "frameMs": 12.399999976158142,
+          "at": 1790226539674
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 13.5,
+          "ok": true,
+          "requestId": "t14:5:1790226539662:6",
+          "at": 1790226539675
+        },
+        {
+          "kind": "ui-feedback",
+          "event": "pointerdown",
+          "target": "fillSeatsBtn",
+          "frameMs": 5.200000047683716,
+          "at": 1790226539724
+        },
+        {
+          "kind": "action-save",
+          "requestMs": 6.300000011920929,
+          "ok": true,
+          "requestId": "t14:6:1790226539720:7",
+          "at": 1790226539726
+        }
+      ]
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 56.93289999999979
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 70.98539999999048
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.25239999999758
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 56.39089999999851
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#foldAction",
+      "elapsedMs": 45.82399999999325
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#raiseAction",
+      "elapsedMs": 54.85000000000582
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#fillSeatsBtn",
+      "elapsedMs": 70.28029999999853
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"As\"]",
+      "elapsedMs": 46.03090000001248
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "button.pick[data-card=\"Kd\"]",
+      "elapsedMs": 46.4435000000085
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#actionButtons button",
+      "elapsedMs": 46.1536000000051
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#actionButtons button",
+      "elapsedMs": 46.138099999996484
+    },
+    {
+      "kind": "browserMutationVisible",
+      "selector": "#sizeButtons button",
+      "elapsedMs": 71.96499999999651
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "baseline UI and V2 produce identical normalized input",
+      "metrics": []
+    },
+    {
+      "kind": "frontendMetrics",
+      "suite": "cached supported nodes repeated real browser analysis",
+      "metrics": []
+    },
+    {
+      "kind": "finalFrontendMetrics",
+      "metrics": []
+    }
+  ],
+  "captures": [
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\reraise-minimum-34bb.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\invalid-amount-feedback.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\card-editing.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\allin-confirmation.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\short-call-and-check.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\analysis-does-not-block-recording.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\analysis-timeout.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\retry-after-lost-response.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\layout-1366x768.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\layout-1024x768.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\reachable-actions-1024.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\layout-390x844.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\reachable-actions-390.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\nine-seat-layout.png",
+    "D:\\德州决策\\reports\\fast-input-decision-v2\\browser\\original-ui-comparison.png"
+  ]
+}

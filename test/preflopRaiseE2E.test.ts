@@ -240,10 +240,18 @@ test('E2E-02：🔴 建议的加注尺寸必须拥有**属于它自己**的 EV�
       for (const key of ['foldLikelihood', 'callLikelihood', 'reRaiseLikelihood']) {
         assert.equal(typeof data[key], 'number', `${key} 必须随理由一起披露`);
       }
-      assert.equal(data['heroFiveBetExpanded'], 0, '必须如实标注「Hero 的 5Bet 未展开」');
+      assert.equal(
+        data['heroFiveBetExpanded'],
+        size!['heroFiveBetExpanded'] ? 1 : 0,
+        '理由里的 5Bet 展开标记必须忠实映射所选尺寸',
+      );
       const text = String(reason!['textZh']);
       assert.ok(text.includes('未经统计校准'), '必须声明响应模型未校准');
-      assert.ok(text.includes('5Bet'), '必须披露未展开的应对');
+      assert.ok(text.includes('5Bet'), '必须披露 5Bet 应对的支持状态');
+      if (size!['heroFiveBetExpanded']) {
+        assert.ok(text.includes('已展开'), `已建模的 5Bet 分支必须明确写「已展开」：${text}`);
+        assert.equal(text.includes('5Bet **未展开**'), false, `不得继续报告过期限制：${text}`);
+      }
     }
   }
 });
@@ -614,7 +622,7 @@ test('E2E-10：决策 ViewModel 的诊断区必须给出逐尺寸 EV / 响应 / 
   const labels = rows.map((x) => x.label).join('｜');
 
   /* 使用者第十一节点名的五件事，逐条必须在诊断区可见 */
-  for (const needle of ['逐尺寸 EV', '逐尺寸响应', '条件权益', '被再加注分支', '未支持']) {
+  for (const needle of ['逐尺寸 EV', '逐尺寸响应', '条件权益', '被再加注后的 Hero 应对', '未支持']) {
     assert.ok(labels.includes(needle), `诊断区必须包含「${needle}」这一行（实际标签：${labels}）`);
   }
   const evRow = valueOf('逐尺寸 EV')!;
@@ -626,11 +634,12 @@ test('E2E-10：决策 ViewModel 的诊断区必须给出逐尺寸 EV / 响应 / 
   assert.ok(responseRow.includes('弃') && responseRow.includes('跟') && responseRow.includes('再加'),
     `响应行必须同时给出「弃 / 跟 / 再加注」三个概率：${responseRow.slice(0, 120)}`);
 
-  const rrRow = valueOf('被再加注分支')!;
-  assert.ok(rrRow.includes('FOLD') || rrRow.includes('弃牌'), '被再加注分支必须写明 Hero 评估了哪些应对');
+  const rrRow = valueOf('被再加注后的 Hero 应对')!;
+  assert.ok(rrRow.includes('弃牌') && rrRow.includes('5Bet'), '被再加注分支必须写明 Hero 评估了哪些应对');
 
   const unsupportedRow = valueOf('未支持')!;
-  assert.ok(unsupportedRow.includes('5Bet'), '必须披露「Hero 的 5Bet 应对未展开」');
+  assert.ok(unsupportedRow.includes('5Bet'), '必须披露 Hero 的 5Bet 支持状态');
+  assert.ok(unsupportedRow.includes('已展开'), '存在受支持 5Bet 候选时必须如实标注已展开');
   assert.ok(unsupportedRow.includes('摊牌终止近似') || unsupportedRow.includes('近似'), '必须披露未来街近似');
   assert.ok(unsupportedRow.includes('NOT_APPLIED'), '必须披露抽水未计入');
 

@@ -1,0 +1,56 @@
+{
+  "cacheKey": "c7348fc89",
+  "scenario": {
+    "kind": "RFI",
+    "gameType": "CASH",
+    "tableSize": 9,
+    "effectiveStackBB": 100,
+    "heroPosition": "UTG",
+    "villainPosition": null,
+    "actionHistory": [],
+    "raiseSizesBB": [],
+    "blinds": {
+      "sbBB": 0.5,
+      "bbBB": 1,
+      "anteBB": 0
+    },
+    "heroAlreadyActed": false
+  },
+  "solveMeta": {
+    "brGapTotal": 0.02115291714591222,
+    "seatGaps": [],
+    "seatEvs": [],
+    "stopReason": "target_gap",
+    "solverState": "done",
+    "iterationsCompleted": 12,
+    "iterationsRequested": 12,
+    "targetGap": 0.05,
+    "solveDurationMs": 7233,
+    "multiwayEquityModel": "coupled_deck_v1",
+    "realizationNote": "",
+    "gpu": false
+  },
+  "quality": "LOW_CONVERGENCE",
+  "source": {
+    "kind": "SOLVER",
+    "engine": "gtopen",
+    "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+    "solverVersion": null,
+    "endpoint": "http://127.0.0.1:3737"
+  },
+  "handClasses": 169,
+  "totalClassCombos": 1326,
+  "positiveClasses": 169,
+  "classFrequencySum": 19.115795982699986,
+  "comboWeightedMass": 121.09384515959995,
+  "trueComboUniverseAfterDeadCards": 1225,
+  "positiveCombosAfterDeadCards": 1225,
+  "pSum": 1,
+  "effectiveComboCount": 94.05598276264811,
+  "normalizedEntropy": 0.6564907113362355,
+  "examples": {
+    "AA": 0.9992308,
+    "AJo": 0.8068438,
+    "72o": 0.0007692308
+  }
+}

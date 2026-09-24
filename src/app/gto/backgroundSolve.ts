@@ -128,7 +128,7 @@ export type BackgroundSolveRecord = {
    * **完全不同的事**（前者等也不会好、也**不该**提示去查求解器）。
    * 只靠中文文案区分会让界面被迫做字符串匹配，而那是踩过的坑。
    */
-  reasonKind?: 'SETTINGS_MISMATCH' | 'SOLVER' | 'UNKEYABLE';
+  reasonKind?: 'SETTINGS_MISMATCH' | 'SOLVER' | 'UNKEYABLE' | 'QUEUE_SUPERSEDED';
 };
 
 /**
@@ -178,6 +178,8 @@ export type BackgroundSolveQueueOptions = {
    * 顺带让队列长度成为可观测的量。
    */
   concurrency?: number;
+  /** 正在运行的任务之外最多保留几个等待任务；满时由最新局面替换最旧等待项。 */
+  maxPending?: number;
   /** 单个任务的硬上限；省略则用 `GtoSafeLookup` 自己的超时 */
   now?: () => number;
 };
@@ -189,6 +191,7 @@ type QueueEntry = {
 
 export class BackgroundSolveQueue {
   private readonly concurrency: number;
+  private readonly maxPending: number;
   private readonly now: () => number;
 
   /** 待跑（含正在跑）的队列 */
@@ -203,7 +206,12 @@ export class BackgroundSolveQueue {
     if (!Number.isInteger(concurrency) || concurrency < 1) {
       throw new Error(`后台求解并发数必须是 >= 1 的整数，收到 ${String(concurrency)}`);
     }
+    const maxPending = options.maxPending ?? 8;
+    if (!Number.isInteger(maxPending) || maxPending < 1) {
+      throw new Error(`后台求解等待上限必须是 >= 1 的整数，收到 ${String(maxPending)}`);
+    }
     this.concurrency = concurrency;
+    this.maxPending = maxPending;
     this.now = options.now ?? (() => Date.now());
   }
 
@@ -281,6 +289,17 @@ export class BackgroundSolveQueue {
     };
     this.records.set(cacheKey, record);
 
+    if (this.waiting.length >= this.maxPending) {
+      const superseded = this.waiting.shift();
+      const old = superseded === undefined ? undefined : this.records.get(superseded.cacheKey);
+      if (old !== undefined && old.state === BackgroundSolveState.QUEUED) {
+        old.state = BackgroundSolveState.FAILED;
+        old.reasonKind = 'QUEUE_SUPERSEDED';
+        old.reasonZh = '等待队列已满，已由更新的牌桌局面取代；未启动本次后台求解。';
+        old.finishedAtMs = this.now();
+        old.durationMs = 0;
+      }
+    }
     this.waiting.push({
       cacheKey,
       run: () => {
