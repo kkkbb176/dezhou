@@ -1,0 +1,60 @@
+=== 建桌 ===
+Hero 手牌 = As Ks；heroPosition=BTN；heroPlayerId=p1
+牌桌自己的 board（string[]）= （空）
+
+=== 翻前：Hero（seat_BTN）之外的都弃牌 ⇒ 只剩 Hero，推进到翻牌 ===
+
+—— 即将行动：seat_UTG（需跟注 100 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+—— 即将行动：seat_HJ（需跟注 100 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+—— 即将行动：seat_CO（需跟注 100 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+—— [hero] 即将行动：seat_BTN（需跟注 100 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+—— 即将行动：seat_SB（需跟注 50 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+—— 即将行动：seat_BB（需跟注 0 筹码）
+   行动前：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+   行动后：street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「（空）」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+=== 录入翻牌 3 张后（此时 hero 与 villain 都还在）===
+牌桌 board = Kh 7c 2d
+street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「13h 7c 2d」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+=== 再录入转牌 ===
+牌桌 board = Kh 7c 2d Qd
+street=PREFLOP board切片[flop/turn/river]=0/0/0 boardCards=「13h 7c 2d 12d」
+              holes=[seat_UTG:null seat_HJ:null seat_CO:null seat_BTN:14s13s seat_SB:null seat_BB:null]
+
+=== 写出的记录（全部）===
+{"handId":"local#H1","playerId":"p2","seatId":"seat_UTG","street":"PREFLOP","actionType":"FOLD","potBB":1.5}
+{"handId":"local#H1","playerId":"p3","seatId":"seat_HJ","street":"PREFLOP","actionType":"FOLD","potBB":1.5}
+{"handId":"local#H1","playerId":"p4","seatId":"seat_CO","street":"PREFLOP","actionType":"FOLD","potBB":1.5}
+{"handId":"local#H1","playerId":"p1","seatId":"seat_BTN","street":"PREFLOP","actionType":"CALL","potBB":1.5}
+{"handId":"local#H1","playerId":"p5","seatId":"seat_SB","street":"PREFLOP","actionType":"FOLD","potBB":2.5}
+{"handId":"local#H1","playerId":"p6","seatId":"seat_BB","street":"PREFLOP","actionType":"FOLD","potBB":2.5}
+记录总数 = 6

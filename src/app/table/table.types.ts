@@ -363,6 +363,14 @@ export type TableOp =
   | { kind: 'SIT_OUT'; seatId: string }
   | { kind: 'SIT_IN'; seatId: string }
   | { kind: 'SET_STACK'; seatId: string; stackBB: number }
+  /**
+   * 🔴 **改名**（`SET_PLAYER_NAME`）：只改**显示名**，`playerId` 不变。
+   *
+   * 为什么需要它：`ADD_PLAYER{displayName}` 只对**空座位**生效，而实际牌桌上
+   * 座位常常**已经**坐满（一键补齐 / 逐个加入都得到自动名「玩家N」），
+   * 那时没有任何入口能改成使用者的叫法。
+   */
+  | { kind: 'SET_PLAYER_NAME'; seatId: string; displayName: string }
   | { kind: 'SET_PROFILE'; seatId: string; quickProfile: QuickProfile }
   | { kind: 'SET_DYNAMIC_HINT'; seatId: string; dynamicHint: DynamicHint }
   | { kind: 'CLEAR_ALL_VILLAINS' }
@@ -408,6 +416,9 @@ export type TableBlockCode =
   | 'HERO_SEAT_REQUIRED'
   | 'NOT_SITTING_OUT'
   | 'ALREADY_SITTING_OUT'
+  /* 改名（`SET_PLAYER_NAME`）：空名字 / 超长必须显式拒绝，不得静默写入 */
+  | 'PLAYER_NAME_EMPTY'
+  | 'PLAYER_NAME_TOO_LONG'
   | 'INTERNAL_ERROR';
 
 export type TableIssue = {

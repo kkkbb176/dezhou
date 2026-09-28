@@ -1,0 +1,49 @@
+=== 建桌：6 人，Hero 在 BTN，手牌 As Ks ===
+heroPosition=BTN；board=「」
+
+=== 翻前：全部 CHECK/CALL 打到本街结束 ===
+本街打完后 street = PREFLOP（仍是翻前：引擎在等公共牌）
+
+=== 录入翻牌 Kh 7c 2d ⇒ 引擎重放并把街道推进到翻牌 ===
+录牌后 street = FLOP
+
+=== 录入转牌 Qd ⇒ 推进到转牌 ===
+录牌后 street = TURN
+
+=== 记录 ===
+PREFLOP seat_UTG  CALL  board=[]                 holeCards=（未记录）
+PREFLOP seat_HJ   CALL  board=[]                 holeCards=（未记录）
+PREFLOP seat_CO   CALL  board=[]                 holeCards=（未记录）
+PREFLOP seat_BTN  CALL  board=[]                 holeCards=[As Ks]
+PREFLOP seat_SB   CALL  board=[]                 holeCards=（未记录）
+PREFLOP seat_BB   CHECK board=[]                 holeCards=（未记录）
+FLOP    seat_SB   CHECK board=[Kh 7c 2d]         holeCards=（未记录）
+FLOP    seat_BB   CHECK board=[Kh 7c 2d]         holeCards=（未记录）
+FLOP    seat_UTG  CHECK board=[Kh 7c 2d]         holeCards=（未记录）
+FLOP    seat_HJ   CHECK board=[Kh 7c 2d]         holeCards=（未记录）
+FLOP    seat_CO   CHECK board=[Kh 7c 2d]         holeCards=（未记录）
+FLOP    seat_BTN  CHECK board=[Kh 7c 2d]         holeCards=[As Ks]
+TURN    seat_SB   CHECK board=[Kh 7c 2d Qd]      holeCards=（未记录）
+TURN    seat_BB   CHECK board=[Kh 7c 2d Qd]      holeCards=（未记录）
+TURN    seat_UTG  CHECK board=[Kh 7c 2d Qd]      holeCards=（未记录）
+TURN    seat_HJ   CHECK board=[Kh 7c 2d Qd]      holeCards=（未记录）
+TURN    seat_CO   CHECK board=[Kh 7c 2d Qd]      holeCards=（未记录）
+TURN    seat_BTN  CHECK board=[Kh 7c 2d Qd]      holeCards=[As Ks]
+
+=== 回放校验（用生产函数 `replayHand`）===
+记录共 18 条 ⇒ 回放出 1 手
+
+手 local#H1：
+  记录条数            = 18（带公共牌 18 条 / 带底牌 3 条）
+  回放 board          = [Kh 7c 2d Qd]   真实 = [Kh 7c 2d Qd]
+  回放 heroCards      = [As Ks]   真实 = [As Ks]
+  回放 行动条数       = 18   真实 = 18
+  覆盖街道            = FLOP / PREFLOP / TURN
+  ⇒ board ✅ | heroCards ✅ | 行动序列 ✅
+
+成功校验手数 = 1
+
+=== 旧记录（本次修复前写入的 1,036 条）的真实状态 ===
+  条数 = 1036
+  带 board 的 = 0；带 holeCards 的 = 0
+  ⇒ 旧记录**不可回放**（当时没记牌面）。这是历史事实，不会被追溯补上。

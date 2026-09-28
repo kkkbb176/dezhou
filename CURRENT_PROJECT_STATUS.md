@@ -9,23 +9,316 @@
 > 这是防止「文档说待办、代码已完成」这类状态漂移的机制。
 >
 > **最后审计日期**：2026-09-14 · **审计方式**：核对实际文件清单 + 全量测试运行
+> **最近更新**：**首次真实牌局验证**（455 手 Pluribus 真实 6-max NLHE，MIT 数据集）。
+> 查出并修复 **1 个确诊缺陷**（BB 作为翻前加注者时翻后整条分析失败，40 个节点 → 0），
+> 新增 2 条回归锁，全量 **2,325 / 2,325 通过**。
+> 报告：`reports/REAL_HAND_VALIDATION.md`。上一轮五项优先级见 §1.0。
 
 ---
 
 ## 1. 一句话状态
 
 > **端到端链路已打通**：可以打开网页、手动输入一手牌、
-> 在约 100 毫秒内得到「动作 + 合法尺寸 + 置信度 + 分类 + 中文原因」。
+> 在**实测中位 587ms**（p90 2,707ms）内得到「动作 + 合法尺寸 + 置信度 + 分类 + 中文原因」。
 >
 > **「9 座桌 8 人」这个现金局最常见的形态已经可用**（Table Topology Correction）：
 > 空座位与暂离只意味着「本手少几个人」，不再让整张牌桌无法分析。
 >
 > ⚠️ **但「能用」不等于「可信」**：范围是**启发式先验**（非求解器输出）、
 > 抽水未计入、**尚未用真实牌局验证过**。下一步唯一要做的事就是拿真实牌来测。
+>
+> 📌 **本轮起记录可回放了**（P4）：`ObservationRecord` 带上 `board` / `holeCards`，
+> 新写的牌局能用 `replayHand` 还原成完整一手 —— 真实牌局验证这条线**从"不成立"变为"可做"**。
+> ⚠️ 但**已写入的 1,036 条旧记录永远不可回放**（当时没记牌面），真实验证只能从现在开始积累。
 
 ---
 
-## 1.0 最近一轮：V2.1 画像敏感度与决策影响审计（**不是新 Phase**）
+## 1.0 本轮：**优先级与作用**（实测数据支撑）
+
+> 全部数字来自真实记录与本轮探针，可复现：
+> `data/decision-log.jsonl`（10,917 条真实决策）· `scripts/context-latency-audit.ts` ·
+> `scripts/hundred-hands-three-streets-out.txt` · `reports/FOLD_ANCHOR_FIX.md`
+
+### P0 —— **决策尾延迟**（唯一"会让实战不可用"的问题）· **已定位 + step1 优化完成，仍有剩余**
+
+**实测**：10,917 条真实决策里 `timingMs.total` **中位 587ms、p90 2,707ms、最大 6,674ms**；
+**33.7% 超过 1 秒、5.2% 超过 3 秒软预算**。`context` 阶段占掉几乎全部耗时。
+
+**分层定位**：热点是 **`raiseResponse`**；面对下注节点 wall ≈ 2.0–2.3s，其中它 ≈ 1.0–1.2s；
+**与画像无关**（有无画像几乎相同）⇒ **基线设计成本**（加注网格 7 档 × 每档一遍响应 + 桶权益）。
+
+**step1（已完成，纯去重、不改任何数值）**：7 个档位共用同一副公共牌与同一份对手范围，
+但 `publicStrengthBandOf`（内含 `describeHand`）与 `drawProfileOf` 原先**逐条重算 7 遍**。
+新增可选 `comboClassificationMemo`（同一决策内跨档位复用；缺省走原路径）。
+
+| 指标 | 修复前 | **修复后** |
+|---|---|---|
+| 去重率 | — | **91.7%**（命中 5,016 / 实算 456） |
+| wall（翻牌·面对 2/3 池） | 2,312ms | **1,989ms（−14%）** |
+| `raiseResponse` | 1,224ms | **991ms（−19%）** |
+| 全量测试 | — | **2,313 / 2,313 通过**（等价变换） |
+
+**P0 剩余（step2 已完成定位）**：新增**永久分段计时**
+（`raiseComboClassify` / `raiseBucketEquity`，只读、不改计算）。实测：
+
+```text
+raiseResponse 总 = 972ms
+  ├ 组合分类 raiseComboClassify =  14ms  ← step1 去重后已可忽略
+  ├ 桶权益   raiseBucketEquity  = 953ms  ← 98%
+  └ 其余                        =   5ms
+```
+
+**P0 根因（step3 已测出，非推测）**：给 `raiseResponseAll` 补上 `equityMethod` / `equityIterations`
+披露后，实测 **8 档全是 `EXACT`，每档 53,460–77,220 局（合计约 47 万）** ——
+调用点申请的是 `iterations: 6000`，但 `buildCapacity` 的规则是
+「matchups ≤ `maxExactMatchups`（默认 500,000）⇒ **不论申请多少次迭代都走精确枚举**」。
+5.3–7.7 万远低于 50 万 ⇒ **被静默升级**。这就是「申请 6000 次却花 60ms/次」的机制。
+
+**step4（已修复）**：给条件范围权益一个**与调用方声明一致的枚举预算** ——
+`contextBuilder.ts` 新增 `RESPONSE_EQUITY_MAX_EXACT_MATCHUPS = 20_000` 并透传给权益引擎。
+**三条性质**：① 仍是确定性（固定 seed + 固定 6000 次，不看时间、不看负载）；
+② **不是**「按剩余时间降级」（项目明文禁止的是那种做法）；③ 表驱动，无逐点特判。
+
+| 指标 | 修复前 | **修复后** |
+|---|---|---|
+| `raiseBucketEquity` | 1,017ms | **401ms（−61%）** |
+| `raiseResponse` | 1,035ms | **421ms（−59%）** |
+| 面对下注节点总耗时 | 1,618ms | **690ms（−57%）** |
+| 分桶权益方法 | EXACT 5.3–7.7 万局 ×16 | **MONTE_CARLO 6000 ×16** |
+
+**副作用（已披露）**：修掉静默升级会移动一批 EV 数值（约 0.1–2%），5 处钉值测试逐项更新，
+契约本身（EV>0 不得弃牌 / 一致性 / 资金口径）未变。**想完全恢复旧数值**：
+把 `RESPONSE_EQUITY_MAX_EXACT_MATCHUPS` 调回 500,000。
+
+**P0 剩余（诚实边界）**：仍剩 **401ms**（16 次 × ~25ms 抽样本身的开销），
+再往下只能降迭代数（**改精度，需拍板**）或改权益引擎热路径（**动冻结核**）。
+另外本轮**只优化了「面对下注」一个节点**，`decision-log` 里 5.2% 超 3 秒的极端样本**未逐条归因**。
+
+### P1 —— `FoldTo*CBet` 不驱动「他面对我加注」的响应 · **✅ 已修复**
+
+**修法**：`raiseResponse.ts` 的 `continueIndex` 乘上 `streetCallScale`
+（与响应层同一个量、同一方向）。对照（他下注 5BB，我 A♠Q♠）：
+
+| 他的 `foldToFlopCBet` | 修复前 弃/跟/再加注 ｜ RAISE EV | **修复后** |
+|---|---|---|
+| 未观测 | 77.1/19.5/3.5 ｜ 626.8 | **91.9/4.6/3.5 ｜ 998.7** |
+| 90% | 77.1/19.5/3.5 ｜ 626.8 | **92.9/3.6/3.5 ｜ 1,028.0** |
+
+（修复前「弃多弃少同一条数」⇒ 对紧手的加注 EV 被低估。）
+
+### P2 —— `betScale` 的双口径 · **✅ 结论反转：不是缺陷**（未改动）
+
+实测（`scripts/betscale-pfr-probe.ts`）：`pfr` 5%→40%（`resolved.aggression` 0.267→0.560）时
+`FLOP.betScale` **逐位不变**（0.8232）⇒ PFR 在该通道**惰性**，不存在两套口径。
+且 `profileResolverV3Fix` 的 UNIFIED-1/3/4 锁着一条**有意的不变量**
+（`betScale` 必须完全由 `resolved` 维度决定）；改动会**破坏**它。
+⇒ 维持原样，结论已写进源码注释（防止再次被当成缺陷重开）。
+
+### P3 —— 锚定状态做成正式诊断字段 · **✅ 已完成**
+
+`SizeResponse.foldAnchor { measured, tolerance, modeled, applied, clamped }`
+经 `postflopAdvisor` → `decisionEngine` 原样带出。实测披露：
+`hands=8000 25% → 锚定[实测30% 模型74.6%→45.1% **已夹**]`（可直接判定，不必反推）。
+
+### P4 —— 牌局记录可回放 · **✅ 已修复**
+**问题（实测）**：`data/player-history.jsonl` **1,036 条里带 `board` 的 0 条、带底牌的 0 条**；
+`decision-log.jsonl` 只存 `inputHash` ⇒ 两套记录**都不可回放**，
+「真实牌局复盘 + 实战验证」这条线**根本不成立**（此前 100 手验证只能用合成语料）。
+
+**修法**：`ObservationRecord` 新增 `board?`（行动**之前**的公共牌，按街切片）与
+`holeCards?`（行动者自己的底牌；只有 Hero 有 ⇒ 对手缺省，**不虚构**）；
+新增纯函数模块 `src/domain/handReplay/handReplay.ts`（`replayHand` / `replayAllHands`）。
+
+**数据源选错就会「有字段但永远为空」**（实测）：
+
+| 候选源 | 实测 | 结论 |
+|---|---|---|
+| `engineViewOf().engine.board` | 录满翻牌+转牌后仍 `0/0/0`、`street` 恒为 `PREFLOP` | ❌ 引擎要等 `advanceStreet` 才有牌 |
+| `state.board`（牌桌 `string[]`） | 与录入逐字一致 | ✅ 真源 |
+
+**验证**（`scripts/p4-history-replay-verify.ts` + `test/handReplayableRecord.test.ts` 10 项）：
+18 条记录（翻前/翻牌/转牌三街）⇒ `board [Kh 7c 2d Qd]` ✅、`heroCards [As Ks]` ✅、
+行动序列 18/18 ✅。**Fail Closed**：牌面互不为前缀 / 底牌不一致 / 座位还原不出 / 无记录 ⇒ 显式失败，
+绝不拼一个「从未存在过的牌局」。
+
+**诚实边界**：旧 1,036 条**永久不可回放**（不会被追溯补上）；对手底牌**永远是缺省**（不是遗漏，是没人知道）；
+`decision-log.jsonl` **仍未改**（要不要合并两套记录需你定）；记录现在**含具体底牌**（隐私）。
+
+> 本轮报告：`reports/PRIORITY_FIXES_ROUND.md` · 验收日志：`reports/_verify_after_priority_fixes.log`
+
+---
+
+## 1.0b 本轮：**真实牌局验证**（第一次拿真牌局检验引擎）
+
+> 报告：`reports/REAL_HAND_VALIDATION.md` · 探针：`scripts/validate-real-hands.ts`
+> · 原始输出：`scripts/real-hands-full.txt`（修复前）/ `scripts/real-hands-after-fix.txt`（修复后）
+
+**数据**：`third_party/phh-dataset/`（多伦多大学 CPRG，**MIT**）的 Pluribus 子集 ——
+**455 手真实 6-max NLHE**（$50/$100，Pluribus 对职业牌手），**6 家底牌全已知**。
+已在 `.gitignore` 隔离（第三方 + 含具体底牌）。下载：`npm run fetch:real-hands`。
+
+**规模**：1,302 个决策点。
+
+### 确诊缺陷（已修）：BB 是翻前加注者时，翻后整条分析失败
+
+**现场**：40 个节点（3.1%）`CONTEXT_BUILD_FAILED`，形态 100% 一致 ——
+`翻前 [UTG弃 HJ弃 CO弃 BTN弃 SB跟注 BB加注 SB跟注] ⇒ 翻后`。
+
+**根因（三处调用点，逐层剥出）**：`rfiTierByPositionName` 对 BB 抛错是**故意**的
+（防红队 F-03 给 BB 兜底按钮档位），但「SB 平跟、其余全弃、BB 加注」**不是开池**，
+是**隔离加注** —— 三处调用点都默认了「主动加注者 = 开池者」：
+
+1. `contextBuilder` RAISE 分支 → `rfiWeightsByHandedness(BB)`；
+2. `contextBuilder` CALL 分支 → `defendWeightsByHandedness(BB, …)`；
+3. **最隐蔽**：`decisionEngine.ts:2489` 的「面对开池 3Bet」闸门 ——
+   它本来有「我已经加注过 ⇒ 放行」的判据，但 BB 只投了盲注，
+   判据认为「我面对的是开池」，可 BB 根本没有开池范围可查。
+
+**修法（不编造策略数字）**：① 新增分支：BB 是本手首个加注者 ⇒
+借用既有的 `defendWeightsByHandedness(跛入者位置, BB)`，标签**如实写明它比真实隔离范围宽**；
+② 加判据「只有 CO/BTN/HJ/LJ/UTG* 才能当开池者」；③ 把「对手必须是合法开池者」
+提为闸门**前置条件**（判据用位置，**不用 try/catch** —— 那会吞掉别的错误）。
+
+| 指标 | 修复前 | **修复后** |
+|---|---|---|
+| `CONTEXT_BUILD_FAILED` | **40**（3.1%） | **0** |
+| 引擎给出可执行建议 | 1,262 / 1,302 = 96.9% | **1,302 / 1,302 = 100.0%** |
+| 合法性违规 / 尺寸越界 | 0 / 0 | **0 / 0** |
+
+**回归锁**：`test/postflopRangeFoundation.test.ts` 的 `C1-C` / `C1-C2`
+（输入**逐字取自真实牌局 `105/27.phh`**；C1-C2 用**范围宽度**判定，
+文案可以改、宽度不会撒谎）。
+
+### 如实列出（未修 / 不能判定）
+
+| 项 | 处置 |
+|---|---|
+| **15 个全下节点**重建失败（`BET_EXCEEDS_STACK`） | **验证装置的缺口**，不是引擎缺陷（引擎拒绝它是对的）。1.2%，不混进结论 |
+| 引擎建议 BET/RAISE 878 次（进攻 67%），真实玩家约 25% | **成因已定位**（见下条），**未修** |
+| **引擎预测的弃牌率系统性偏高约 4 倍** | **已量化，未修** —— 见下 |
+| `VALUE_GATE` 说「不是取值场合」而 `STRATEGIC_VALUE_BET` 照样下注 | **文案/归因**问题，需单独查证，**本轮未动** |
+| 画像通道 | **本轮未验证** —— Pluribus 数据集**没有跨手玩家身份** |
+
+#### 弃牌率校准（本轮最重要的量化发现）
+
+配对口径：对每个「引擎建议下注/加注」的节点，取**同一手里、它之后第一个不是该行动者**
+的动作 = 对手的响应；与引擎为该尺寸报的 `foldLikelihood` 比对。
+（⚠️ 第一版把「该决策点的真实动作」当成对手响应，永远是 0 弃牌 ——
+交叉表 `scripts/cross-tab-engine-vs-real.ts` 证明那是**两个不同主体的动作**，我配错了对。）
+
+```text
+732 个配对样本：预测平均弃牌率 74.8% ｜ 实际 18.2% ｜ 绝对误差 57.6 个百分点
+分层（按双方真实底牌 + 牌面算强度）：
+  两者接近 n=308：预测 78.0% vs 实际 17.5%   ❌
+  对手明显更弱 n=235：预测 69.2% vs 实际 27.7%  ❌
+  对手明显更强 n=189：预测 76.5% vs 实际  7.4%  ❌
+```
+
+**偏差在三层里全部存在** ⇒ **不能**用「引擎以为对手是什么牌」解释。
+
+**分街（决定了修法必须是什么形状）**：
+
+| 街道 | 修复前 | 实际 | 差 |
+|---|---|---|---|
+| FLOP | 83.7% | 17.0% | −66.7pp |
+| TURN | 66.2% | 17.1% | −49.1pp |
+| RIVER | 35.6% | 31.6% | **−4.0pp ✅** |
+
+**偏差异常只在还有牌要发的街** ⇒ 机理：`boardStrength` 只算「现在对牌面成手多强」，
+**不含「还有牌要发 ⇒ 落后也仍有权益」**。河牌无待发牌 ⇒ 代理成立。
+
+#### 已做的结构性修复（`betResponse.ts` 的 `classifyResponse`）
+
+给 `strengthScore` 加**待发牌权益 `liveCardEquity`**，并乘 `cardsToCome/2`
+⇒ **河牌恰好为 0 ⇒ 行为逐位不变**（实测 35.6% 未动）。用 `cardsToCome` +
+`villainDraw`（都是调用方已给的既有量），**刻意不做 `outs × 2%`**（`draws.ts:142` 禁止）。
+
+| 指标 | 修复前 | 修复后 |
+|---|---|---|
+| 加权平均绝对误差 | 57.6pp | **50.6pp** |
+| FLOP 预测 | 83.7% | **76.4%** |
+| TURN 预测 | 66.2% | **60.2%** |
+| RIVER 预测 | 35.6% | **35.6%（逐位不变）** |
+
+#### **它没有修好 —— 而且测出了"为什么不能靠调常数修好"**
+
+**上限探测**（常数临时放大到 0.25/0.30/0.45）：
+
+```text
+FLOP 预测 76.4% → 41.8%（实际 20.2% —— 确实接近了）
+但引擎下注节点数 654 → 418
+```
+
+⇒ 要让预测对上，常数得大到「几乎所有牌都继续」——模型被推向另一个极端。
+**这不是无代价的校准**，所以恢复了有依据的保守值，**没有**去追那个数字。
+
+**剩余 50.6pp 是分辨率上限**：响应规则层**结构上只有 6 档牌面强度**，
+且**刻意不能读 `versusHero`**（`betResponse.ts:872`，那会用 Hero 真实底牌 = 信息边界泄露）。
+⇒「没成牌也没听牌但翻牌仍有约 20% 权益」那一大类**表达不出来**。
+**治本方案**：用**逐组合真实权益**（对 Hero 的**范围**算，不越界）替换 6 档代理 ——
+但它与 P0 刚优化掉的延迟直接冲突，需要先做缓存设计，属单独一轮决策。
+
+#### 比校准更大的问题：**行为与自己的声明矛盾**（未修）
+
+`decisionEngine.ts:614-615 / 833-839 / 1001-1003` 明写：
+
+> 「下注的 EV 依赖对手弃牌率，而本项目**没有**可信的弃牌率估计」
+> 「如果为了能加注而编一个弃牌率，那正是项目明令禁止的『编造数据』」
+
+**但实际行为**：引擎确实算 `foldLikelihood`（最高报到 87.4%）、拿它**选尺寸**、
+并在理由里用**弃牌权益**为进攻辩护。修好分辨率之前，这条矛盾**仍然成立**。
+
+**纪律（写进报告 §7）**：**未按「与真人一致率」调参**。24.8% 的一致率
+**不能**当作准确率 —— 真人会失误。用它调参等于把引擎调成「模仿对手的平均水平」。
+
+---
+
+## 1.1 最近一轮：PFR→BETRANGE（切断「翻前主动性 → 翻后下注范围」越权通道）
+
+> 报告：`reports/PFR_TO_BETRANGE_FIX.md`（修复）· `reports/PFR_TO_BETRANGE_VERIFICATION.md`（定位与对照实验）
+> 探针：`scripts/tight-villain-pfr-sweep.ts`、`scripts/tight-villain-stat-attribution.ts`（各含修复前/后输出）
+> 验收：`npm run verify` ⇒ **exit 0**（2,312 项 / 2,312 通过 / 0 失败；类型检查 0 错误；197 个产物与清单一致）
+
+**缺陷**：实测 `pfr` 经「极性 +1 → 融合维度 `aggression`」直接改写
+**下注范围层** `betProbabilityByBand` 的三个锚（`valueAnchor` / `thinAnchor` / `showAnchor`）。
+`pfr` 从 5% 改到 35% 能移动我方权益 **16.2pp**、把 J♥J♠ 的动作从 RAISE 翻成 CALL；
+`pfr=9%` 把 `thinAnchor` 推到 −0.0766 ⇒「顶对/中对」整档被踢出他的下注范围（空气占比 35% → 47%）。
+而源码明文禁止这条推论（`observedStats.ts`：「PFR 不碰 `bluffTendency`（禁止「翻前凶 ⇒ 河牌爱诈唬」）」）——
+极性表照做了，但 `aggression` 在另一层被当成「开枪倾向」的系数，于是**从后门成立**。
+另：`VPIP` 在该层零影响 ⇒「12/9 紧手」与「60/9 松被动鱼」被算成同一个下注者。
+
+**修法（最小改动，5 个生产文件）**：给下注范围层一个**只由翻后统计推动**的 aggression。
+`observedStats.ts` 把逐统计推力抽成可复用的 `StatPush` + `accOf(pushes, axes)`（可只取部分轴做加权平均），
+新增 `postflopBetAggression`（仅 `STAT_TO_STREET_TRAIT` 覆盖到的计入；无翻后证据 ⇒ **逐位等于标签原型值**）
+并随 `StreetFactors.betAggression` 透传；`betResponse.ts` 的 `responseTendenciesOf` 新增可选第 4 参
+`betAggression`（**只有显式给出时才带该字段** ⇒ 既有调用方逐位不变）；
+`contextBuilder.ts` 的 `betRangeTendenciesForSeat`（该层唯一供数点）传入该值；
+`bettingRange.ts` 改读 `aggressionForBetRange`，并在 `model.aggressionInput { value, source }` 里
+**披露本次实际使用的 aggression 与来源**（使该层可复算）。
+
+| 量（同一夹具：9 人桌 100BB / K♠7♥2♣ / 紧手 UTG 下注 5BB / Hero A♠Q♥） | 修复前 | **修复后** |
+|---|---|---|
+| `EqVs下注` @ `pfr` 未观测 | 38.04% | **38.04%** |
+| `EqVs下注` @ `pfr` 5% / 9% / 22% / 35% | 49.15 / 46.64 / 38.96 / 32.99% | **38.04%（全平）** |
+| 下注范围 `纯空气` | 35.15%（未观测）→ 49.68%（pfr 5%） | **35.15%（13 种统计组合全部相同）** |
+| 只给翻前统计的 CALL EV | 随 PFR 变化 | **与「无统计」逐位相同**（新增回归锁 P4-1b） |
+
+- **未改**：EV / 赔率 / 权益 / 行动排序公式、`betScale` 阈值通道、响应层（VPIP⇒tightness、
+  WTSD⇒passivity 仍照常驱动）、翻前加注响应模型（仍由画像驱动）、语义门、全部资金口径。
+- **测试契约更新 10 处**（全部是「钉住旧行为」的断言改为钉住新契约，**无一处放宽**）：
+  `profileFacingBetChannel`（复算助手 + §五-A1 + 墨菲 M-4 + 墨菲 M-7 + 附录-2）、
+  `profileEffectiveness`（夹具 + **新增 P4-1b 回归锁**）、`callFoldVerdictRuler` P1-A 钉值、
+  `test17DisplayDisclosure` D-3/D-8 钉值、`raiseToAmountConsistency` §八 钉值。
+- **产物清单**：`npm run manifest` 重新生成（197 个文件），`manifest:check` 通过。
+
+**遗留（如实）**：① 该层目前**没有正向的翻后 aggression 证据源**（极性表里 `FoldTo*CBet` / `*CheckRaise`
+对 aggression 极性为 0）⇒ 本次是「切断越权」而非「换一条统计驱动」；将来补极性即可自动生效（接线已就绪）。
+② 同一人身上仍并存两套「他爱不爱开枪」的口径（`betScaleOfUnifiedDimensions` 阈值门含 PFR vs 新锚系数不含），
+本次只修**下注范围构成**这条。③ `foldToFlopCBet` 对该层仍无通道（与实测库里「Nit vs Tight-passive 的真正区分量」不一致）。
+
+---
+
+## 1.2 最近一轮：V2.1 画像敏感度与决策影响审计（**不是新 Phase**）
 
 > 判定：`V2.1 PROFILE SENSITIVITY & DECISION IMPACT — PASS_WITH_WARNINGS`
 > 报告：`reports/PROFILE_V21_SENSITIVITY_AUDIT.md`（20 节）
@@ -72,7 +365,7 @@ E3 的 N0 档与 E0 逐位相同），且**全部落在同一个固定牌局**�
 ---
 
 
-## 1.1 最近一轮：Table Topology Correction（**不是新 Phase**）
+## 1.3 最近一轮：Table Topology Correction（**不是新 Phase**）
 
 > 判定：`# TABLE TOPOLOGY CORRECTION — PASS`
 > 报告：`reports/TABLE_TOPOLOGY_CORRECTION.md`（25 节）
@@ -105,7 +398,7 @@ Environment 策略 / Decision 策略 / Confidence —— **全部冻结未改**�
 
 ---
 
-## 1.2 最近一轮：PLAYER PROFILE V3 RESOLVER 定向修复（**不是新 Phase**）
+## 1.4 最近一轮：PLAYER PROFILE V3 RESOLVER 定向修复（**不是新 Phase**）
 
 > 判定：`PROFILE_RESOLVER_V3_FIX — PASS_WITH_WARNINGS`
 > 回归锁：`test/profileResolverV3Fix.test.ts`（26 项：TEST VECTOR A–J + MURPHY 1–10 + 算术锁）
@@ -417,8 +710,8 @@ Phase 4.5 已 **PASS**。**禁止**继续主动寻找新的 GitHub 项目 / Solv
 | 项 | 值 |
 |---|---|
 | 源代码 | 125 个文件 / 59306 行（含 GTO 子域、翻后模块、画像→范围桥与下注响应/合法动作树、面对下注画像通道 `src/app/manualInput/facingBetProfile.ts`；`GTOopen/` 下的外部求解器源码**不计入**本项目。口径：`src/**/*.ts`，2026-09-19 实测） |
-| 测试代码 | **117 个文件**（口径：`test/**/*.test.ts`，2026-09-22 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
-| 测试 | **2,271 项 / 137 套件 / 124 个测试文件**（**TABLE DYNAMICS V1 正确性收尾（54 项 —— 纯逻辑契约 47：A 无数据/旧格式记录被排除并计数/1 手样本不得编造数字；B 机会数≠动作次数、从未主动入池仍在分母、三档下注尺寸分桶互不合并；B4 证据足够时方向出现；C 连续 3 次 3Bet 不得宣称「压力高」、系数永不越 ±15%；D 整桌偏松不得覆盖个体紧（**断言作用范围明确的 tightness 而不是标签**）、个体不足才有限参考整桌并如实标注；E 离桌玩家被排除并计数；F Hero 自排除、分层不跨层求和、逐维度各自带机会数与可信度；G 只读行动前状态、记录形状无摊牌字段；H 单挑与「身后无人」显式 NOT_APPLICABLE、五类独立生成；I 摘要随桌况变化且不含耗时；J 影子模式十一条契约（正式建议先算且不被覆盖 / OFF 不计算 / 桌况异常与重算异常均收敛 FAILED / 超时 TIMEOUT 仍给桌况**且如实标记未做真实隔离** / **提供 withBudget 时预算原样传入并标记 budgetInjected=true** / **注入预算后不由外层宣布超时** / 证据不足不调整 / 对比结构化 / 可重放）；K 调整层不产出动作与金额；L 领域层标签必须落在 QuickProfile 枚举内；**M 六条真实缺陷回归锁 —— ①逐玩家维度必须能看见「别人先加注」（否则再加注压力机会数恒为 0）②强证据必须能定出方向（不得把 delta 二次收缩到门槛以下）③被动与凶必须在**轴**与**作用范围明确的维度**上区分开 ④个体证据充分时无关座位不影响注入维度 ⑤**任何会改动 bluffTendency 的标签一律判定为不可注入（不得用翻前再加注频率断言翻后诈唬倾向）** ⑥桌况层登记的标签维度必须与生产原型表逐项一致（防复制漂移；该测试当场抓出 3 项手抄错误）**。端到端 7 项：真实牌桌操作写入桌况字段逐字段核对 / 桌况层真能读到记录并产出维度 / 重复提交不重复累计 / 撤销后无残留 / 模式解析 / 影子对比记录字段齐全且可逐条读回 / 桌况变化则摘要变化）**；**PREFLOP RAISE DECISION 阶段 A/B（32 项：A-01/A-01b 34BB 最小再加注与 4Bet 节点逐尺寸建模；B-00a/B-00b 强度阶梯四条序关系 + 锚点表与结构式逐位一致 + 组合索引↔类别键 169 类全覆盖；B-01/B-02 每个尺寸各有自己的响应概率与 EV；B-03/B-03b/B-03c 概率守恒 + 条件范围归一化 + 价格单调 + 再加注闸门与两个全下判据；B-04/B-04b/B-04c/B-04d 独立复算 + 与唯一现金流公式逐位一致 + 被再加注分支同一零点 + 再加注尺寸由真实行动状态推导；B-06 尺寸对不上不得借用别的尺寸的 EV；B-07 换 Hero 底牌响应逐位不变；B-08/B-08b 不等筹码退回不计入投入；B-09/B-09b 非单挑与身后有人必须拒绝；B-10 可复现；E2E-01…E2E-11 建议与 EV 一致 / 披露自洽 / 位置来自真实行动顺序 / 20·40·100·200BB / 多人拒绝 / 时间预算 / 诊断区逐尺寸证据 / 模型版本可追溯）**；**PREFLOP 5BET MINIMUM RAISE 连续再加注合法性审计（16 项：最小 5Bet = 22 + (22−10) 且 legalActions 与 gameState 同口径 / 开池·3Bet·4Bet 逐段核对 lastRaiseSize·currentBet·minRaiseTo / 🔴 加注到 32BB 必须被拒 / 加注到最小额被接受 / 加注到 40BB 被接受 / 全下按预览按钮真实载荷提交且被识别 / 全下的 amountChips 口径（本街累计被拒、本次投入被接受）/ 尺寸网格不得含低于最小额的候选 / 决策候选逐个 ≥ 最小加注额 / 🔴 最终建议不得是 32BB 且必须落在网格内并可被实际执行入口接受 / 网格内每一项都真的能执行 / 动作记录 amount(增量) 与 toAmount(本街累计) 口径分离 / 需跟注额 = currentBet − 本街已投入 / 短码全下例外且不改写 lastRaiseSize / 由全下完成的完整加注照常更新 lastRaiseSize / 被拒绝的 32BB 无副作用）**；**SEAT SWAP 座位对调语义（12 项：玩家数/空位数/筹码总数三者逐位不变 / Button 不因换位而浮到别人手里 / 角色不重不漏 / 对调双向且筹码跟着座位走 / 🔴 6 人桌设为 UTG 后座位标签必须是「枪口位」而不是「大盲位」/ 9 人桌同样成立 / 满座逐位遍历「角色=座位名」/ 目标座位空着时沿用旧语义且不凭空造人 / 空座位分支筹码跟着 Hero 走 / 对调后冻结拓扑与预览同源 / 对调可被一次撤销完整退回）**；**PLAYER PROFILE TABLE UI V1 人物画像前端接入与浏览器验收（9 项：名册搜索 / 同名不合并与 duplicateName / 无机会 ⇒ null（不得显示 0%）/ 已接通统计如实显示为「成功 / 机会」/ 新建玩家新身份且不继承 / 选历史玩家入座按 playerId 绑定（换座位不丢）/ HTTP `/api/table/players` 名册与损坏历史显式报错 / 前端资源含选人弹窗与悬停画像且不遮挡 / 画像数字全部来自接口、无硬编码）**；**PLAYER PROFILE EXPLOIT V1 真实历史持久化与决策链路（15 项：A 行动落盘（§三 字段齐全）/ B 关闭重开可读且统计一致 / M 不同牌局不互相覆盖 / N 撤销不改动已完成牌局 / E 重复提交不重复计数 / F 撤销后统计正确更新并可修正 / C 重新上桌绑定真实历史并注入决策 / D 换人（含同名）不继承统计 / K 无接通项时宁缺勿假 / G 真实记录来源可追踪且统计项确有响应通道 / H 只改统计项输出按公式单调变化 / I 样本不足强收缩（2 手 ≪ 10 万手）/ J 界面如实披露实测手数与来源 / L 读取失败不得伪装成功 / O·P 街道状态与 RDC V1 契约不变）**；**RIVER DECISION CONSISTENCY 河牌全下 / 下注动作一致性（10 项：§1 下注额=全部剩余筹码 55BB ⇒ 语义必须等同全下（界面须写「全下」）/ §2 BET 与 ALL_IN 同金额 ⇒ 必须视为同一实际动作、不得报一致性错误 / §3 尺寸不同必须保留区分且 EV 分别计算 / §4 最高分尺寸为 ALL_IN 时最终输出必须一致 / §5 未打光筹码的下注不得被提升为全下（深筹码变体）/ §6 形态识别是纯标注（底池·有效筹码·再投入口径自洽）/ §7 校验按实际动作语义比较（含反证：真小于全下额仍须报错）/ §8 真分歧保留报错 + 等价动作消除误报 / §9 违规必须显著提示「不要据此行动」且保留调试信息 / §10 V2 街道状态契约不受影响）**；**STREET STATE CONSISTENCY V2 街道状态一致性（12 项：§A-1~A-4 不提前推进街道 / 录牌不结算、不补行动、不改投入 / 完成转牌行动才推进且不凭空发牌；§B-1~B-2 先录满 5 张再补全部行动仍可达河牌、Hero 本人历史行动可补录且不被当成 CHECK；§C-1~C-3 未完成转牌行动时预览必须 ready=false + 说明缺谁的行动、与管线口径一致、且不误伤正常转牌决策点；§E-1~E-3 预录第 5 张牌不进引擎状态、转牌计算对其逐位无关、未完成转牌行动时不存在合法河牌决策节点）**；**CB-5 河牌「打光筹码」容差带护栏（10 项：CB5-01/02 A–E 五个节点不变量与护栏自洽 / CB5-03 黄金向量不变 / CB5-04 强牌全下保留 / CB5-05 H·I·J 差=0·=带·>带边界 / CB5-06 K·L EV=null 不得当 0 / CB5-07 M·N 负 EV 与非全下加注 / CB5-08 O 翻前 3Bet·4Bet / CB5-09 P 翻牌·转牌（含转牌真全下 186）/ CB5-10 M9 候选与证据保全）**；**PREFLOP P0 · F2 全下保护街道适用范围（11 项：F2-1 A–D 合法全下不被翻后保护拦下 / F2-2 全下**真的**进入证据表 / F2-3 M7·M8 无 EV 如实标 null / F2-4 不得绕过既有证据纪律 / M1 弱牌中等牌仍不能全下 / M5-1 翻后一对牌保护仍生效 / M5-2 翻后强牌不受限 / M6 最小加注 > 全下额边界 / M9 3–25BB 扫描 / M10 阈值与底池比例档未动 / 街道矩阵穷举）**；**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
+| 测试代码 | **118 个文件**（口径：`test/**/*.test.ts`，2026-09-28 实测；另有执行 harness `test/helpers/tableJsHarness.ts`、`test/helpers/fakeGtopen.ts` GTOpen 结构替身） |
+| 测试 | **2,332 项 / 137 套件 / 128 个测试文件**（**TABLE DYNAMICS V1 正确性收尾（54 项 —— 纯逻辑契约 47：A 无数据/旧格式记录被排除并计数/1 手样本不得编造数字；B 机会数≠动作次数、从未主动入池仍在分母、三档下注尺寸分桶互不合并；B4 证据足够时方向出现；C 连续 3 次 3Bet 不得宣称「压力高」、系数永不越 ±15%；D 整桌偏松不得覆盖个体紧（**断言作用范围明确的 tightness 而不是标签**）、个体不足才有限参考整桌并如实标注；E 离桌玩家被排除并计数；F Hero 自排除、分层不跨层求和、逐维度各自带机会数与可信度；G 只读行动前状态、记录形状无摊牌字段；H 单挑与「身后无人」显式 NOT_APPLICABLE、五类独立生成；I 摘要随桌况变化且不含耗时；J 影子模式十一条契约（正式建议先算且不被覆盖 / OFF 不计算 / 桌况异常与重算异常均收敛 FAILED / 超时 TIMEOUT 仍给桌况**且如实标记未做真实隔离** / **提供 withBudget 时预算原样传入并标记 budgetInjected=true** / **注入预算后不由外层宣布超时** / 证据不足不调整 / 对比结构化 / 可重放）；K 调整层不产出动作与金额；L 领域层标签必须落在 QuickProfile 枚举内；**M 六条真实缺陷回归锁 —— ①逐玩家维度必须能看见「别人先加注」（否则再加注压力机会数恒为 0）②强证据必须能定出方向（不得把 delta 二次收缩到门槛以下）③被动与凶必须在**轴**与**作用范围明确的维度**上区分开 ④个体证据充分时无关座位不影响注入维度 ⑤**任何会改动 bluffTendency 的标签一律判定为不可注入（不得用翻前再加注频率断言翻后诈唬倾向）** ⑥桌况层登记的标签维度必须与生产原型表逐项一致（防复制漂移；该测试当场抓出 3 项手抄错误）**。端到端 7 项：真实牌桌操作写入桌况字段逐字段核对 / 桌况层真能读到记录并产出维度 / 重复提交不重复累计 / 撤销后无残留 / 模式解析 / 影子对比记录字段齐全且可逐条读回 / 桌况变化则摘要变化）**；**PREFLOP RAISE DECISION 阶段 A/B（32 项：A-01/A-01b 34BB 最小再加注与 4Bet 节点逐尺寸建模；B-00a/B-00b 强度阶梯四条序关系 + 锚点表与结构式逐位一致 + 组合索引↔类别键 169 类全覆盖；B-01/B-02 每个尺寸各有自己的响应概率与 EV；B-03/B-03b/B-03c 概率守恒 + 条件范围归一化 + 价格单调 + 再加注闸门与两个全下判据；B-04/B-04b/B-04c/B-04d 独立复算 + 与唯一现金流公式逐位一致 + 被再加注分支同一零点 + 再加注尺寸由真实行动状态推导；B-06 尺寸对不上不得借用别的尺寸的 EV；B-07 换 Hero 底牌响应逐位不变；B-08/B-08b 不等筹码退回不计入投入；B-09/B-09b 非单挑与身后有人必须拒绝；B-10 可复现；E2E-01…E2E-11 建议与 EV 一致 / 披露自洽 / 位置来自真实行动顺序 / 20·40·100·200BB / 多人拒绝 / 时间预算 / 诊断区逐尺寸证据 / 模型版本可追溯）**；**PREFLOP 5BET MINIMUM RAISE 连续再加注合法性审计（16 项：最小 5Bet = 22 + (22−10) 且 legalActions 与 gameState 同口径 / 开池·3Bet·4Bet 逐段核对 lastRaiseSize·currentBet·minRaiseTo / 🔴 加注到 32BB 必须被拒 / 加注到最小额被接受 / 加注到 40BB 被接受 / 全下按预览按钮真实载荷提交且被识别 / 全下的 amountChips 口径（本街累计被拒、本次投入被接受）/ 尺寸网格不得含低于最小额的候选 / 决策候选逐个 ≥ 最小加注额 / 🔴 最终建议不得是 32BB 且必须落在网格内并可被实际执行入口接受 / 网格内每一项都真的能执行 / 动作记录 amount(增量) 与 toAmount(本街累计) 口径分离 / 需跟注额 = currentBet − 本街已投入 / 短码全下例外且不改写 lastRaiseSize / 由全下完成的完整加注照常更新 lastRaiseSize / 被拒绝的 32BB 无副作用）**；**SEAT SWAP 座位对调语义（12 项：玩家数/空位数/筹码总数三者逐位不变 / Button 不因换位而浮到别人手里 / 角色不重不漏 / 对调双向且筹码跟着座位走 / 🔴 6 人桌设为 UTG 后座位标签必须是「枪口位」而不是「大盲位」/ 9 人桌同样成立 / 满座逐位遍历「角色=座位名」/ 目标座位空着时沿用旧语义且不凭空造人 / 空座位分支筹码跟着 Hero 走 / 对调后冻结拓扑与预览同源 / 对调可被一次撤销完整退回）**；**PLAYER PROFILE TABLE UI V1 人物画像前端接入与浏览器验收（9 项：名册搜索 / 同名不合并与 duplicateName / 无机会 ⇒ null（不得显示 0%）/ 已接通统计如实显示为「成功 / 机会」/ 新建玩家新身份且不继承 / 选历史玩家入座按 playerId 绑定（换座位不丢）/ HTTP `/api/table/players` 名册与损坏历史显式报错 / 前端资源含选人弹窗与悬停画像且不遮挡 / 画像数字全部来自接口、无硬编码）**；**PLAYER PROFILE EXPLOIT V1 真实历史持久化与决策链路（15 项：A 行动落盘（§三 字段齐全）/ B 关闭重开可读且统计一致 / M 不同牌局不互相覆盖 / N 撤销不改动已完成牌局 / E 重复提交不重复计数 / F 撤销后统计正确更新并可修正 / C 重新上桌绑定真实历史并注入决策 / D 换人（含同名）不继承统计 / K 无接通项时宁缺勿假 / G 真实记录来源可追踪且统计项确有响应通道 / H 只改统计项输出按公式单调变化 / I 样本不足强收缩（2 手 ≪ 10 万手）/ J 界面如实披露实测手数与来源 / L 读取失败不得伪装成功 / O·P 街道状态与 RDC V1 契约不变）**；**RIVER DECISION CONSISTENCY 河牌全下 / 下注动作一致性（10 项：§1 下注额=全部剩余筹码 55BB ⇒ 语义必须等同全下（界面须写「全下」）/ §2 BET 与 ALL_IN 同金额 ⇒ 必须视为同一实际动作、不得报一致性错误 / §3 尺寸不同必须保留区分且 EV 分别计算 / §4 最高分尺寸为 ALL_IN 时最终输出必须一致 / §5 未打光筹码的下注不得被提升为全下（深筹码变体）/ §6 形态识别是纯标注（底池·有效筹码·再投入口径自洽）/ §7 校验按实际动作语义比较（含反证：真小于全下额仍须报错）/ §8 真分歧保留报错 + 等价动作消除误报 / §9 违规必须显著提示「不要据此行动」且保留调试信息 / §10 V2 街道状态契约不受影响）**；**STREET STATE CONSISTENCY V2 街道状态一致性（12 项：§A-1~A-4 不提前推进街道 / 录牌不结算、不补行动、不改投入 / 完成转牌行动才推进且不凭空发牌；§B-1~B-2 先录满 5 张再补全部行动仍可达河牌、Hero 本人历史行动可补录且不被当成 CHECK；§C-1~C-3 未完成转牌行动时预览必须 ready=false + 说明缺谁的行动、与管线口径一致、且不误伤正常转牌决策点；§E-1~E-3 预录第 5 张牌不进引擎状态、转牌计算对其逐位无关、未完成转牌行动时不存在合法河牌决策节点）**；**CB-5 河牌「打光筹码」容差带护栏（10 项：CB5-01/02 A–E 五个节点不变量与护栏自洽 / CB5-03 黄金向量不变 / CB5-04 强牌全下保留 / CB5-05 H·I·J 差=0·=带·>带边界 / CB5-06 K·L EV=null 不得当 0 / CB5-07 M·N 负 EV 与非全下加注 / CB5-08 O 翻前 3Bet·4Bet / CB5-09 P 翻牌·转牌（含转牌真全下 186）/ CB5-10 M9 候选与证据保全）**；**PREFLOP P0 · F2 全下保护街道适用范围（11 项：F2-1 A–D 合法全下不被翻后保护拦下 / F2-2 全下**真的**进入证据表 / F2-3 M7·M8 无 EV 如实标 null / F2-4 不得绕过既有证据纪律 / M1 弱牌中等牌仍不能全下 / M5-1 翻后一对牌保护仍生效 / M5-2 翻后强牌不受限 / M6 最小加注 > 全下额边界 / M9 3–25BB 扫描 / M10 阈值与底池比例档未动 / 街道矩阵穷举）**；**P1 CALL/FOLD 裁决标尺（11 项：A 原始 99 节点 / B 负 EV / C·D 带内外 / E·F null 与非法数 / H·J 跨画像 / I 同源回归 / K 跨动作优先级 / L 资金流 / M 确定性 / N 理由与界面）**；**TEST 18 RAISE-TO AMOUNT CONSISTENCY（12 项：A 合法全下 / B 本街已投入 0 / C+J 非法金额仍被拦 / D CALL 增量口径 / E BET / F 非全下 RAISE / G 资金守恒 / H 无再加注分支 / §六 用户可见金额 / §八 数值回归）**；**TEST 17 决策展示与假设披露定向测试（11 项：D-1 权益口径 / D-2 同源纪律 / D-3 界面分行与回落标注 / D-4 文案完整性 / D-5 未来街披露 / D-6 去重 / D-7 公式可复算 / D-8 验收数值）**；PLAYER PROFILE V3 · FACING BET CHANNEL M1 定向测试（35 项：§五 修复语义 A-1~A-4、§六 墨菲 M-1~M-10、附录 1–4）；PLAYER IDENTITY ROUTING V1 身份路由 A/B/C + M1–M10；PLAYER PROFILE QUANTIFICATION V1 黄金测试 03A/03B；NODE DETERMINISM AUDIT 确定性回归 D1–D5；**V2 统一似然 + 范围指标**；**V2 收口 REPORT VERDICT CONSISTENCY GATE**；**画像 A/B + 策略评分命名 + 权益语义审计**；**PLAYER PROFILE V3 连续统计**；**TEST 08 P0 定向审计（P0-1…P0-10）；**TEST 09 BET RANGE 定向审计（BR-1…BR-13）**；**PLAYER PROFILE V3 RESOLVER 定向修复（逐统计锚点 + 标签融合）**；**U1 加注 EV（U1-1…U1-8；P0 资金口径 P0-1…P0-9 / M1–M4 / GATE；P1-2a/P1-4 合法分支 A–H / I1–I4 / P1-4-1…3；**下注金额一致性 T1–T4**）**） |
 | 类型检查 | 零错误 |
 | 产物 hash 绑定 | **187 个产物 / 6 类** |，已接入 `npm run verify`（本节此前写 152，实际为 154；补登记后 155；U1 轮 157；**U1 P0 修复轮补登记 `src/app/manualInput/raiseResponse.ts` → 158**；**PLAYER IDENTITY ROUTING V1 补登记 `src/app/manualInput/playerIdentity.ts` → 159**；**PLAYER PROFILE V3 · FACING BET CHANNEL M1 补登记 `src/app/manualInput/facingBetProfile.ts` → 160**；**M1 自审补登记 `reports/M1_FACING_BET_CHANNEL_SELF_REVIEW.md` → 161**；**M1 修复轮补登记 `reports/M1_BAND_LAYER_LABEL_SCALING_FIX.md` → 162**；**P1 审计补登记 `reports/P1_99_CALL_FOLD_CONSISTENCY_AUDIT.md` → 163**；**SEAT SWAP 补登记 `test/seatSwap.test.ts` → 164**；**PREFLOP 5BET 审计补登记 `test/preflopFiveBetMinRaise.test.ts` → 165**；**PREFLOP RAISE DECISION 阶段 A/B 补登记 `src/app/manualInput/preflopRaiseResponse.ts`、`src/app/manualInput/preflopRaiseFacts.ts` → 167**，再补登记 `reports/PREFLOP_RAISE_DECISION_V1.md`、`reports/evidence/preflop-raise-sensitivity.txt` **→ 169**；其余展示轮只刷新既有产物哈希，未新增登记项，数字以生成器输出为准） |
 | Git 状态（PLAYER PROFILE EXPLOIT V1 实施后） | ⚠️ **不是干净基线**：`HEAD = bc56191`（= **已提交**的 CB-5 护栏；尚未推送 —— `git ls-remote` 连续失败，本地领先 `origin/main` 1 个提交）；**V2 / RDC V1 / 本轮画像历史修复均未提交、未推送**（等人工确认）：已修改 `src/app/table/tablePreview.ts`、`src/app/table/tableAdapter.ts`、`src/app/table/tableOps.ts`、`src/app/table/tableApi.ts`、`src/app/table/seatLifecycle.ts`、`src/app/table/table.types.ts`、`src/app/manualInput/contextBuilder.ts`、`src/app/manualInput/manualInput.ts`、`src/app/alphaPipeline.ts`、`src/domain/decision/decisionConsistency.ts`、`src/domain/decision/decision.types.ts`、`src/app/decision/decisionEngine.ts`、`src/viewmodels/decisionViewModel.ts`、`CURRENT_PROJECT_STATUS.md`、`data/artifact-manifest.json`；**新增** `src/app/table/playerHistory.ts`；新增未跟踪测试与报告 `test/playerProfileExploitV1.test.ts`、`test/streetStateConsistencyV2.test.ts`、`test/riverBetAllInConsistency.test.ts`、`reports/PLAYER_PROFILE_EXPLOIT_VALIDATION_V1.md`、`reports/RIVER_DECISION_CONSISTENCY_V1.md`、`reports/STREET_STATE_CONSISTENCY_V2.md` 及全部审计探针（**一律保留**）。检查点：`%TEMP%\dezhou-checkpoint-f2ac-20260920-131436` |
@@ -2130,3 +2423,4 @@ Internal Alpha                   ← 19/20 项门槛已满足
 - **已恢复功能**：U1 加注 EV 与 P0 资金口径、P1-2a/P1-4 合法再加注分支、BET SIZE CONSISTENCY、P1-2b 再加注分支与 Hero FOLD/CALL、RIVER BET RANGE V2 到达范围、RIVER RAISE DECISION V2 披露层、画像与诊断透传。生产入口逐位复现 P0-7：`P(弃)=0.05296693816568434｜P(跟)=0.9470330618343152｜rr=0｜RAISE EV=33.315808978687605`（详见 reports/evidence）。
 - **仍存在的缺口**：6 处**非确定性中文说明文字**缺口（无法逐字定字，已以「—」占位并登记为 UNKNOWN；不含任何原因码/字段名/比较用字符串，经全量测试证明不影响行为）。
 - **尚未完成的模型校准问题**（事故前即存在，本次未改）：P1-1 画像统计未被决策消费、P1-3 标签维度与融合维度差异、P2-1 单一启发式尺寸、P2-2/P2-3 诊断计数与伪计数不一致、U9 sawtooth、D1 到达范围口径、D5 决策日志未记录响应模型版本。
+

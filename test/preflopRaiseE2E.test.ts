@@ -665,3 +665,137 @@ test('E2E-11：模型版本与「不读 Hero 底牌」必须可追溯', () => {
     assert.equal(typeof s['heroEquityVsRaiseCallRange']['iterations'], 'number');
   }
 });
+
+/* ============================================================
+ * PREFLOP_RAISE_RANGE_GATE —— 翻前加注的「范围闸门」
+ * ============================================================
+ *
+ * ## 修的是什么（实测缺陷，见 `reports/ENGINE_FIELD_TEST_REPORT.md` §3）
+ *
+ * 翻前加注模型只在「我之后无人行动」时构建（`PLAYERS_BEHIND` 边界，本身正确），
+ * 于是**只有大盲位面对开池**会拿到它。而该模型 EV 的**主导项是弃牌率**，
+ * 弃牌率又是公共信息口径（不读我的底牌）：
+ *
+ * ```text
+ * 72o 弃 86.1% ／ KJo 弃 86.2% ／ AA 弃 90.5%   ← 几乎与我的手牌无关
+ * ```
+ *
+ * 结果：`BB 面对 BTN 开池` 时引擎对 **169/169 个类别全部建议加注**，
+ * 其中 **72 类连引擎自己的「继续」范围都不在**。
+ *
+ * ## 闸门规则
+ *
+ * ```text
+ * 允许把「加注」纳入本次动作比较 ⟺ 本手类别 ∈ threeBetWeights(我, 开池者) 且权重 > 0
+ * ```
+ *
+ * 改的是**决策规则**，不是模型数值（没有调任何概率）。
+ */
+
+/**
+ * 本手应当**禁止**被建议加注（不在 3Bet 先验里）的手牌样本。
+ *
+ * ⚠️ `98s` **不在**本清单里 —— 它确实在盲位 3Bet 先验（`THREEBET_FROM_BLIND`）里，
+ * 因此闸门放行它是**正确**的。（本文件第一版把它误列进来，被 G-1 当场抓出。）
+ *
+ * ⚠️ 顺带记录一处**与本闸门无关的残留不一致**：`98s` 在 3Bet 表里、却不在
+ * `BIG_BLIND_VS_OPEN`（继续范围）里 ⇒ 引擎自己的「3Bet 集 ⊄ 继续集」。
+ * 根因与 `reports/MANUAL_V1.4_AUDIT.md` §3.3 的「6 手牌恒定缺失」是同一处规格枚举遗漏
+ * （`suitedFrom: 'T'` 切掉全部含 9 的同花组合，`exact` 块又漏枚举）。
+ * 修它会改动**对手范围建模**（进而改动权益与 EV），须单独立项，故**不在此处锁成契约**。
+ */
+const OUT_OF_RANGE = ['72o', '32o', '42o', '52o', '62o', '82o', '92o', 'T2o',
+  'K9s', 'Q9s', 'J9s', 'T8s', 'A2o', 'K7o', 'J4s', '93o', '84o'] as const;
+
+test('G-1【范围闸门】不在 3Bet 先验里的手牌**绝不**被建议加注（修复前 169/169 全加注）', () => {
+  const cardsOf = (key: string): [string, string] =>
+    key.length === 2 ? [`${key[0]}s`, `${key[1]}h`] : [key[0] + 's', key[1] + (key.endsWith('s') ? 's' : 'h')];
+  const offenders: string[] = [];
+  for (const key of OUT_OF_RANGE) {
+    const r = analyzeManualHand(bbVsBtnScenario({ heroCards: cardsOf(key) }), OPTIONS);
+    assert.equal(r.ok, true, `${key} 必须可分析`);
+    if (!r.ok) continue;
+    const a = String(r.decision.action);
+    if (a === 'RAISE' || a === 'ALL_IN') offenders.push(`${key}→${a}`);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    '不在 3Bet 先验范围里的手牌不得被建议加注（加注 EV 的弃牌率项与我的手牌无关，' +
+      '若不加闸门会让「任何两张」都成为 +EV 加注）：' +
+      JSON.stringify(offenders),
+  );
+});
+
+test('G-2【范围闸门】闸门拦下时必须**说出来**，不得静默', () => {
+  const r = analyzeManualHand(bbVsBtnScenario({ heroCards: ['7s', '2d'] }), OPTIONS);
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.notEqual(String(r.decision.action), 'RAISE', '前置：72o 不得被建议加注');
+  const note = r.decision.diagnostics.decisionMargin?.noteZh ?? '';
+  assert.match(
+    note,
+    /3Bet 先验范围/,
+    `闸门拦下加注时必须说明原因（"不在…3Bet 先验范围里"），实际边际说明：${note}`,
+  );
+  assert.match(note, /不把加注纳入动作比较/, '必须说明加注未进入动作比较');
+  /* 逐尺寸 EV 仍在候选表里披露 —— 「已算出 ≠ 已入选」 */
+  const raises = r.decision.diagnostics.candidates.filter(
+    (c) => (c.action === 'RAISE' || c.action === 'ALL_IN') && c.ev !== null,
+  );
+  assert.ok(raises.length > 0, '加注 EV 仍须逐尺寸披露（闸门只影响「是否入选比较」，不隐藏数值）');
+});
+
+test('G-4【范围闸门·边界】Hero 开池后被 BB 再加注（4Bet 节点）不得被闸门打成失败', () => {
+  /*
+   * 🔴 **本闸门第一版就是这样崩的**：闸门用 `facts.opponentPosition` 当「开池者」去查档位，
+   * 而「Hero 开池 → BB 3Bet」时那位是 **BB**，BB **没有开池范围** ⇒
+   * `rfiTierByPositionName` 按设计抛错 ⇒ 整个节点 `DECISION_FAILED`。
+   *
+   * 修法：Hero 本街的投入超过盲注（= 我已经加注过）⇒ 这是 4Bet 节点 ⇒ 闸门不适用。
+   * 本测试把这个边界钉住：**不得崩溃，且必须给出建议**。
+   */
+  /* Hero BTN 开池 2.5BB，BB 3Bet 到 10BB ⇒ 轮到我（4Bet 节点） */
+  const fourBet = analyzeManualHand({
+    tableSize: 6,
+    heroPosition: 'BTN',
+    heroCards: ['As', 'Ah'],
+    board: [],
+    street: 'PREFLOP',
+    effectiveStackBB: 100,
+    seatStacksBB: { UTG: 100, HJ: 100, CO: 100, BTN: 100, SB: 100, BB: 100 },
+    environment: 'LOW_STAKES_ONLINE',
+    actionHistory: [
+      { position: Position.UTG, type: 'FOLD' },
+      { position: Position.HJ, type: 'FOLD' },
+      { position: Position.CO, type: 'FOLD' },
+      { position: Position.BTN, type: 'RAISE', amountBB: 2.5 },
+      { position: Position.SB, type: 'FOLD' },
+      { position: Position.BB, type: 'RAISE', amountBB: 10 },
+    ],
+  } as unknown as ManualHandInput, OPTIONS);
+  assert.equal(
+    fourBet.ok,
+    true,
+    `4Bet 节点不得崩溃（这正是闸门第一版的失败形态）：${fourBet.ok ? '' : JSON.stringify(fourBet.issues)}`,
+  );
+  if (fourBet.ok) {
+    assert.notEqual(fourBet.decision.action, null, '4Bet 节点必须给出建议');
+    assert.notEqual(String(fourBet.decision.action), 'FOLD', 'AA 面对 3Bet 不得弃牌');
+  }
+});
+
+test('G-3【范围闸门】在范围内的牌不得被误伤（AA / AKs 仍必须加注）', () => {
+  for (const cards of [['As', 'Ah'], ['As', 'Ks']] as [string, string][]) {
+    const r = analyzeManualHand(bbVsBtnScenario({ heroCards: cards }), OPTIONS);
+    assert.equal(r.ok, true);
+    if (!r.ok) continue;
+    assert.equal(
+      String(r.decision.action),
+      'RAISE',
+      `${cards.join('')} 在 3Bet 先验范围里 ⇒ 不得被闸门拦下（实际 ${String(r.decision.action)}）`,
+    );
+    const note = r.decision.diagnostics.decisionMargin?.noteZh ?? '';
+    assert.doesNotMatch(note, /3Bet 先验范围/, '放行时不得出现闸门拦下的说明');
+  }
+});

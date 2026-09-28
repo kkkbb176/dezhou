@@ -1,0 +1,6 @@
+河牌纯空气：动作与**建议尺寸**是否随对手类型变？
+① 无画像                      动作=BET    尺寸=6.50   P(弃)max=72.2%  CHECK=94.1  bestSize=BET_LARGE
+② 跟注站(wtsd42/vpip55)       动作=CHECK  尺寸=—      P(弃)max=51.8%  CHECK=94.1  bestSize=BET_SMALL
+③ 会弃型(wtsd18/vpip22)       动作=BET    尺寸=6.50   P(弃)max=85.5%  CHECK=94.1  bestSize=BET_LARGE
+④ 标签 CALLING_STATION       动作=BET    尺寸=6.50   P(弃)max=60.7%  CHECK=96.1  bestSize=BET_LARGE
+⑤ 标签 VERY_TIGHT            动作=BET    尺寸=6.50   P(弃)max=78.5%  CHECK=90.6  bestSize=BET_LARGE

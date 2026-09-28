@@ -35,6 +35,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeF
 import { join } from 'node:path';
 
 import { applyAction, actorOnTurn } from '../../domain/poker/engine.ts';
+import { cardToString } from '../../domain/poker/cards.ts';
 import { computePot, playerById } from '../../domain/poker/gameState.ts';
 import { streetOrderOf as sharedStreetOrderOf } from './tableDynamicsSeatOrder.ts';
 import type { PlayerObservedStats } from '../../domain/player/observedStats.ts';
@@ -155,6 +156,46 @@ export type ObservationRecord = {
   playersYetToAct?: number | null;
   /** 该行动时 Button 的逻辑位置（位置语义的唯一权威来源） */
   buttonPosition?: string;
+
+  /* ============================================================
+   * 🔴 P4：底牌与公共牌 —— 让记录**可回放**
+   *
+   * ## 为什么必须记在**行动之前**这一刻
+   *
+   * 这两个字段回答的是「他做这个决定时，看得见什么」：
+   * - `board` = 当时**已发出**的公共牌（不包含这条行动触发的新街）；
+   * - `holeCards` = 行动者自己的底牌（只有 Hero 的手牌会被录入，
+   *   对手的底牌**没人知道** ⇒ 没有就是没有，**绝不虚构**）。
+   *
+   * 记「行动前」而不是「行动后」，是因为要复核的是一个**决策**：
+   * 牌一旦发出就不可撤销地改变了可观测信息，把发牌后的牌面记在
+   * 决策记录上，等于用**决策者当时看不到的信息**去解释他的决策。
+   *
+   * ## 口径
+   *
+   * 牌面代码 = `As` / `Td` / `7c` / `2h`（点数大写、花色小写），
+   * 与 `domain/poker/cards.ts` 的 `cardToString`、以及**牌桌状态**里的
+   * `heroCards` / `board`（`table.types.ts:259-261`）**完全同格式**。
+   *
+   * ## 为什么此前无法回放
+   *
+   * 本字段加入前，`data/player-history.jsonl`（实测 1,036 条）里
+   * **一条牌都没有**；而 `data/decision-log.jsonl`（10,917 条）只存 `inputHash`。
+   * 于是「真实牌局复盘 + 实战验证」这条线**根本不成立** ——
+   * 不知道牌面，就无法判断任何一条决策当时是否正确。
+   *
+   * ## 向后兼容
+   *
+   * 两者都是**可选**字段：旧记录没有它们 ⇒ 读出来是 `undefined`，
+   * 消费方必须当作「这条记录没有牌面」（**不是**当作空数组，更不是 0）。
+   * `board` 为 `[]`（翻前）与 `undefined`（未记录）**语义不同**：前者是
+   * 「当时确实没有公共牌」，后者是「这条记录写于本字段存在之前」。
+   * ============================================================ */
+
+  /** 行动**之前**已发出的公共牌（按街道切片：翻牌 3 张 / 转牌 4 张 / 河牌 5 张；翻前为空数组） */
+  board?: readonly string[];
+  /** 行动者自己的底牌（2 张牌面代码）；未录入或不是 Hero ⇒ 缺省（**不填 `null`、不猜**） */
+  holeCards?: readonly string[];
 };
 
 export type HistoryIssue = { code: string; message: string };
@@ -345,10 +386,55 @@ export type PlayerHistoryStats = {
   handsObserved: number;
   /** 其中**已完成**的手数（未完成的手不计入） */
   handsComplete: number;
-  /** 每项统计的**有效观测机会数**（0 = 没有观察到机会，不是「0%」） */
-  opportunities: { foldToRiverBet: number; riverCheckRaise: number };
+  /**
+   * 每项统计的**有效观测机会数**（0 = 没有观察到机会，不是「0%」）。
+   *
+   * 🔴 **KQ 阶段四补齐**：新增翻前三项。口径逐条写明（用户强制要求：
+   * 「单手牌中同一统计机会的计算口径必须明确，避免跨街或跨场景混用」）：
+   *
+   * | 统计 | 机会（分母） | 成功（分子） |
+   * |---|---|---|
+   * | `vpip` | 该手**我在翻前至少做过一个决定** | 我翻前出现过 CALL / RAISE / ALL_IN |
+   * | `pfr` | **与 `vpip` 同一分母**（标准 HUD 口径：每手一次机会） | 我翻前出现过 RAISE / ALL_IN |
+   * | `threeBet` | 该手我面对的局面里「别人已加注**恰好一次**」（= 面对开池） | 我在该局面再加注 |
+   *
+   * ⚠️ 三项都是**逐手去重**（一手最多各计 1 次机会），不按记录条数计
+   * —— 否则一手里多次行动会把分母灌水。
+   * ⚠️ 没记录到我的翻前行动 ⇒ **不进分母**（不是「观测到他 0 次」）。
+   */
+  opportunities: {
+    foldToRiverBet: number;
+    riverCheckRaise: number;
+    vpip: number;
+    pfr: number;
+    threeBet: number;
+    /* 分街条目（阶段四第二轮，口径见 `successes` 的说明） */
+    foldToFlopCBet: number;
+    flopCheckRaise: number;
+  };
   /** 成功次数（分母见上） */
-  successes: { foldToRiverBet: number; riverCheckRaise: number };
+  successes: {
+    foldToRiverBet: number;
+    riverCheckRaise: number;
+    vpip: number;
+    pfr: number;
+    threeBet: number;
+    /**
+     * 🔴 **KQ 阶段四（第二轮补齐）：分街条目才是响应层真正消费的通道。**
+     *
+     * | 统计 | 机会（分母） | 成功（分子） |
+     * |---|---|---|
+     * | `foldToFlopCBet` | 翻牌上我面对**翻前进攻者**的下注（= 真的面对 c-bet） | 我对该下注弃牌 |
+     * | `flopCheckRaise` | 翻牌上我先过牌、随后**别人下注**（真的有机会加注） | 我随后加注 / 全下 |
+     *
+     * 为什么必须判「是不是 **c-bet**」而不是「有没有面对下注」：
+     * 分街条目 `foldToFlopBet` 的语义门要求节点为 `FACING_CBET`
+     *（`actionContext.ts`），它描述的是**面对翻前进攻者持续下注**时的弃牌倾向。
+     * 把「面对任意下注」都算进去只是**换一种证据错配**。
+     */
+    foldToFlopCBet: number;
+    flopCheckRaise: number;
+  };
   /**
    * 交给决策模型的实测统计。**机会数为 0 的项不出现**（宁缺勿假）。
    */
@@ -376,11 +462,13 @@ export function statsFromRecords(
   const foldToRiverBetSucc = riverFacing.filter((r) => r.actionType === 'FOLD').length;
 
   /**
-   * 河牌过牌-加注：机会 = 该手该街**自己过牌后又被下注**（真的有机会加注）；
+   * 逐手逐街的「过牌-加注」配对：机会 = 该手该街**自己过牌后又被下注**（真的有机会加注）；
    * 成功 = 自己随后加注。逐手逐街配对，**不跨手、不跨街**。
+   *
+   * 🔴 **河牌与翻牌共用同一实现**（阶段四第二轮）：抽成闭包而不是复制一份，
+   * 因为「两处各写一份迟早分歧」是本仓库反复踩过的坑。
+   * 语义与抽提前的河牌实现**逐位一致**（同一 `byHand` 过滤、同一排序、同一配对法）。
    */
-  let crOpp = 0;
-  let crSucc = 0;
   const byHand = new Map<string, ObservationRecord[]>();
   for (const r of records) {
     if (r.playerId !== playerId && r.saved !== true) continue;
@@ -388,16 +476,55 @@ export function statsFromRecords(
     list.push(r);
     byHand.set(r.handId, list);
   }
+  const checkRaiseCounts = (street: 'FLOP' | 'RIVER'): { opp: number; succ: number } => {
+    let opp = 0;
+    let succ = 0;
+    for (const [, list] of byHand) {
+      const ordered = [...list].sort((a, b) => a.seq - b.seq || a.baseRevision - b.baseRevision);
+      const rows = ordered.filter((r) => r.street === street);
+      const myCheckIndex = rows.findIndex((r) => r.playerId === playerId && r.actionType === 'CHECK');
+      if (myCheckIndex < 0) continue;
+      const after = rows.slice(myCheckIndex + 1);
+      const betAfter = after.some(
+        (r) => r.playerId !== playerId && (r.actionType === 'BET' || r.actionType === 'RAISE' || r.actionType === 'ALL_IN'),
+      );
+      if (!betAfter) continue;
+      opp += 1;
+      if (after.some((r) => r.playerId === playerId && (r.actionType === 'RAISE' || r.actionType === 'ALL_IN'))) succ += 1;
+    }
+    return { opp, succ };
+  };
+  const riverCr = checkRaiseCounts('RIVER');
+  const flopCr = checkRaiseCounts('FLOP');
+  const crOpp = riverCr.opp;
+  const crSucc = riverCr.succ;
+
+  /**
+   * 翻牌面对持续下注（c-bet）弃牌率 —— **响应层真正消费的那条通道**。
+   *
+   * 逐手最多一次机会，判据只用必填字段（`street` / `actionType` / `playerId` / `seq` / `facedBet`）：
+   * ① 翻前**最后一位**加注/全下的人 = 翻前进攻者（若是我自己 ⇒ 我是 c-bet 方，不是面对方）；
+   * ② 他在翻牌**真的下注**了；
+   * ③ 我在他那注**之后**面对下注并做出决定。
+   */
+  let flopCbetOpp = 0;
+  let flopCbetSucc = 0;
   for (const [, list] of byHand) {
     const ordered = [...list].sort((a, b) => a.seq - b.seq || a.baseRevision - b.baseRevision);
-    const river = ordered.filter((r) => r.street === 'RIVER');
-    const myCheckIndex = river.findIndex((r) => r.playerId === playerId && r.actionType === 'CHECK');
-    if (myCheckIndex < 0) continue;
-    const after = river.slice(myCheckIndex + 1);
-    const betAfter = after.some((r) => r.playerId !== playerId && (r.actionType === 'BET' || r.actionType === 'RAISE' || r.actionType === 'ALL_IN'));
-    if (!betAfter) continue;
-    crOpp += 1;
-    if (after.some((r) => r.playerId === playerId && (r.actionType === 'RAISE' || r.actionType === 'ALL_IN'))) crSucc += 1;
+    const preAggressor = [...ordered]
+      .filter((r) => r.street === 'PREFLOP')
+      .reverse()
+      .find((r) => r.actionType === 'RAISE' || r.actionType === 'ALL_IN');
+    if (preAggressor === undefined || preAggressor.playerId === playerId) continue;
+    const flop = ordered.filter((r) => r.street === 'FLOP');
+    const hisBet = flop.find(
+      (r) => r.playerId === preAggressor.playerId && (r.actionType === 'BET' || r.actionType === 'ALL_IN'),
+    );
+    if (hisBet === undefined) continue;
+    const myResponse = flop.find((r) => r.playerId === playerId && r.seq > hisBet.seq && r.facedBet);
+    if (myResponse === undefined) continue;
+    flopCbetOpp += 1;
+    if (myResponse.actionType === 'FOLD') flopCbetSucc += 1;
   }
 
   const stats: Record<string, number | null> = {};
@@ -407,12 +534,118 @@ export function statsFromRecords(
   if (crOpp > 0) {
     stats['riverCheckRaise'] = crSucc / crOpp;
   }
+  if (flopCbetOpp > 0) {
+    stats['foldToFlopCBet'] = flopCbetSucc / flopCbetOpp;
+  }
+  if (flopCr.opp > 0) {
+    stats['flopCheckRaise'] = flopCr.succ / flopCr.opp;
+  }
+
+  /*
+   * ============================================================
+   * 🔴 **阶段四补齐：翻前 VPIP / PFR / 3Bet**
+   * ============================================================
+   *
+   * ## 为什么以前没有
+   *
+   * 本函数此前只推导两项**河牌**统计（`foldToRiverBet` / `riverCheckRaise`），
+   * 而真实语料里河牌机会数为 0（实测：63 条河牌记录、河牌 FOLD 0 条、
+   * 河牌 RAISE 0 条）⇒ **真实画像对决策的实际影响恒为 0**。
+   * 与此同时翻前记录了 662 条 —— 数据一直都在，只是没有推导逻辑。
+   *
+   * ## 只用**必填**字段
+   *
+   * 判据只依赖 `handId` / `playerId` / `street` / `actionType` / `seq` / `saved`
+   * —— 它们在 `ObservationRecord` 里都是**必填**的，因此**新旧记录一律适用**；
+   * 不依赖 `facedBetBB` 那类可选快照字段（旧记录没有，按项目纪律不得当 0）。
+   *
+   * ## 口径（逐手去重，一手最多各计一次）
+   *
+   * | 统计 | 机会 | 成功 |
+   * |---|---|---|
+   * | `vpip` | 我在该手翻前**至少做过一个决定** | 翻前出现 CALL / RAISE / ALL_IN |
+   * | `pfr` | **与 vpip 同分母** | 翻前出现 RAISE / ALL_IN |
+   * | `threeBet` | 我面对的局面里「别人已加注**恰好一次**」 | 我在该局面再加注 |
+   *
+   * 3Bet 用「恰好一次」而不是「至少一次」，是为了**不把 4Bet 记成 3Bet**；
+   * 且**逐手只取第一次**面对开池的局面，避免同一手重复计机会。
+   */
+  const byHandAll = new Map<string, ObservationRecord[]>();
+  for (const r of records) {
+    if (r.saved !== true) continue;
+    const list = byHandAll.get(r.handId);
+    if (list === undefined) byHandAll.set(r.handId, [r]);
+    else list.push(r);
+  }
+  let vpipOpp = 0;
+  let vpipSucc = 0;
+  let pfrSucc = 0;
+  let threeBetOpp = 0;
+  let threeBetSucc = 0;
+  const isAggressive = (t: string): boolean => t === 'RAISE' || t === 'ALL_IN';
+  for (const handId of hands) {
+    const handRecords = byHandAll.get(handId) ?? [];
+    /*
+     * 🔴 **热路径纪律**：本函数在**每一次牌桌操作**里对**每一位玩家**各调用一次
+     * （`applyUserOpWithHistory` 第 3 步），因此内层必须是**线性**的。
+     *
+     * 第一版在「我的每条翻前记录」上都对整手做一次 `.filter()` 数别人的加注
+     * ⇒ `O(我的翻前条数 × 本手记录数)` —— 实测直接把 5000 事件的
+     * **热路径性能基准跑失败**。现在改为「排序一次 + 单次有序遍历」维护
+     * 「别人已加注数」的前缀计数 ⇒ 每手 `O(k log k)`。
+     */
+    const preAll = handRecords
+      .filter((r) => r.street === 'PREFLOP')
+      .sort((a, b) => a.seq - b.seq || a.baseRevision - b.baseRevision);
+    const pre = preAll.filter((r) => r.playerId === playerId);
+    if (pre.length === 0) continue; // 没记录到我的翻前行动 ⇒ 不进分母
+    vpipOpp += 1;
+    if (pre.some((r) => r.actionType === 'CALL' || isAggressive(r.actionType))) vpipSucc += 1;
+    if (pre.some((r) => isAggressive(r.actionType))) pfrSucc += 1;
+
+    /* 3Bet：有序遍历；遇到我的行动时「别人已加注数」恰为前缀计数（等价于原来的 seq 比较） */
+    let priorRaises = 0;
+    for (const r of preAll) {
+      if (r.playerId === playerId) {
+        if (priorRaises !== 1) continue; // 不是「面对开池」的局面
+        threeBetOpp += 1;
+        if (isAggressive(r.actionType)) threeBetSucc += 1;
+        break; // 逐手只算第一次面对开池的局面
+      }
+      if (isAggressive(r.actionType)) priorRaises += 1;
+    }
+  }
+  if (vpipOpp > 0) {
+    stats['vpip'] = vpipSucc / vpipOpp;
+    /* 🔴 PFR 与 VPIP **同分母**（标准 HUD 口径：每手一次机会） */
+    stats['pfr'] = pfrSucc / vpipOpp;
+  }
+  if (threeBetOpp > 0) {
+    stats['threeBet'] = threeBetSucc / threeBetOpp;
+  }
+
   const hasAny = Object.keys(stats).length > 0;
   return Object.freeze({
     handsObserved: hands.length,
     handsComplete: completeHands.length,
-    opportunities: Object.freeze({ foldToRiverBet: foldToRiverBetOpp, riverCheckRaise: crOpp }),
-    successes: Object.freeze({ foldToRiverBet: foldToRiverBetSucc, riverCheckRaise: crSucc }),
+    opportunities: Object.freeze({
+      foldToRiverBet: foldToRiverBetOpp,
+      riverCheckRaise: crOpp,
+      vpip: vpipOpp,
+      pfr: vpipOpp,
+      threeBet: threeBetOpp,
+      foldToFlopCBet: flopCbetOpp,
+      flopCheckRaise: flopCr.opp,
+    }),
+    successes: Object.freeze({
+      foldToRiverBet: foldToRiverBetSucc,
+      riverCheckRaise: crSucc,
+      vpip: vpipSucc,
+      pfr: pfrSucc,
+      threeBet: threeBetSucc,
+      foldToFlopCBet: flopCbetSucc,
+      flopCheckRaise: flopCr.succ,
+    }),
     observedStats: hasAny
       ? Object.freeze({ handsObserved: hands.length, ...stats } as PlayerObservedStats)
       : null,
@@ -422,16 +655,42 @@ export function statsFromRecords(
 /** 给界面/诊断用的一句话披露（**只列真正接通的项**） */
 export function statsNoteZh(stats: PlayerHistoryStats): string {
   const parts: string[] = [`实测历史 ${stats.handsObserved} 手（其中已完成 ${stats.handsComplete} 手）`];
+  /* 🔴 翻前三项（阶段四补齐）—— 逐项带**机会数**，机会为 0 的项不出现（宁缺勿假） */
+  const pct = (s: number, o: number) => `${((s / o) * 100).toFixed(1)}%`;
+  if (stats.opportunities.vpip > 0) {
+    parts.push(
+      `翻前入池机会 ${stats.opportunities.vpip} 次 → VPIP ${pct(stats.successes.vpip, stats.opportunities.vpip)}（已接入响应模型）`,
+    );
+    parts.push(`翻前加注率 PFR ${pct(stats.successes.pfr, stats.opportunities.pfr)}（同分母）`);
+  }
+  if (stats.opportunities.threeBet > 0) {
+    parts.push(
+      `面对开池 ${stats.opportunities.threeBet} 次 → 3Bet ${pct(stats.successes.threeBet, stats.opportunities.threeBet)}（已接入响应模型）`,
+    );
+  }
+  /* 🔴 分街条目：翻牌这两项是**加注响应层真正消费**的通道（把 P(弃)/P(跟) 直接接上） */
+  if (stats.opportunities.foldToFlopCBet > 0) {
+    parts.push(
+      `翻牌面对持续下注 ${stats.opportunities.foldToFlopCBet} 次 → 弃牌率 ` +
+        `${pct(stats.successes.foldToFlopCBet, stats.opportunities.foldToFlopCBet)}（已接入响应模型）`,
+    );
+  }
+  if (stats.opportunities.flopCheckRaise > 0) {
+    parts.push(
+      `翻牌过牌-加注机会 ${stats.opportunities.flopCheckRaise} 次 → 加注率 ` +
+        `${pct(stats.successes.flopCheckRaise, stats.opportunities.flopCheckRaise)}（已接入响应模型）`,
+    );
+  }
   if (stats.opportunities.foldToRiverBet > 0) {
     parts.push(
       `河牌面对下注 ${stats.opportunities.foldToRiverBet} 次 → 弃牌率 ` +
-        `${((stats.successes.foldToRiverBet / stats.opportunities.foldToRiverBet) * 100).toFixed(1)}%（已接入响应模型）`,
+        `${pct(stats.successes.foldToRiverBet, stats.opportunities.foldToRiverBet)}（已接入响应模型）`,
     );
   }
   if (stats.opportunities.riverCheckRaise > 0) {
     parts.push(
       `河牌过牌-加注机会 ${stats.opportunities.riverCheckRaise} 次 → 加注率 ` +
-        `${((stats.successes.riverCheckRaise / stats.opportunities.riverCheckRaise) * 100).toFixed(1)}%（已接入响应模型）`,
+        `${pct(stats.successes.riverCheckRaise, stats.opportunities.riverCheckRaise)}（已接入响应模型）`,
     );
   }
   parts.push('未列出的统计项**没有**输入通道，不作为本次决策依据');
@@ -483,10 +742,32 @@ export type KnownPlayer = {
   noteZh: string;
 };
 
-const CONNECTED_KEYS: readonly string[] = ['foldToRiverBet', 'riverCheckRaise'];
+/**
+ * 已接通（真实历史 → 决策模型）的统计项。
+ *
+ * 🔴 **阶段四补齐**：从 2 项扩到 5 项。翻前三项（`vpip` / `pfr` / `threeBet`）
+ * 由 `statsFromRecords` 从**同一批真实行动记录**推导，并经既有通道进入决策：
+ *
+ * ```text
+ * statsFromRecords → playersById[id].observedStats
+ *   → tableAdapter（按 persistentPlayerId 绑定）→ contextBuilder
+ *   → resolvePlayerProfile（维度通道）→ 响应层概率 → 范围 / Equity / EV
+ * ```
+ *
+ * ⚠️ 「已接通」指的是**通道存在**，不等于「本次一定生效」——
+ * 是否生效还要看机会数（>0）与节点语义门，披露层由 `statStatuses` 三态如实报出。
+ */
+const CONNECTED_KEYS: readonly string[] = [
+  'vpip', 'pfr', 'threeBet',
+  /* 🔴 阶段四第二轮：分街条目 = 响应层真正消费的通道 */
+  'foldToFlopCBet', 'flopCheckRaise',
+  'foldToRiverBet', 'riverCheckRaise',
+];
 const UNCONNECTED_KEYS: readonly string[] = [
-  'vpip', 'pfr', 'threeBet', 'wtsd',
-  'foldToFlopCbet', 'foldToTurnCbet', 'flopCheckRaise', 'turnCheckRaise',
+  'wtsd',
+  /* ⚠️ 键名大小写必须与 `PlayerObservedStats` 字段一致（`…CBet`，大写 B）——
+     此前写成 `foldToFlopCbet` 是**拼写错误**（仅展示用，未影响模型，但会让人无法按名检索）。 */
+  'foldToTurnCBet', 'turnCheckRaise',
 ];
 
 function knownPlayerOf(records: readonly ObservationRecord[], playerId: string): KnownPlayer {
@@ -579,6 +860,8 @@ type PreActionSnapshot = {
   actorOrderIndex: number | null;
   streetActorCount: number | null;
   buttonPosition: string | null;
+  /** 行动者自己的底牌（**只有 Hero 有**；对手的没人知道 ⇒ `null`，绝不虚构） */
+  actorHoleCards: readonly string[] | null;
 };
 
 const EMPTY_SNAPSHOT: PreActionSnapshot = {
@@ -590,6 +873,7 @@ const EMPTY_SNAPSHOT: PreActionSnapshot = {
   actorOrderIndex: null,
   streetActorCount: null,
   buttonPosition: null,
+  actorHoleCards: null,
 };
 
 /**
@@ -633,6 +917,21 @@ function preActionSnapshot(engine: Parameters<typeof actorOnTurn>[0]): PreAction
   const actorOrderIndex = actor === undefined ? null : order.indexOf(actor.position);
   const toCallChips = actor === undefined ? 0 : deriveLegalActions(engine, actor).callCost;
 
+  /*
+   * 🔴 P4：行动者的底牌。
+   *
+   * 引擎里 `PlayerState.holeCards` 是 `Card[] | null` ——
+   * **只有 Hero 的手牌被录入**（`tableAdapter.ts:284` 把 `state.heroCards` 传进引擎），
+   * 对手一律 `null`（实测：`holes=[seat_UTG:null ... seat_BTN:14s13s ...]`）。
+   *
+   * 因此：有就记，没有就 `null` **不记这个字段** ——
+   * 「对手的底牌未知」是**事实**，不是「我们忘了填」。
+   */
+  const actorHoleCards =
+    actor?.holeCards == null || actor.holeCards.length === 0
+      ? null
+      : Object.freeze(actor.holeCards.map((c) => cardToString(c)));
+
   return {
     actorPosition: actor?.position ?? null,
     toCallChips,
@@ -642,6 +941,7 @@ function preActionSnapshot(engine: Parameters<typeof actorOnTurn>[0]): PreAction
     actorOrderIndex: actorOrderIndex === null || actorOrderIndex < 0 ? null : actorOrderIndex,
     streetActorCount: order.length === 0 ? null : order.length,
     buttonPosition,
+    actorHoleCards,
   };
 }
 
@@ -660,6 +960,7 @@ function snapshotFields(
   | 'streetActorCount'
   | 'playersYetToAct'
   | 'buttonPosition'
+  | 'holeCards'
 > {
   const toBB = (chips: number): number => Number((chips / chipsPerBB).toFixed(4));
   const facedBetChips = snapshot.toCallChips;
@@ -685,6 +986,8 @@ function snapshotFields(
         ? null
         : snapshot.streetActorCount - snapshot.actorOrderIndex - 1,
     buttonPosition: snapshot.buttonPosition ?? undefined,
+    /* 未知就不写这个键（**不是**写空数组 —— 两者语义不同，见类型注释） */
+    ...(snapshot.actorHoleCards === null ? {} : { holeCards: snapshot.actorHoleCards }),
   };
 }
 
@@ -702,6 +1005,38 @@ export function deriveObservations(
   const handId = handIdOf(before);
   /** 街道取引擎**当时**的真实街（录牌/行动都以引擎为准） */
   const streetNow = viewBefore.ok ? viewBefore.engine.street : 'PREFLOP';
+
+  /**
+   * 🔴 **P4：本手「行动前」已发出的公共牌（按街切片）**。
+   *
+   * ## 为什么取 `before.board` 而不是 `viewBefore.engine.board`
+   *
+   * 实测（`scripts/history-replay-probe.ts`）：PREVIEW 模式下即使已经录入
+   * 翻牌 3 张 + 转牌 1 张，`engine.board` 依然是 `flop/turn/river = 0/0/0`
+   * 且 `engine.street` 恒为 `PREFLOP` —— 引擎**要等 `advanceStreet` 跑过**
+   * 才有牌，而录入路径靠的是 `boardCards`。拿引擎的牌面当数据源会**静默记下空牌面**，
+   * 那比不记更糟（看起来「有字段」但永远是空的）。
+   *
+   * `before.board` 是**牌桌自己**维护的、用户逐张录入的公共牌
+   *（`table.types.ts:261`：0～5 张），它才是真源。
+   *
+   * ## 为什么切到本街为止
+   *
+   * 录牌是在**街开始时一次性发生**的（翻牌 3 张同时录入），因此
+   * 「行动前已发出的牌」= 按当前街切片的**前缀**。
+   * 多街回放由 `handId` 把同手的记录合起来即可（前缀可合并）。
+   *
+   * ## 切片长度由**记录自己的 `street`** 决定
+   *
+   * 用 `action.street ?? streetNow`（与下面写 `street` 字段**同一个表达式**），
+   * 保证「记录说这是转牌」与「牌面有 4 张」永远自洽 ——
+   * 不引入第二处对街道的判断（那正是「同一事实两处各算一次」的缺陷形态）。
+   */
+  const boardAt = (street: ObservationRecord['street']): readonly string[] => {
+    const visible = before.board.length;
+    const expected = street === 'FLOP' ? 3 : street === 'TURN' ? 4 : street === 'RIVER' ? 5 : 0;
+    return Object.freeze(before.board.slice(0, Math.min(visible, expected)));
+  };
 
   /**
    * 逐步推进的引擎状态。
@@ -724,18 +1059,22 @@ export function deriveObservations(
         ? EMPTY_SNAPSHOT
         : preActionSnapshot(cursor as Parameters<typeof actorOnTurn>[0]);
 
+    /** 本条记录的街道（写字段与切公共牌**共用同一个值**，见 `boardAt` 注释） */
+    const streetOfAction = (action.street ?? streetNow) as ObservationRecord['street'];
+
     out.push(
       Object.freeze({
         handId,
         playerId,
         displayName: before.playersById[playerId]?.displayName,
         seatId: seat?.seatId ?? `seat_${action.position}`,
-        street: (action.street ?? streetNow) as ObservationRecord['street'],
+        street: streetOfAction,
         actionType: action.type,
         amountBB: action.amountBB ?? 0,
         facedBet: snapshot.toCallChips > 0,
         toCallBB: Number((snapshot.toCallChips / chipsPerBB).toFixed(4)),
         ...snapshotFields(snapshot, chipsPerBB),
+        board: boardAt(streetOfAction),
         seq: before.revision,
         baseRevision: before.revision,
         historyLength: after.actionHistory.length,

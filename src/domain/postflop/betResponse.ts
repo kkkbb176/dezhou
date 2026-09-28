@@ -39,6 +39,7 @@
 import type { Card, Street } from '../types.ts';
 import { ALL_CARDS } from '../types.ts';
 import { compareHands, evaluateCards, type EvaluatedHand } from '../poker/handEval.ts';
+import { computeEquity } from '../poker/equity.ts';
 import { boardRelativeTierOf } from '../poker/boardRelativeStrength.ts';
 import { drawProfileOf } from './draws.ts';
 import type { PlayerDimensions } from '../player/playerClassifier.ts';
@@ -275,10 +276,45 @@ export type ResponseTendencies = {
     bluffTendency: number;
     passivity: number;
   } | null;
+  /**
+   * 🔴 **FOLD-ANCHOR FIX**：该街 `foldTo{街}Bet` 的**实测生效值**（0..1），
+   * 用于把模型自算的弃牌频率夹逼在实测附近（见 `buildResponseModel` 的锚定段）。
+   *
+   * **缺省（`undefined`）⇒ 完全不做锚定** —— 这保证「无实测统计」与
+   * 「语义门挡下该条目」两条路径**逐位不变**。
+   */
+  streetFoldTraitValue?: number;
   /** 参与计算的画像可信度（0 = 无画像 ⇒ 全部为 1） */
   confidence: number;
+  /**
+   * 🔴 **下注范围专用 aggression（PFR→BETRANGE 修复）**。
+   *
+   * 「公共强度带模型」（`betProbabilityByBand`）用它替代
+   * `effectiveDimensions.aggression`：因为后者唯一的实测来源是
+   * **翻前**统计（`PFR` / `3Bet`），而拿翻前主动性去定「他翻牌下注里
+   * 有多少是诈唬」正是本项目源码明文禁止的推论
+   * （见 `observedStats.ts` 的 `STAT_DIMENSION_POLARITY` 说明）。
+   *
+   * 取值由 `resolvePlayerProfile` 的 `StreetFactors.betAggression` 提供：
+   * **只有翻后统计**能推动它；无翻后证据时逐位等于标签原型的 `aggression`
+   * （即修复前行为）。缺省（`undefined`）⇒ 该层退回读 `effectiveDimensions.aggression`
+   * ⇒ 直接调用本函数的既有测试与审计脚本**行为不变**。
+   */
+  aggressionForBetRange?: number;
   noteZh: string;
 };
+
+/**
+ * 🔴 **FOLD-ANCHOR FIX：实测锚点的工程容差**（单位：概率，0.15 = ±15 个百分点）。
+ *
+ * `buildResponseModel` 把模型自算的弃牌频率夹在「该街实测值 ± 本容差」之内。
+ *
+ * ⚠️ **它是工程选择，不是统计误差、也不是「最优弃牌率」**：
+ * 项目没有「模型弃牌频率的误差分布」这类数据，所以取一个**有界、可审计**的值，
+ * 只用来挡住「模型声称 78% 而实测 65%、且价格上不可能」这种量级偏离。
+ * 依据与对照实验见 `reports/HUNDRED_HANDS_THREE_STREETS_AUDIT.md` §2。
+ */
+export const FOLD_ANCHOR_TOLERANCE = 0.15;
 
 /**
  * 🔴 **TEST 08 P0-2：分街下注倾向（最终值）**。
@@ -334,6 +370,73 @@ export function neutralResponseTendencies(noteZh = '无画像：响应概率只�
 }
 
 /**
+ * 🔴 **环境基线（无画像对手）** —— 真实牌局验证查出的缺陷的修法。
+ *
+ * ## 缺陷现场（实测，`scripts/test-environment-effect.ts`）
+ *
+ * 同一局面、只改环境，响应概率**逐位相同**：
+ *
+ * | 环境 | P(弃) | P(跟) |
+ * |---|---|---|
+ * | `LOW_STAKES_ONLINE` | **81.06%** | 18.19% |
+ * | `MID_LOW_STAKES` | **81.06%** | 18.19% |
+ * | `THEORY_REFERENCE` | **81.06%** | 18.19% |
+ *
+ * 原因：无画像对手走 `neutralResponseTendencies()`，而它把 `callScale` **硬编码为 1**。
+ * ⇒ 知识库的 `env.low.calling-tendency-up`（低级别线上 ⇒ 更爱跟）
+ * 在**无画像对手**这条路径上是**死的** —— 而那正是它最该生效的场合。
+ *
+ * ## 幅度从哪来（**它是什么、不是什么**）
+ *
+ * | 是 | 不是 |
+ * |---|---|
+ * | **方向型**修正，符号由知识库规则给出（低级别线上 = 更爱跟 ⇒ call ↑ fold ↓） | **不是**分级别统计数据 |
+ * | 幅度**有界**（见下表的常数）且**如实标注** | **不是**"最优弃牌率"，也不是拟合值 |
+ *
+ * ⚠️ **本项目没有任何可引用的分级别统计数据**（Phase 4.5 审计过 4 个 GitHub 项目与 6 本书，
+ * 一个都没有；见 `gameEnvironment.ts:81-90`）。因此这里给的幅度与
+ * `gamEnvironment.ts` 里那些已被标为「假精确」的倍数是**同一性质** ——
+ * 唯一区别是：**这一处此前完全没生效（恒为 1），现在它至少表达了方向**。
+ *
+ * ⚠️ 幅度取 **±0.06** 而不是更大：实测缺口是 50pp 量级，**任何有界的常数都填不满**
+ *（报告 §6.4 的上限探测已证明：把常数推到极端会摧毁下注频率）。
+ * 所以这里只做**方向修正**，剩下的缺口如实留在报告里，不靠放大常数掩盖。
+ */
+const ENVIRONMENT_CALL_DIRECTION: Readonly<Record<string, { call: number; fold: number }>> =
+  Object.freeze({
+    /* 低级别线上：跟注多、诈唬少、位置意识弱（`gameEnvironment.ts:55`） */
+    LOW_STAKES_ONLINE: Object.freeze({ call: 0.06, fold: -0.06 }),
+    /* 中低级别：介于两者之间（也是项目默认） */
+    MID_LOW_STAKES: Object.freeze({ call: 0.03, fold: -0.03 }),
+    /* 理论参考：不受真人偏差影响 ⇒ **不动**（这正是 `THEORY_REFERENCE` 的定义） */
+    THEORY_REFERENCE: Object.freeze({ call: 0, fold: 0 }),
+  });
+
+/**
+ * 环境方向下的**中立基线**（无画像 / 可信度 0 时使用）。
+ *
+ * 未给环境、或环境未知 ⇒ 与 `neutralResponseTendencies()` **逐位相同**（零回归）。
+ */
+export function neutralResponseTendenciesFor(
+  environment: string | null | undefined,
+  noteZh?: string,
+): ResponseTendencies {
+  const base = neutralResponseTendencies(noteZh);
+  if (environment === null || environment === undefined) return base;
+  const dir = ENVIRONMENT_CALL_DIRECTION[environment];
+  if (dir === undefined || (dir.call === 0 && dir.fold === 0)) return base;
+  return Object.freeze({
+    ...base,
+    callScale: 1 + dir.call,
+    foldScale: 1 + dir.fold,
+    noteZh:
+      `${noteZh ?? '无画像：响应概率只用范围与尺寸决定'}` +
+      `｜🔴 **环境基线**（${environment}）：跟注 ×${(1 + dir.call).toFixed(2)}、弃牌 ×${(1 + dir.fold).toFixed(2)}` +
+      '（**方向型**修正，无分级别统计数据支撑 ⇒ 幅度是工程选择，已如实标注）',
+  });
+}
+
+/**
  * 画像维度 → 响应倾向。
  *
  * 刻度（【启发式】结构性判断，只有方向与序关系有意义）：
@@ -359,18 +462,60 @@ export function responseTendenciesOf(
    * `null` / 未给 ⇒ 三个分街系数恒为 1 ⇒ 与 V2 **逐位一致**。
    * 给了 ⇒ 只有「属于这一街」的连续统计生效（例如河牌只看 `FoldToRiverBet`）。
    */
-  streetInput?: { street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER'; factors: { foldScale: number; callScale: number; checkRaiseScale: number; betScale?: number } } | null,
+  streetInput?: {
+    street: 'PREFLOP' | 'FLOP' | 'TURN' | 'RIVER';
+    factors: { foldScale: number; callScale: number; checkRaiseScale: number; betScale?: number; betAggression?: number; foldTraitValue?: number };
+  } | null,
+  /**
+   * 🔴 **下注范围专用 aggression（PFR→BETRANGE 修复）**：见 `ResponseTendencies.aggressionForBetRange`。
+   *
+   * 缺省（`undefined`）⇒ 该字段不出现在返回值里 ⇒ 下注范围层退回读
+   * `effectiveDimensions.aggression` ⇒ **既有调用方（测试 / 审计 / 旧入口）行为逐位不变**。
+   */
+  betAggression?: number | null,
+  /**
+   * 🔴 **牌局环境**（真实牌局验证查出的缺陷的修法）。
+   *
+   * 缺省（`undefined` / `null`）⇒ 无画像路径与修复前**逐位相同**（零回归）。
+   * 给了 ⇒ 无画像 / 可信度 0 时改用 `neutralResponseTendenciesFor(environment)`，
+   * 让知识库的 `env.low.calling-tendency-up` 在这条路径上**真正生效**
+   *（修复前它对无画像对手完全无效，见该函数的说明）。
+   */
+  environment?: string | null,
 ): ResponseTendencies {
   const conf = Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0;
   const streetFactors = streetInput?.factors ?? null;
   const street = streetInput?.street ?? null;
+  /**
+   * 只在调用方**显式**给出时才带上（避免给既有调用点新增字段，
+   * 那会让「无画像路径与 V2 逐位一致」的断言多一个变量）。
+   */
+  const betAggField =
+    typeof betAggression === 'number' && Number.isFinite(betAggression)
+      ? { aggressionForBetRange: betAggression }
+      : {};
+  /**
+   * 🔴 **FOLD-ANCHOR FIX**：实测锚点只在调用方**显式**给出时才带上
+   * ⇒ 缺省时返回值与修复前**逐位相同**（既有测试/审计脚本零影响）。
+   */
+  const foldAnchorField =
+    typeof streetInput?.factors.foldTraitValue === 'number' &&
+    Number.isFinite(streetInput.factors.foldTraitValue)
+      ? { streetFoldTraitValue: streetInput.factors.foldTraitValue }
+      : {};
   if (dimensions === null || conf <= 0) {
     /*
      * ⚠️ 画像可信度为 0 时**仍然要应用分街系数** —— 两者是**独立**的证据来源：
      * 标签可信度 0 只表示「没有标签证据」，不代表「没有实测统计」。
      * 反过来也一样。因此这里不能用「conf<=0 ⇒ 全部中立」一刀切。
      */
-    if (streetFactors === null) return neutralResponseTendencies();
+    if (streetFactors === null) {
+      return Object.freeze({
+        ...neutralResponseTendenciesFor(environment),
+        ...betAggField,
+        ...foldAnchorField,
+      });
+    }
     const noLabelDims = {
       tightness: 0.5,
       aggression: 0.5,
@@ -378,12 +523,17 @@ export function responseTendenciesOf(
       passivity: 0.5,
     };
     return Object.freeze({
-      ...neutralResponseTendencies('无标签证据：响应基线只用范围与尺寸；但**有 V3 分街统计**'),
+      ...neutralResponseTendenciesFor(
+        environment,
+        '无标签证据：响应基线只用范围与尺寸；但**有 V3 分街统计**',
+      ),
       streetFoldScale: streetFactors.foldScale,
       streetCallScale: streetFactors.callScale,
       streetCheckRaiseScale: streetFactors.checkRaiseScale,
       streetBetScale: streetFactors.betScale ?? 1,
       effectiveDimensions: Object.freeze(noLabelDims),
+      ...betAggField,
+      ...foldAnchorField,
       noteZh:
         `无标签证据（可信度 0）｜**V3 分街系数**（${street ?? '?'}）：` +
         `弃 ×${streetFactors.foldScale.toFixed(3)}、跟 ×${streetFactors.callScale.toFixed(3)}、` +
@@ -435,6 +585,8 @@ export function responseTendenciesOf(
       bluffTendency: dimensions.bluffTendency,
       passivity: dimensions.passivity,
     }),
+    ...betAggField,
+    ...foldAnchorField,
     confidence: conf,
     noteZh:
       `画像响应倾向（可信度 ${conf.toFixed(2)}）：跟注 ×${(1 + 0.30 * passive - 0.18 * tight).toFixed(3)}、` +
@@ -697,8 +849,110 @@ export type ResponseInput = {
   villainDraw: 'STRONG_DRAW' | 'WEAK_DRAW' | 'NO_DRAW';
 };
 
-export type ResponseClassification = {
-  bucket: ResponseBucket;
+/**
+ * 🔴 **待发牌权益**（`liveCardEquity`）的三个幅度。
+ *
+ * ## 这些数字从哪来
+ *
+ * **不是拟合出来的，也不是从职业牌手数据搬来的。** 它们是**工程选择**，
+ * 取值依据只有两条，其余全部如实标注为「未标定」：
+ *
+ * 1. **必须随 `cardsToCome` 归零**（河牌逐位不变）—— 结构性要求，不是数值；
+ * 2. **裸听牌（STRONG_DRAW）的"能继续"程度应高于卡顺，卡顺应高于无听**
+ *    —— 方向由 `draws.ts` 的结构计数给出，这里只是把它映射成一个有界增量。
+ *
+ * ## 为什么量级这么小
+ *
+ * 翻牌一手「完全没成牌也没听牌」的高张，对上一个下注范围的真实权益约 20% 上下；
+ * 而 `boardStrength` 的**整条曲线只跨 0.6**（0.15→0.75），相邻一档 0.12。
+ * 因此增量取到「约半档到一档」的量级（0.06–0.14）是**与既有刻度匹配**的做法；
+ * 再大就会让「空气牌」表现得像「中等成手」，那是另一种失真。
+ *
+ * ⚠️ 这三个常数**没有**经过目标人群数据标定。它们的**唯一**依据是：
+ * 让「有牌要发」这条结构性事实进入模型，同时**不动**河牌。
+ * 剩余偏差（`NO_DRAW` 那一大类）**不会**被它们补上 —— 报告里如实留着。
+ */
+/**
+ * 允许**只读的**环境变量覆盖，用于对抗模拟扫描（`scripts/ablate-fold-model.ts`）。
+ *
+ * ⚠️ **生产行为不受影响**：不设环境变量时取下面的默认值，逐位不变。
+ * ⚠️ 这三个值**不得**被当作"可调参数"在生产里调 —— 它们没有目标人群数据标定
+ *（见上面的说明）。这里开放覆盖**只为**回答一个问题：
+ *「把待发牌权益改大 / 归零，引擎的答案会变多少」。
+ */
+function liveCardEquityOverride(envKey: string, fallback: number): number {
+  const raw = process.env[envKey];
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+const LIVE_CARD_EQUITY_STRONG_DRAW = liveCardEquityOverride('DSH_LIVE_EQUITY_STRONG', 0.14);
+const LIVE_CARD_EQUITY_WEAK_DRAW = liveCardEquityOverride('DSH_LIVE_EQUITY_WEAK', 0.09);
+const LIVE_CARD_EQUITY_NO_DRAW = liveCardEquityOverride('DSH_LIVE_EQUITY_NONE', 0.06);
+
+/**
+ * 逐组合权益的**确定性口径**。
+ *
+ * ## ⚠️ 当前**未被使用** —— 保留是因为「换掉牌力代理」这个修法方向已被实测确认，
+ * 而这些口径是那次尝试留下的、经过验证的部分（固定种子 + 显式上限）。
+ *
+ * ## 为什么那次尝试被回退（2026-09，两次都失败，教训必须留下）
+ *
+ * `reports/REAL_HAND_VALIDATION.md` §6 记录：现有牌力代理
+ *（`boardStrength` 派生的 `foldLikelihood`）与实际弃牌的相关系数 **r ≈ −0.03 ~ −0.12**
+ *（几乎无区分能力），而**逐组合权益 r = −0.311**、分组均值差 27.3pp vs 2.2pp。
+ * 方向明确，但**两种实现都过不了工程约束**：
+ *
+ * | 实现 | 结果 |
+ * |---|---|
+ * | **逐组合**算权益（每组合一次 `computeEquity`） | 3 个用例从**毫秒涨到 9–11 秒** ⇒ 性能不合格 |
+ * | **按 `tier` 聚合**算（每档一次、跨尺寸复用） | 权益**与尺寸无关** ⇒ 破坏「注越大跟注越少」不变量（实测 0.647 vs 0.681） |
+ * | **按 `tier` 聚合 + 分子换成权益、比较留在逐尺寸**（第三次） | **仍然失败**，且数字与第二次**逐位相同**（0.647 vs 0.681） |
+ *
+ * ## 🔴 第三次失败暴露了**设计本身的错误**（比实现问题深）
+ *
+ * 第三次我按正确的结构做了：权益按档位算一次（实测确实有区分度：
+ * tier=1 → 对手权益 0.8417、tier=4 → 0.6450），比较留在逐尺寸里。
+ * 结果不变量**仍然**被破坏，而且数字与第二次一模一样。
+ *
+ * 查下去才看清：权益 **0.8417** 的手在大注下门槛是 0.64 ⇒
+ *「84% ≫ 64%」⇒ **照样继续**，而且强到会**加注**；
+ * 加注按比例分摊后，「跟注」标签上的量反而上升 ⇒ 大注的 callLikelihood 更高。
+ *
+ * **根本错误**：**单组合权益 ≠ 决策相关性**。
+ * 它回答的是「我这手对**他这一手**多强」，
+ * 而「该不该继续」问的是「我这手对**他的整个范围**多强」。
+ * 拿单组合权益当控制变量，方向就是错的 —— 越"碾压他这一手"的牌越会继续，
+ * 与「价格 vs 范围权益」无关。
+ *
+ * ## 下一次要怎么做（不要再从"换输入量"入手）
+ *
+ * 正确的控制变量是**该组合对「所有会继续的组合」的权益**（条件范围权益），
+ * 而那需要范围级计算 —— 是 `buildRangeSnapshot`/`contextBuilder` 那一层的活，
+ * 不是 `classifyResponse` 这一层拿两张牌能算出来的。
+ * ⇒ **这已经不像是"改响应层"，而像是"把响应层的职责重新划一遍"。**
+ * 动它之前应该先把职责边界写清楚，而不是再试一次。
+ *
+ * ## 下一步要解决的真问题（不是"再调一下"）
+ *
+ * 必须让「权益」**随尺寸变化** —— 而权益本身与尺寸无关，所以真正要改的是
+ * **判据的形状**：从「`continueIndex` ≥ 价格 + 余量」改成
+ * 「权益 ≥ 价格」的**逐尺寸比较**，同时把「余量」重新定义为**不确定性的函数**
+ * 而不是常数。那是一次**模型重构**，不是换一个输入量。
+ */
+const PER_COMBO_EQUITY_ITERATIONS = 400;
+const PER_COMBO_EQUITY_SEED = 20260926;
+
+/**
+ * 每个成手档位取几个代表组合来估权益 —— **当前未使用**（见下面关于三次失败尝试的说明）。
+ *
+ * 3 是**工程折中**：实测单次权益 95% 半宽 3.2pp（`scripts/measure-equity-noise.ts`），
+ * 3 个平均后 ≈ 1.9pp，成本 ≤ 18 次权益 ≈ 19ms。
+ */
+const TIER_EQUITY_SAMPLES = 3;
+
+export type ResponseClassification = {  bucket: ResponseBucket;
   /**
    * 🔴 **混频权重**（§8，Phase 1 最小实现）：一个组合可以同时以不同概率
    * 落入多个桶，三者之和恒为 1。
@@ -784,7 +1038,52 @@ export function classifyResponse(input: ResponseInput): ResponseClassification {
    * 因此保留原来的档位曲线，只删除原来的 `versusHero` 相对修正。
    */
   const boardStrength = 0.15 + 0.6 * (1 - input.tier / 5);
-  const strengthScore = Math.max(0, Math.min(1, boardStrength));
+
+  /*
+   * 🔴🔴 **待发牌权益（live-card equity）—— 真实牌局验证查出的模型缺口**（2026-09）
+   *
+   * ## 现场（455 手真实牌局、732 个配对样本，`scripts/calibrate-real-hands.ts`）
+   *
+   * | 街道 | 引擎预测弃牌率 | 实际 | 差 |
+   * |---|---|---|---|
+   * | FLOP | **83.7%** | 17.0% | −66.7pp |
+   * | TURN | **66.2%** | 17.1% | −49.1pp |
+   * | RIVER | 35.6% | 31.6% | −4.0pp ✅ |
+   *
+   * 偏差异常**只在还有牌要发的街**。这就是机理：
+   *
+   * `boardStrength` 只回答「他**现在**对这副牌面成手多强」，完全不含
+   * 「**还有牌要发 ⇒ 现在落后也仍有权益**」。河牌没有待发牌，牌力即权益，
+   * 所以代理在那里成立（实测 −4pp）；翻牌/转牌还有 1–2 张，代理就系统性地
+   * 把「有权益的落后牌」判成弃牌。
+   *
+   * ## 为什么必须随 `cardsToCome` 归零
+   *
+   * `cardsToCome === 0`（河牌）时这一项**必须恰好为 0** ⇒ 河牌行为**逐位不变**。
+   * 否则就会把唯一校准得住的那条街改坏。
+   *
+   * ## 用的是什么（**不发明参数**）
+   *
+   * - 待发张数 = `cardsToCome`（翻牌 2 / 转牌 1 / 河牌 0，调用方已给）；
+   * - 现有听牌的结构性强度 = `input.villainDraw`（`drawProfileOf` 判定，调用方已给）。
+   *
+   * ⚠️ **刻意不做 `outs × 2%` 那类换算** —— `draws.ts:142` 明文禁止：
+   * 「这些是**结构计数**，不是胜率 —— 胜率由权益引擎给出」。
+   * 这里加的是**方向性**的「有补牌 ⇒ 更容易继续」，不是伪造一个胜率数字。
+   *
+   * ⚠️ **已知局限**：它**不能**补上「没成牌也没听牌、但在翻牌仍有约 20% 权益」
+   * 的那一大类（`villainDraw === 'NO_DRAW'`）。也就是说这一项**只修一部分**偏差，
+   * 剩下的偏差**如实留在报告里**，不靠调大系数去掩盖。
+   */
+  const liveCardEquity =
+    input.cardsToCome <= 0
+      ? 0
+      : (input.cardsToCome / 2) *
+        (input.villainDraw === 'STRONG_DRAW' ? LIVE_CARD_EQUITY_STRONG_DRAW
+          : input.villainDraw === 'WEAK_DRAW' ? LIVE_CARD_EQUITY_WEAK_DRAW
+          : LIVE_CARD_EQUITY_NO_DRAW);
+
+  const strengthScore = Math.max(0, Math.min(1, boardStrength + liveCardEquity));
 
   const playability = input.villainDraw === 'STRONG_DRAW' ? 0.1 : input.villainDraw === 'WEAK_DRAW' ? 0.05 : 0;
   const sizePressure = Math.max(0, Math.min(1, input.ratioToPot / 1));
@@ -1017,6 +1316,24 @@ export type SizeResponse = {
   villainIsAllInByCall: boolean;
   /** 三桶质量（Σp，已含混频权重；三者之和 = 1） */
   buckets: readonly ResponseBucketRange[];
+  /**
+   * 🔴 **FOLD-ANCHOR FIX 的正式披露**（P3）：本尺寸的弃牌概率是否被实测锚定夹过。
+   *
+   * `measured === null` ⇒ **未锚定**（无实测 / 样本不足 / 语义门挡下 ⇒ 旧行为）。
+   * 外部（界面 / 测试 / 审计）可据此**直接判断**，而不必反推「数值是否落在实测 ±容差内」。
+   */
+  foldAnchor: {
+    /** 实测锚点（0..1）；`null` = 本尺寸未做锚定 */
+    readonly measured: number | null;
+    /** 工程容差（`FOLD_ANCHOR_TOLERANCE`） */
+    readonly tolerance: number;
+    /** 模型自算的原始弃牌概率 */
+    readonly modeled: number;
+    /** 锚定后实际采用的弃牌概率 */
+    readonly applied: number;
+    /** 是否真的发生了夹逼 */
+    readonly clamped: boolean;
+  };
   /** 分类逐组合的证据等级 */
   classificationKind: 'HEURISTIC';
   noteZh: string;
@@ -1061,6 +1378,17 @@ export function buildResponseModel(input: {
    * 与 `heroRemaining` 分开传入，**不得**用同一个字段代替。
    */
   villainRemaining?: number;
+  /**
+   * 🔴 **牌局环境**（真实牌局验证查出的缺陷的修法）。
+   *
+   * 用途：`responseTendenciesOf` 在**无画像 / 可信度 0** 时走的中立基线，
+   * 此前把 `callScale` 硬编码为 1 ⇒ 知识库的 `env.low.calling-tendency-up`
+   *（低级别线上 ⇒ 更爱跟）在**无画像对手**上完全无效（实测三个环境逐位相同）。
+   * 传进来后，那条规则才真正生效。
+   *
+   * 缺省 ⇒ 与修复前逐位相同（零回归）。
+   */
+  environment?: string | null;
 }): ResponseModel | null {
   if (input.board.length < 3 || input.heroHole.length !== 2) return null;
 
@@ -1083,8 +1411,11 @@ export function buildResponseModel(input: {
     versusHero: 'STRONGER' | 'WEAKER' | 'EQUAL';
     tier: number;
     villainDraw: 'STRONG_DRAW' | 'WEAK_DRAW' | 'NO_DRAW';
+    /** 该组合对 Hero 底牌的真实权益；缺省 = 权益引擎失败（不猜） */
+    villainEquity?: number;
   };
   const prepared: Prepared[] = [];
+
   for (const entry of input.entries) {
     if (!(entry.probability > 0)) continue;
     const hole: [Card, Card] = [ALL_CARDS[entry.cardIndices[0]]!, ALL_CARDS[entry.cardIndices[1]]!];
@@ -1193,6 +1524,60 @@ export function buildResponseModel(input: {
         ? Object.freeze([])
         : Object.freeze(entries.map((e) => Object.freeze({ ...e, probability: e.probability / mass })));
 
+    /*
+     * ============================================================
+     * 🔴 **FOLD-ANCHOR FIX（本轮）：用实测锚点夹逼模型给出的弃牌频率**
+     * ============================================================
+     *
+     * ## 缺陷（100 手实战验证发现，`reports/HUNDRED_HANDS_THREE_STREETS_AUDIT.md` §2）
+     *
+     * 同一节点（河牌、纯空气），模型给出 **P(他弃) = 78.2%** 面对**满池**下注，
+     * 而该对手 `foldToRiverBet = 65%` 是 **2000 手实测**；且满池给他 2:1 赔率
+     * （他需 33.3% 权益）⇒ 「78% 的牌都低于 33% 权益」在真实牌局不成立。
+     * 后果是**系统性高估诈唬 EV**（引擎会在实战里推荐亏钱的诈唬）。
+     *
+     * ## 修法：只夹**幅度**，方向仍由模型决定
+     *
+     * ```text
+     * measured = 该街已生效的 foldTo{街}Bet 实测值（`tendencies.streetFoldTraitValue`）
+     * final    = clamp(模型值, measured − K, measured + K)      K = FOLD_ANCHOR_TOLERANCE
+     * ```
+     *
+     * 性质：
+     * ① **无实测（或语义门挡下）⇒ 该字段缺省 ⇒ 逐位不变**（旧路径零回归）；
+     * ② 只在模型偏离实测**超过 K** 时才拉回，模型仍决定「弃得多还是少」；
+     * ③ 只夹 fold，把被夹掉的**质量按比例补给 call/raise**（保持 `fold+call+raise = 1`，
+     *    且**不产生/删除任何组合** —— 组合集与桶结构不变）；
+     * ④ K 是**工程容差**，不是统计误差，也不是「最优弃牌率」，全部如实标注。
+     */
+    const measuredFold = input.tendencies.streetFoldTraitValue;
+    let foldMassOut = foldMass;
+    let callMassOut = callMass;
+    let raiseMassOut = raiseMass;
+    let foldAnchorNoteZh = '';
+    if (measuredFold !== undefined && Number.isFinite(measuredFold)) {
+      const modeled = foldMass / totalMass;
+      const lo = Math.max(0, measuredFold - FOLD_ANCHOR_TOLERANCE);
+      const hi = Math.min(1, measuredFold + FOLD_ANCHOR_TOLERANCE);
+      const clamped = Math.max(lo, Math.min(hi, modeled));
+      if (Math.abs(clamped - modeled) > 1e-12) {
+        /*
+         * 质量迁移：`delta × totalMass` 从 fold 挪到 call/raise。
+         * 按**原有比例**分配 ⇒ 不改变「他跟注与加注之间」的相对倾向。
+         */
+        const otherMass = callMass + raiseMass;
+        const deltaMass = (modeled - clamped) * totalMass;
+        const callShare = otherMass > 0 ? callMass / otherMass : 1;
+        const raiseShare = otherMass > 0 ? raiseMass / otherMass : 0;
+        foldMassOut = clamped * totalMass;
+        callMassOut = callMass + deltaMass * callShare;
+        raiseMassOut = raiseMass + deltaMass * raiseShare;
+        foldAnchorNoteZh =
+          `｜🔴 实测锚定：模型 ${(modeled * 100).toFixed(1)}% 超出实测 ${(measuredFold * 100).toFixed(1)}%` +
+          ` ± ${(FOLD_ANCHOR_TOLERANCE * 100).toFixed(0)}pp ⇒ 夹到 ${(clamped * 100).toFixed(1)}%（质量按比例补给跟/加）`;
+      }
+    }
+
     result.push(
       Object.freeze({
         kind: spec.kind,
@@ -1205,39 +1590,49 @@ export function buildResponseModel(input: {
         heroIsAllIn,
         /** 🔴 P1-4：他跟这一注就投光 ⇒ 该尺寸下不可能有加注分支 */
         villainIsAllInByCall,
-        foldLikelihood: foldMass / totalMass,
-        callLikelihood: callMass / totalMass,
-        raiseLikelihood: raiseMass / totalMass,
+        foldLikelihood: foldMassOut / totalMass,
+        callLikelihood: callMassOut / totalMass,
+        raiseLikelihood: raiseMassOut / totalMass,
         rawFoldLikelihood: rawFoldMass / totalMass,
         rawCallLikelihood: rawCallMass / totalMass,
         rawRaiseLikelihood: rawRaiseMass / totalMass,
         buckets: Object.freeze([
           Object.freeze({
             bucket: ResponseBucket.FOLD,
-            entries: normalize(foldEntries, foldMass),
-            mass: foldMass / totalMass,
+            /* 🔴 锚定后 fold 质量变了 ⇒ 桶内权重按 `foldMassOut` 归一（组合集不变） */
+            entries: normalize(foldEntries, foldMassOut),
+            mass: foldMassOut / totalMass,
             comboCount: foldEntries.length,
           }),
           Object.freeze({
             bucket: ResponseBucket.CALL,
-            entries: normalize(callEntries, callMass),
-            mass: callMass / totalMass,
+            entries: normalize(callEntries, callMassOut),
+            mass: callMassOut / totalMass,
             comboCount: callEntries.length,
           }),
           Object.freeze({
             bucket: ResponseBucket.RAISE,
-            entries: normalize(raiseEntries, raiseMass),
-            mass: raiseMass / totalMass,
+            entries: normalize(raiseEntries, raiseMassOut),
+            mass: raiseMassOut / totalMass,
             comboCount: raiseEntries.length,
           }),
         ]),
         classificationKind: 'HEURISTIC' as const,
+        /* 🔴 P3：锚定状态做成正式字段（不再只藏在 noteZh 文案里） */
+        foldAnchor: Object.freeze({
+          measured: measuredFold !== undefined && Number.isFinite(measuredFold) ? measuredFold : null,
+          tolerance: FOLD_ANCHOR_TOLERANCE,
+          modeled: foldMass / totalMass,
+          applied: foldMassOut / totalMass,
+          clamped: Math.abs(foldMassOut - foldMass) > 1e-12,
+        }),
         noteZh:
           `面对 ${spec.labelZh}（合法 ${betAmount.toFixed(1)} 筹码 = ${(ratioToPot * 100).toFixed(0)}% 池` +
           `${spec.wasCapped ? `；理论 ${spec.requestedAmount.toFixed(1)} 已按有效筹码封顶` : ''}` +
           `${heroIsAllIn ? '；**Hero 全下 ⇒ 他不能加注**' : ''}）：` +
-          `弃 ${((foldMass / totalMass) * 100).toFixed(1)}% / 跟 ${((callMass / totalMass) * 100).toFixed(1)}% / ` +
-          `加 ${((raiseMass / totalMass) * 100).toFixed(1)}%（他需要的底池权益 ${(priceRequiredEquity * 100).toFixed(1)}%）`,
+          `弃 ${((foldMassOut / totalMass) * 100).toFixed(1)}% / 跟 ${((callMassOut / totalMass) * 100).toFixed(1)}% / ` +
+          `加 ${((raiseMassOut / totalMass) * 100).toFixed(1)}%（他需要的底池权益 ${(priceRequiredEquity * 100).toFixed(1)}%）` +
+          foldAnchorNoteZh,
       }),
     );
   }
@@ -2249,4 +2644,7 @@ export function normalizeEVScore(ev: number | null, checkEV: number | null, pot:
   const value = 0.5 + (0.5 * (ev - checkEV)) / pot;
   return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }
+
+
+
 

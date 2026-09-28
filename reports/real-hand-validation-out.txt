@@ -1,0 +1,105 @@
+真实牌局验证 —— 引擎答案 vs 真实牌局
+数据：D:\德州\third_party\phh-dataset
+牌局数（本次）：455
+
+========================================================================
+① 解析
+========================================================================
+读过文件          455
+成功解析          455
+含可验证决策点    243
+  排除 NO_DECISION_POINT        212
+
+被跳过的决策节点（**不是**「本来不该问」，而是重放/重建失败）：
+  ENGINE_CANNOT_REBUILD    15
+       · RECONSTRUCT :: ACTION_REJECTED: 第 12 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 78.75BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 12 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：小盲位 RAISE 59.8BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 13 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 62.5BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 14 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：劫持位 RAISE 70.25BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 15 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：关煞位 RAISE 65.25BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 11 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：劫持位 RAISE 22BB）
+
+========================================================================
+② 决策规模
+========================================================================
+决策点总数        1302
+引擎给出可执行建议 1302（100.0%）
+平均单次耗时      458.3ms
+
+引擎建议分布：
+  BET                  749
+  CHECK                185
+  FOLD                 132
+  RAISE                129
+  CALL                 107
+
+========================================================================
+③ 客观检验：合法性（违反 = 确诊缺陷）
+========================================================================
+动作不被该节点允许  0
+尺寸越界            0
+
+========================================================================
+③b 引擎**自己的价值门槛**（不是与真人比，是它自己两个模块之间是否自洽）
+========================================================================
+「更差 X%」= 对手范围里比我这手更差的组合占比（引擎 VALUE_GATE 自己算的）
+
+动作      样本    更差%均值   更差<50%（我落后）      更差<25%（我明显落后）   无门槛字段
+AGGRESSIVE  749       44.5%     427 ( 57.0%)     260 ( 34.7%)     129
+PASSIVE       0        0.0%       0 (     —)       0 (     —)     424
+
+「引擎为什么这么打」—— 动作 × 落后与否 ｜ 理由码（前 24 条）
+  BET/落后 ｜ VALUE_GATE                                  1414
+  BET/领先 ｜ VALUE_GATE                                  658
+  BET/落后 ｜ STRATEGIC_VALUE_BET                         427
+  BET/落后 ｜ ENVIRONMENT_DIRECTION                       391
+  BET/领先 ｜ STRATEGIC_VALUE_BET                         322
+  BET/领先 ｜ ENVIRONMENT_DIRECTION                       322
+  BET/领先 ｜ RAKE_MODEL                                  319
+  BET/领先 ｜ DECISION_BASIS                              264
+  CHECK/无门槛 ｜ STRATEGIC_CHECK                          185
+  CHECK/无门槛 ｜ ENVIRONMENT_DIRECTION                    185
+  CHECK/无门槛 ｜ RAKE_MODEL                               185
+  CHECK/无门槛 ｜ DECISION_BASIS                           185
+  BET/落后 ｜ RAKE_MODEL                                  153
+  FOLD/无门槛 ｜ POSTFLOP_ROLE                             132
+  FOLD/无门槛 ｜ BOARD_DELTA                               132
+  FOLD/无门槛 ｜ SPR_COMMITMENT                            132
+  FOLD/无门槛 ｜ MATH_FOLD_DOMINANT                        132
+  FOLD/无门槛 ｜ MATH_REQUIRED_EQUITY                      132
+  FOLD/无门槛 ｜ MATH_ESTIMATED_EQUITY                     132
+  RAISE/无门槛 ｜ POSTFLOP_ROLE                            129
+  RAISE/无门槛 ｜ BOARD_DELTA                              129
+  RAISE/无门槛 ｜ SPR_COMMITMENT                           129
+  RAISE/无门槛 ｜ MATH_CALL_SUPPORTED                      129
+  RAISE/无门槛 ｜ RAISE_MODEL_EV                           129
+
+========================================================================
+④ 对照：引擎建议 vs 真实玩家动作（**不同 ≠ 错**）
+========================================================================
+完全一致          323 / 1302 = 24.8%
+
+分街道：
+  FLOP         85 /  659 = 12.9%
+  RIVER       120 /  256 = 46.9%
+  TURN        118 /  387 = 30.5%
+
+真实动作 → 引擎建议（前 20 种组合）：
+  CHECK → BET                        476
+  RAISE → BET                        273
+  CHECK → CHECK                      134
+  FOLD → FOLD                        108
+  CALL → RAISE                       70
+  CALL → CALL                        63
+  RAISE → CHECK                      51
+  FOLD → RAISE                       41
+  FOLD → CALL                        37
+  CALL → FOLD                        21
+  RAISE → RAISE                      18
+  RAISE → CALL                       7
+  RAISE → FOLD                       3
+
+========================================================================
+⑤ 结果对照（仅参考 —— 单次结果噪声极大）
+========================================================================
+无「引擎建议弃牌、摊牌却赢」的样本。

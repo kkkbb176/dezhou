@@ -591,6 +591,45 @@ input[type='number'] {
   margin: 2px 0 6px;
 }
 
+/* ============================================================
+ * 牌力档 + 「这条建议该不该信」
+ *
+ * 放在动作正下方、其它信息之前 —— 它决定「后面那些理由要不要读」。
+ * 三档配色与「可不可信」一一对应（判据是后端 `trust` 字段，不是文案匹配）：
+ *   绿 = 靠权益赢，可以信 ｜ 黄 = 混合，打折 ｜ 红 = 靠弃牌率，最不可信
+ * ============================================================ */
+.hsBox {
+  border-left: 3px solid var(--muted);
+  border-radius: 3px;
+  padding: 4px 8px;
+  margin: 4px 0 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hsBox .hsTier {
+  font-weight: 700;
+}
+
+.hsBox .hsTrustLine {
+  font-size: 11px;
+}
+
+.hsTrust {
+  border-left-color: #2e9e5b;
+  background: rgba(46, 158, 91, 0.12);
+}
+
+.hsDiscount {
+  border-left-color: #c99a2e;
+  background: rgba(201, 154, 46, 0.12);
+}
+
+.hsDistrust {
+  border-left-color: #c0392b;
+  background: rgba(192, 57, 43, 0.12);
+}
+
 #resultReasons {
   margin: 0;
   padding-left: 16px;

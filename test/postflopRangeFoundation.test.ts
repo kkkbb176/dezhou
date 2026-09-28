@@ -138,6 +138,118 @@ test('C1-B：跛入池里翻牌下注者拿到的必须是**被动进入的宽�
 });
 
 /* ============================================================
+ * C1-C：**BB 隔离加注**（真实牌局验证查出的缺陷，2026-09）
+ *
+ * `655 手真实牌局`（Pluribus 6-max，见 `reports/REAL_HAND_VALIDATION.md`）里
+ * **40 个节点**整条分析失败，形态完全一致：
+ *
+ * ```text
+ * 翻前 [UTG弃 HJ弃 CO弃 BTN弃 SB跟注 BB加注 SB跟注]  ⇒ 翻牌
+ * 修复前：CONTEXT_BUILD_FAILED: rfiTierByPositionName: 「BB」没有开池范围
+ * ```
+ *
+ * ⚠️ 与 C1-A 不是同一个缺陷：C1-A 是「翻前**无人加注**」的跛入池；
+ * 这一条是「**BB 是翻前最后一个加注者**」，两者走的是不同分支。
+ * C1-A 修好后这一条**依然失败** —— 实测确认过。
+ * ============================================================ */
+
+/** SB 平跟 → BB 隔离加注 → SB 跟注；`flopBettor` 在翻牌下注，Hero 面对那个下注 */
+function bigBlindIsoPot(flopBettor: 'SB' | 'BB', heroPosition: 'SB' | 'BB'): ManualHandInput {
+  const preflop = [
+    F('UTG'), F('HJ'), F('CO'), F('BTN'),
+    { position: 'SB', type: 'CALL' as const, amountBB: 0.5 },
+    { position: 'BB', type: 'RAISE' as const, amountBB: 4.5 },
+    { position: 'SB', type: 'CALL' as const, amountBB: 3.5 },
+  ];
+  /*
+   * ⚠️ 历史必须**止于 Hero 面对决策那一刻** —— 把 Hero 自己的动作也写进去，
+   * 引擎会以 `ACTION_NOT_ACTOR` 拒绝（轮到他之后历史却继续了）。
+   * 翻牌先行动的是 SB（六人桌翻后顺序 SB → BB → …）：
+   * - `flopBettor='SB'`：SB 直接下注 ⇒ 历史到 `SB BET` 为止 ⇒ **BB** 面对决策；
+   * - `flopBettor='BB'`：SB 先过牌，BB 下注 ⇒ 历史到 `BB BET` 为止 ⇒ **SB** 面对决策。
+   */
+  const flopSBFirst = { position: 'SB', type: 'CHECK' as const, street: 'FLOP' as const };
+  const flopBet = { position: flopBettor, type: 'BET' as const, amountBB: 6, street: 'FLOP' as const };
+  const upTo = flopBettor === 'SB' ? [...preflop, flopBet] : [...preflop, flopSBFirst, flopBet];
+  return {
+    tableSize: 6,
+    heroPosition,
+    heroCards: ['Ts', 'Jh'],
+    board: ['Kc', '4s', 'Qs'],
+    street: 'FLOP',
+    effectiveStackBB: 95.5,
+    actionHistory: upTo,
+    environment: 'MID_LOW_STAKES',
+    bigBlindBB: 100,
+    seatStacksBB: { SB: 95.5, BB: 95.5 },
+    buttonPosition: 'BTN',
+  } as unknown as ManualHandInput;
+}
+
+test('C1-C：SB 平跟 → **BB 隔离加注** ⇒ 翻后必须能分析（修复前整条 CONTEXT_BUILD_FAILED）', () => {
+  /*
+   * 用**真实牌局 105/27.phh 的原样输入**（金额逐字来自该手记录）。
+   * 断言「能给出建议」，**不**断言具体动作 —— 具体动作是策略数值，
+   * 会被以后的正当地调整；而「这个局面能不能分析」是硬契约。
+   *
+   * ⚠️ 两个组合是**互补**的：翻牌先行动的是 SB，因此
+   * 「SB 下注 ⇒ BB 面对」与「SB 过牌 → BB 下注 ⇒ SB 面对」——
+   * 没有「SB 下注且 SB 面对」这种局面（那会是 Hero 自己跟自己打）。
+   */
+  const combos: readonly [('SB' | 'BB'), ('SB' | 'BB')][] = [
+    ['SB', 'BB'],
+    ['BB', 'SB'],
+  ];
+  for (const [bettor, hero] of combos) {
+    const result = analyzeManualHand(bigBlindIsoPot(bettor, hero), OPTIONS);
+    assert.equal(
+      result.ok,
+      true,
+      `${bettor} 翻牌下注 / Hero=${hero} 必须能分析：${result.ok ? '' : JSON.stringify(result.issues)}`,
+    );
+    if (!result.ok) continue;
+    assert.notEqual(result.decision.action, null, '必须给出方向');
+    assert.equal(result.decision.actionable, true, '必须可执行（不是 INSUFFICIENT_INFORMATION）');
+  }
+});
+
+test('C1-C2：BB 隔离加注拿到的范围必须**不是**开池范围 —— 而是更宽的一个档位', () => {
+  /*
+   * 判据用**范围宽度**（与 C1-B 同一手法）：隔离加注借用的「大盲防守范围」
+   * 明显比开池范围宽。若哪天有人把这里改回「套一个开池档位」，宽度会立刻暴露它。
+   *
+   * ⚠️ 对照组必须是**同一形态的另一条合法线**（下注者是开池者 BTN），
+   * 否则比的是两件不相干的事、或者干脆构造出一手已经结束的牌。
+   */
+  const iso = contextOf(bigBlindIsoPot('SB', 'BB')).range!;
+  const openContext = contextOf({
+    tableSize: 6,
+    heroPosition: 'SB',
+    heroCards: ['Ts', 'Jh'],
+    board: ['Kc', '4s', 'Qs'],
+    street: 'FLOP',
+    effectiveStackBB: 95.5,
+    actionHistory: [
+      F('UTG'), F('HJ'), F('CO'),
+      { position: 'BTN', type: 'RAISE', amountBB: 2.5 },
+      { position: 'SB', type: 'CALL', amountBB: 2 },
+      F('BB'),
+      /* 翻牌：SB 过牌，**开池者 BTN** 下注 ⇒ SB 面对决策 */
+      { position: 'SB', type: 'CHECK', street: 'FLOP' },
+      { position: 'BTN', type: 'BET', amountBB: 6, street: 'FLOP' },
+    ],
+    environment: 'MID_LOW_STAKES',
+    bigBlindBB: 100,
+  } as unknown as ManualHandInput).range!;
+
+  assert.ok(
+    iso.supportShare > openContext.supportShare,
+    `隔离加注范围（借大盲防守档）必须比开池范围宽：${(iso.supportShare * 100).toFixed(1)}% ` +
+      `vs 开池 ${(openContext.supportShare * 100).toFixed(1)}%`,
+  );
+});
+
+/* ============================================================
  * C2：跟注 ≠ 过牌
  * ============================================================ */
 

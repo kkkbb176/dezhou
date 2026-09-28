@@ -612,6 +612,7 @@ const VALID_OP_KINDS: readonly string[] = [
   'SIT_OUT',
   'SIT_IN',
   'SET_STACK',
+  'SET_PLAYER_NAME',
   'SET_PROFILE',
   'SET_DYNAMIC_HINT',
   'CLEAR_ALL_VILLAINS',

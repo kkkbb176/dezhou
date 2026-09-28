@@ -1227,23 +1227,167 @@ test('解释一致性：首屏理由必须解释**被选中的那个动作**（�
   );
   // 并且必须显式声明它的比较范围，否则单看这一句仍会误导
   const dominance = r.decision.reasons.find((x) => x.code === 'MATH_DOMINANCE');
+  /*
+   * 🔴 **契约更新（2026-09-24 · KQ_FLOP_DECISION_REPAIR 阶段一 · D2 修复）**
+   *
+   * 原断言要求文本包含**字面短语**「不在此比较之内」。该短语现已**被删除**，
+   * 因为它是 D2 缺陷的载体：它是一条**全局否定断言**，在「加注 EV 确实参与了
+   * 同一零点比较」的节点上是**假的**（`decisionSource` 会同时报出「跨动作比较已做」）。
+   *
+   * 现在改为断言**语义**（而不是某个具体措辞）：
+   * ① 必须声明本次比较的**范围**（只有「可比较 EV」的动作参与）；
+   * ② 必须切断「未参与比较 ⇒ EV 更低」的误读。
+   * 这两条比原来那句字面匹配更能防住误导，且不再把缺陷文案锁死。
+   */
   assert.ok(
-    dominance!.textZh.includes('可比较') && dominance!.textZh.includes('不在此比较之内'),
-    `数学优势结论必须声明「只在可比较 EV 的动作之间」，实际：${dominance!.textZh}`,
+    dominance!.textZh.includes('可比较') || dominance!.textZh.includes('比较集'),
+    `数学优势结论必须声明比较范围，实际：${dominance!.textZh}`,
+  );
+  /*
+   * ③ **契约更新（PREFLOP_RAISE_EV_BACKFILL）**：原断言**无条件**要求这句提示存在，
+   * 隐含前提是「网格里总有没算过 EV 的加注尺寸」。逐尺寸回填接入翻前之后，本节点的
+   * **8 档加注尺寸全部有自有 EV**（本断言下方会逐一核实），此时那句话**无对象可指** ——
+   * 强行要求它出现，等于要求引擎声明一件不成立的事。
+   *
+   * 新契约**更严**：不断言措辞，而是先**自己数一遍**未评估的加注尺寸，再要求
+   * 「有未评估 ⇒ 必须切断误读」；覆盖完整时才允许省略。误读防线在真正需要时依然锁死。
+   */
+  const unevaluatedRaiseCount = r.decision.diagnostics.candidates.filter(
+    (c) => (c.action === 'RAISE' || c.action === 'ALL_IN') && c.ev === null,
+  ).length;
+  assert.ok(
+    unevaluatedRaiseCount === 0 ||
+      dominance!.textZh.includes('未参与比较 ≠ EV 更低') ||
+      dominance!.textZh.includes('未评估的尺寸不做低 EV 假设'),
+    `存在 ${unevaluatedRaiseCount} 个未评估的加注尺寸时，必须切断` +
+      `「未参与比较 ⇒ EV 更低」的误读，实际：${dominance!.textZh}`,
   );
 });
 
-test('解释一致性：`MATH_DOMINANCE` 的措辞必须声明比较范围', () => {
+test('解释一致性：`MATH_DOMINANCE` 的措辞必须声明比较范围与**归因**', () => {
   const spot = preflopHeroOpensThenFacesRaise(Position.CO, ['Ah', 'Ad'], 3, Position.BB, 10);
   const r = analyzeManualHand(spot, OPTIONS);
   assert.equal(r.ok, true);
   if (!r.ok) return;
-  // 无论是否 dominant，note 都不得暗示「下注/加注类动作参与了这个比较」
-  for (const reason of r.decision.reasons.filter((x) => x.code === 'MATH_DOMINANCE')) {
+  const notes = r.decision.reasons.filter((x) => x.code === 'MATH_DOMINANCE');
+  assert.ok(notes.length > 0, '必须存在数学优势结论');
+  /*
+   * 🔴 **契约更新（PREFLOP_RAISE_EV_BACKFILL）**
+   *
+   * 原断言是 `!/^(加注|下注)\s*在/.test(...)`，理由是「加注/下注的 EV 不可比」。
+   * 该**前提**在逐尺寸回填接入翻前之后**不再成立**：本节点的加注确实带着
+   * `PREFLOP_RAISE_RESPONSE_V1` 的 EV 参与了**同一零点**比较（该模型与 CALL EV
+   * 共用同一条现金流公式，见 `preflopRaiseFacts.ts` 的零点声明），而且它就是最大值。
+   * 继续禁止这句话，等于要求引擎**否认一次它真的做过、且合规的比较**。
+   *
+   * 新断言**更严**：不再锁任何字面量，改为锁三条语义不变量 ——
+   * ① 不得声称与**建议动作相反**的动作占优（自相矛盾，这是本测试的原始目的）；
+   * ② 一旦声称加注类动作占优，必须**点名**提供 EV 的模型，且不得张冠李戴
+   *    （本节点不是跛入池 ⇒ 不得归因给隔离加注模型）；
+   * ③ 必须声明比较范围，切断「未参与比较 ⇒ EV 更低」的误读。
+   */
+  for (const reason of notes) {
+    const t = reason.textZh.trim();
+    const opposite = /^(弃牌|跟注|过牌)\s*在/.test(t) && t.includes('明显占优');
     assert.ok(
-      !/^(加注|下注)\s*在/.test(reason.textZh.trim()),
-      `不得声称「加注/下注明显占优」—— 它们的 EV 不可比：${reason.textZh}`,
+      !opposite,
+      `结论句不得与建议动作相反：建议=${r.decision.action}，实际：${t}`,
     );
+    if (/^(加注|下注|全下)\s*在/.test(t)) {
+      assert.ok(
+        /PREFLOP_RAISE_RESPONSE_V1|翻前加注响应模型/.test(t),
+        `声称加注类动作占优时必须点名提供 EV 的模型（归因不得缺失）：${t}`,
+      );
+      assert.ok(
+        !/隔离加注模型/.test(t),
+        `本节点不是跛入池，归因不得写成隔离加注模型：${t}`,
+      );
+    }
+    assert.ok(
+      t.includes('可比较') || t.includes('比较集'),
+      `数学优势结论必须声明比较范围，实际：${t}`,
+    );
+    /*
+     * ③′ 「未参与比较 ⇒ EV 更低」的误读必须在**需要时**被切断。
+     *
+     * 引擎只在「加注未参与比较」那一支写这句提示；当加注**确实参与**时它改说
+     * 「加注有自带模型 EV 并参与了同一零点比较」—— 此时若网格里**还有**未评估的
+     * 加注尺寸，那句提示仍然必需（否则「参与了的那个」会盖住「没算的那些」）。
+     * 因此这里不断言具体措辞，而是断言二者**必居其一**：
+     * · 已切断误读；或
+     * · 网格内**不存在**未评估的加注尺寸（无事可切）。
+     */
+    const unevaluatedRaises = r.decision.diagnostics.candidates.filter(
+      (c) => (c.action === 'RAISE' || c.action === 'ALL_IN') && c.ev === null,
+    ).length;
+    assert.ok(
+      t.includes('未参与比较 ≠ EV 更低') ||
+        t.includes('未评估的尺寸不做低 EV 假设') ||
+        unevaluatedRaises === 0,
+      `存在 ${unevaluatedRaises} 个未评估的加注尺寸，结论句却既未切断` +
+        `「未参与比较 ⇒ EV 更低」的误读、也未声明覆盖完整：${t}`,
+    );
+  }
+});
+
+test('翻前逐尺寸回填：候选表的加注 EV 必须来自 `preflopRaise.sizes`（不得留空）', () => {
+  /*
+   * 🔴 **PREFLOP_RAISE_EV_BACKFILL 的锁定测试。**
+   *
+   * 修复前的自相矛盾：同一份响应里，候选表把 4.0BB / 12.0BB … 全部标成
+   * 「本尺寸未被评估」，而证据层与理由里已经在用逐尺寸的响应概率与 RAISE EV。
+   * 根因是回填表**只读** `postflopFacts.raiseResponseAll`（翻后专有）。
+   *
+   * 本测试同时锁住三件事：
+   * ① 翻前节点上「带自有 EV 的加注尺寸」**不止一个**（逐尺寸真的算过）；
+   * ② 候选表里对应金额的 EV **不再是 null**（回填真的接上了）；
+   * ③ 每个被回填的金额都能在 `preflopRaise.sizes` 里**精确**找到同一金额
+   *    （整数筹码等值匹配 ⇒ 不存在串档）。
+   */
+  const spot = preflopHeroOpensThenFacesRaise(Position.CO, ['Ah', 'Ad'], 3, Position.BB, 10);
+  const r = analyzeManualHand(spot, OPTIONS);
+  assert.equal(r.ok, true, `应当能分析：${r.ok ? '' : JSON.stringify(r.issues)}`);
+  if (!r.ok) return;
+
+  const diag = r.decision.diagnostics;
+  const candidates = diag.candidates;
+
+  /* ① 事实包：逐尺寸模型确实为**多档**算出了自有 EV */
+  const sizesWithEV = (diag.preflopRaise?.sizes ?? []).filter((s) => s.raiseEV !== null);
+  assert.ok(
+    sizesWithEV.length >= 2,
+    `翻前逐尺寸模型应给出多档自有 EV，实际 ${sizesWithEV.length} 档：` +
+      `${JSON.stringify((diag.preflopRaise?.sizes ?? []).map((s) => [s.sizeBB, s.raiseEV]))}`,
+  );
+
+  /* ② 候选表：对应金额的 EV 不再为 null（回填真的接上了） */
+  const backfilled = candidates.filter(
+    (c) => (c.action === 'RAISE' || c.action === 'ALL_IN') && c.ev !== null,
+  );
+  assert.ok(
+    backfilled.length >= 2,
+    `候选表应有 ≥2 档加注尺寸带自有 EV，实际 ${backfilled.length} 档：` +
+      `${JSON.stringify(candidates.map((c) => [c.action, c.sizeBB, c.ev]))}`,
+  );
+
+  /* ③ 逐档**逐位相等** —— 每个金额只能用「它自己的」事实包（杜绝串档/近似） */
+  for (const c of backfilled) {
+    assert.ok(
+      Number.isInteger(c.sizeChips),
+      `被回填的尺寸必须是整数筹码（杜绝近似串档）：${JSON.stringify([c.sizeBB, c.sizeChips])}`,
+    );
+    const fact = sizesWithEV.find((s) => s.sizeChips === c.sizeChips);
+    assert.ok(
+      fact !== undefined,
+      `候选表 ${String(c.sizeBB)}BB（${String(c.sizeChips)} 筹码）被回填了 EV，` +
+        '但事实包里找不到**同一整数金额**的尺寸 ⇒ 存在串档',
+    );
+    assert.equal(
+      c.ev,
+      fact!.raiseEV,
+      `候选表 ${String(c.sizeBB)}BB 的 EV 必须逐位等于该金额自己的事实包`,
+    );
+    assert.notEqual(c.evEstimateType, null, `被回填的 EV 必须声明估计类型：${String(c.sizeBB)}BB`);
   }
 });
 

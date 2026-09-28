@@ -93,6 +93,13 @@ export type BetSizeAdvice = Omit<BetEVBreakdown, 'kind'> & {
   evKind: string;
   /** 单挑旧公式的 BetEV（只供审计对比，**不参与**决策） */
   betEVSingleOpponent: number | null;
+  /**
+   * 🔴 **P3（FOLD-ANCHOR FIX 披露）**：本尺寸的弃牌概率是否被**实测锚点**夹过。
+   *
+   * `measured === null` ⇒ 未锚定（无实测 / 样本不足 / 语义门挡下）。
+   * 由 `buildResponseModel` 原样带出（**不做二次计算**）。
+   */
+  foldAnchor: import('../../domain/postflop/betResponse.ts').SizeResponse['foldAnchor'];
 };
 
 /** 下注决策汇总（CHECK vs 三个尺寸，同一筹码口径） */
@@ -608,6 +615,8 @@ export function advisePostflop(
         multiway,
         evKind: size.evKind,
         betEVSingleOpponent: legacy.betEV,
+        /* 🔴 P3：锚定状态**原样搬运**（不重算）—— `composeBetEV` 的入参表里没有它 */
+        foldAnchor: size.foldAnchor,
       };
     });
     const scored = sizes.map((ev, index) => ({

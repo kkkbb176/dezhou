@@ -1374,6 +1374,39 @@
     action.id = 'resultAction';
     box.appendChild(action);
 
+    /*
+     * 🔴 **牌力档 + 「这条建议该不该信」**（使用者要求：一眼看出要不要信它）。
+     *
+     * 放在动作**正下方**、其它信息**之前** —— 因为它决定「后面那些理由要不要读」。
+     *
+     * 判据来自后端 `handStrengthHint`（`viewmodels/handStrengthHint.ts`）：
+     * 引擎唯一被实测证伪的模块是**弃牌率**（预测 65–75% vs 真实 51.6%，
+     * 与真实弃牌的相关系数 r ≈ −0.03）；而**强牌的利润来自权益、与弃牌率无关**，
+     * 弱牌/听牌几乎全靠弃牌率。
+     *
+     * 用 `trust` 这个**结构化字段**决定样式，不做文案匹配 ——
+     * 文案可以改，字段不会撒谎（本项目在范围来源那一处踩过文案匹配的坑）。
+     */
+    var hs = a.viewModel.handStrengthHint;
+    if (hs) {
+      var hsCls =
+        hs.trust === 'TRUST' ? 'hsTrust' : hs.trust === 'DISCOUNT' ? 'hsDiscount' : 'hsDistrust';
+      var hsBox = el('div', 'hsBox ' + hsCls);
+      hsBox.id = 'resultHandStrength';
+      /*
+       * ⚠️ `strength` 不假设是 number：直接 `hs.strength.toFixed(2)` 在字段缺失/
+       * 被序列化成字符串时会抛错，而**渲染里抛错会冻结整个面板**
+       *（本文件有过前例：`appendChild(box)` 那次，导致时间线/弹层全部不再更新）。
+       * 后端 `handStrengthHintOf` 已经保证是有限数，这里是**便宜的第二道防线**。
+       */
+      var hsStrength = typeof hs.strength === 'number' && isFinite(hs.strength) ? hs.strength.toFixed(2) : '—';
+      hsBox.appendChild(
+        el('div', 'hsTier', hs.tierZh + '（' + hs.roleZh + '，强度 ' + hsStrength + '）'),
+      );
+      hsBox.appendChild(el('div', 'hsTrustLine', hs.trustZh));
+      box.appendChild(hsBox);
+    }
+
     var meta = [a.viewModel.confidenceZh, a.viewModel.classificationZh];
     if (a.viewModel.sizeZh) meta.unshift(a.viewModel.sizeZh);
     var metaLine = el('div', null, meta.join(' · '));
@@ -1610,7 +1643,20 @@
 
   function compactResult(box, a) {
     var details=el('details','result-details');details.appendChild(el('summary',null,'收益、范围与完整依据'));
-    var keep=['resultAction','resultMeta','resultReasons'];
+    /*
+     * 🔴 **`keep` 是「紧凑模式下仍然常驻显示」的白名单。**
+     *
+     * 不在名单里的节点会被**搬进折叠的 `<details>`**（`compactResult` 的语义）。
+     *
+     * `resultHandStrength`（牌力档 + 「这条建议该不该信」）**必须留在这里**：
+     * 它是**判断依据**，不是**补充披露**。使用者要先知道「这条建议能不能信」，
+     * 才决定要不要展开看后面的理由 —— 把它折叠起来等于**把最关键的一条藏起来**。
+     *
+     * 踩过的坑：本块最初加进来时**没进白名单**，于是在「快速录入」模式下
+     * 被静默搬进折叠区，界面上看起来「功能没生效」。
+     * 表现形式具有迷惑性：DOM 里节点**存在**、数据也**正确**，只是不在可见区域。
+     */
+    var keep=['resultAction','resultMeta','resultReasons','resultHandStrength'];
     Array.from(box.children).forEach(function(n){if(keep.indexOf(n.id)<0)details.appendChild(n);});
     var reasons=$('resultReasons');
     function shortText(text, limit) { var plain=String(text).replace(/\*\*/g,''); return plain.length>limit?plain.slice(0,limit)+'…':plain; }
@@ -2261,11 +2307,41 @@
   function openSeatMenu(seat) {
     if (!seat.playerId) {
       openModal('空座位', seat.positionZh + '（' + seat.logicalPosition + '）', function (modal) {
+        /*
+         * 🔴 **新玩家名称录入**（放在最前，由**同一个**「加入玩家」按钮消费）。
+         *
+         * ## 为什么不能配一个单独的「用该名称加入」按钮
+         *
+         * 第一版就是那样做的 —— 结果上方的**主按钮**「加入玩家」仍然忽略已输入的名字：
+         * 使用者填了名字、点最显眼的那个按钮，座位显示的还是「玩家N」。
+         * **这不是后端问题**（实测服务端 `preview.seats[].displayName` 就是填的名字），
+         * 而是**两个按钮抢同一件事**的交互缺陷。现在只有一条路径：
+         * 填了 ⇒ 用该名称；留空 ⇒ 自动命名（与修复前逐位一致）。
+         *
+         * ⚠️ 名称只是**显示名**：身份仍是自动 `p{n}`，同名不合并、也不读取任何旧历史。
+         * 要让同一位玩家延续历史，必须走「选择历史玩家…」（按身份匹配）。
+         */
+        var nameRow = el('div', 'row');
+        nameRow.appendChild(el('div', 'label', '玩家名称（留空 ⇒ 自动命名）'));
+        var nameInput = el('input');
+        nameInput.type = 'text';
+        nameInput.maxLength = 24;
+        nameInput.placeholder = '例如：老张';
+        nameInput.setAttribute('data-testid', 'newPlayerName');
+        nameInput.disabled = busy();
+        nameRow.appendChild(nameInput);
+        modal.appendChild(nameRow);
+
         var row = el('div', 'row');
         var add = el('button', 'primary', '加入玩家');
         add.disabled = busy();
         add.onclick = function () {
-          sendOp({ kind: 'ADD_PLAYER', seatId: seat.seatId }).then(closeUnlessPending);
+          var typed = String(nameInput.value || '').trim();
+          sendOp(
+            typed.length > 0
+              ? { kind: 'ADD_PLAYER', seatId: seat.seatId, displayName: typed }
+              : { kind: 'ADD_PLAYER', seatId: seat.seatId },
+          ).then(closeUnlessPending);
         };
         row.appendChild(add);
         var pickFromHistory = el('button', null, '选择历史玩家…');
@@ -2275,11 +2351,17 @@
         };
         row.appendChild(pickFromHistory);
         modal.appendChild(row);
+        /* 回车即加入 —— 与点「加入玩家」完全等价（少一次鼠标移动） */
+        nameInput.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') add.click();
+        });
+
         modal.appendChild(
           el(
             'div',
             'note',
             '新玩家默认：新身份、' + app.state.defaultStackBB + 'BB、画像「未知」。' +
+              '名称只影响显示，**不代表身份**（同名不合并）。' +
               '本手进行中无法加入（会破坏当前牌局）。',
           ),
         );
@@ -2322,6 +2404,53 @@
             ),
           );
         });
+
+        /*
+         * 🔴 **改名**（`SET_PLAYER_NAME`）。
+         *
+         * ## 为什么必须有这一行
+         *
+         * 座位常常**已经**坐满（一键补齐 / 逐个加入都得到自动名「玩家2、玩家3…」），
+         * 而此前**没有任何入口**能把名字改成使用者的叫法 —— 实测反馈正是
+         * 「加了位置，名字还是玩家2、玩家3」。空座位那边只能给**新**玩家命名，救不了已坐下的。
+         *
+         * ⚠️ 只改**显示名**：身份 `playerId` 不变 ⇒ 历史绑定 / 统计 / 画像都不受影响；
+         * 同名不合并；名册取「最新一条记录」的名字，所以改名后要等这位玩家**下一次行动**
+         * 才会在名册里显示新名字（不为了改显示名去重写历史文件）。
+         */
+        var renameRow = el('div', 'row');
+        renameRow.appendChild(
+          el('div', 'label', '玩家名称' + (seatEditLocked() ? '（本手进行中不可改）' : '')),
+        );
+        var renameInput = el('input');
+        renameInput.type = 'text';
+        renameInput.maxLength = 24;
+        renameInput.value = String(seat.displayName || '');
+        renameInput.setAttribute('data-testid', 'playerName');
+        /*
+         * ⚠️ 与筹码编辑**同一条门禁**（`seatEditLocked()`）：本手进行中禁用。
+         * 改名本身不改牌局状态，但一手之内改名字会让**这一手的行动记录**里
+         * 前后名字不一致（记录写的是当时的名字），所以按同一纪律一起禁掉。
+         */
+        renameInput.disabled = seatEditLocked() || busy();
+        renameRow.appendChild(renameInput);
+        var renameSave = el('button', null, '保存名称');
+        renameSave.disabled = seatEditLocked() || busy();
+        renameSave.onclick = function () {
+          var typed = String(renameInput.value || '').trim();
+          if (typed.length === 0) {
+            toast('玩家名称不能为空', true);
+            return;
+          }
+          sendOp({ kind: 'SET_PLAYER_NAME', seatId: seat.seatId, displayName: typed }).then(
+            closeUnlessPending,
+          );
+        };
+        renameRow.appendChild(renameSave);
+        renameInput.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') renameSave.click();
+        });
+        modal.appendChild(renameRow);
 
         // ---- 画像 ----
         var profileRow = el('div', 'row');
@@ -2463,8 +2592,19 @@
    * ⚠️ 唯一门禁来自后端：本手进行中不允许改筹码（本手的筹码守恒基于开局筹码）。
    * 这里按同一条件**禁用**控件并写明原因 —— 点了才被拒是更差的体验。
    */
+  /**
+   * 🔴 **座位编辑的统一门禁**：本手进行中 ⇒ 编辑控件必须禁用。
+   *
+   * 唯一门禁来自后端（本手的筹码守恒基于开局筹码）；这里按**同一个条件**禁用控件，
+   * 点了才被拒是更差的体验。抽成函数是为了让「筹码编辑」与「改名」**共用一处判据** ——
+   * 两处各写一遍 `handActive === true` 正是本项目最忌讳的「两处口径」。
+   */
+  function seatEditLocked() {
+    return app.state.handActive === true;
+  }
+
   function appendStackEditor(modal, seat) {
-    var locked = app.state.handActive === true;
+    var locked = seatEditLocked();
 
     var row = el('div', 'row');
     row.appendChild(el('div', 'label', '编辑筹码（本手未开始时可用）'));

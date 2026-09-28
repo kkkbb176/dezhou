@@ -971,6 +971,43 @@ export type StreetFactors = {
    * 保证无统计路径与 V2 **逐位一致**。
    */
   betScale?: number;
+  /**
+   * 🔴 **FOLD-ANCHOR FIX**：该街 `foldTo{街}Bet` 的**实测生效值**（0..1）。
+   *
+   * 响应层（`buildResponseModel`）用它把模型自算的弃牌频率夹逼在实测附近，
+   * 防止「模型声称 78% 而 2000 手实测只有 65%、且价格上不可能」这类量级偏离
+   * （对照实验见 `reports/HUNDRED_HANDS_THREE_STREETS_AUDIT.md` §2）。
+   *
+   * ⚠️ **只在「该街真有观测且语义门放行」时出现**；未观测 / 被挡下
+   * ⇒ 本字段为 `undefined` ⇒ 响应层**完全不做锚定**（旧路径逐位不变）。
+   */
+  foldTraitValue?: number;
+  /**
+   * 🔴 **下注范围专用（PFR→BETRANGE 修复）**：喂给「公共强度带模型」
+   * （`betProbabilityByBand` 的 `valueAnchor` / `thinAnchor` / `showAnchor`）
+   * 的 `aggression` 取值。
+   *
+   * ## 为什么单独开一个字段，而不是直接用它读到的 `aggression`
+   *
+   * 「他被观测到多爱开枪」和「他翻前多爱加注」是**两件事**。修复前
+   * `betProbabilityByBand` 直接读融合维度里的 `aggression`，而该轴唯一的
+   * 实测来源是 **PFR / 3Bet（都是翻前统计）** ⇒ 一条 `pfr=9%` 的观测能把
+   * `thinAnchor` 从 −0.0002 推到 −0.0766，把「顶对/中对」整档踢出他的下注范围，
+   * 空气占比 35% → 47%、我方权益被抬高 8.6pp（对照实验见
+   * `reports/PFR_TO_BETRANGE_VERIFICATION.md`）。而本项目源码早已明文禁止这条推论
+   * （见 `STAT_DIMENSION_POLARITY` 上方：「PFR 不碰 `bluffTendency`
+   *（禁止「翻前凶 ⇒ 河牌爱诈唬」）」）。
+   *
+   * ## 现在的取值来源（`betAggressionOf` / `postflopAggressionOf`）
+   *
+   * - **只有翻后统计**（`FoldTo*CBet` / `*CheckRaise`）能推动它；
+   * - 翻前统计（`VPIP` / `PFR` / `3Bet`）**推不动它**；
+   * - 无任何翻后证据 ⇒ **逐位等于**标签原型的 `aggression`（即修复前行为）。
+   *
+   * ⚠️ 它描述的是**玩家属性**、不随街变化，因此四条街给的是同一个值
+   * （放在 `StreetFactors` 里只为让既有透传链原样带走它）。
+   */
+  betAggression?: number;
 };
 
 export type StreetProfile = {
@@ -1034,6 +1071,8 @@ export function neutralStreetFactors(): StreetProfile {
     callScale: 1,
     checkRaiseScale: 1,
     betScale: 1,
+    /* 中立 ⇒ 下注范围层与「无画像」逐位一致（0.5 与缺省等价） */
+    betAggression: 0.5,
   });
   return Object.freeze({ PREFLOP: one, FLOP: one, TURN: one, RIVER: one });
 }
@@ -1233,6 +1272,52 @@ export function resolvePlayerProfile(input: {
   const stats = normalized.stats;
 
   const trace: StatResolutionTrace[] = [];
+  type Axis = keyof ResolvedDimensions;
+  /** 逐统计算好的「对四轴的推力」（推力 / 权重 / 证据质量），供不同轴集合复用 */
+  type StatPush = {
+    stat: ObservedStatKey;
+    /** 每条轴的推力分子 `p × 偏离 × 可信度`（极性为 0 ⇒ 恒 0） */
+    push: Record<Axis, number>;
+    /** 该条统计对某条轴的**权重** `|p| × 可信度`（极性为 0 ⇒ 恒 0） */
+    weight: Record<Axis, number>;
+    /** 该条统计对某条轴的**证据质量** `|p| × 机会数`（极性为 0 ⇒ 恒 0） */
+    mass: Record<Axis, number>;
+  };
+  /**
+   * 按**给定的轴集合**做加权平均累加。
+   *
+   * 之所以要「按轴集合」而不是只跑一遍全量：本轮修复需要一份
+   * **剔除翻前统计之后**的 `aggression`（见 `StreetFactors.betAggression`），
+   * 而「剔除某条统计」只能通过「不给它记这一条轴」表达 ⇒ 必须能只取部分轴。
+   *
+   * ⚠️ 只取部分轴时，`den` 也只统计这些轴 ⇒ **不会**污染全量那一份。
+   */
+  const accOf = (
+    list: readonly StatPush[],
+    axes: readonly Axis[],
+  ): Record<Axis, { num: number; den: number }> => {
+    const out: Record<Axis, { num: number; den: number }> = {
+      tightness: { num: 0, den: 0 },
+      aggression: { num: 0, den: 0 },
+      bluffTendency: { num: 0, den: 0 },
+      passivity: { num: 0, den: 0 },
+    };
+    for (const p of list) {
+      for (const axis of axes) {
+        out[axis].num += p.push[axis];
+        out[axis].den += p.weight[axis];
+      }
+    }
+    return out;
+  };
+  const massOf = (list: readonly StatPush[], axes: readonly Axis[]): Record<Axis, number> => {
+    const out: Record<Axis, number> = { tightness: 0, aggression: 0, bluffTendency: 0, passivity: 0 };
+    for (const p of list) {
+      for (const axis of axes) out[axis] += p.mass[axis];
+    }
+    return out;
+  };
+  const pushes: StatPush[] = [];
   /**
    * 🔴 **逐维度的「加权平均」累加器**（不是简单求和）。
    *
@@ -1254,12 +1339,6 @@ export function resolvePlayerProfile(input: {
    * ② 多条统计是**互相平均**而不是叠加；③ 分母为 0（没有任何统计）
    * ⇒ 结果 0 ⇒ 维度恒为 0.5 ⇒ **V2 恒等**。
    */
-  const acc: Record<'tightness' | 'aggression' | 'bluffTendency' | 'passivity', { num: number; den: number }> = {
-    tightness: { num: 0, den: 0 },
-    aggression: { num: 0, den: 0 },
-    bluffTendency: { num: 0, den: 0 },
-    passivity: { num: 0, den: 0 },
-  };
   /**
    * 🔴 **P0-B：每个轴的证据质量**（`Σ |极性| × 原始机会数`）。
    *
@@ -1271,12 +1350,6 @@ export function resolvePlayerProfile(input: {
    * - `den` 是**轴内**各统计的相对权重（越可信的统计说话越响）；
    * - `mass` 是**轴整体**对标签 prior 的证据量（决定标签还占多少权重）。
    */
-  const mass: Record<'tightness' | 'aggression' | 'bluffTendency' | 'passivity', number> = {
-    tightness: 0,
-    aggression: 0,
-    bluffTendency: 0,
-    passivity: 0,
-  };
   /**
    * 🔴 **标签先验的证据质量**（权重 1 = 与「1 次满证据的观测」等价）。
    *
@@ -1338,6 +1411,12 @@ export function resolvePlayerProfile(input: {
    * 「统计明明给了却毫无影响」会变成又一个无法审计的静默行为。
    */
   const streetTraitDenied = new Set<StreetTraitKey>();
+  /**
+   * 🔴 **FOLD-ANCHOR FIX**：**真的有实测**的分街条目（语义门放行的那些）。
+   * 与 `streetTraitValue` 分开记 —— 后者在「未观测」与「被门挡下」时都是 0.5，
+   * 而 0.5 也可能是真实观测值 ⇒ 拿它当锚点会把中立当成证据。
+   */
+  const measuredStreetTrait: Partial<Record<StreetTraitKey, { value: number; confidence: number }>> = {};
   /** 当前节点语义（`null` = 调用方未提供 ⇒ 不做节点判定） */
   const context: ActionContextValue | null = input.actionContext ?? null;
 
@@ -1413,13 +1492,23 @@ export function resolvePlayerProfile(input: {
      * 后者含先验，会与融合层的标签 prior 重复计票。
      */
     const observedDeviation = ev.observedRate === null ? 0 : statDeviationOf(stat, ev.observedRate);
+    /*
+     * 🔴 **PFR→BETRANGE 修复**：逐条统计的推力**先算好存起来**，
+     * 再由 `accOf(pushes, axes)` 决定「这一条统计算不算进哪些轴」。
+     * 修复前是直接写进唯一的 `acc`，因此无法表达「同一条统计在某些轴上不算」——
+     * 而「只让翻后统计推动下注范围用的 aggression」正需要那个能力。
+     */
+    const push: Record<Axis, number> = { tightness: 0, aggression: 0, bluffTendency: 0, passivity: 0 };
+    const weight: Record<Axis, number> = { tightness: 0, aggression: 0, bluffTendency: 0, passivity: 0 };
+    const statMass: Record<Axis, number> = { tightness: 0, aggression: 0, bluffTendency: 0, passivity: 0 };
     for (const dim of ['tightness', 'aggression', 'bluffTendency', 'passivity'] as const) {
       const p = polarity[dim];
       if (p === 0) continue; // 极性为 0 ⇒ 这条统计**不碰**这个维度（§七 的硬约束）
-      acc[dim].num += p * observedDeviation * ev.confidence;
-      acc[dim].den += Math.abs(p) * ev.confidence;
-      mass[dim] += Math.abs(p) * ev.opportunities;
+      push[dim] = p * observedDeviation * ev.confidence;
+      weight[dim] = Math.abs(p) * ev.confidence;
+      statMass[dim] = Math.abs(p) * ev.opportunities;
     }
+    pushes.push({ stat, push, weight, mass: statMass });
 
     // ---- 分街条目：同样的收缩，但存成「倾向强度」0..1 ----
     if (mapping !== null && mapping.streetTrait !== null) {
@@ -1450,6 +1539,16 @@ export function resolvePlayerProfile(input: {
        */
       if (isTraitAllowedInContext(mapping.streetTrait, context, input.street ?? null)) {
         streetTraitValue[mapping.streetTrait] = ev.effectiveRate;
+        /*
+         * 🔴 **FOLD-ANCHOR FIX**：记录「这一街**真的有实测**」及其**可信度**。
+         * 与 `streetTraitValue` 的区别：后者在「语义门挡下」时是 0.5（人为中立），
+         * 而 0.5 也可能是**真实的实测值** ⇒ 必须分开记，否则会把中立当成实测锚点。
+         *
+         * ⚠️ **可信度也必须一起记**：锚定只在样本足够时启用（见 `measuredFoldTraitOf`），
+         * 否则「2 手实测」会通过锚点**直接改写**弃牌频率 —— 那会绕过整个收缩机制
+         * （实测发现：`profileProfileExploitV1` 的「样本不足必须被强收缩」当场失败）。
+         */
+        measuredStreetTrait[mapping.streetTrait] = { value: ev.effectiveRate, confidence: ev.confidence };
       } else {
         streetTraitValue[mapping.streetTrait] = 0.5;
         streetTraitDenied.add(mapping.streetTrait);
@@ -1498,6 +1597,28 @@ export function resolvePlayerProfile(input: {
   }
 
   /* ============================================================
+   * 🔴 **PFR→BETRANGE 修复**：两份轴累加（全量 / 仅翻后）
+   * ============================================================
+   *
+   * 全量那一份 = 既有行为（逐位不变）；「仅翻后」那一份只把
+   * `STAT_TO_STREET_TRAIT` 覆盖到的统计计入 `aggression`
+   * （目前是 `FoldTo*CBet` / `*CheckRaise`）。它的作用就是那道闸门：
+   * **翻前统计（VPIP / PFR / 3Bet）永远进不了它**。
+   */
+  const ALL_AXES: readonly Axis[] = ['tightness', 'aggression', 'bluffTendency', 'passivity'];
+  const acc = accOf(pushes, ALL_AXES);
+  const mass = massOf(pushes, ALL_AXES);
+  /*
+   * ⚠️ `?? null` **不可省**：`STAT_TO_STREET_TRAIT` 对「不属于任何街」的统计
+   * 根本**没有这个键**（取到 `undefined`），而 `undefined !== null` 恒为真 ——
+   * 第一版就因此把 `VPIP/PFR/3Bet` 也当成了翻后统计，闸门完全没生效（实测发现）。
+   */
+  const isPostflopStat = (stat: ObservedStatKey): boolean =>
+    (STAT_TO_STREET_TRAIT[stat] ?? null) !== null;
+  const postflopPushes = pushes.filter((p) => isPostflopStat(p.stat));
+  const postflopAgg = accOf(postflopPushes, ['aggression']);
+
+  /* ============================================================
    * 维度落地：三层（P0-A 偏离 → P0-B 融合 → P0-C 无证据保标签）
    * ============================================================
    *
@@ -1514,8 +1635,6 @@ export function resolvePlayerProfile(input: {
    *      resolved = evidenceMass > 0 ? (1−w)·base + w·observedDim : base
    * ```
    */
-  type Axis = keyof ResolvedDimensions;
-
   const observedDimOf = (dim: Axis): number => {
     const { num, den } = acc[dim];
     if (!(den > 0)) return 0.5; // 没有任何该轴证据 ⇒ 精确 0.5 ⇒ 下游恒等
@@ -1569,7 +1688,62 @@ export function resolvePlayerProfile(input: {
   /** 分街通道用的仍是「只有实测」的那一层（本轮**刻意不改**分街通道，见文件头说明） */
   const dims: ResolvedDimensions = observedDimensions;
 
+  /* ============================================================
+   * 🔴 **PFR→BETRANGE 修复：下注范围专用的 aggression**
+   * ============================================================
+   *
+   * 只让**翻后统计**（`FoldTo*CBet` / `*CheckRaise`，即 `STAT_TO_STREET_TRAIT`
+   * 覆盖到的那几条）推动它；`VPIP` / `PFR` / `3Bet` 一律**推不动**。
+   *
+   * 三段与全量那一份**同形**（轴内收缩 → 融合 → 无证据保标签），因此：
+   * - **无任何翻后证据** ⇒ 逐位等于 `baseDimOf('aggression')` = 修复前的取值
+   *   （标签原型的 aggression）⇒ 既有夹具与标签路径**零变化**；
+   * - 有翻后证据 ⇒ 翻后统计按 `w_axis` 融合进来。
+   *
+   * ⚠️ 已知边界（如实标注）：当前极性表里 `FoldTo*CBet` / `*CheckRaise`
+   * **对 aggression 轴的极性都是 0** ⇒ 今天没有任何统计能真正推动这份值，
+   * 于是它的实际效果是「**切断** PFR/3Bet → 下注范围的通道」，
+   * 而不是「换一条统计来驱动」。将来给 `*CheckRaise` 补上 aggression 极性时，
+   * 这条通道会自动开始工作，无需再改这里。
+   */
+  const postflopAggMass = massOf(postflopPushes, ['aggression']).aggression;
+  const postflopBetAggression = ((): number => {
+    if (!(postflopAggMass > 0)) return baseDimOf('aggression');
+    const w = baseSpec === null ? 1 : postflopAggMass / (postflopAggMass + K_PROFILE_LABEL);
+    const { num, den } = postflopAgg.aggression;
+    const observed = den > 0 ? clamp01(0.5 + (num / (axisShrinkMass + den)) / 2) : 0.5;
+    return clamp01((1 - w) * baseDimOf('aggression') + w * observed);
+  })();
+
   // ---- 分街因子 ----
+  /**
+   * 🔴 **FOLD-ANCHOR FIX**：取「该街实测锚点」——**只有真观测到、且样本足够**才返回数字。
+   *
+   * | 情形 | 返回 | 后果 |
+   * |---|---|---|
+   * | 未观测 / 被语义门挡下 | `undefined` | 响应层不做任何锚定（逐位不变） |
+   * | **样本不足**（`confidence ≤ 0.5`，即「实测还不如先验说话响」） | `undefined` | **不锚定** ⇒ 收缩机制与旧路径逐位不变 |
+   * | 样本足够 | `effectiveRate` | 允许把模型弃牌频率夹到实测 ± 容差 |
+   *
+   * ⚠️ 后两类**必须分开**：锚定是「直接改写频率」，如果 2 手实测也能触发，
+   * 它就绕过了项目的收缩纪律（实测发现 `playerProfileExploitV1` 的
+   * 「样本不足必须被强收缩」会当场失败）。门槛取 `K/(n+K) ≤ 0.5`
+   * 即 `n ≤ K`（PFR/VPIP 类 K=30 手；分街类同量级）——语义是
+   * 「**至少要到 K 手，实测才开始与先验等权**」，与 `statEvidenceOfRate` 同一口径。
+   */
+  const measuredFoldTraitOf = (street: Street): number | undefined => {
+    const key: StreetTraitKey | null =
+      street === 'FLOP' ? 'foldToFlopBet'
+        : street === 'TURN' ? 'foldToTurnBet'
+          : street === 'RIVER' ? 'foldToRiverBet'
+            : null;
+    if (key === null) return undefined;
+    const rec = measuredStreetTrait[key];
+    if (rec === undefined || !Number.isFinite(rec.value)) return undefined;
+    /* 样本不足 ⇒ 不锚定（让既有的向先验收缩机制照常工作） */
+    if (!(rec.confidence > 0.5)) return undefined;
+    return rec.value;
+  };
   const factorsOf = (street: Street): StreetFactors => {
     /*
      * ⚠️ `PREFLOP` 没有对应的分街统计（`STAT_TO_STREET_TRAIT` 只覆盖
@@ -1631,7 +1805,43 @@ export function resolvePlayerProfile(input: {
        * `calibratedBetScaleOf`（含标签校准项）**保留但不再用于生产路径**：
        * 它的校准项是为「输入不含标签」设计的，换到 resolved 后会造成标签重复计票。
        */
+      /*
+       * 🔴 **P2 的结论：**这里**保持** `resolvedDimensions`（本项的结论与最初提议相反，如实记录）
+       *
+       * 最初以为「`betScale` 里仍含 PFR ⇒ 两套口径」。**实测推翻了这个判断**：
+       * 把 `pfr` 从 5% 扫到 40%（`resolved.aggression` 0.267 → 0.560）时
+       * `FLOP.betScale` **逐位不变**（`scripts/betscale-pfr-probe.ts`）——
+       * 因为该轴对 `betScale` 的净贡献被标签基线项抵消，PFR 在这条通道上**是惰性的**。
+       *
+       * 而三条既有测试（`profileResolverV3Fix.test.ts` 的 UNIFIED-1/3/4）锁着一条
+       * **有意的不变量**：`betScale` 必须**完全由 `resolved` 维度决定**，
+       * 目的正是防止「同一次分析里，主动下注模型内部的维度与响应模型不一致」。
+       * 改动它会**破坏**那条不变量（把 P2 想修的问题换成另一个更大的问题）。
+       *
+       * ⇒ 维持原样；P2 关闭为「**不是缺陷**」。
+       */
       betScale: betScaleOfUnifiedDimensions({ ...resolvedDimensions }),
+      /*
+       * 🔴 **PFR→BETRANGE 修复**：下注范围（公共强度带模型）专用 aggression。
+       * 详见 `StreetFactors.betAggression` 与上面 `postflopBetAggression` 的说明。
+       */
+      betAggression: postflopBetAggression,
+      /*
+       * 🔴 **FOLD-ANCHOR FIX**：该街 `foldTo{街}Bet` 的**实测生效值**，
+       * 供响应层把模型自算的弃牌频率夹逼在实测附近。
+       *
+       * ⚠️ **只在「这一街真的有观测」时给出**：
+       * · 翻前没有对应的分街统计 ⇒ `undefined`（不做锚定）；
+       * · 有观测 ⇒ 用**收缩后的生效值**（`effectiveRate`，不是原始比率 ——
+       *   它已经含「向先验收缩」，直接拿原始比率当锚点会与标签先验脱钩）；
+       * · 语义门挡下该条目（例如 turn donk）⇒ streetTraitValue 仍为 0.5，
+       *   但那时 `deniedStreetTraits` 有记录；这里用「是否等于 0.5 且无观测」无法区分，
+       *   因此以 `observedStatCount > 0` ＋该街确有该条目的有效值判定（见下）。
+       */
+      foldTraitValue:
+        street === 'PREFLOP'
+          ? undefined
+          : measuredFoldTraitOf(street),
     });
   };
 

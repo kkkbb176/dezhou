@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1.0.0",
-  "generatedAt": "2026-09-24",
+  "generatedAt": "2026-09-28",
   "generator": "npm run manifest（src/infra/artifactManifest.ts）",
   "exclusions": [
     {
@@ -215,8 +215,8 @@
     {
       "path": "src/domain/player/observedStats.ts",
       "category": "PLAYER_MODEL",
-      "sha256": "8d9448ad0ff293e59c0f496d169d392df7b0318a05dfc57fcc26fcc8e9e16e13",
-      "bytes": 78392,
+      "sha256": "19ba8d0dd83a577e12083a0f8a1c5f593ef2e14a8f4f2c614be4c96c59548ad3",
+      "bytes": 91041,
       "impact": "连续统计 → 人物维度的解析器变化（逐统计中性锚点/半宽、标签 prior 与实测的融合权重、分街条目的收缩与语义门）→ **所有带实测统计的对手的 tightness / aggression / bluffTendency / passivity 与分街系数发生变化** ⇒ Fold/Call/Raise 概率、Hero 权益、BetEV 与最终建议全部受影响"
     },
     {
@@ -236,8 +236,8 @@
     {
       "path": "src/domain/postflop/betResponse.ts",
       "category": "DECISION",
-      "sha256": "75f66e7641472aebaf9cb94d5f4a3ab3f0162dc63e2ba16d4f21604770de14f3",
-      "bytes": 96932,
+      "sha256": "c3fc8e488e21361f1947c166236f65fc94f55f46ca7af5cd6413b99c102c5b35",
+      "bytes": 117713,
       "impact": "下注响应模型变化（每尺寸的 P(弃/跟/加)、条件范围、Hero 听牌通道、权益实现因子、BetEV 公式）→ **所有「无人下注」节点的下注决策与尺寸选择都会变化**"
     },
     {
@@ -390,8 +390,8 @@
     {
       "path": "src/domain/decision/decision.types.ts",
       "category": "DECISION",
-      "sha256": "e0ea2072c5c37878939f842437c9bd45283b579f0027d8eebdc1f30295e82d4e",
-      "bytes": 81176,
+      "sha256": "017d97cd3dd12ea9ef3c9ab744265cc0d6e86a3e8cfd0afc32859da17c0fd169",
+      "bytes": 90554,
       "impact": "决策类型与常量变化（阈值 / 分类 / 置信度档位 / EV gap 门槛）→ **所有决策判定阈值发生变化**（该文件改动必须升 `ALPHA_DECISION_MODEL_VERSION`）"
     },
     {
@@ -453,22 +453,22 @@
     {
       "path": "src/app/manualInput/contextBuilder.ts",
       "category": "DECISION",
-      "sha256": "03892f23c6b7695f5b797d2f8bb7686a3f1dd296432db7d86b6695fa0016dd99",
-      "bytes": 241124,
+      "sha256": "7d8a4327c1c394bf8edebf394c6bda3e0f7a1492d61f37166be893e29e9a458a",
+      "bytes": 281532,
       "impact": "决策上下文组装变化（数学快照 / 范围 / 玩家 / 环境 / 动态 / 权益）→ **决策层看到的全部输入数据发生变化**"
     },
     {
       "path": "src/app/manualInput/raiseResponse.ts",
       "category": "DECISION",
-      "sha256": "4800c12fc5b2bc1b2e91a28959359d8ec663c09c1ef284654e1c677f92a230b3",
-      "bytes": 21481,
+      "sha256": "37055df940207d9b0322fa62c81caa0ad4cbe8dc1afab62caf76474d97f58338",
+      "bytes": 26661,
       "impact": "面对加注的响应模型变化（公共强度带权重 / 对手跟注所需权益 price / 再加注份额 / 资金口径契约 `CASHFLOW_CONTRACT`）→ **加注 EV、EqVsRaiseCallRange 与「加注 vs 跟注」的排序发生变化**；⚠️ 该文件同时定义 `raiseEVOf`（加注 EV 的唯一公式），改动必须同步 `test/raiseEvCashflowP0.test.ts` 与 `reports/U1_RAISE_EV_LIGHT_AUDIT.md` 的结论"
     },
     {
       "path": "src/app/decision/decisionEngine.ts",
       "category": "DECISION",
-      "sha256": "556e308c40b25863f808861a3bf63ccd8cd578a2cccf76979fd5a0d93084b0ad",
-      "bytes": 215140,
+      "sha256": "670781c0f8a15fb7ce9b2557f1b9aed958cbde82a3b732c9e6e7669883c720b9",
+      "bytes": 254159,
       "impact": "决策引擎变化（候选评估 / 数学优势保护 / 动作选择 / 置信度 / 分类 / Shadow）→ **最终建议的动作、尺寸与置信度发生变化**"
     },
     {
@@ -516,9 +516,16 @@
     {
       "path": "src/viewmodels/decisionViewModel.ts",
       "category": "DECISION",
-      "sha256": "40f9ab56145898de3dae8765537183110d2ef43e093fcc883af144dfcf1190ef",
-      "bytes": 72843,
+      "sha256": "a89e32ae1d4bafc38e5086045e5f921cba77441b5b65a942afa1ddbfa5ca16a6",
+      "bytes": 78325,
       "impact": "ViewModel 映射变化 → **界面显示的内容发生变化**（必须忠实映射引擎输出，不得二次推导结论）"
+    },
+    {
+      "path": "src/viewmodels/handStrengthHint.ts",
+      "category": "DECISION",
+      "sha256": "13fee46fe09da253ac38016e2ff22dd1c1caec22928a83b48aca77509058a9cd",
+      "bytes": 7745,
+      "impact": "牌力档 → 「这条建议该不该信」的映射变化（相对牌力角色 → 强/中/弱 + 信任等级）→ **不改变任何引擎决策，但会改变界面对「这条建议能不能信」的表述**；映射写错会让使用者照着一个错误的「可以信」下注（须与 `test/handStrengthHint.test.ts` 的 H1–H7 同步）"
     },
     {
       "path": "src/app/decisionDeadline.ts",
@@ -817,8 +824,8 @@
     {
       "path": "CURRENT_PROJECT_STATUS.md",
       "category": "REPORT",
-      "sha256": "78664e64cbe40b9dab02410085aec698716bbe72e5d98e1058e43a87461dab93",
-      "bytes": 179906,
+      "sha256": "71364fc3009660f11f8e687b63335dde2cf7cf5f7bf734acce3fcc3ea4c96001",
+      "bytes": 199091,
       "impact": "**阶段状态的单一事实来源变化 → 项目进度声明发生变化**（若它被改动，必须确认新状态与代码事实一致）"
     },
     {
@@ -887,8 +894,8 @@
     {
       "path": "src/infra/artifactDefinitions.ts",
       "category": "DECISION",
-      "sha256": "382476e86213561d488105c254995f67f553ceb49afe3ede61574d0f3d574949",
-      "bytes": 75876,
+      "sha256": "58862c87f79d0d8e6344a35c59897c89c93c3c3816dc8b1df593d936f8c55799",
+      "bytes": 77399,
       "impact": "产物定义表变化 → 哪些文件被 hash 绑定发生变化"
     },
     {
@@ -915,8 +922,8 @@
     {
       "path": "test/alphaRedteamRegression.test.ts",
       "category": "DECISION",
-      "sha256": "861ad0097f529a0379329b5ec6d1645664ae90c9a317b6a828ae8430b4d67b90",
-      "bytes": 56273,
+      "sha256": "4382851eecd0fcd526a96cc0e9617291ea53b011180fd7d66c3a6b97c1477931",
+      "bytes": 64052,
       "impact": "红队发现的永久回归测试变化 → **「已修复的缺陷是否仍然被锁住」这一保证发生变化**；本文件删掉任何一条断言都等于放弃对应的修复"
     },
     {
@@ -943,8 +950,8 @@
     {
       "path": "src/app/table/table.types.ts",
       "category": "DECISION",
-      "sha256": "61c9cbc972551b0b6b31e97727f2849f2a2b7c7df18ed44acce772b76e9b4381",
-      "bytes": 29841,
+      "sha256": "cf74c128112453db8429bffda229fbf663f51facd0d9b6b98da6ba87c0048ea5",
+      "bytes": 30425,
       "impact": "牌桌数据模型变化（座位状态 / 座位 / 玩家 / 牌桌状态 / 操作）→ **「Fold ≠ Leave」「Seat ≠ Player」这两条铁律的表达能力发生变化**；`SeatStatus` 少一个成员就等于把两种语义混成一种，必须同步全部生命周期测试"
     },
     {
@@ -957,15 +964,15 @@
     {
       "path": "src/app/table/seatLifecycle.ts",
       "category": "DECISION",
-      "sha256": "a02df97e534d8808bf567eb93e409ac3816a69cca8a833bd48d142d0a0192f62",
-      "bytes": 58518,
+      "sha256": "e9433d5a7f68e16941e72f86919eff2caa6d13dcfdbf43afa8b4a1788361dad5",
+      "bytes": 61768,
       "impact": "座位生命周期变化（加入 / 清空 / 换人 / 暂离 / 手后离桌 / 下一手 / 新牌桌 / 撤销 / 手牌与公共牌）→ **哪些操作会改动座位绑定、玩家画像、筹码与手牌历史发生变化**；本文件里任何「按座位删除历史」的改动都会破坏筹码守恒与行动台账"
     },
     {
       "path": "src/app/table/tableOps.ts",
       "category": "DECISION",
-      "sha256": "d73b2c742dfe919f03ddd92115d6858bacabce0373fcb3ef880ea5b6e9a19425",
-      "bytes": 15370,
+      "sha256": "d51615355d439ea6b99192cea5ac973f99aaac1f3121422f4ef67abe6a4fa398",
+      "bytes": 15685,
       "impact": "牌桌操作分发变化（尤其是 `applyTableAction` 的**重放等价自检**）→ **「牌桌显示的状态」与「分析时重放出的状态」是否仍然一致**发生变化；去掉那一段自检等于放弃这条保证"
     },
     {
@@ -985,15 +992,15 @@
     {
       "path": "src/app/table/tableApi.ts",
       "category": "DECISION",
-      "sha256": "b6b074b667aae23aa1082fbc34d5462abe33307e8c800d82c195aa9142c07063",
-      "bytes": 34275,
+      "sha256": "ff7d4d282401c09c0b547002ea525591ba91d6b6ba8f3c9760b83be5556bee1c",
+      "bytes": 34296,
       "impact": "牌桌 API 变化（请求形状校验 / Fail-Closed / **版本水位线** / 元数据）→ **畸形载荷是否被拒绝、迟到请求是否会被丢弃**发生变化；`parseTableState` 是「客户端状态不可信」这条纪律的唯一执行点（撤销栈也必须逐条校验）"
     },
     {
       "path": "src/app/table/playerHistory.ts",
       "category": "DECISION",
-      "sha256": "5e32654fe5a10e6db9001bfe6fc38a2b2425be86a2e22352fc64f201b9862fd7",
-      "bytes": 38575,
+      "sha256": "894f3a60cf393b9d14a4824dc4f596aec42c5227537686182038d0138309c162",
+      "bytes": 54922,
       "impact": "**逐手行为记录的形状与写入时机**变化 → 「机会数 / 命中数」的分母来源变化；该文件在**行动发生的那一刻**快照行动前状态（人数 / 有效筹码 / 底池 / 面对下注额与池比 / 本街第几个行动 / 身后还有几人）—— 这些都是**只能在此刻取得**的事实，事后无法从行动序列反推。改动它等于改变**此后全部桌况统计与玩家实测统计**的输入；旧格式记录（缺桌况字段）会被桌况层如实排除并计数，不会被当成 0"
     },
     {
@@ -1069,15 +1076,15 @@
     {
       "path": "src/app/web/table.js",
       "category": "DECISION",
-      "sha256": "794e5efcd5eca67861695fb7b98468d4bc7af2614d2959af5906c3d9be47f039",
-      "bytes": 118618,
+      "sha256": "123c03448487d74288194d9848941b48a744033af46cbd61de64cd33cabe3b91",
+      "bytes": 126242,
       "impact": "客户端脚本变化 → **界面的交互方式与渲染结果发生变化**；🔴 本文件**不允许**出现任何牌局规则（轮到谁 / 合法动作 / 街道推进 / 底池 / 筹码），一旦出现，前端与后端就会在某个边界上分歧，而表现形式是「牌桌看起来对、后端收到的是另一个牌局」"
     },
     {
       "path": "src/app/web/table.css",
       "category": "DECISION",
-      "sha256": "de978750fdf4351e5fe6f60e95f57e1d9074aacbd1caa64fe7c122765513cfcc",
-      "bytes": 17464,
+      "sha256": "7eda1410c7830c317094c714940e857cdcb98ff4abcfc10f01356e038f453a3f",
+      "bytes": 18448,
       "impact": "牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）"
     },
     {
