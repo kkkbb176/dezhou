@@ -73,6 +73,7 @@ import {
   setHeroPosition,
   setButton,
   setProfile,
+  setPlayerName,
   setStack,
   setTableSize,
   sitIn,
@@ -392,6 +393,12 @@ export function applyTableOp(state: PokerTableState, op: TableOp): TableOpOutcom
       return sitIn(state, op.seatId);
     case 'SET_STACK':
       return setStack(state, op.seatId, op.stackBB);
+    case 'SET_PLAYER_NAME':
+      /*
+       * 🔴 **改名**（只改显示名，身份 `playerId` 不变）。
+       * 空名字 / 超长由 `setPlayerName` 显式拒绝（`PLAYER_NAME_EMPTY` / `PLAYER_NAME_TOO_LONG`）。
+       */
+      return setPlayerName(state, op.seatId, op.displayName);
     case 'SET_PROFILE':
       return setProfile(state, op.seatId, op.quickProfile);
     case 'SET_DYNAMIC_HINT':

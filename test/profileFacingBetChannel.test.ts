@@ -145,8 +145,22 @@ function runOf(input: ManualHandInput): Record<string, any> {
  */
 function bandRatesUnderDims(run: Record<string, any>, dims: unknown, confidence: number): Record<string, number> {
   const model = run['betRange']!['model'] as Record<string, any>;
+  /*
+   * 🔴 **PFR→BETRANGE 修复后的复算口径**：该层的 aggression 不再读维度里的
+   * `aggression`，而是读 `StreetFactors.betAggression`（只吃翻后统计）。
+   * 复算必须与生产**同口径** —— 从生产快照里把那个值取出来一起喂进去，
+   * 否则这里复算的是「修复前的语义」，断言会假失败（或假通过）。
+   */
+  const betAggression = (run['betRange']?.['model']?.['aggressionInput'] ?? null) as
+    | { value: number; source: string }
+    | null;
   const rates = betProbabilityByBand({
-    tendencies: responseTendenciesOf(dims as never, confidence, null),
+    tendencies: responseTendenciesOf(
+      dims as never,
+      confidence,
+      null,
+      betAggression !== null && betAggression.source === 'betAggression' ? betAggression.value : null,
+    ),
     ratioToPot: model['ratioToPot'] as number,
     boardTexture: model['boardTexture'] as string,
   }).rates as unknown as Record<string, number>;
@@ -574,15 +588,39 @@ test('§三 五条保证：标签不被放大 / 实测不被二次衰减 / 逐�
  * 与生产 `bandRates` 逐位比对 —— 不锁具体数值，因此不会因调参而假通过。
  */
 
-test('§五-A1（语义·主）：有轴证据时，下注范围层吃的是 **V3 融合维度**', () => {
+test('§五-A1（语义·主）：有轴证据时，下注范围层吃的是 **V3 融合维度（aggression 换成下注范围专用值）**', () => {
   const run = runOf(test16(boundVillain(BASE_STATS)));
   const resolved = run['v3']['resolvedDimensions'] as Record<string, number>;
   assert.ok(resolved !== undefined && resolved !== null, 'V3 快照必须给出 resolvedDimensions');
+  /*
+   * 🔴 **契约更新（PFR→BETRANGE 修复）**
+   *
+   * 修复前：该层吃 `resolvedDimensions.aggression` —— 而那个轴唯一的实测来源是
+   * **翻前**统计（`PFR` / `3Bet`）⇒ 一条 `pfr=9%` 就能把 `thinAnchor` 推到负数、
+   * 把「顶对/中对」整档踢出他的下注范围（实测：空气占比 35% → 47%，
+   * 我方权益 +8.6pp）。而源码明文禁止这条推论
+   *（`observedStats.ts` ：「PFR 不碰 bluffTendency（禁止「翻前凶 ⇒ 河牌爱诈唬」）」）。
+   *
+   * 修复后：该层的 aggression 改读 `StreetFactors.betAggression`（**只吃翻后统计**，
+   * 无翻后证据时逐位等于标签原型值）。因此本测试改为断言：
+   * 「其余三个轴仍吃 V3 融合维度 + aggression 吃 betAggression」——
+   * 即**修的是那一条越权通道**，不是把该层整体退回标签。
+   */
+  const betAggression = run['betRange']!['model']!['aggressionInput']!['value'] as number;
+  assert.ok(Number.isFinite(betAggression), '模型快照必须给出本次实际使用的 aggression（可复算）');
   assertSameRates(
     run['betRange']!['bandRates'] as Record<string, number>,
-    bandRatesUnderDims(run, resolved, 1),
-    '有轴证据 ⇒ 该层必须吃融合维度（conf=1，标签份额由 (1−w) 承担）',
+    bandRatesUnderDims(run, { ...resolved, aggression: betAggression }, 1),
+    '有轴证据 ⇒ 该层吃融合维度（conf=1，标签份额由 (1−w) 承担），但 aggression 用 betAggression',
   );
+  /* 对照：该层确实**仍然**被画像驱动（不是「退回标签、什么都看不见了」） */
+  const labelOnly = runOf(test16(boundVillain(null)));
+  const sameAsLabel = Object.keys(run['betRange']!['bandRates'] as Record<string, number>).every(
+    (b) =>
+      (run['betRange']!['bandRates'] as Record<string, number>)[b] ===
+      (labelOnly['betRange']!['bandRates'] as Record<string, number>)[b],
+  );
+  assert.equal(sameAsLabel, false, 'bluffTendency/passivity 的实测必须仍能改变该层（否则等于画像整条失效）');
 });
 
 test('§五-A2（连续性）：第一个观测不得让下注范围跳变（修复前 Δ = 0.179805541）', () => {
@@ -708,34 +746,47 @@ test('墨菲 M-3（逐轴隔离）：PFR 证据不得改动其它三个轴（防
   assert.ok(inputs.blendWeight['aggression'] > 0, 'aggression 必须有实测权重');
 });
 
-test('墨菲 M-4（方向）：与标签方向相反的实测必须把该层推向实测，且结果夹在两个来源之间', () => {
-  const villain = boundVillain({ ...NO_AXIS_STATS, pfr: 0.05 });
-  const run = runOf(test16(villain));
-  const labelDim = archetypeDimensionsOf('MANIAC', 0.35)!;
-  const observed = facingInputsOf(test16(villain)).observedDimensions;
-  /* ① 逐轴夹逼：融合维度必须落在「标签」与「实测」之间（凸组合的性质） */
-  for (const axis of AXES) {
-    const lo = Math.min(labelDim[axis], observed[axis]);
-    const hi = Math.max(labelDim[axis], observed[axis]);
-    const fused = run['v3']['resolvedDimensions'][axis] as number;
-    assert.ok(lo - 1e-12 <= fused && fused <= hi + 1e-12, `${axis}：融合值 ${fused} 必须夹在 [${lo}, ${hi}]`);
-  }
-  /* ② 逐带夹逼：该层拿到的带速率同样必须在两个来源之间 */
-  const labelRates = bandRatesUnderDims(run, labelDim, 0.35);
-  const observedRates = bandRatesUnderDims(run, { ...NEUTRAL_DIMS, ...observed }, 1);
-  const actual = run['betRange']!['bandRates'] as Record<string, number>;
-  for (const band of Object.keys(labelRates)) {
-    const lo = Math.min(labelRates[band]!, observedRates[band]!);
-    const hi = Math.max(labelRates[band]!, observedRates[band]!);
-    assert.ok(
-      actual[band]! >= lo - 1e-12 && actual[band]! <= hi + 1e-12,
-      `${band}：实际 ${actual[band]} 必须夹在标签 ${labelRates[band]} 与实测 ${observedRates[band]} 之间`,
+test('墨菲 M-4（方向·契约更新）：**翻前**证据不得改写该层；方向必须由标签/翻后证据决定', () => {
+  /*
+   * 🔴 **契约更新（PFR→BETRANGE 修复）**
+   *
+   * 修复前这条测试断言「极低 PFR（与疯型标签相反）必须降低 AIR 下注率」——
+   * 它锁定的正是本轮被判为越权的那条通道（翻前主动性 ⇒ 翻后下注范围构成）。
+   * 修复后该通道被**有意切断**，因此断言改为：
+   *   ① PFR / VPIP / 3Bet / WTSD（**全部是翻前或跨街统计**）都**不得**移动该层；
+   *   ② 该层仍然必须随**标签**（真正有语义的来源）改变方向 —— 否则就是「一刀切回中立」。
+   */
+  const ratesOfVillain = (stats: Record<string, unknown>): Record<string, number> =>
+    runOf(test16(boundVillain(stats as never)))['betRange']!['bandRates'] as Record<string, number>;
+
+  const reference = ratesOfVillain({ ...NO_AXIS_STATS, pfr: 0.35 });
+  for (const [tag, stats] of [
+    ['极低 PFR（修复前会大幅降低 AIR）', { ...NO_AXIS_STATS, pfr: 0.05 }],
+    ['极高 PFR', { ...NO_AXIS_STATS, pfr: 0.75 }],
+    ['极端 VPIP', { ...NO_AXIS_STATS, vpip: 0.9 }],
+    ['极端 3Bet', { ...NO_AXIS_STATS, threeBet: 0.4 }],
+    /*
+     * ⚠️ **刻意不含 WTSD**：它是**跨街**统计（摊牌坚持），极性表给它
+     * `passivity +1` —— 那条通道合法且是设计意图；本测试只锁定
+     * 「**纯翻前**统计（VPIP/PFR/3Bet）不得改写该层」。
+     */
+    ['三项翻前统计一起给', { ...NO_AXIS_STATS, vpip: 0.9, pfr: 0.05, threeBet: 0.4 }],
+  ] as const) {
+    assertSameRates(
+      ratesOfVillain(stats),
+      reference,
+      `${tag} ⇒ 翻前统计**不得**改写「他下注范围里有多少诈唬」（本层只认翻后证据与标签）`,
     );
   }
-  /* ③ 方向：极低 PFR（与疯型标签相反）必须让诈唬端下注率下降 */
+
+  /* ② 方向必须仍由标签决定：MANIAC（诈唬倾向 0.90）的 AIR 必须高于 VERY_TIGHT（0.15） */
+  const maniacAir = (runOf(test16({ ...boundVillain({ ...NO_AXIS_STATS, pfr: 0.35 }), quickProfile: 'MANIAC' }))
+    ['betRange']!['bandRates'] as Record<string, number>)['AIR']!;
+  const nitAir = (runOf(test16({ ...boundVillain({ ...NO_AXIS_STATS, pfr: 0.35 }), quickProfile: 'VERY_TIGHT' }))
+    ['betRange']!['bandRates'] as Record<string, number>)['AIR']!;
   assert.ok(
-    actual['AIR']! < labelRates['AIR']!,
-    `与标签方向相反的实测必须降低 AIR 下注率：${actual['AIR']} vs 标签 ${labelRates['AIR']}`,
+    maniacAir > nitAir,
+    `该层必须仍随标签方向变化：MANIAC AIR ${maniacAir} 必须高于 VERY_TIGHT ${nitAir}`,
   );
 });
 
@@ -776,14 +827,44 @@ test('墨菲 M-6（极端与非法输入）：不得产生 NaN / 越界速率，
   }
 });
 
-test('墨菲 M-7（已知饱和，U1）：未饱和区必须单调，饱和区必须平坦（把这一限制钉住）', () => {
+test('墨菲 M-7（契约更新）：PFR 与该层**完全脱钩** —— 全域逐位相同（修复前是单调/饱和）', () => {
+  /*
+   * 🔴 **契约更新（PFR→BETRANGE 修复）**
+   *
+   * 修复前这条测试钉的是「未饱和区单调、饱和区平坦」——那是
+   * `pfr → aggression → 该层` 这条越权通道的形状。
+   * 修复后 PFR **不该**对该层有任何影响，因此契约收紧为：
+   * 全取值域（含两端的饱和区）逐位相同；同时**对照**响应层仍随 PFR 变化
+   * （证明不是「统计整体失效」）。
+   */
   const massOf = (pfr: number): number =>
     runOf(test16(boundVillain({ ...NO_AXIS_STATS, pfr })))['betRange']!['betMass'] as number;
-  const lo = massOf(0.05);
-  const mid = massOf(0.2);
-  assert.ok(mid > lo, `未饱和区必须单调：PFR 0.05 → ${lo}，PFR 0.20 → ${mid}`);
-  assert.equal(massOf(0.35), massOf(0.75), 'PFR ≥ 0.35 已饱和（偏差 clamp 到 +1）⇒ 逐位相同（U1 已知限制，未修）');
-  assert.equal(massOf(0.02), massOf(0.05), 'PFR ≤ 0.05 已饱和 ⇒ 逐位相同（U1 已知限制，未修）');
+  const base = massOf(0.2);
+  for (const pfr of [0.02, 0.05, 0.1, 0.35, 0.5, 0.75] as const) {
+    assert.equal(massOf(pfr), base, `PFR=${pfr} 不得改变该层（修复前它是该层的主驱动之一）`);
+  }
+  /*
+   * 对照：**有通道的**统计（`VPIP` ⇒ tightness、`WTSD` ⇒ passivity）必须仍然
+   * 同时驱动响应层与本层 —— 否则这次修复就变成了「顺手把画像链掐断」。
+   *
+   * ⚠️ 这里**刻意不断言 PFR 驱动响应层**：在「面对下注」这条链上，
+   * 响应概率只由 tightness / passivity 与分街条目决定，`aggression` 只进
+   * `raiseScale` / `riverBetScale`（本节点用不到）。实测两侧刻度逐位相同，
+   * 所以那不是回归、而是这条链的既有形状（由 `profileFacingBetChannel`
+   * 的「测试五」用 VPIP 单独锁定）。
+   */
+  const foldScaleOf = (stats: Record<string, unknown>): number =>
+    responseScalesOf(runOf(test16(boundVillain(stats as never)))).foldScale;
+  assert.notEqual(
+    foldScaleOf({ ...NO_AXIS_STATS, vpip: 0.05 }),
+    foldScaleOf({ ...NO_AXIS_STATS, vpip: 0.9 }),
+    '响应层必须仍然吃 VPIP（否则等于整条画像链断了）',
+  );
+  assert.notEqual(
+    massOf(0.2),
+    runOf(test16(boundVillain({ ...NO_AXIS_STATS, wtsd: 0.6 })))['betRange']!['betMass'] as number,
+    '本层必须仍然吃 WTSD（⇒ passivity）—— 修复只切断翻前统计，不是切断画像',
+  );
 });
 
 test('墨菲 M-8（确定性）：同输入重复、键序不同 ⇒ 输出逐位相同', () => {
@@ -900,16 +981,21 @@ test('附录-2（归因固定·修复后）：该层**逐轴隔离** —— 只�
       `${tag} ⇒ betMass 必须与纯标签逐位相同`,
     );
   }
-  /* ② 该层消费的轴有证据时**必须**变化（否则等于实测没进这一层） */
+  /*
+   * ② 该层仍然必须被画像驱动 —— 但驱动它的只剩 `bluffTendency` / `passivity`
+   *    （🔴 **契约更新（PFR→BETRANGE 修复）**：`aggression` 已与该层脱钩，
+   *     因为它的实测来源全是**翻前**统计）。`BASE_STATS` 里的 `WTSD` 推 `passivity`
+   *     ⇒ 该层必须与纯标签**不同**。
+   */
   assert.notEqual(
     full['betRange']['betMass'], labelOnly['betRange']['betMass'],
-    'PFR/3Bet/WTSD 有证据（⇒ aggression/passivity）时，下注范围必须变化',
+    'WTSD（⇒ passivity）有证据时，下注范围必须变化（否则等于实测没进这一层）',
   );
   /* ③ 变化幅度必须与证据量同阶：1 手几乎不动，800 手才明显（修复前 1 手即跳 −38.1%） */
   const d1 = Math.abs((oneHand['betRange']['betMass'] as number) - (labelOnly['betRange']['betMass'] as number));
   const d800 = Math.abs((full['betRange']['betMass'] as number) - (labelOnly['betRange']['betMass'] as number));
   assert.equal(d1, 0, '1 手（VPIP 单轴）不得移动该层');
-  assert.ok(d800 > 0.01, `800 手四轴证据必须明显移动该层（实际 ${d800}）`);
+  assert.ok(d800 > d1, `800 手四轴证据必须比 1 手更明显地移动该层（实际 d1=${d1}、d800=${d800}）`);
   /* ④ 对照：响应层确实随 VPIP 的**取值**变化（证明①②不是「统计整体没进模型」） */
   assert.notEqual(
     scales(tight).foldScale, scales(loose).foldScale,
@@ -938,6 +1024,71 @@ test('附录-3（覆盖补强）：只有**分街**统计（FoldTo*/CheckRaise�
   }
 });
 
+test('附录-5（本轮修复回归锁）：**我下注时** `foldToFlopCBet` 必须真的改变对手的弃牌概率', () => {
+  /*
+   * 🔴 **EXPLOIT FOLD-TO-CBET GATE FIX 的回归锁**
+   *
+   * 缺陷：`nodeActionContextOf` 在「本街尚无人下注」时把下注者记成 **Hero**，
+   * 再用「下注者 vs 上一街进攻者」分类 ⇒ 当**对手是翻前进攻者**（他开池、我跟注、
+   * 他过牌）时判成 `FACING_DONK` / `GENERIC_BET` ⇒ `isTraitAllowedInContext`
+   * 把 `foldToFlopBet` **挡在门外** ⇒ 我下注时面对的 `P(他弃)` 与这条统计**完全脱钩**
+   * （实测：该统计 20%→85% 时 `P(弃)` 逐位相同 77.38717227490729%）。
+   *
+   * 修复：仅当「对手本街已行动且没下注 + 本街无人下注 + 他就是上一街进攻者」时
+   * 判为 `FACING_CBET`。本测试断言该统计**必须**移动 `P(他弃)`，
+   * 且**不得**违反单调性（弃得越多 ⇒ 我面对的弃牌概率越高）。
+   *
+   * ⚠️ 夹具形态有讲究：`test16` 是**河牌、Hero 有主动权**的形态，
+   * 那条线路的节点语义是 `GENERIC_BET`（翻牌过牌-过牌 ⇒ 延迟 c-bet / 探牌，
+   * `actionContext.ts` 明文「不猜」）⇒ 该统计本就不适用。因此这里必须用
+   * **翻牌、对手（翻前进攻者）过牌给我**的形态。
+   */
+  const flopProbe = (foldToFlopCBet: number | null): ManualHandInput => ({
+    tableSize: 9, heroPosition: 'BTN', heroCards: ['As', '5s'],
+    board: ['Ks', '7h', '2c'], street: 'FLOP',
+    effectiveStackBB: 100, bigBlindBB: 100,
+    seatStacksBB: { UTG: 100, UTG1: 100, UTG2: 100, LJ: 100, HJ: 100, CO: 100, BTN: 100, SB: 100, BB: 100 },
+    actionHistory: [
+      A('UTG', 'RAISE', 3), A('UTG1', 'FOLD'), A('UTG2', 'FOLD'), A('LJ', 'FOLD'), A('HJ', 'FOLD'), A('CO', 'FOLD'),
+      A('BTN', 'CALL', 3), A('SB', 'FOLD'), A('BB', 'FOLD'), A('UTG', 'CHECK', undefined, 'FLOP'),
+    ],
+    environment: 'MID_LOW_STAKES',
+    villain: {
+      seatId: 'seat_UTG', persistentPlayerId: 'p_utg', quickProfile: 'VERY_TIGHT', stackBB: 100,
+      observedStats: {
+        handsObserved: 2000, vpip: 0.105, pfr: 0.071, threeBet: 0.03, wtsd: 0.24,
+        flopCheckRaise: 0.06,
+        ...(foldToFlopCBet === null ? {} : { foldToFlopCBet }),
+      } as never,
+    },
+  } as unknown as ManualHandInput);
+
+  const foldLikelihoodOf = (f: number | null): number => {
+    const r = analyzeManualHand(flopProbe(f), OPTIONS);
+    assert.equal(r.ok, true, `必须可分析：${r.ok ? '' : JSON.stringify(r.issues)}`);
+    if (!r.ok) throw new Error('unreachable');
+    const bd = (r.decision.diagnostics.postflop as unknown as Record<string, any>)['betDecision'] as Record<string, any>;
+    const sizes = bd['sizes'] as readonly Record<string, number>[];
+    assert.ok(sizes.length > 0, '必须给出逐尺寸响应');
+    return sizes[sizes.length - 1]!['foldLikelihood'] as number;
+  };
+
+  const station = foldLikelihoodOf(0.2);   /* 他跟注站型：面对 c-bet 只弃 20% */
+  const folder = foldLikelihoodOf(0.85);   /* 他爱弃型：面对 c-bet 弃 85% */
+  assert.notEqual(
+    station, folder,
+    `我下注时的 P(他弃) 必须随 foldToFlopCBet 变化（20% ⇒ ${station}，85% ⇒ ${folder}）——` +
+      '逐位相同即语义门又把它挡回去了',
+  );
+  assert.ok(
+    folder > station,
+    `方向必须正确：他弃得越多 ⇒ 我面对的弃牌概率越高（85% ⇒ ${folder} 必须 > 20% ⇒ ${station}）`,
+  );
+  /* 无观测 ⇒ 不得与「有观测」同值（否则说明该统计没进来） */
+  const unobserved = foldLikelihoodOf(null);
+  assert.notEqual(unobserved, folder, '未观测与观测到 85% 不得同值');
+});
+
 test('附录-4（潜在风险固定）：`baseDimensions` 目前逐位等于手选标签维度（跨 4 类画像）', () => {
   for (const archetype of ['MANIAC', 'CALLING_STATION', 'VERY_TIGHT', 'NORMAL'] as const) {
     const villain: ManualVillain = { ...boundVillain(BASE_STATS), quickProfile: archetype };
@@ -952,3 +1103,4 @@ test('附录-4（潜在风险固定）：`baseDimensions` 目前逐位等于手�
     }
   }
 });
+

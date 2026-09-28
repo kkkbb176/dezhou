@@ -30,7 +30,7 @@
  *    `confidenceOf()` 的输入里**没有** `heroEquity`。
  */
 
-import { Street } from '../../domain/types.ts';
+import { Position, Street } from '../../domain/types.ts';
 import { advisePostflop, type PostflopAdvice } from './postflopAdvisor.ts';
 import { EV_SCORE_DISCLAIMER_ZH } from '../../domain/postflop/evScore.ts';
 import { allBoardCards } from '../../domain/poker/gameState.ts';
@@ -73,6 +73,9 @@ import {
  *（旧口径把对手已下注的筹码漏出底池，见 `reports/U1_RAISE_EV_LIGHT_AUDIT.md`）。
  */
 import { CASHFLOW_CONTRACT } from '../manualInput/raiseResponse.ts';
+import { rankClassOfIndices } from '../manualInput/preflopRaiseResponse.ts';
+import { threeBetWeightsByHandedness } from '../manualInput/preflopPriors.ts';
+import { cardIndex, isCardIndexInRange } from '../../domain/poker/cards.ts';
 import {
   evaluatePreflopRaiseModel,
   preflopRaiseSizeFactsOf,
@@ -845,6 +848,20 @@ export function mathDominanceOf(
    * 而错的声明会让首屏出现「建议加注 / 跟注明显占优」并存的自相矛盾。
    */
   includedRaiseModel = false,
+  /**
+   * 参与比较的那个加注 EV **究竟是哪个模型**（用于归因披露）。
+   *
+   * 🔴 **为什么必须参数化（`RAISE_MODEL_ATTRIBUTION` 修复）**：
+   * 原文在 `includedRaiseModel === true` 时**硬编码**「隔离加注模型」——
+   * 那在跛入池（`preflopIso`）里是对的，但同一个 `true` 后来还被两处复用：
+   * · 翻后逐尺寸回填（`mathDominanceForReport`，U1 响应模型）；
+   * · 翻前逐尺寸回填（`preflopRaise`，`PREFLOP_RAISE_RESPONSE_V1`）。
+   * 于是结论句会**把别的模型算出来的 EV 归因给隔离加注模型** —— 数字对、
+   * 归因错，属于「说得比知道的更多」。
+   *
+   * `null`（默认）⇒ 保持原文案，供**真的**走了隔离加注的那条路径使用。
+   */
+  raiseModelDisclosureZh: string | null = null,
 ): MathDominanceVerdict {
   const comparable = candidates.filter((c) => c.ev !== null);
   if (comparable.length < 2 || pot <= 0) {
@@ -854,7 +871,18 @@ export function mathDominanceOf(
       evGapToPotRatio: null,
       thresholdProvenance: 'HEURISTIC_THRESHOLD' as const,
       thresholdRatio: DOMINANT_EV_GAP_RATIO,
-      noteZh: '可比较的动作不足 2 个（下注类动作的 EV 依赖弃牌率，本项目无可信估计，故不参与比较；' +
+      /*
+       * 🔴 **D2 修复（KQ_FLOP_DECISION_REPAIR · 阶段一）**：原文写死
+       * 「下注类动作的 EV 依赖弃牌率，本项目无可信估计，故不参与比较」——
+       * 该断言**在本节点可能为假**：翻后响应模型可用时，被选中的加注尺寸
+       * 确实带着 `MODEL_EV` 参与了同一零点的比较（`decisionSource` 会如实报出）。
+       * 于是同一响应里「未比较加注」与「跨动作比较已做」并存 = 自相矛盾。
+       *
+       * 现在只陈述**本次实际发生了什么**，并把「未参与」与「更低」明确切开 ——
+       * 未评估的尺寸不得被读成低 EV（用户要求 §9）。
+       */
+      noteZh: '可比较的动作不足 2 个（本次带可比较量化 EV 的动作少于 2 个；' +
+        '下注/加注类动作只有在自带 EV 模型可用时才进入比较，**未评估的尺寸不做低 EV 假设**；' +
         '多人边池时跟注的 EV 只是下界，同样不参与比较）',
     });
   }
@@ -880,9 +908,19 @@ export function mathDominanceOf(
         // 下注/加注类动作产生表面矛盾：实测出现过建议「加注」而首屏理由写着
         // 「跟注在数学上明显占优」—— 两句话都对，但放在一起读就是自相矛盾。
         (includedRaiseModel
-          ? '（本节点的加注**有**自带的代理 EV 并参与了比较 —— 隔离加注模型，RAKE 未实现）'
-          : '（下注/加注的 EV 依赖对手弃牌率，本项目无可信估计，**不在此比较之内**）')
-      : `没有明显占优动作（最大 EV 差 ${evGap.toFixed(2)} 筹码，底池的 ${(ratio * 100).toFixed(1)}%）`,
+          ? (raiseModelDisclosureZh ??
+            '（本节点的加注**有**自带的代理 EV 并参与了比较 —— 隔离加注模型，RAKE 未实现）')
+          : '（本次比较集内**没有**带自有 EV 的加注/下注动作参与；' +
+            '**未参与比较 ≠ EV 更低** —— 候选表按尺寸逐项标注其评估状态）')
+      : `没有明显占优动作（最大 EV 差 ${evGap.toFixed(2)} 筹码，底池的 ${(ratio * 100).toFixed(1)}%）` +
+        /*
+         * 🔴 **D2 补充**：这一支同样必须切断「未参与比较 ⇒ EV 更低」的误读。
+         * 本局实测：8 个加注尺寸里**只有 1 个**被算过 EV，其余 7 个的 `ev` 是
+         * `null`（= 未评估）。用户明确要求「不得把没有 EV 的尺寸自动当成低 EV」，
+         * 因此这句声明在两支里都要有，不能只写在「明显占优」那一支。
+         */
+        '（⚠️ 未参与比较 ≠ EV 更低：本节点可能仍有**未评估**的合法尺寸，' +
+        '候选表按尺寸逐项标注其评估状态）',
   });
 }
 
@@ -1447,6 +1485,8 @@ function postflopSnapshotOf(
                   score: s.score,
                   equityMethod: s.equityMethod,
                   equityIterations: s.equityIterations,
+                  /* 🔴 P3：锚定状态（实测锚点 / 模型原值 / 是否夹逼）——让外部可**直接判定**，不必反推 */
+                  foldAnchor: Object.freeze({ ...s.foldAnchor }),
                 }),
               ),
             ),
@@ -1743,6 +1783,8 @@ function pickCandidate(
        * `decideAlpha` 的 `unevaluatedActions` 读它 —— 单一事实来源，避免两处口径。
        */
       raiseSizesWithOwnEV: readonly number[];
+      /** 🔴 **PREFLOP_RAISE_RANGE_GATE**：被范围闸门拦下时的原因（翻后恒为 `null`） */
+      preflopRangeGateBlocked?: { handKey: string; heroPosition: string; openerPosition: string } | null;
       onePairAllInBlocked: boolean;
       largeRaiseBlocked: boolean;
       raiseToPotRatio: number | null;
@@ -2273,7 +2315,7 @@ function pickCandidate(
          * ## 与 U1 的**诚实差别**（必须在 `assumptionsZh` 里说清）
          *
          * U1（翻后）：模型的再加注分支**没有 Hero 的再加注**；
-         * 翻前：本模型只展开被再加注后的 FOLD / CALL，**Hero 的 5Bet 未展开**。
+         * 翻前：本模型会在合法时继续展开被 4Bet 后的 FOLD / CALL / 5Bet / 全下。
          * 两者都是「有限的未来行动树」，但**不是同一棵树**，因此
          * 这里的说明文案逐字来自翻前事实包，不复用 U1 的文案。
          *
@@ -2369,7 +2411,126 @@ function pickCandidate(
       const raiseModelSizeMatches =
         raiseModelFacts !== null && raiseCandidate !== null && raiseCandidate.sizeChips !== undefined &&
         Math.abs(raiseCandidate.sizeChips - raiseModelFacts.sizeChips) < ALL_IN_COMPARE_EPSILON;
-      const raiseModelUsable = raiseFactsCashOk && raiseModelSizeMatches;
+      /*
+       * ============================================================
+       * 🔴🔴 **PREFLOP_RAISE_RANGE_GATE · 翻前加注的「范围闸门」**
+       * ============================================================
+       *
+       * ## 这条闸门修的是什么（实测缺陷，不是假想）
+       *
+       * 翻前加注模型只在**我之后无人行动**时构建（`buildPreflopRaiseFacts` 的
+       * `PLAYERS_BEHIND` 边界 —— 那条边界本身是**对的**）。副作用是：
+       * 只有**大盲位面对开池**的节点会拿到逐尺寸加注模型，而该模型的 EV
+       * **主导项是弃牌率**，且弃牌率是**公共信息口径**（不读我的底牌）：
+       *
+       * ```text
+       * 72o 弃 86.1% ／ KJo 弃 86.2% ／ AA 弃 90.5%      ← 几乎与我的手牌无关
+       * 4BB 底池 × 86% ≈ +3.44BB                          ← 于是"任何两张"都成了 +EV 加注
+       * ```
+       *
+       * 实测（`reports/ENGINE_FIELD_TEST_REPORT.md` §3）：
+       * `BB 面对 BTN 开池` 时引擎对 **169/169 个手牌类别全部建议加注**，
+       * 其中 **72 类连引擎自己的「继续(防守)」范围都不在** ——
+       * 即「引擎自己的模型判定连继续都不够格，却被建议加注到 9BB」。
+       *
+       * 对照：其余位置（SB/BTN/CO）拿不到该模型，建议是正常的
+       * （恰好 6 档值区间）。⇒ 缺陷**只在闸门缺失的那些节点**上出现。
+       *
+       * ## 闸门规则（**以引擎自己的先验为准**，不引入任何新概率）
+       *
+       * ```text
+       * 允许把「加注」纳入本次动作比较  ⟺
+       *   本手牌类别 ∈ threeBetWeights(heroPosition, openerPosition) 且权重 > 0
+       * ```
+       *
+       * · **改的是决策规则，不是模型数值** —— 没有调任何弃牌率/权益/EV；
+       * · 范围表本来就是引擎自己的产物（用于建模对手），拿它约束**自己的建议**
+       *   消除的正是「建议与自身模型互相矛盾」；
+       * · 被拦下时**不静默**：`raiseShape.preflopRangeGateBlocked` 带出原因，
+       *   `decideAlpha` 会把它写进**已经对外暴露**的加注覆盖面文案
+       *   （`raiseComparisonCaveatZh`）。
+       *
+       * ## 作用域
+       *
+       * 只在**翻前**且**存在翻前加注事实包**时生效；翻后（U1）与隔离加注（`isoUsable`）
+       * **一律放行**（`ok: true`）⇒ 本闸门不可能影响任何翻后节点。
+       */
+      const preflopRangeGate: {
+        readonly ok: boolean;
+        readonly blocked: { handKey: string; heroPosition: string; openerPosition: string } | null;
+      } = ((): { ok: boolean; blocked: null | { handKey: string; heroPosition: string; openerPosition: string } } => {
+        const pass = { ok: true, blocked: null } as const;
+        if (math.street !== Street.PREFLOP) return pass;
+        const facts = context.preflopRaise ?? null;
+        if (facts === null || facts === undefined) return pass;
+        /*
+         * 🔴🔴 **本闸门只负责「面对开池的 3Bet」，不得作用于 4Bet 及以上。**
+         *
+         * `facts.opponentPosition` 是**对我这次加注做出响应的人**，不一定是「开池者」：
+         * 当我先开池、BB 再加注时，它就是 **BB** —— 而 BB **没有开池范围**，
+         * `threeBetWeightsByHandedness` 会（按设计、响亮地）抛
+         * `rfiTierByPositionName: 「BB」没有开池范围`。
+         *
+         * 实测：本闸门第一版就是这样把 `test17DisplayDisclosure` 的「翻前面对 3Bet」
+         * 节点整个打成 `DECISION_FAILED` 的。
+         *
+         * 判据：**我本街只投了盲注 / 没主动加注过** ⇒ 我面对的是「开池」⇒ 闸门适用；
+         * 否则我已经加注过（4Bet 节点）⇒ 本闸门不适用（4Bet 该用另一套范围，
+         * 不在本次修复范围内）。
+         */
+        if ((facts.sizes[0]?.heroStreetCommitted ?? 0) > facts.bigBlind + 1e-9) return pass;
+        /*
+         * 🔴🔴 **对手不是开池者时，本闸门同样不适用**（真实牌局验证查出，2026-09）。
+         *
+         * ## 现场（455 手真实牌局里 40 个节点 = 3.2% 整条分析失败）
+         *
+         * ```text
+         * 翻前 [UTG弃 HJ弃 CO弃 BTN弃 SB跟注 BB加注 SB跟注] ⇒ 翻牌
+         * CONTEXT_BUILD_FAILED: rfiTierByPositionName: 「BB」没有开池范围
+         * ```
+         *
+         * 这条路径**不走** `buildBaseRange`（那边已经能处理 BB 隔离加注），
+         * 而是走到本闸门：`facts.opponentPosition = BB`（**对我这次加注做出响应的人**），
+         * 于是 `threeBetWeightsByHandedness(我方位置, BB)` →
+         * `rfiTierByPositionName(BB)` → **按设计抛错**。
+         *
+         * 上面那条「我已经加注过 ⇒ 放行」的判据拦不住它：BB 只投了盲注，
+         * `heroStreetCommitted` 不大于大盲 ⇒ 闸门认为「我面对的是开池」——
+         * 可对手是 BB，**BB 根本没有开池范围可查**。
+         *
+         * ## 修法：把「对手必须是合法的开池者」变成闸门的**前置条件**
+         *
+         * 这不是放宽校验，而是把闸门的适用范围写准 —— 与上面那条注释同一个道理：
+         * 闸门只负责「面对**开池**的 3Bet」。`BB` / 非开池者 ⇒ 不适用 ⇒ 放行。
+         *
+         * ⚠️ 判据用**位置**而不是 try/catch：catch 会把「BB 以外的意外错误」
+         * 也一起吞掉，那正是本项目最忌讳的「静默降级」。
+         */
+        const isLegalOpenerPosition =
+          facts.opponentPosition !== Position.BB && facts.opponentPosition !== Position.SB;
+        if (!isLegalOpenerPosition) return pass;
+        const cards = context.heroCards;
+        if (cards.length !== 2) return pass;
+        const ia = cardIndex(cards[0]!);
+        const ib = cardIndex(cards[1]!);
+        /* 牌不合法（-1）时**放行**：本闸门只负责「范围」，不负责输入校验 */
+        if (!isCardIndexInRange(ia) || !isCardIndexInRange(ib)) return pass;
+        const handKey = rankClassOfIndices([ia, ib]);
+        const weights = threeBetWeightsByHandedness(
+          facts.heroPosition,
+          facts.opponentPosition,
+        ) as unknown as Record<string, number>;
+        if ((weights[handKey] ?? 0) > 0) return pass;
+        return {
+          ok: false,
+          blocked: {
+            handKey,
+            heroPosition: String(facts.heroPosition),
+            openerPosition: String(facts.opponentPosition),
+          },
+        };
+      })();
+      const raiseModelUsable = raiseFactsCashOk && raiseModelSizeMatches && preflopRangeGate.ok;
       /*
        * 🔴 事实包存在、但尺寸对不一
 ⇒
@@ -2564,6 +2725,13 @@ function pickCandidate(
             (() => {
               const fromPreflop = context.preflopRaise ?? null;
               if (fromPreflop !== null) {
+                /*
+                 * 🔴 **PREFLOP_RAISE_RANGE_GATE**：闸门拦下时，「入选本次动作比较」的
+                 * 加注尺寸**必须为空** —— 否则披露会说「加注参与了比较」，
+                 * 而决策层其实已经把它排除了（那就是 D6 那类「两处口径」）。
+                 * 事实包仍然有效（逐尺寸 EV 仍在候选表里披露），只是**没入选**。
+                 */
+                if (!preflopRangeGate.ok) return [];
                 return fromPreflop.sizes
                   .filter((s) => evaluatePreflopRaiseModel({
                     facts: fromPreflop,
@@ -2577,6 +2745,7 @@ function pickCandidate(
                 : [];
             })(),
           ),
+          preflopRangeGateBlocked: preflopRangeGate.blocked,
           onePairAllInBlocked,
           largeRaiseBlocked,
           raiseToPotRatio,
@@ -2853,10 +3022,15 @@ function pickCandidate(
                 '；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；' +
                 (raisesByPreflopModel
                   ? preflopSizeForReason!.reraiseAvailable
-                    ? '被再加注分支**只展开 Hero 的 FOLD / CALL**（Hero 的 5Bet **未展开**）；' +
-                      '非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌 ⇒ 不构成严格下界，见 assumptionsZh）；RAKE 未实现'
+                    ? preflopSizeForReason!.heroFiveBetExpanded
+                      ? `被再加注分支**已展开 Hero 的 FOLD / CALL / 5Bet / 全下**` +
+                        `（最佳应对 ${preflopSizeForReason!.heroFiveBetChoice}，最佳 5Bet EV ` +
+                        `${preflopSizeForReason!.heroFiveBetBranchEV === null ? '—' : preflopSizeForReason!.heroFiveBetBranchEV.toFixed(2)}）；` +
+                        '非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌 ⇒ 不构成严格下界，见 assumptionsZh）；RAKE 未实现'
+                      : '被再加注分支没有可可靠计算的 5Bet 候选，只比较当前可用的 FOLD / CALL；' +
+                        '非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌 ⇒ 不构成严格下界，见 assumptionsZh）；RAKE 未实现'
                     : '本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；' +
-                      '即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；' +
+                      '因此 Hero 5Bet 不适用；' +
                       '非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现'
                   : '再加注分支按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌 ⇒ 该 EV 偏低，' +
                     '且**不构成**对真实牌局 EV 的严格下界，见 assumptionsZh）；RAKE 未实现')
@@ -2897,7 +3071,15 @@ function pickCandidate(
                     : {
                         reraiseBranchKind: preflopSizeForReason.reraiseBranchKind,
                         reraiseBranchEV: Number(preflopSizeForReason.reraiseBranchEV.toFixed(6)),
-                        heroFiveBetExpanded: 0,
+                        heroFiveBetExpanded: preflopSizeForReason.heroFiveBetExpanded ? 1 : 0,
+                        heroFiveBetChoice: preflopSizeForReason.heroFiveBetChoice,
+                        heroFiveBetBranchEV: preflopSizeForReason.heroFiveBetBranchEV === null
+                          ? -999999999
+                          : Number(preflopSizeForReason.heroFiveBetBranchEV.toFixed(6)),
+                        heroFiveBetCandidates: preflopSizeForReason.heroFiveBetCandidates
+                          .map((c) => `${c.sizeChips}:${c.branchEV.toFixed(6)}:${c.foldLikelihood.toFixed(6)}/${c.callLikelihood.toFixed(6)}/${c.reRaiseLikelihood.toFixed(6)}:${c.supported ? 1 : 0}:${c.isAllIn ? 'ALL_IN' : 'RAISE'}`)
+                          .join('|'),
+                        heroFiveBetUnsupportedZh: preflopSizeForReason.heroFiveBetUnsupportedZh ?? '',
                       }),
                 } : {}),
           },
@@ -3718,6 +3900,8 @@ export function decideAlpha(
        * 一边声称加注 EV 未实现「
        */
       raiseSizesWithOwnEV: readonly number[];
+      /** 🔴 **PREFLOP_RAISE_RANGE_GATE**：被范围闸门拦下时的原因（翻后恒为 `null`） */
+      preflopRangeGateBlocked?: { handKey: string; heroPosition: string; openerPosition: string } | null;
       onePairAllInBlocked: boolean;
       largeRaiseBlocked: boolean;
       raiseToPotRatio: number | null;
@@ -3745,6 +3929,425 @@ export function decideAlpha(
   /** 证据优先级裁决结果（由 `pickCandidate` 的出口箱带回；供依据/诊断/UI 使用） */
   const evidenceDecisionForBasis: EvidenceDecision | null = evidenceOut.decision ?? null;
   const evidenceForBasis: readonly ActionEvidence[] = evidenceOut.list ?? Object.freeze([]);
+
+  /*
+   * ============================================================
+   * 🔴 **D1 + D2 修复**（KQ_FLOP_DECISION_REPAIR · 阶段一）
+   * ============================================================
+   *
+   * ## 修的是什么
+   *
+   * `evaluateCandidates` 为**每一个**尺寸网格候选写死 `ev: null`（它的注释在
+   * 「本项目没有弃牌率模型」的年代是对的）。但证据层随后会对**被选中的那个尺寸**
+   * 算出 `MODEL_EV` 并用它跟 CALL 比较 —— 于是同一响应里三处互相打架：
+   *
+   * ```text
+   * candidates[]      → 加注 42.0BB「—（依赖弃牌率，本项目无可信估计）」
+   * decisionSource    → 证据 RAISE｜MODEL_EV｜EV 1948.14   ← 真正选了它的依据
+   * mathDominance     → 「加注不在此比较之内」
+   * ```
+   *
+   * ## 怎么修（**只回填、不重算、不改判**）
+   *
+   * `pickCandidate` 已经通过 `evidenceOut.raiseShape.raiseSizesWithOwnEV` 带出
+   * 「真正有自有可比 EV 的加注尺寸」，证据表里也有那条 `MODEL_EV`。
+   * 因此这里只做两件**纯展示层**的事：
+   *
+   * 1. 把该 EV 按尺寸回填进候选表 ⇒ 候选表不再否认自己算过的数；
+   * 2. 用回填后的候选**重算一次 Math Dominance 供报告使用** ⇒ 结论句不再
+   *    声称「加注未参与比较」。
+   *
+   * ## 为什么重算不会改决策、也不会改置信度
+   *
+   * · 决策：`pickCandidate` **已经跑完**，回填发生在它之后 ⇒ 不可能改变选中的动作。
+   * · `confidenceOf`（`:3942`）与 `dynamicShadowOf`（`:3982`）读的是**前面那次**
+   *   `mathDominance.evGapToPotRatio`，本处重算只供**理由文本与诊断输出**使用
+   *   ⇒ 既有黄金数值逐位不变。
+   */
+  const raiseSizesWithOwnEV: readonly number[] = evidenceOut.raiseShape?.raiseSizesWithOwnEV ?? [];
+  /**
+   * 🔴 **PREFLOP_RAISE_RANGE_GATE 的披露**：本手不在 3Bet 先验范围里而被拦下时，
+   * 说清「**为什么**加注没进入比较」。`null` = 闸门放行 / 翻后节点。
+   */
+  const preflopRangeGateZh: string | null = (() => {
+    const b = evidenceOut.raiseShape?.preflopRangeGateBlocked ?? null;
+    if (b === null) return null;
+    return (
+      `⚠️ **本手 ${b.handKey} 不在「${b.heroPosition} 对 ${b.openerPosition} 开池」的 3Bet 先验范围里**` +
+      '⇒ 本次**不把加注纳入动作比较**（加注 EV 仍在候选表里逐尺寸披露，但未入选）—— ' +
+      '范围表是引擎建模对手用的同一张表，用来约束自己的建议以避免「建议与自身模型互相矛盾」。'
+    );
+  })();
+  const raiseEvidenceWithEV: ActionEvidence | null =
+    evidenceForBasis.find(
+      (e) => e.action === 'RAISE' && e.ev !== null && isQuantifiedEvidence(e.estimateType),
+    ) ?? null;
+  /*
+   * ============================================================
+   * 🔴 **阶段二：逐尺寸回填 —— 网格内每个已评估尺寸都用「它自己的」EV**
+   * ============================================================
+   *
+   * ## 与阶段一（D1）的区别
+   *
+   * 阶段一只回填**被启发式选中的那一档**（证据层只有一条 RAISE 量化条目）。
+   * 阶段二起，`contextBuilder` 已用**同一个闭包**为**网格内每一档**算出各自的
+   * 事实包（`postflopFacts.raiseResponseAll`）⇒ 现在每档都能拿到**它自己的**
+   * `P(弃)/P(跟)/P(再加注)`、条件权益、资金流与 `raiseEV`。
+   *
+   * ## 一致性闸（沿用阶段一的硬纪律，且**更严**）
+   *
+   * · 只接受**整数筹码**的精确等值匹配（**绝不**用 `toFixed` 近似 ⇒ 杜绝串档）；
+   * · 每个候选最多被回填一次，且**不覆盖**任何既有 EV；
+   * · 回填值必须来自**该金额自己的**事实包（按 `sizeChips` 精确索引）；
+   * · 事实包 `null` 的 `raiseEV` 保持 `null`（**未计算 ≠ 0 ≠ 低 EV**）；
+   * · 若事实包集合为空但证据层声称有自有 EV 尺寸，则**拒绝回填**并说明。
+   */
+  /*
+   * 🔴 **阶段二补完：翻前也走同一张逐尺寸表**（`PREFLOP_RAISE_EV_BACKFILL`）。
+   *
+   * 修复前本表**只读** `postflopFacts.raiseResponseAll`（翻后专有），于是翻前出现
+   * 自相矛盾的三处打架 —— 与 D1 修翻后之前**一模一样的形态**：
+   *
+   * ```text
+   * candidates[]   → 加注 4.0BB / 12.0BB …「—（本尺寸未被评估）」
+   * 证据层          → 同一响应里已给出「弃 88.5% / 跟 5.0% / 再加注 6.5%」与 RAISE EV
+   * 决策            → 却是 RAISE 12BB
+   * ```
+   *
+   * 根因不是「翻前没算」，而是**算了没接上**：`contextBuilder` 早已用
+   * `buildPreflopRaiseFacts` 为**网格内每一个合法尺寸**算出属于它自己的响应概率、
+   * 条件权益与 `raiseEV`（`preflopRaise.sizes`），但回填表的唯一数据源是翻后字段。
+   *
+   * ## 两套模型**绝不混用**（这是本改动的硬边界）
+   *
+   * 翻后（U1）与翻前（`PREFLOP_RAISE_RESPONSE_V1`）是**两棵不同的行动树**，
+   * 数字不可互换。因此这里**不做合并**，而是：
+   * · 只要翻后事实包非空 ⇒ 只用翻后（翻后节点绝不会读到翻前数字）；
+   * · 翻后为空时才回落到翻前尺寸表。
+   * 同一条新闻里两者不可能同时非空（街道唯一），该优先级只是**显式写死**以防将来串档。
+   *
+   * ## 归一化：只翻译「再加注分支是否退化为下界」，不改任何数值
+   *
+   * 翻后用 `LOWER_BOUND_NOT_IMPLEMENTED` 标记该档的再加注分支只能退回下界；
+   * 翻前对应的字面量是 `FOLD_ONLY_UNAVAILABLE`（语义完全相同）。
+   * 归一化**保留原始标签**（`reraiseBranchKind` 取 `string`），只在下方判定近似时
+   * 同时接受这两个字面量 ⇒ 不丢信息、不会把「精确」误标成「近似」。
+   */
+  const raiseFactsAll: readonly {
+    readonly sizeChips: number;
+    readonly raiseEV: number | null;
+    readonly evKind: string;
+    readonly reraiseBranchKind: string;
+    readonly foldLikelihood: number;
+    readonly callLikelihood: number;
+    readonly reRaiseLikelihood: number;
+    readonly heroEquityVsRaiseCallRange: number | null;
+  }[] = (() => {
+    const postflop = context.postflopFacts?.raiseResponseAll ?? [];
+    if (postflop.length > 0) {
+      return postflop.map((f) => ({
+        sizeChips: f.sizeChips,
+        raiseEV: f.raiseEV,
+        evKind: f.evKind,
+        reraiseBranchKind: f.reraiseBranchKind as string,
+        foldLikelihood: f.foldLikelihood,
+        callLikelihood: f.callLikelihood,
+        reRaiseLikelihood: f.reRaiseLikelihood,
+        heroEquityVsRaiseCallRange: f.heroEquityVsRaiseCallRange,
+      }));
+    }
+    const preflop = context.preflopRaise?.sizes ?? [];
+    return preflop.map((s) => ({
+      sizeChips: s.sizeChips,
+      raiseEV: s.raiseEV,
+      evKind: 'PREFLOP_RAISE_RESPONSE_V1',
+      reraiseBranchKind: s.reraiseBranchKind,
+      foldLikelihood: s.foldLikelihood,
+      callLikelihood: s.callLikelihood,
+      reRaiseLikelihood: s.reRaiseLikelihood,
+      heroEquityVsRaiseCallRange: s.heroEquityVsRaiseCallRange.value,
+    }));
+  })();
+  /** 该档的再加注分支是否**只能退回下界**（⇒ 该 EV 属近似：摊牌终止近似） */
+  const reraiseBranchIsLowerBound = (kind: string): boolean =>
+    kind === 'LOWER_BOUND_NOT_IMPLEMENTED' || kind === 'FOLD_ONLY_UNAVAILABLE';
+  /**
+   * 本次逐尺寸表的**数据源**（供归因披露）。
+   *
+   * 与 `raiseFactsAll` 用**同一个**优先级判据（同一处真值，不得两处口径），
+   * 保证「表里的数字从哪来」与「结论句说它从哪来」永远一致。
+   */
+  const raiseFactsSourceZh: string | null = (() => {
+    if ((context.postflopFacts?.raiseResponseAll ?? []).length > 0) {
+      return '翻后加注响应模型（U1：逐尺寸响应概率 + 条件权益，非全下尺寸按摊牌终止近似）';
+    }
+    if ((context.preflopRaise?.sizes ?? []).length > 0) {
+      return '翻前加注响应模型 `PREFLOP_RAISE_RESPONSE_V1`' +
+        '（结构性先验、未经统计校准；与 CALL EV 使用同一条现金流公式、同一零点）';
+    }
+    return null;
+  })();
+  const backfillRefusalZh: string | null = (() => {
+    if (raiseSizesWithOwnEV.length === 0) return null;
+    if (raiseFactsAll.length === 0)
+      return '证据层登记了「有自有 EV 的加注尺寸」，但本次没有逐尺寸事实包 ' +
+        '(`postflopFacts.raiseResponseAll` 与 `preflopRaise.sizes` 均为空) ' +
+        '⇒ 拒绝回填（不猜、不复制别的档位）。';
+    if (raiseEvidenceWithEV === null)
+      return '证据层登记了「有自有 EV 的加注尺寸」，但证据表里找不到对应的量化 RAISE 条目 ⇒ 拒绝回填。';
+    return null;
+  })();
+  /**
+   * 每个已评估尺寸各自的 EV 索引（**按精确整数金额**，不做任何近似）。
+   *
+   * 值携带 `evKind`：`LOWER_BOUND_NOT_IMPLEMENTED` 的再加注分支 ⇒ 该档属于
+   * **近似计算**（摊牌终止近似），披露层必须与「已完整计算」区分开。
+   */
+  const raiseEVBySize = new Map<
+    number,
+    { ev: number | null; kind: string; approximatedReraise: boolean; fold: number; call: number; reRaise: number; equity: number | null }
+  >();
+  for (const f of raiseFactsAll) {
+    if (!Number.isInteger(f.sizeChips)) continue;
+    raiseEVBySize.set(f.sizeChips, {
+      ev: f.raiseEV,
+      kind: f.evKind,
+      /*
+       * 🔴 **只有「真的存在再加注分支、而该分支只能退回下界」才算近似**。
+       *
+       * 反例（必须避免的误标）：**Hero 全下**时对手**结构上不可能**再加注
+       * ⇒ `reRaiseLikelihood = 0` ⇒ 该分支对 EV 的贡献恒为 0 ⇒
+       * 这个 EV 在「再加注」这一维上是**精确**的，不该被标成「近似计算」。
+       * 把全下误标成近似会**无端削弱**最该被认真对待的那一档。
+       */
+      approximatedReraise: reraiseBranchIsLowerBound(f.reraiseBranchKind) && f.reRaiseLikelihood > 0,
+      fold: f.foldLikelihood,
+      call: f.callLikelihood,
+      reRaise: f.reRaiseLikelihood,
+      equity: f.heroEquityVsRaiseCallRange,
+    });
+  }
+  const candidatesWithEvaluatedEV: readonly DecisionCandidate[] = (() => {
+    if (backfillRefusalZh !== null) return candidatesForDecision;
+    let changed = false;
+    const filled = new Set<number>();
+    const out = candidatesForDecision.map((c) => {
+      if (c.action !== DecisionAction.RAISE && c.action !== DecisionAction.ALL_IN) return c;
+      if (c.sizeChips === undefined || !Number.isInteger(c.sizeChips)) return c;
+      if (c.ev !== null) return c; // 不覆盖任何既有计算
+      const hit = raiseEVBySize.get(c.sizeChips);
+      if (hit === undefined || hit.ev === null) return c; // 未计算 ⇒ 保持 null
+      if (filled.has(c.sizeChips)) return c; // 同一金额只回填一次
+      filled.add(c.sizeChips);
+      changed = true;
+      return {
+        ...c,
+        ev: hit.ev,
+        evEstimateType: 'MODEL_EV',
+        /* 逐尺寸的响应概率与条件权益一并带出（供披露层逐项核对） */
+        evBranches: { fold: hit.fold, call: hit.call, reRaise: hit.reRaise, equity: hit.equity },
+        evApproximatedReraise: hit.approximatedReraise,
+      } as DecisionCandidate;
+    });
+    return changed ? (Object.freeze(out) as readonly DecisionCandidate[]) : candidatesForDecision;
+  })();
+  /**
+   * 回填是否**真的**发生了。
+   *
+   * ⚠️ 不能用 `candidatesWithEvaluatedEV === candidatesForDecision` 当判据：
+   * 本节点未走 `betDecision` 补候选时两者**本来就是同一个对象**，那时该等式为真
+   * 却与「有没有回填」无关（本修复的第一版正是踩了这个坑）。
+   */
+  const raiseEVBackfilled = candidatesWithEvaluatedEV.some(
+    (c) => (c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN) && c.ev !== null,
+  ) && !candidatesForDecision.some(
+    (c) => (c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN) && c.ev !== null,
+  );
+  /*
+   * ============================================================
+   * 🔴 **D2 修复：比较范围披露必须是四态的**（用户 §二）
+   * ============================================================
+   *
+   * 用户点名的四种状态**不得混为一谈**：
+   *
+   * | 状态 | 含义 |
+   * |---|---|
+   * | `NONE` | 未计算任何 RAISE EV |
+   * | `SINGLE` | 只计算了**一个** RAISE 尺寸 |
+   * | `PARTIAL` | 计算了**部分** RAISE 尺寸 |
+   * | `ALL` | 全部正式候选尺寸都已计算 |
+   *
+   * ⚠️ 硬要求：「已比较 CALL 与**一个** RAISE 尺寸」**绝不能**写成
+   * 「已完成所有加注尺寸 EV 比较」—— 这正是原缺陷的措辞形态。
+   *
+   * 判据完全来自**实际数组**（候选层的加注族候选 vs 其中 `ev !== null` 的个数），
+   * 不是靠文案常量声明。
+   */
+  const raiseCandidatesAll = candidatesWithEvaluatedEV.filter(
+    (c) => c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN,
+  );
+  const raiseCandidatesEvaluated = raiseCandidatesAll.filter((c) => c.ev !== null);
+  const raiseEvalState: 'NONE' | 'SINGLE' | 'PARTIAL' | 'ALL' =
+    raiseCandidatesEvaluated.length === 0
+      ? 'NONE'
+      : raiseCandidatesAll.length > 0 && raiseCandidatesEvaluated.length === raiseCandidatesAll.length
+        ? 'ALL'
+        : raiseCandidatesEvaluated.length === 1
+          ? 'SINGLE'
+          : 'PARTIAL';
+  /*
+   * 🔴 **`RAISE_EV_EVALUATED_NOT_COMPARED`（阶段二补完）：「已算出」≠「已入选」≠「更好」。**
+   *
+   * 阶段二起 `postflopFacts.raiseResponseAll` 为网格内**每一档**都算出了自有 EV
+   * ⇒ `ALL` 这个状态**第一次变得常见**。但 `pickCandidate` 只把**启发式选中的那一档**
+   * 纳入动作比较（翻后口径；翻前口径见 `raiseShape` 里那段阶段 B 注释）。
+   *
+   * 若不说清，用户会把候选表里「某尺寸 EV 更高」直接读成「引擎认为该尺寸更好」 ——
+   * 实测：T9s 节点候选表显示「加注 16.0BB EV 844.28 已完整计算」，而建议是 FOLD。
+   * 两句话都对，并排读就是误导。因此覆盖面文案必须**同时**说清进入比较的档数。
+   */
+  const raiseComparisonCaveatZh: string =
+    (raiseCandidatesEvaluated.length > 0 && raiseSizesWithOwnEV.length < raiseCandidatesEvaluated.length
+      ? `—— ⚠️ 但**进入本次动作比较**的只有 ${raiseSizesWithOwnEV.length} 档` +
+        (raiseSizesWithOwnEV.length === 0
+          ? '（本次**没有**任何加注尺寸入选）'
+          : `（${raiseSizesWithOwnEV.map((s) => s.toFixed(0)).join(' / ')}）`) +
+        '；**已算出 ≠ 已入选，更 ≠ 更好** —— 候选表里其余尺寸的数值是**逐尺寸披露**，' +
+        '不代表引擎已在这些尺寸之间择优'
+      : '') + (preflopRangeGateZh === null ? '' : `｜${preflopRangeGateZh}`);
+  const raiseEvalStateZh = ({
+    NONE: '**未计算**任何加注尺寸的 EV',
+    SINGLE: `**只计算了 1 个**加注尺寸的 EV（正式候选共 ${raiseCandidatesAll.length} 个）—— ` +
+      '**这不等于**已完成全部加注尺寸的 EV 比较' + raiseComparisonCaveatZh,
+    PARTIAL: `计算了**部分**加注尺寸的 EV（${raiseCandidatesEvaluated.length} / ${raiseCandidatesAll.length}）` +
+      raiseComparisonCaveatZh,
+    ALL: `全部 ${raiseCandidatesAll.length} 个正式候选尺寸都已计算 EV` + raiseComparisonCaveatZh,
+  } as const)[raiseEvalState];
+  /*
+   * ---- D5 补充：混合 EV 来源必须披露可比性限制 ----
+   *
+   * 用户 §四硬要求：存在 `PROXY_EV` 与 `MODEL_EV` 混合比较时，必须披露
+   * 「不同 EV 来源」及「模型可比性」的限制。这里从**证据表**取实际来源集合，
+   * 不靠字段名推断。
+   */
+  const quantifiedSources = [
+    ...new Set(
+      evidenceForBasis
+        .filter((e) => e.ev !== null && isQuantifiedEvidence(e.estimateType) && e.action !== 'FOLD')
+        .map((e) => String(e.estimateType)),
+    ),
+  ].sort();
+  const mixedEVSourcesZh =
+    quantifiedSources.length > 1
+      ? `⚠️ **EV 来源不同**：本次参与比较的量化证据来自 ${quantifiedSources.join(' / ')} —— ` +
+        '不同来源的模型假设与误差结构**不同**，跨来源比大小只在「各自都在自己的分辨力之内」时有意义；' +
+        '本引擎不声称它们严格同质。'
+      : null;
+  const raiseEVBackfillNoteZh =
+    backfillRefusalZh ??
+    (raiseEVBackfilled
+      ? (() => {
+          const filledSizes = candidatesWithEvaluatedEV
+            .filter(
+              (c) =>
+                (c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN) &&
+                c.ev !== null &&
+                c.sizeChips !== undefined,
+            )
+            .map((c) => c.sizeChips! / context.math.bigBlind)
+            .sort((a, b) => a - b);
+          const approxCount = candidatesWithEvaluatedEV.filter(
+            (c) =>
+              (c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN) &&
+              c.ev !== null &&
+              c.evApproximatedReraise === true,
+          ).length;
+          return (
+            `逐尺寸回填（阶段二）：${filledSizes.length} 个尺寸各自带**它自己的** MODEL_EV` +
+            `（${filledSizes.map((s) => `${s}BB`).join(' / ')}），` +
+            `按**精确整数筹码**索引，未做任何近似匹配；` +
+            (approxCount > 0
+              ? `其中 ${approxCount} 个的再加注分支为**摊牌终止近似**（近似计算，非完整全树 EV）；`
+              : '') +
+            `每个尺寸的响应概率与条件权益见候选表逐项披露。` +
+            /*
+             * 🔴 **阶段二 §10：禁止声称「全局最高 EV」**。
+             *
+             * 理由是具体的、可核对的（不是免责声明）：本模型
+             * · 未实现 4-bet 分支（`heroFourBetSupported` 只在对方再加注为全下时为真）；
+             * · 非全下分支按**摊牌终止近似**计入（未模拟后续街行动）；
+             * · 未计抽水；
+             * · 响应概率是**未经统计校准**的结构性先验。
+             * ⇒ 尺寸之间的差值是**模型内**的差值，只能支撑「在这套模型里更高」。
+             */
+            `⚠️ **不得据此声称任何尺寸是「全局最高 EV」**：上述差值只是**本模型内部**的比较 —— ` +
+            `模型未实现 4-bet 分支、非全下尺寸按摊牌终止近似、未计抽水、` +
+            `且响应概率是未经统计校准的结构性先验 ⇒ 差值小于工程容差带 ` +
+            `±${(context.math.winnable * MODEL_UNCERTAINTY_RATIO).toFixed(2)} 时更**不构成**「这个尺寸更好」的证据。`
+          );
+        })()
+      : null);
+  const mathDominanceForReport: MathDominanceVerdict = raiseEVBackfilled
+    ? mathDominanceOf(
+      candidatesWithEvaluatedEV,
+      context.math.pot,
+      true,
+      raiseFactsSourceZh === null
+        ? null
+        : '（本节点的加注**有**自带的模型 EV 并参与了**同一零点**比较 —— ' +
+          `${raiseFactsSourceZh}；RAKE 未实现）`,
+    )
+    : mathDominance;
+
+  /*
+   * ============================================================
+   * 🔴 **阶段二 §「局部尺寸搜索是否有必要」—— 用测量回答，而不是用论证**
+   * ============================================================
+   *
+   * 用户提问：「35BB 也是合法尺寸，但不在当前默认网格中。请检查是否有必要通过
+   * 局部尺寸搜索覆盖相邻尺寸，以避免固定网格造成明显的选择偏差。」
+   *
+   * 判据（可证伪）：把**离网**尺寸的 EV 与**网格内最优**比较 ——
+   * · 若上风 **≤ 工程容差带** ⇒ 在本模型自身的分辨力内**不可分辨** ⇒
+   *   局部搜索只会产生更不可区分的数字，**没有必要**；
+   * · 若上风 **> 容差带** ⇒ 固定网格确实造成了明显的选择偏差，**必须补局部搜索**。
+   *
+   * ⚠️ 本判定**只写进披露**，不参与选择动作（离网尺寸不进候选层）。
+   */
+  const localSearchVerdict = (() => {
+    const probes = (context.postflopFacts as unknown as Record<string, unknown> | undefined)?.[
+      'raiseResponseLocalProbe'
+    ] as readonly { sizeChips: number; raiseEV: number | null }[] | undefined;
+    if (probes === undefined || probes.length === 0) {
+      return { needed: null as boolean | null, noteZh: '（本节点没有离网探测数据：加注模型不适用或无离网尺寸）' };
+    }
+    const gridEVs = [...raiseEVBySize.entries()]
+      .filter(([, v]) => v.ev !== null)
+      .map(([size, v]) => ({ size, ev: v.ev as number }));
+    if (gridEVs.length === 0) {
+      return { needed: null as boolean | null, noteZh: '（网格内没有任何已算 EV 的尺寸 ⇒ 无法比较）' };
+    }
+    const gridBest = gridEVs.reduce((a, b) => (b.ev > a.ev ? b : a));
+    const offGrid = probes.filter((p) => p.raiseEV !== null) as { sizeChips: number; raiseEV: number }[];
+    if (offGrid.length === 0) {
+      return { needed: null as boolean | null, noteZh: '（离网尺寸的 EV 都算不出来 ⇒ 无法比较）' };
+    }
+    const offBest = offGrid.reduce((a, b) => (b.raiseEV > a.raiseEV ? b : a));
+    const band = context.math.winnable * MODEL_UNCERTAINTY_RATIO;
+    const edge = offBest.raiseEV - gridBest.ev;
+    const needed = edge > band;
+    return {
+      needed,
+      noteZh:
+        `局部尺寸搜索探测（**仅诊断，不参与决策**）：评估了 ${offGrid.length} 个离网尺寸；` +
+        `离网最优 ${(offBest.sizeChips / context.math.bigBlind).toFixed(2)}BB（EV ${offBest.raiseEV.toFixed(2)}）` +
+        ` vs 网格最优 ${(gridBest.size / context.math.bigBlind).toFixed(1)}BB（EV ${gridBest.ev.toFixed(2)}）` +
+        ` ⇒ 离网上风 **${edge.toFixed(2)}** 筹码，工程容差带 ±${band.toFixed(2)}` +
+        (needed
+          ? ' ⇒ ⚠️ **超出容差带：固定网格确实造成可分辨的选择偏差，需要局部尺寸搜索。**'
+          : ' ⇒ **未超出容差带：本模型分辨力内不可分辨 ⇒ 局部尺寸搜索不会带来可分辨的改进。**'),
+    };
+  })();
 
   /*
    * ============================================================ * ---- 4.1 RIVER RAISE DECISION V2：动作形态 / 全下保护 / 未评估动作 ----
@@ -3841,7 +4444,32 @@ export function decideAlpha(
      * 现在只列**真的**没有 EV 的金额（其余金额确实仍未建模，如实保留）。
      */
     const sizesWithOwnEV = evidenceOut.raiseShape?.raiseSizesWithOwnEV ?? [];
-    for (const c of candidates) {
+    /*
+     * 🔴 **`RAISE_EV_DISCLOSURE_SINGLE_SOURCE`（阶段二补完）——遍历回填**后**的候选表。**
+     *
+     * 修复前这里遍历的是 `candidates`（= `evaluated.candidates`，**回填之前**）。
+     * 在那个列表里**每一个加注候选的 `ev` 都是 `null`**（加注 EV 挂在证据表上），
+     * 于是「已评估」只能靠 `raiseShape.raiseSizesWithOwnEV` 反推 —— 而翻后那一支
+     * 只登记**被启发式选中的那一档**（翻前一早已修正为「所有有自有 EV 的尺寸」，
+     * 见 `pickCandidate` 里那段阶段 B 注释；**翻后漏改**）。
+     *
+     * 阶段二起 `postflopFacts.raiseResponseAll` 为**网格内每一档**都算出了自有 EV，
+     * D1 回填又把它们写进了候选表 ⇒ 于是同一份响应里出现**互相否认的两处披露**：
+     *
+     * ```text
+     * diagnostics.candidates      → RAISE 16.0BB  ev = 844.28  「已完整计算」
+     * diagnostics.unevaluatedActions → RAISE 16.0BB  ev = null
+     *                                  「RAISE_EV_NOT_IMPLEMENTED：该金额缺响应概率」
+     * ```
+     *
+     * 实测三手牌（T9s / AK / 88）全部命中，8 档里 7~8 档重叠。
+     *
+     * **修法**：直接遍历**与用户看到的候选表同一份列表**（`candidatesWithEvaluatedEV`），
+     * 于是「已评估」由 `c.ev !== null` **当且仅当**判定 —— 两处披露**由构造保证**
+     * 不可能再矛盾（不再需要任何「反推已评估尺寸」的第二口径）。
+     * `sizesWithOwnEV` 保留为**次级**兜底（候选表里没有该金额时仍以证据层为准）。
+     */
+    for (const c of candidatesWithEvaluatedEV) {
       if (c.ev !== null) continue;
       const label = String(c.action);
       const isRaiseLike = label === 'RAISE' || label === 'ALL_IN';
@@ -3866,8 +4494,22 @@ export function decideAlpha(
      */
     return Object.freeze(out.map((x) => Object.freeze(x)));
   })();
+  /*
+   * 🔴 **同一处真值（`RAISE_EV_DISCLOSURE_SINGLE_SOURCE`）**：
+   * 「哪些加注尺寸有自有 EV」**只**从候选表读取（与用户看到的那张表逐行同源），
+   * 不再从 `raiseShape.raiseSizesWithOwnEV` 反推 —— 后者在翻后只登记**入选比较**的那一档。
+   */
+  const evaluatedRaiseSizesFromTable: readonly number[] = candidatesWithEvaluatedEV
+    .filter(
+      (c) =>
+        (c.action === DecisionAction.RAISE || c.action === DecisionAction.ALL_IN) &&
+        c.ev !== null &&
+        c.sizeChips !== undefined &&
+        Number.isInteger(c.sizeChips),
+    )
+    .map((c) => c.sizeChips as number);
   if (unevaluatedActions.some((u) => u.reasonCode === 'RAISE_EV_NOT_IMPLEMENTED')) {
-    const evaluatedRaiseSizes = evidenceOut.raiseShape?.raiseSizesWithOwnEV ?? [];
+    const evaluatedRaiseSizes = evaluatedRaiseSizesFromTable;
     factReasons.push({
       code: 'RAISE_EV_NOT_IMPLEMENTED',
       textZh:
@@ -3883,6 +4525,14 @@ export function decideAlpha(
       data: { unevaluatedCount: unevaluatedActions.length, evaluatedRaiseSizes: evaluatedRaiseSizes.length },
     });
   }
+  /*
+   * ⚠️ 这里**刻意不再**追加一条「已算出但未入选比较」的理由。
+   *
+   * 该保留意见是真实且必要的，但 `reasons` 对外只暴露**前 6 条**
+   * （`Object.freeze(reasons.slice(0, 6))`）—— 追加在末尾等于**写了没人看得见**，
+   * 属于死代码。因此改为放进**已经对外暴露**的加注覆盖面文案
+   * （`raiseEvalStateZh` 的 `raiseComparisonCaveatZh`），那里才是它真正被读到的地方。
+   */
   const conditionalEquities = Object.freeze({
     arrivalRange: context.postflopFacts?.betRangeArrival?.heroEquityVsArrivalRange ?? null,
     betRange: context.math.heroEquityVsBetRange,
@@ -3905,13 +4555,23 @@ export function decideAlpha(
   let reasons: DecisionReason[] = [...decisionReasons, ...factReasons];
 
   /* ---- 4.5 Math Dominance 的理由（排在动作理由之后）---- */
-  if (mathDominance.dominant) {
+  /*
+   * 🔴 **D2 修复**：这里必须用**回填后的** `mathDominanceForReport`。
+   *
+   * 用回填前的版本会在「加注 EV 其实参与了比较」的节点上推出
+   * 「跟注在可比较 EV 的动作里明显占优（…不在此比较之内）」——
+   * 与 `decisionSource` 的「跨动作比较已做」直接打架（用户报告的 D2）。
+   *
+   * ⚠️ 置信度仍读 `mathDominance`（见下面 `confidenceOf`）：
+   * 那是本修复**刻意**保持逐位不变的口径，避免动到既有黄金数值。
+   */
+  if (mathDominanceForReport.dominant) {
     reasons.push({
       code: 'MATH_DOMINANCE',
-      textZh: mathDominance.noteZh,
+      textZh: mathDominanceForReport.noteZh,
       data: {
-        evGap: Number((mathDominance.evGap ?? 0).toFixed(3)),
-        thresholdRatio: mathDominance.thresholdRatio,
+        evGap: Number((mathDominanceForReport.evGap ?? 0).toFixed(3)),
+        thresholdRatio: mathDominanceForReport.thresholdRatio,
       },
     });
   }
@@ -4206,6 +4866,20 @@ export function decideAlpha(
     ).length;
     const scope =
       crossActionCount > 0 ? DecisionMarginScope.CROSS_ACTION : DecisionMarginScope.VS_FOLD_ONLY;
+    /*
+     * 🔴 **D5 修复**（用户报告）：本块原本**只**描述「跟注 EV vs 0」这一条轴，
+     * 于是当最终动作是 RAISE 时，边际行仍在讲 CALL ——
+     * 实测 `CALLING_STATION` 变体：判据写「真实跟注 EV 1578.35」、结论写
+     * `CLEAR_CALL_OVER_FOLD`，而动作是 RAISE（EV 1669.29）。用户读到的
+     * 是**另一个动作**的边际。
+     *
+     * 修法（不动判据、只补事实）：当最终动作自己带着量化 EV 且**不是** CALL 时，
+     * 必须在同一行里报出它自己的 EV，并显式声明本标签只对「跟注 vs 弃牌」有效。
+     */
+    const finalActionEvidence =
+      evidenceForBasis.find(
+        (e) => e.action === action && e.ev !== null && isQuantifiedEvidence(e.estimateType),
+      ) ?? null;
     return Object.freeze({
       kind,
       kindZh: DECISION_MARGIN_ZH[kind],
@@ -4219,6 +4893,21 @@ export function decideAlpha(
         (scope === DecisionMarginScope.VS_FOLD_ONLY
           ? '⚠️ 作用域 VS_FOLD_ONLY：本次比较**只有跟注 vs 弃牌**，对加注/全下**没有**发言权。'
           : `作用域 CROSS_ACTION：另有 ${crossActionCount} 个动作带着自己的量化 EV 参与了同一零点比较。`) +
+        (finalActionEvidence === null || finalActionEvidence.action === 'CALL'
+          ? ''
+          : `🔴 **本行不是本次动作的判据**：最终动作是 ${DECISION_ACTION_ZH[action as DecisionAction] ?? action}` +
+            `，其 ${finalActionEvidence.estimateType} EV = ${finalActionEvidence.ev!.toFixed(2)} 筹码` +
+            `（与上面同一零点、同一容差带 ±${bandChips.toFixed(2)}）——` +
+            `「${DECISION_MARGIN_ZH[kind]}」这个标签的**名字**只描述「跟注 vs 弃牌」这条轴，不代表本次动作。`) +
+        /*
+         * 🔴 **D2 补充（用户 §二）**：无论最终动作是什么，都必须如实报出
+         * **加注尺寸 EV 的计算覆盖面**（四态），不得把「只算了一个尺寸」
+         * 说成「已完成所有加注尺寸比较」。
+         */
+        `｜加注 EV 覆盖面：${raiseEvalStateZh}。` +
+        (mixedEVSourcesZh === null ? '' : `｜${mixedEVSourcesZh}`) +
+        `｜${localSearchVerdict.noteZh}` +
+        (raiseEVBackfillNoteZh === null ? '' : `｜回填说明：${raiseEVBackfillNoteZh}`) +
         '⚠️ 容差带是**工程容差**，不是统计误差，也不自动翻转动作。',
     });
   })();
@@ -4226,11 +4915,13 @@ export function decideAlpha(
   const diagnostics: DecisionDiagnostics = Object.freeze({
     math: context.math,
     legalActions: legal.actions,
-    candidates: Object.freeze(candidatesForDecision),
+    /* 🔴 D1 修复：候选表带**回填后的** EV（被评估的加注尺寸不再自称「无可信估计」） */
+    candidates: candidatesWithEvaluatedEV,
     baseDecision,
     adjustedDecision: baseDecision,
     shadow,
-    mathDominance,
+    /* 🔴 D2 修复：与候选表/证据表同一口径的 Math Dominance */
+    mathDominance: mathDominanceForReport,
     ...(postflopAdvice === null
       ? {}
       : {
@@ -4430,4 +5121,3 @@ export function boardCountOf(context: DecisionContext): number {
 export function streetOf(context: DecisionContext): Street {
   return context.math.street;
 }
-

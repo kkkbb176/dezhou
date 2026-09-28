@@ -185,9 +185,10 @@ import {
   ActionContext,
   actionContextOf,
   lastAggressorOfStreet,
+  previousStreetOf,
   type ActionContextValue,
 } from '../../domain/postflop/actionContext.ts';
-import { buildBettingRangeFacts } from './bettingRange.ts';
+import { buildBettingRangeFacts, publicStrengthBandOf } from './bettingRange.ts';
 import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
 import {
   buildPreflopRaiseFacts,
@@ -228,7 +229,7 @@ import {
   type PlayerBehaviorProfile,
 } from '../../domain/player/behaviorProfile.ts';
 /* 🔴 PLAYER PROFILE V3：标签 Prior + 实测连续统计 ⇒ 分街画像 */
-import { resolvePlayerProfile, type PlayerObservedStats } from '../../domain/player/observedStats.ts';
+import { resolvePlayerProfile, STAT_DIMENSION_POLARITY, type ObservedStatKey, type PlayerObservedStats } from '../../domain/player/observedStats.ts';
 
 /* ============================================================
  * 常量
@@ -1014,6 +1015,46 @@ function buildBaseRange(
    *   这个天花板约束，**不会**变成「已验证」）；
    * - **不再施加似然更新**（见 `buildRangeSnapshot` 的 `skipLikelihoodUpdates`）。
    */
+  /**
+   * 真实牌局验证：单人跛入 + BB 隔离加注（`SB limp → BB raise`）—— 见下方注释。
+   *
+   * ⚠️ 判据必须是**真正的跛入者**：非盲注位、且在**面对任何加注之前**就跟注。
+   *
+   * 第一版只判「有人 CALL 且不是 BB」⇒ 把 **SB 的补齐跟注**也算成跛入，
+   * 于是「BTN 开池、SB 跟注、BB 弃牌」这种普通局面也被当成隔离场景
+   * （由回归锁 `C1-C` 抓到：它当时期望的是 BTN 开池的路径，却走进了这一支）。
+   */
+  const hasLimperBeforeBigBlind = (() => {
+    let raisesSoFar = 0;
+    for (const r of state.actions) {
+      if (r.street !== Street.PREFLOP) continue;
+      if (r.type === 'RAISE' || r.type === 'RERAISE') {
+        raisesSoFar += 1;
+        continue;
+      }
+      if (r.type !== 'CALL') continue;
+      if (raisesSoFar > 0) continue; // 面对加注的跟注 ≠ 跛入
+      const p = playerById(state, r.playerId);
+      if (p === undefined) continue;
+      /* 盲注位的「跟注」是补齐盲注，不是主动入池 */
+      if (p.position === Position.SB || p.position === Position.BB) continue;
+      return true;
+    }
+    return false;
+  })();
+
+  /**
+   * BB 是**本手第一个加注者** ⇒ 这一步不是「开池」而是「隔离 / 盲注对盲注」。
+   *
+   * 覆盖两种实测形态：
+   * - 有人跛入（`hasLimperBeforeBigBlind`）：用「BB 面对该跛入位置开池的防守范围」；
+   * - 只有 SB 补齐（无跛入者）：用「BB 对小盲」，仍是同一个既有档位族。
+   */
+  const bigBlindIsolationOf = (
+    agg: { action: 'RAISE' | 'CALL'; raiseOrdinal: number },
+  ): boolean =>
+    opponent.position === Position.BB && agg.action === 'RAISE' && agg.raiseOrdinal === 1;
+
   if (solverOverride !== undefined) {
     weights = solverOverride.weights;
     label = solverOverride.labelZh;
@@ -1026,7 +1067,62 @@ function buildBaseRange(
     //
     // 第一个加注 = 开池 → 开池范围
     // 第二个及以上加注 = 3Bet/4Bet → 再加注范围（**紧得多**）
-    if (aggression.raiseOrdinal >= 2) {
+    if (bigBlindIsolationOf(aggression)) {
+      /*
+       * 🔴 **BB 隔离加注**（真实牌局验证查出的缺陷，2026-09）。
+       *
+       * ## 现场
+       *
+       * ```text
+       * 翻前 [UTG弃 HJ弃 CO弃 BTN弃 SB跟注 BB加注 SB跟注]  ⇒ 翻牌
+       * 修复前：CONTEXT_BUILD_FAILED: rfiTierByPositionName: 「BB」没有开池范围
+       * ```
+       *
+       * 455 手真实牌局里 **40 个节点**（3.2%）整条分析失败，形态完全一致。
+       *
+       * ## 为什么以前是对的、现在不适用
+       *
+       * `rfiTierByPositionName` 对 BB 抛错是**故意**的（`preflopPriors.ts:764-773`：
+       * 「大盲不可能开池……宁可响亮地失败」）。它防的是旧实现给 BB 兜底 `BUTTON`
+       * 档位那个缺陷（红队 F-03）。
+       *
+       * 但**「SB 平跟、其余全弃、BB 加注」不是开池** —— 它是**隔离加注**
+       * （isolation raise）：BB 面对的只有一个用平跟示弱的范围很宽的对手。
+       * BB 完全可能、也很常见地在这里加注。此时「BB 没有开池范围」这个前提
+       * 不再成立，函数却仍然照抛 —— 于是**一个真实存在的局面**让整条分析失败。
+       *
+       * ## 用哪个范围（**不编造新数字**）
+       *
+       * 复用既有的 `defendWeightsByHandedness(跛入者位置, BB)` ——
+       * 即「BB 面对该位置开池时的防守范围」，它已经在项目里存在、有据可依。
+       *
+       * ⚠️ **它比真实的隔离范围宽**（BB 会用一个比防守范围更紧、更偏价值的
+       * 范围去隔离）。因此本标签**如实写出这个偏差**，不假装精确：
+       * 这是一个「比原来抛错要好、但没有专门标定过」的近似。
+       */
+      const limperPosition = (() => {
+        let raisesSoFar = 0;
+        for (const record of state.actions) {
+          if (record.street !== Street.PREFLOP) continue;
+          if (record.type === 'RAISE' || record.type === 'RERAISE') {
+            raisesSoFar += 1;
+            continue;
+          }
+          if (record.type !== 'CALL' || raisesSoFar > 0) continue;
+          const p = playerById(state, record.playerId);
+          if (p !== undefined && p.position !== Position.BB && p.position !== Position.SB) return p.position;
+        }
+        /* 没有跛入者 ⇒ 只剩「小盲补齐」这一种来源）
+         *
+         * ⚠️ 注意这里**不是**「随便挑一个」：`defendWeightsByHandedness(SB, BB)`
+         * 是项目里既有的「大盲对小盲」档位，语义上正是这个局面。 */
+        return Position.SB;
+      })();
+      weights = defendWeightsByHandedness(limperPosition, Position.BB);
+      label =
+        `大盲位隔离加注范围（对${POSITION_ZH[limperPosition]}的平跟）—— ` +
+        '⚠️ 借用「大盲面对该位置开池的防守范围」，**比真实隔离范围宽**（未专门标定）';
+    } else if (aggression.raiseOrdinal >= 2) {
       const opener = openerPositionOf(state, opponent.id);
       weights =
         opener !== null && opener !== opponent.position
@@ -1045,7 +1141,26 @@ function buildBaseRange(
   } else {
     // 主动跟注（未加注）
     const opener = openerPositionOf(state, opponent.id);
-    if (opener !== null && opener !== opponent.position) {
+    /*
+     * 🔴 **BB 不能当「开池者」用来查继续范围**（真实牌局验证查出，2026-09）。
+     *
+     * 同一条真实形态的另一半：`SB 平跟 → BB 隔离加注 → SB 跟注 ⇒ 翻牌`。
+     * 这时翻前加注者是 **BB**，而 BB 没有开池档位 ⇒
+     * `defendWeightsByHandedness(BB, …)` → `rfiTierByPositionName(BB)` **抛错**
+     * ⇒ 整条 `CONTEXT_BUILD_FAILED`（实测调用栈：
+     * `defendTierByHandedness → rfiTierByPositionName`）。
+     *
+     * 判据与 `decisionEngine` 的 3Bet 闸门**同一个**：只有
+     * `CO / BTN / HJ / LJ / UTG*` 这些**真正能开池**的位置才能当开池者。
+     * BB 的加注是「隔离 / 盲注对盲注」，SB 的加注是「小盲补齐后的反抢」——
+     * 两者都不该拿开池范围去查。
+     *
+     * 落到 `else` 支（宽范围 / 跛入原型）是**正确**的：跟注者在翻前
+     * 面对的是一个「没有开池过」的对手，他确实没有「面对开池」的继续范围可言。
+     */
+    const openerIsRealOpener =
+      opener !== null && opener !== Position.BB && opener !== Position.SB;
+    if (openerIsRealOpener && opener !== opponent.position) {
       weights = defendWeightsByHandedness(opener, opponent.position);
       label = `面对${POSITION_ZH[opener]}开池的启发式继续范围（对手选择跟注）`;
     } else if (limpProfile === null || limpProfile === undefined) {
@@ -1736,6 +1851,30 @@ function buildRangeSnapshot(
 
 /** 条件范围权益的抽样次数（响应模型一次要算 3 尺寸 × 2 桶 = 6 次） */
 const RESPONSE_EQUITY_ITERATIONS = 6000;
+/**
+ * 🔴 **P0（本轮）：条件范围权益的「精确枚举」上限**（组合数级，**确定性**）。
+ *
+ * ## 缺陷（实测确认，见 `reports/PRIORITY_FIXES_ROUND.md` §P0）
+ *
+ * `computeEquity` 的选型规则是「`matchups ≤ maxExactMatchups`（默认 **500,000**）⇒ 用精确枚举」
+ * —— **与调用方申请的 `iterations` 无关**。于是这里申请 `6000` 次抽样、
+ * 实际却跑了 **53,460–77,220 局精确枚举/档**：面对下注节点
+ * `raiseResponse` 的 **953ms / 972ms（98%）** 全花在这 16 次调用上（≈60ms/次）。
+ *
+ * ## 修法：给这条通道一个**与它自己声明一致**的枚举预算
+ *
+ * 这些权益是**启发式代理 EV 的输入**（`RESPONSE_EQUITY_ITERATIONS = 6000` 已经
+ * 明确声明它只要抽样精度），因此把上限压到抽样量级 ⇒ 引擎按**蒙特卡洛**
+ * 跑固定的 6000 次。性质：
+ * ① **仍是确定性的**：固定 seed + 固定迭代数 ⇒ 同输入同输出（不依赖机器负载）；
+ * ② **不是「按时间降级」**（项目明文禁止那种做法）：这里**不看时间**，只看声明；
+ * ③ 表驱动：所有经 `rangeEquityOf` 的条件范围权益**统一**适用，不存在逐点特判。
+ *
+ * ⚠️ 20,000 是**工程选择**：它在「枚举成本」与「抽样精度」之间取抽样一侧
+ *（6000 次抽样的 95% 半宽量级 ~1.3pp，对**代理 EV 的方向判断**足够；
+ * 主决策的 `POT/DELTA` 那几项仍走各自的预算，不受本常量影响）。
+ */
+const RESPONSE_EQUITY_MAX_EXACT_MATCHUPS = 20_000;
 
 /**
  * 对**某一份组合权重**算 Hero 权益（与 `computeHeroEquity` 同一引擎、同一口径）。
@@ -1783,6 +1922,8 @@ function rangeEquityOfMany(
       mode: EquityComputeMode.FAST,
       seed,
       iterations: RESPONSE_EQUITY_ITERATIONS,
+      /* 🔴 P0：声明 6000 次抽样 ⇒ 枚举上限也必须压到抽样量级（否则会被静默升级为精确枚举） */
+      maxExactMatchups: RESPONSE_EQUITY_MAX_EXACT_MATCHUPS,
       opponentWeights: usable.map((entries) => entries.map((e) => e.probability)),
     },
   );
@@ -1834,6 +1975,56 @@ function nodeActionContextOf(
   if (bettor !== hero.position && bettor !== primaryOpponent.position) {
     return ActionContext.GENERIC_BET;
   }
+  /*
+   * 🔴 **FOLD-TO-CBET 语义门修复（本轮）**：
+   * 「**他面对的是不是一次持续下注**」的判据必须看**这一注的来历**，
+   * 而不是看「本街正在下注的人是不是他」。
+   *
+   * ## 修的是什么
+   *
+   * 本街尚无人下注（`lastAggressor === null`）且正轮到 Hero 行动时，上面的
+   * `?? hero.position` 会把「下注者」记成 **Hero**；而 `actionContextOf` 再用
+   * 「下注者是不是**上一街进攻者**」分类 ⇒ 上一街开池的是**对手**（他在翻前加注、
+   * Hero 跟注），于是被判成 `FACING_DONK`（领打）⇒
+   * `isTraitAllowedInContext` 把 `foldToFlopBet` **挡在门外**。
+   *
+   * 实测后果：**翻前加注者过牌、Hero 下注**这条最常见的线路上，
+   * `foldToFlopCBet` 从 20% 改到 85%（2000 手）→ 我方面对的
+   * `P(他弃)` 逐位不变（77.38717227490729%），因为那条统计**根本没被放行**。
+   * 而语义上他此刻面对的正是一注「由翻前进攻者所在的牌局延续而来」的下注，
+   * 与 c-bet 面对的环境同类（`foldTo*CBet` 描述的是「他在有翻前进攻者的牌局里
+   * 面对翻牌下注弃不弃」，与「这一注由谁打出」无关）。
+   *
+   * ## 边界（刻意只在这一种情形生效）
+   *
+   * 仅当**对手在本街已经行动过且没有下注**（CHECK / CALL）、且**他就是上一街的进攻者**时
+   * 改判 `FACING_CBET`；其余一切情形**逐位不变**：
+   *
+   * | 情形 | 判定 | 为什么 |
+   * |---|---|---|
+   * | 他本街已过牌/跟注，我下注 | `FACING_CBET`（**改**） | 他的牌局由他的翻前/上一街进攻延续而来，此刻正面对这一注 |
+   * | 他本街**尚未行动**，我在领打（donk） | `FACING_DONK`（**不变**） | 他是「面对领打」的一方 —— P0-8 / D-8 两条测试锁定的就是它 |
+   * | 他先领打 | 原判据 | 他面对的是自己的下注，与我无关 |
+   * | 上一街无人进攻 | `GENERIC_BET` | 延迟 c-bet 与探牌不可区分，不猜 |
+   *
+   * 判据用「他本街**有没有行动过**」而不是「本街有没有人下注」——
+   * 第一版用了后者，把「Hero 尚未下注的领打」也改判成了 c-bet，
+   * 当场被 `P0-8` / `P0-8b` 抓住（turn donk 上 `FoldToTurnCBet` 不得生效）。
+   */
+  const prior = previousStreetOf(state.street);
+  const priorAggressor =
+    prior === null ? null : lastAggressorOfStreet(state.actions, prior);
+  const opponentActedThisStreet = state.actions.some(
+    (a) => a.street === state.street && a.position === primaryOpponent.position,
+  );
+  if (
+    opponentActedThisStreet &&
+    lastAggressorOfStreet(state.actions, state.street) === null &&
+    priorAggressor !== null &&
+    priorAggressor === primaryOpponent.position
+  ) {
+    return ActionContext.FACING_CBET;
+  }
   return actionContextOf({
     street: state.street,
     bettorPosition: bettor,
@@ -1872,6 +2063,21 @@ function buildBetDecisionFacts(input: {
      */
     confidence: number;
     tendencyNoteZh: string;
+    /**
+     * 🔴 **该家自己的当前街 V3 分街因子**（`foldScale / callScale / checkRaiseScale / betScale / betAggression / foldTraitValue`）。
+     *
+     * ## 为什么必须逐家给（本轮修复）
+     *
+     * 修复前这条多人路径调用的是 `responseTendenciesOf(o.dimensions, o.confidence)`
+     * —— **完全没有传分街输入** ⇒ 对这两层而言「这一街的实测统计」等于不存在：
+     * · `betProbabilityByBand` 拿不到 `aggressionForBetRange`（上轮 PFR→BETRANGE 修复的产物）；
+     * · 响应层拿不到 `streetFoldScale` 与**实测锚点** `foldTraitValue`
+     *   ⇒ 我下注时面对的弃牌概率**不随 `foldTo{街}Bet` 变化**（实测：65% 与 85% 给出同一个数）。
+     *
+     * 单挑路径（本文件 `:1998`）一直是传了 `input.v3Street` 的 ⇒ 两条路径口径不一致。
+     * 现在逐家传入（与 `tendencyNoteZh` / `dimensions` 同一纪律：**每家的画像各自生效**）。
+     */
+    v3Street?: Parameters<typeof responseTendenciesOf>[2];
   }[];
   board: readonly Card[];
   heroHole: readonly Card[];
@@ -1907,6 +2113,15 @@ function buildBetDecisionFacts(input: {
         factors: { foldScale: number; callScale: number; checkRaiseScale: number; betScale?: number };
       }
     | undefined;
+  /**
+   * 🔴 **牌局环境**（真实牌局验证查出的缺陷的修法）。
+   *
+   * 为什么必须传进来：无画像对手走 `neutralResponseTendencies()`，
+   * 而它把 `callScale` 硬编码为 1 ⇒ 知识库的 `env.low.calling-tendency-up`
+   *（低级别线上 ⇒ 更爱跟）在**这条路径上完全无效**
+   *（实测：三个环境的响应概率逐位相同，`scripts/test-environment-effect.ts`）。
+   */
+  environment?: string | null;
   /**
    * 🔴 **PLAYER PROFILE V3**：由实测统计解析出的四维度（覆盖标签维度）。
    *
@@ -1944,7 +2159,14 @@ function buildBetDecisionFacts(input: {
           bluffTendency: input.v3Dimensions.bluffTendency,
           passivity: input.v3Dimensions.passivity,
         } as Parameters<typeof responseTendenciesOf>[0];
-  const tendencies = responseTendenciesOf(effectiveDimensions, input.profileConfidence, input.v3Street ?? null);
+  const tendencies = responseTendenciesOf(
+    effectiveDimensions,
+    input.profileConfidence,
+    input.v3Street ?? null,
+    undefined,
+    /* 🔴 环境基线：让「低级别线上 ⇒ 对手更爱跟」在**无画像对手**上也生效 */
+    input.environment ?? null,
+  );
 
   /*
    * 🔴 **先合法化，再算响应与 EV**（本轮 P0）。
@@ -2058,7 +2280,16 @@ function buildBetDecisionFacts(input: {
         spr: input.spr,
         opponentCount: opponents.length,
         wetness,
-        tendencies: responseTendenciesOf(o.dimensions, o.confidence),
+        tendencies: responseTendenciesOf(
+          o.dimensions,
+          o.confidence,
+          /* 🔴 逐家传入当前街的分街因子与实测锚点（修复前这里没传 ⇒ 该层与统计脱钩） */
+          o.v3Street ?? null,
+          /* 下注范围层的专用 aggression（PFR→BETRANGE 修复的产物） */
+          o.v3Street?.factors.betAggression ?? null,
+          /* 🔴 环境基线（无画像对手也要让「更爱跟」生效） */
+          input.environment ?? null,
+        ),
         sizes: legalSizes,
         heroRemaining: input.heroRemaining,
         /* 🔴 P1-4：对手剩余筹码 —— 「他跟这一注就全下 ⇒ 他不能再加注」这条判据要用它 */
@@ -2975,16 +3206,146 @@ function withMeasuredDisclosure(
   snapshot: PlayerSnapshot,
   observed: PlayerObservedStats | null | undefined,
   providedNoteZh: string | null,
+  resolved: ReturnType<typeof resolvePlayerProfile> | null,
 ): PlayerSnapshot {
   if (observed === null || observed === undefined) return snapshot;
   const hands =
     typeof observed.handsObserved === 'number' && observed.handsObserved > 0
       ? observed.handsObserved
       : 0;
-  const used: string[] = [];
-  if (typeof observed.foldToRiverBet === 'number') used.push('foldToRiverBet（河牌面对下注弃牌率）');
-  if (typeof observed.riverCheckRaise === 'number') used.push('riverCheckRaise（河牌过牌-加注率）');
-  if (hands === 0 && used.length === 0) return snapshot;
+
+  /*
+   * ============================================================
+   * 🔴 **D4 修复：三态披露**（用户 §六）
+   * ============================================================
+   *
+   * ## 原缺陷
+   *
+   * 旧实现用一张**硬编码两项**（`foldToRiverBet` / `riverCheckRaise`）的清单
+   * 生成 `usedStatKeys`。于是传入 `vpip` / `pfr` 时该清单为空 ⇒ 界面显示
+   * 「无（该玩家尚无模型支持的统计项）」—— 而这两个统计**确实改变了数值**
+   * （实测 RAISE EV 2038.26 → 2037.45）。披露**不实**。
+   *
+   * ## 现在的判据（**只看真实执行路径，不看字段名、不看用户输入**）
+   *
+   * 逐项状态全部从解析器已经算出的证据推导：
+   *
+   * | 判据（按序） | 状态 |
+   * |---|---|
+   * | 本次没有该键的数值 | `NO_DATA`（没有有效数据） |
+   * | `trace` 里查不到该项 | `UNCONFIRMED`（结构判不了 ⇒ **不默认 USED**） |
+   * | `trace.streetTrait === null` | `UNSUPPORTED`（模型无该通道） |
+   * | 该项的分街条目被语义门挡下 | `NOT_APPLICABLE`（有通道但本节点不适用） |
+   * | 有效机会数 = 0 | `NO_DATA`（有通道且适用，但无证据 ⇒ 走先验） |
+   * | 其余 | `USED`（通道 + 适用 + 证据实际参与） |
+   *
+   * ⚠️ 两条硬纪律：
+   * 1. **不把「存在输入通道」当成「本次已使用」** —— `USED` 要求机会数 > 0；
+   * 2. **不把「最终动作未变化」当成「统计项没进模型」** —— 本函数**完全
+   *    不看动作**，因此这句话在本实现里结构上不可能发生。
+   */
+  const traceOf = (key: string) =>
+    resolved?.trace.find((t) => String(t.stat) === key) ?? null;
+  const denied = new Set<string>((resolved?.deniedStreetTraits ?? []).map((t) => String(t)));
+  const statStatuses = Object.entries(observed as Record<string, unknown>)
+    .filter(([k]) => k !== 'handsObserved')
+    .map(([stat, raw]) => {
+      if (raw === null || raw === undefined || typeof raw !== 'number') {
+        return {
+          stat, status: 'NO_DATA' as const,
+          reasonZh: '本次没有该统计项的数值（缺失 ⇒ 走先验，**不当作 0**）',
+          opportunities: null, approximated: null, confidence: null,
+        };
+      }
+      const entry = traceOf(stat);
+      if (entry === null) {
+        return {
+          stat, status: 'UNCONFIRMED' as const,
+          reasonZh: '解析器路径里找不到该项的执行记录 ⇒ **状态未确认**（不默认 USED）',
+          opportunities: null, approximated: null, confidence: null,
+        };
+      }
+      /*
+       * 🔴 **两条独立通道**（本修复第一版漏掉了第二条，把 vpip/pfr 误判为
+       * 「模型无此通道」—— 那句话是错的）：
+       *
+       * | 通道 | 判据 | 是否受节点语义门约束 |
+       * |---|---|---|
+       * | **维度**（tightness / aggression / bluffTendency / passivity） | `STAT_DIMENSION_POLARITY` 上有非零极性 | **否**（它描述通用倾向，与节点无关） |
+       * | **分街条目**（`streetTrait`） | `trace.streetTrait !== null` | **是**（`deniedStreetTraits`） |
+       *
+       * `vpip` / `pfr` 只走**维度**通道 ⇒ 它们的正确状态是「已进入模型（经维度）」，
+       * 而不是「无通道」。
+       */
+      const polarity = STAT_DIMENSION_POLARITY[stat as ObservedStatKey] ?? null;
+      const dimAxes = polarity === null
+        ? []
+        : (['tightness', 'aggression', 'bluffTendency', 'passivity'] as const)
+            .filter((d) => (polarity as Record<string, number>)[d] !== 0);
+      const hasDimChannel = dimAxes.length > 0;
+      const trait = entry.streetTrait === null ? null : String(entry.streetTrait);
+      const hasStreetChannel = trait !== null;
+      if (!hasDimChannel && !hasStreetChannel) {
+        return {
+          stat, status: 'UNSUPPORTED' as const,
+          reasonZh: '模型**没有**该统计项的通道（既无维度极性、也不映射到任何分街因子）',
+          opportunities: entry.opportunities, approximated: entry.approximated, confidence: entry.confidence,
+        };
+      }
+      if (entry.opportunities <= 0) {
+        return {
+          stat, status: 'NO_DATA' as const,
+          reasonZh: '通道存在，但**有效机会数为 0** ⇒ 无可信证据，走先验',
+          opportunities: entry.opportunities, approximated: entry.approximated, confidence: entry.confidence,
+        };
+      }
+      const streetDenied = hasStreetChannel && denied.has(trait!);
+      /*
+       * 「已进入模型」的判据：**至少一条通道在本次真实生效**。
+       * · 维度通道 = 有极性 ∧ 可信度 > 0 ∧ 有实测比率（否则推力恒为 0，见
+       *   `observedStats.ts:1415` 的 `observedDeviation`）；
+       * · 分街通道 = 有该条目 ∧ **未被语义门挡下**。
+       */
+      const dimActive = hasDimChannel && entry.confidence > 0 && entry.observedRate !== null;
+      const streetActive = hasStreetChannel && !streetDenied;
+      if (!dimActive && !streetActive) {
+        return {
+          stat, status: 'NOT_APPLICABLE' as const,
+          reasonZh:
+            `通道存在（分街条目 \`${trait}\`），但**本节点语义门不适用**，` +
+            '且本项不经维度通道 ⇒ 本局未生效',
+          opportunities: entry.opportunities, approximated: entry.approximated, confidence: entry.confidence,
+        };
+      }
+      const channels: string[] = [];
+      if (dimActive) channels.push(`维度（${dimAxes.join(' / ')}）`);
+      if (streetActive) channels.push(`分街条目 \`${trait}\``);
+      return {
+        stat, status: 'USED' as const,
+        reasonZh:
+          `已进入模型 —— 生效通道：${channels.join(' + ')}；` +
+          `机会数 ${entry.opportunities}${entry.approximated ? '（**由手数 × 频率近似**，已被先验收缩）' : '（来自实测统计）'}；` +
+          `后验可信度 ${entry.confidence.toFixed(2)}` +
+          (streetDenied
+            ? `；⚠️ 分街条目 \`${trait}\` **被本节点语义门挡下**，本次只有维度通道生效`
+            : '') +
+          (dimActive
+            ? '；⚠️ 本项只保证**进入**了维度通道 —— 若实测比率恰等于该统计的中性锚点，推力为 0（即「已读入但未产生实际调整」）'
+            : ''),
+        opportunities: entry.opportunities, approximated: entry.approximated, confidence: entry.confidence,
+      };
+    })
+    .sort((a, b) => a.stat.localeCompare(b.stat));
+  const used = statStatuses.filter((s) => s.status === 'USED').map((s) => s.stat);
+  if (hands === 0 && statStatuses.length === 0) return snapshot;
+
+  const zh: Record<string, string> = {
+    USED: '已进入模型', NOT_APPLICABLE: '有通道但本节点不适用',
+    UNSUPPORTED: '模型无此通道', NO_DATA: '无有效数据', UNCONFIRMED: '状态未确认',
+  };
+  const statusLine = statStatuses.length === 0
+    ? '（本次没有可供判定的统计项）'
+    : statStatuses.map((s) => `${s.stat}=${zh[s.status]}`).join('、');
 
   const base =
     providedNoteZh !== null && providedNoteZh.length > 0
@@ -2997,8 +3358,10 @@ function withMeasuredDisclosure(
       usedStatKeys: Object.freeze(used),
       noteZh:
         base +
-        '。（其余统计项没有输入通道 ⇒ **不作为**本次决策依据；实测统计进入的是**响应层**，' +
-        '不改变对手范围）',
+        `。逐项三态：${statusLine}。` +
+        '⚠️ 「有通道」**不等于**「本次已使用」；「最终动作未变化」也**不等于**该统计项没进模型。' +
+        '各状态由解析器实际执行路径得出（`trace` / `deniedStreetTraits`），未做字段名推断。',
+      statStatuses: Object.freeze(statStatuses),
     }),
   });
 }
@@ -3760,7 +4123,48 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   const facingInputsForSeat = (
     seatId: string | null | undefined,
   ): { readonly profile: FacingBetProfile; readonly labelDimensions: PlayerDimensions } | null => {
-    if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) return null;
+    /*
+     * ============================================================
+     * 🔴 **第三道门（真正的绑定约束）：无手选标签 ⇒ 整个通道返回 `null`**
+     * ============================================================
+     *
+     * 缺陷（实测复现）：原判据是
+     *
+     * ```ts
+     * if (!profileAppliesTo(seatId) || playerBuilt.tendency === null) return null;
+     * ```
+     *
+     * **没有手选标签**时直接 `return null` ⇒ 调用方 `tendenciesForSeat` 拿到 `null`
+     * ⇒ `responseTendenciesOf(null, 0, null)` 全中立 ⇒
+     * **实测统计（vpip / pfr / threeBet / 分街条目）被整体丢弃**，
+     * 无论它们多准都不会影响任何概率或 EV。
+     *
+     * 这是三处「假接线」中最靠后、也最致命的一处：前两处在
+     * `buildBetDecisionFacts` 的入参（`dimensions` / `profileConfidence`），
+     * 本处在**响应层通道的准入**。
+     *
+     * 修法：**有实测证据时**用「中性标签载体」继续走这条通道 ——
+     * `labelConfidence = 0` + 四轴 0.5 ⇒ `facingBetProfileOf` 的
+     * `hasObservedEvidence` 由 `blendWeight` 判定为真 ⇒ 实测侧全权生效。
+     * 语义上这正是解析器已经承诺的 `observedStats.ts:1548`
+     * 「**无标签 ⇒ w = 1，实测说了算**」。
+     *
+     * 无实测证据且无标签 ⇒ 逐位保持原行为（`return null`）。
+     */
+    const hasObservedEvidence = resolvedV3.observedStatCount > 0;
+    if (!profileAppliesTo(seatId) || (playerBuilt.tendency === null && !hasObservedEvidence)) {
+      return null;
+    }
+    /** 无手选标签时的中性标签载体（只作载体；实测侧按 `blendWeight` 生效） */
+    const NEUTRAL_LABEL_DIMENSIONS = {
+      tightness: 0.5,
+      aggression: 0.5,
+      bluffTendency: 0.5,
+      passivity: 0.5,
+      confidence: 0,
+      sampleSize: 0,
+      tier: 'OBSERVED_ONLY',
+    } as unknown as PlayerDimensions;
     /*
      * 🔴 **TABLE DYNAMICS V1 第二轮：作用范围明确的维度调整**。
      *
@@ -3785,7 +4189,10 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      *
      * 不传 `villainDimensions` ⇒ **逐位等于既有实现**（本分支不进）。
      */
-    const baseLabelDimensions = playerBuilt.tendency.dimension.dimensions;
+    const baseLabelDimensions =
+      playerBuilt.tendency === null
+        ? NEUTRAL_LABEL_DIMENSIONS
+        : playerBuilt.tendency.dimension.dimensions;
     const override = input.villainDimensions;
     const labelDimensions: PlayerDimensions =
       override === undefined
@@ -3804,8 +4211,8 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         baseDimensions: resolvedV3.resolved.baseDimensions,
         observedDimensions: resolvedV3.resolved.observedOnlyDimensions,
         blendWeight: resolvedV3.resolved.blendWeight,
-        /* 既有手选标签的结构性置信系数（不自造新常数） */
-        labelConfidence: playerBuilt.confidence,
+        /* 既有手选标签的结构性置信系数（不自造新常数）；无标签 ⇒ 0（实测侧不折） */
+        labelConfidence: playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
         labelDimensions,
       }),
       labelDimensions,
@@ -3815,11 +4222,23 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
   /** 响应层：标签 `0.35×(1−w)` + 实测 `w`（各进一次），下游以 `confidence = 1` 消费 */
   const tendenciesForSeat = (seatId: string | null | undefined) => {
     const inputs = facingInputsForSeat(seatId);
-    if (inputs === null) return responseTendenciesOf(null, 0, null);
+    if (inputs === null) return responseTendenciesOf(null, 0, null, null, input.environment ?? null);
     return inputs.profile.hasObservedEvidence
-      ? responseTendenciesOf(inputs.profile.dimensions, inputs.profile.confidence, v3StreetInput)
+      ? responseTendenciesOf(
+          inputs.profile.dimensions,
+          inputs.profile.confidence,
+          v3StreetInput,
+          null,
+          input.environment ?? null,
+        )
       /* 无轴证据 ⇒ 逐位走旧实现（标签维度 + 原标签置信系数） */
-      : responseTendenciesOf(inputs.labelDimensions, playerBuilt.confidence, v3StreetInput);
+      : responseTendenciesOf(
+          inputs.labelDimensions,
+          playerBuilt.confidence,
+          v3StreetInput,
+          null,
+          input.environment ?? null,
+        );
   };
 
   /**
@@ -3854,6 +4273,15 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
        */
       1,
       v3StreetInput,
+      /*
+       * 🔴 **PFR→BETRANGE 修复**：本层（公共强度带模型）用的 aggression 由
+       * `StreetFactors.betAggression` 给出 —— 它**只吃翻后统计**，
+       * 因此 `PFR` / `3Bet` 这类翻前统计不再决定「他翻牌下注范围里有多少诈唬」。
+       * 无翻后证据时该值逐位等于标签原型 aggression（= 修复前行为）。
+       */
+      v3StreetInput.factors.betAggression ?? null,
+      /* 🔴 环境基线：`env.low.calling-tendency-up` 在**无画像对手**上生效 */
+      input.environment ?? null,
     );
   };
 
@@ -4107,6 +4535,24 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
    * 再加注分支没有模型（产品无再加注树）⇒ 按「Hero 放弃本次增量」计入 ⇒ 得到**下界**，
    * 在 `evKind = MODEL_EV_WITH_LOWER_BOUND_RERAISE_BRANCH` 里如实标注。
    */
+  /**
+   * 🔴 **阶段二**：网格内**每个**合法尺寸各自的事实包（与 `raiseResponseFacts`
+   * 由**同一个闭包**产出 ⇒ 公式、台账、响应模型、容差带口径逐位一致）。
+   *
+   * 用途：候选层可以按尺寸逐项回填**它自己的** EV，并在界面上如实区分
+   * 「已完整计算 / 近似计算 / 未计算」。
+   *
+   * ⚠️ 空数组 = 本节点不适用加注模型（如多人池被显式拦截）——
+   * 与「算出来是 0」和「EV 更低」都不是一回事。
+   */
+  let raiseResponseFactsAll: readonly NonNullable<PostflopFacts['raiseResponse']>[] = Object.freeze([]);
+  /**
+   * 🔴 **阶段二「局部尺寸搜索必要性」诊断探测**（**仅诊断，绝不参与决策**）。
+   *
+   * 存放网格之外若干**离网**尺寸各自的事实包，用于回答「固定网格是否造成
+   * 明显的选择偏差」。它们**不进候选层、不进回填、不改动作**。
+   */
+  let raiseResponseFactsLocal: readonly NonNullable<PostflopFacts['raiseResponse']>[] = Object.freeze([]);
   const raiseResponseFacts = mark('raiseResponse', (): NonNullable<PostflopFacts['raiseResponse']> | null => {
     /*
      * 🔴🔴 **U1 P0 修复 · 多人底池必须显式拦截**（放在最前面：无论后面因为什么回落，
@@ -4131,6 +4577,12 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     if (bettingRangeFacts === null) return null;
     if (hero.holeCards === null || hero.holeCards.length !== 2) return null;
     const opponent = activeOpponents[0]!;
+    /*
+     * ⚠️ 必须在闭包**之前**把已收窄的底牌捕获成 const：TypeScript 的
+     * null 收窄不会跨越函数边界（`hero` 是可变的），否则闭包内两处
+     * `rangeEquityOf(hero.holeCards, …)` 都会报 `Card[] | null` 不可赋值。
+     */
+    const heroHole = hero.holeCards;
     const villainStreetCommitted = committedThisStreet(state, opponent.id);
     const heroStreetCommitted = committedThisStreet(state, hero.id);
     const currentPot = computePot(state);
@@ -4152,7 +4604,58 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     const desiredTo = currentPot + 2 * heroCallCost;
     const chosen = closestSizeTo(grid, desiredTo, (o) => o.toAmount);
     if (chosen === null) return null;
-    const raiseTo = chosen.toAmount;
+    /*
+     * ============================================================
+     * 🔴 **阶段二：把「单个尺寸的全部计算」抽成闭包**
+     * ============================================================
+     *
+     * 动机（也是唯一的正确做法）：让**网格内每一个尺寸**都走**同一条**代码路径 ——
+     * 同一资金台账、同一 `buildRaiseResponse`、同一 `raiseEVOf`、同一容差带口径。
+     *
+     * ⚠️ 绝不为「多尺寸」另写一份数学：本仓库反复踩过「两处各写一份迟早分歧」
+     * （`contextBuilder.ts:4144` 的 P0 就是尺寸基准两处不一致导致加注 EV 被静默关闭）。
+     *
+     * 闭包捕获外层已算好的量：`state` / `hero` / `opponent` / `legal` /
+     * `heroStreetCommitted` / `villainStreetCommitted` / `currentPot` /
+     * `bettingRangeFacts` / `tendencies` / `streetOfNow`。
+     * 唯一随尺寸变化的入参是 `raiseTo`（本街**累计**加注到多少）。
+     */
+    /**
+     * 🔴 **P0（本轮）：7 个加注档位共用一份「逐组合牌面分类」缓存**
+     *
+     * 公共牌与对手范围在同一节点的 7 次 `factsForRaiseTo` 里完全相同，
+     * 因此 `publicStrengthBandOf`（内含 `describeHand` 完整牌型评估）与
+     * `drawProfileOf` 原先被**逐条重复算 7 遍** —— 实测 `raiseResponse` 占掉
+     * 面对下注节点 wall 的 ~70%（1,224ms / 2,312ms）。
+     *
+     * 缓存**只去重、不改值**：键是组合的 `cardIndices`，值是那两个函数的返回值，
+     * 下游只读不写 ⇒ **任何数值都不会变**（同输入同输出仍然成立）。
+     */
+    const comboClassificationMemo = new Map<
+      string,
+      { band: ReturnType<typeof publicStrengthBandOf>; draw: ReturnType<typeof drawProfileOf> }
+    >();
+    /*
+     * 🔴 **P0（本轮 step2）：把这一档的时间拆成三段**（**只计时，不改任何计算**）
+     *
+     * 上一轮的去重只省了 14%，说明大头不在「逐组合分类」。要决定下一步优化哪一段，
+     * 必须先拿到**分段占比**；`raiseResponse` 这个总量的 mark 回答不了这个问题。
+     *
+     * | 键 | 含义 |
+     * |---|---|
+     * | `raiseComboClassify` | 逐组合牌面分类（`buildRaiseResponse` 的组合循环） |
+     * | `raiseBucketEquity` | 桶条件权益（`rangeEquityOf`：跟注桶 / 再加注桶） |
+     * | `raiseBookkeeping` | 其余（资金记账 / 5-bet 展开 / 组装） |
+     */
+    const subMark = <T,>(key: string, fn: () => T): T => {
+      const t0 = Date.now();
+      try {
+        return fn();
+      } finally {
+        timings[key] = (timings[key] ?? 0) + (Date.now() - t0);
+      }
+    };
+    const factsForRaiseTo = (raiseTo: number): NonNullable<PostflopFacts['raiseResponse']> | null => {
     /*
      * ---- 资金记账（唯一事实来源）----
      *
@@ -4224,7 +4727,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
      * 否则用中立倾向（等于没有画像），绝不把甲的倾向套到乙身上。
      */
     const tendencies = tendenciesForSeat(opponent.id);
-    const built = buildRaiseResponse({
+    const built = subMark('raiseComboClassify', () => buildRaiseResponse({
       betRangeEntries: bettingRangeFacts.entries,
       board: allBoardCards(state),
       currentPot,
@@ -4237,14 +4740,16 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
       heroIsAllIn: raiseTo >= legal.allInToAmount - 1e-9,
       /* 🔴 P1-2a：他跟平即投光 ⇒ 不得生成再加注分支（判据只看**他的**筹码） */
       villainIsAllInByCall,
-    });
+      /* 🔴 P0：同一决策内跨档位复用逐组合分类（纯去重，不改值） */
+      comboClassificationMemo,
+    }));
     if (built === null) return null;
-    const eqVsCall = rangeEquityOf(
-      hero.holeCards,
+    const eqVsCall = subMark('raiseBucketEquity', () => rangeEquityOf(
+      heroHole,
       allBoardCards(state),
       built.callContinueEntries,
       (input.equitySeed ?? 20260913) + 1601,
-    );
+    ));
     /* ============================================================
      * 🔴 **P1-2b：被再加注后的 Hero 决策（FOLD / CALL 两选一）**
      * ============================================================
@@ -4295,7 +4800,7 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
     })();
     const eqVsReraise: { value: number | null } = reRaiseFacts === null
       ? { value: null }
-      : rangeEquityOf(hero.holeCards, allBoardCards(state), built.reRaiseEntries, (input.equitySeed ?? 20260913) + 2601);
+      : subMark('raiseBucketEquity', () => rangeEquityOf(heroHole, allBoardCards(state), built.reRaiseEntries, (input.equitySeed ?? 20260913) + 2601));
     /*
      * 分支值：拿得到再加注范围与资金 ⇒ 用 `max(弃牌, 跟注)`；
      * 拿不到 ⇒ **退回下界** `−heroContestedAdd` 并如实标注（绝不编造跟注 EV）。
@@ -4425,6 +4930,74 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
             `${reraiseBranchKind === 'LOWER_BOUND_NOT_IMPLEMENTED' ? '=下界' : `=${reraiseBranchKind}分支`}) = **${raiseEV.toFixed(4)}**` +
             '（⚠️ 再加注分支按**摊牌终止近似**计入：未模拟后续街的下注/过牌/弃牌 ⇒ 不构成对真实收益的严格下界，详见 assumptionsZh）'),
     });
+    };
+    /* ---- 闭包结束：以下开始「多尺寸」编排（阶段二） ---- */
+
+    const chosenFacts = factsForRaiseTo(chosen.toAmount);
+    if (chosenFacts === null) return null;
+    /*
+     * ============================================================
+     * 🔴 **阶段二：网格内每个尺寸各自独立评估**
+     * ============================================================
+     *
+     * 用户要求（阶段二 §1–§4）：每个合法候选尺寸都要有**自己的**
+     * `P(弃)/P(跟)/P(再加注)`、**自己的**条件继续范围与权益、**自己的**资金流与 EV。
+     *
+     * 本循环复用上面那个闭包 ⇒ 与「被选中的那一档」**逐位同一套公式**。
+     *
+     * ⚠️ 严格按网格顺序产出，并用**精确整数**金额标识；
+     * 任何一档算不出来（`null`）就**如实缺省**，绝不用别的档位的数字顶替。
+     */
+    const allSizeFacts: NonNullable<PostflopFacts['raiseResponse']>[] = [];
+    for (const option of grid) {
+      const facts = factsForRaiseTo(option.toAmount);
+      if (facts !== null) allSizeFacts.push(facts);
+    }
+    raiseResponseFactsAll = Object.freeze(allSizeFacts);
+
+    /*
+     * ============================================================
+     * 🔴 **阶段二 §「局部尺寸搜索」—— 决定它是否必要的**诊断探测****
+     * ============================================================
+     *
+     * 用户原话：「35BB 也是合法尺寸，但不在当前默认网格中。请检查是否有必要通过
+     * 局部尺寸搜索覆盖相邻尺寸，以避免固定网格造成明显的选择偏差。」
+     *
+     * 「检查」需要一个**可证伪的测量**，而不是一句论证。因此在网格之外再评估
+     * 少量**离网**尺寸（围绕启发式目标 `desiredTo` 及其邻域），然后回答：
+     * **是否存在离网尺寸，其 EV 超出网格最优达「工程容差带」以上？**
+     * 若没有 ⇒ 局部搜索在本节点**不产生可分辨的改进**；若有 ⇒ 必须补。
+     *
+     * ## 三条硬纪律（都是为了让这个探测**绝不改变决策**）
+     *
+     * 1. **只算、不进候选**：这些尺寸**不**进入 `candidatesForDecision`，
+     *    回填只认候选层已有的金额 ⇒ 决策与披露逐位不受影响；
+     * 2. **小规模**：只探 5 个点（`desiredTo` 与 ±8%/±16%），保护热路径预算；
+     * 3. **整数筹码**且**排除已在网格内**的金额（重复计算没有意义）。
+     */
+    const localProbeTos = (() => {
+      const set = new Set<number>();
+      /*
+       * ⚠️ **只探 3 个点**（`desiredTo` 与 ±8%）：本诊断跑在**每一次分析**上，
+       * 第一版用 5 个点实测把 context 从 ~850ms 推到 ~1150ms（+35%）。
+       * 3 个点足以回答「离网尺寸能否超出容差带」，代价减半。
+       */
+      for (const factor of [1, 1.08, 0.92]) {
+        const to = Math.round(desiredTo * factor);
+        if (!Number.isInteger(to) || to <= 0) continue;
+        if (to <= legal.minRaiseToAmount - 1e-9 || to > legal.allInToAmount + 1e-9) continue;
+        if (grid.some((o) => Math.abs(o.toAmount - to) < 1e-9)) continue; // 网格内已评估过
+        set.add(to);
+      }
+      return [...set].sort((a, b) => a - b);
+    })();
+    const localFacts: NonNullable<PostflopFacts['raiseResponse']>[] = [];
+    for (const to of localProbeTos) {
+      const facts = factsForRaiseTo(to);
+      if (facts !== null) localFacts.push(facts);
+    }
+    raiseResponseFactsLocal = Object.freeze(localFacts);
+    return chosenFacts;
   });
 
   /*
@@ -4799,6 +5372,79 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
                   noteZh: raiseResponseFacts.noteZh,
                 },
           /*
+           * ============================================================
+           * 🔴 **阶段二：网格内每个合法尺寸各自的事实包**
+           * ============================================================
+           *
+           * 与上面 `raiseResponse`（被启发式选中的那一档）**由同一个闭包产出**，
+           * 因此公式、资金台账、响应模型、容差带口径逐位一致 —— 可直接横向比较。
+           *
+           * ⚠️ 只带**数值与结构**字段，不带 `assumptionsZh` / `noteZh` 这类长文案
+           *（它们对每一档都是同一份，重复 8 次只会让响应体膨胀）。
+           * 文案仍以 `raiseResponse` 那一份为准。
+           *
+           * ⚠️ 空数组 = 本节点不适用加注模型（例：多人池被显式拦截），
+           * 与「算出来是 0」和「EV 更低」都不是一回事。
+           */
+          raiseResponseAll: Object.freeze(
+            raiseResponseFactsAll.map((f) => ({
+              sizeChips: f.sizeChips,
+              sizeBB: f.sizeBB,
+              raiseIncrement: f.raiseIncrement,
+              heroAdd: f.heroAdd,
+              villainAdd: f.villainAdd,
+              villainIsAllInByCall: f.villainIsAllInByCall,
+              heroContestedAdd: f.heroContestedAdd,
+              finalPot: f.finalPot,
+              uncalledReturn: f.uncalledReturn,
+              foldLikelihood: f.foldLikelihood,
+              callLikelihood: f.callLikelihood,
+              reRaiseLikelihood: f.reRaiseLikelihood,
+              /*
+               * 🔴 **P0（本轮）：把分桶权益的「来源」也披露出来**（**只读，不改计算**）。
+               *
+               * 起因：面对下注节点 953ms/972ms 花在 16 次 `rangeEquityOf` 上（≈60ms/次），
+               * 而调用点只申请 `iterations: 6000` —— **6000 次抽样不可能要 60ms**。
+               * 要判断「是不是被静默升级成了精确枚举」，必须先看得见**实际方法**。
+               *
+               * ⚠️ 事实核对（本轮实测）：**事实包里放的确实是两个 `number`**
+               *（`heroEquityVsRaiseCallRange: 0.44` 这种），不是带 `method/iterations` 的对象
+               * ⇒ 「方法与迭代数」在这一层**根本没被保留**，必须先补上来源字段。
+               * 因此这里只保留**数值**（与修复前逐位一致），方法披露放在
+               * `equityMethod` / `equityIterations` 这一对新增字段里（取自权益引擎返回值）。
+               */
+              equityMethod: f.equityMethod,
+              equityIterations: f.equityIterations,
+              heroEquityVsRaiseCallRange: f.heroEquityVsRaiseCallRange,
+              reraiseBranchEV: f.reraiseBranchEV,
+              reraiseBranchKind: f.reraiseBranchKind,
+              /* 该字段在 `raiseResponse` 里由条件分支展开 ⇒ 这里显式归一为 `boolean | null` */
+              heroFourBetSupported: f.heroFourBetSupported ?? null,
+              raiseEV: f.raiseEV,
+              evKind: f.evKind,
+              reachableCombos: f.reachableCombos,
+              callCombos: f.callCombos,
+            })),
+          ),
+          /*
+           * 🔴 **离网尺寸诊断**（同源闭包、同一口径）—— 只用于回答
+           * 「局部尺寸搜索是否有必要」，**不参与任何决策或候选**。
+           */
+          raiseResponseLocalProbe: Object.freeze(
+            raiseResponseFactsLocal.map((f) => ({
+              sizeChips: f.sizeChips,
+              sizeBB: f.sizeBB,
+              foldLikelihood: f.foldLikelihood,
+              callLikelihood: f.callLikelihood,
+              reRaiseLikelihood: f.reRaiseLikelihood,
+              heroEquityVsRaiseCallRange: f.heroEquityVsRaiseCallRange,
+              raiseEV: f.raiseEV,
+              finalPot: f.finalPot,
+              heroAdd: f.heroAdd,
+              villainAdd: f.villainAdd,
+            })),
+          ),
+          /*
            * 🔴 **RIVER BET RANGE V2：真正的「河牌下注前到达范围」**。
            *
            * 它是同一次范围更新链在**当前下注之前**的状态（引用捕获，零额外计算），
@@ -4837,6 +5483,12 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
           betDecision: buildBetDecisionFacts({
             range: primaryBuild.range,
             /*
+             * 🔴 **环境基线**：让知识库的 `env.low.calling-tendency-up`
+             *（低级别线上 ⇒ 对手更爱跟）在**无画像对手**上生效 ——
+             * 修复前它在这条路径上是死的（实测三个环境响应逐位相同）。
+             */
+            environment: input.environment ?? null,
+            /*
              * 🔴 **完整对手列表**（§13）：每家一份自己的范围 + **他自己的**画像倾向。
              * 优先级：`seatProfiles[位置]` > `quickProfile`（当该座位就是画像描述的那家）> 中立先验。
              */
@@ -4871,6 +5523,13 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
                     : ownDimensions !== null
                       ? '画像（首要对手，含实测与手选合并）'
                       : '无画像 ⇒ 中立先验（不编造类型）',
+                /*
+                 * 🔴 **逐家传当前街的分街因子**（本轮修复）：
+                 * 画像**只有指向这家**（`isVillain`）时才带实测分街统计；
+                 * 逐座位手选画像与「无画像」两家**不带** ⇒ 那两家的响应与修复前逐位相同。
+                 * 单挑路径一直是这么传的（`:1998`），这里补齐多人路径的口径差。
+                 */
+                ...(isVillain ? { v3Street: v3StreetInput } : {}),
               };
             }),
             board: boardCards,
@@ -4882,9 +5541,65 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
             heroPosition: hero.position,
             villainPosition: primaryOpponent?.position ?? null,
             equityVsArrivalRange: math.heroEquity,
+            /*
+             * ============================================================
+             * 🔴 **修复：实测维度被「标签置信度」归零 ⇒ 画像「算了但没用」**
+             * ============================================================
+             *
+             * 缺陷（实测复现）：`profileConfidence` 取的是**标签**置信度，
+             * 而**无手选标签**时 `playerBuilt.tendency === null` ⇒ 传 `0`。
+             * `responseTendenciesOf` 里 `scaled(raw) = 1 + (raw−1)·conf`
+             * ⇒ `conf = 0` 时**所有刻度恒为 1** ⇒ 上面刚传进去的 `v3Dimensions`
+             * **被整体归零** ⇒ 实测统计（vpip/pfr 等）对决策零影响。
+             *
+             * 实测证据：同一节点只改对手实测统计
+             * `vpip 0.18 → 0.80`（极端两端）时，权益 80.43%/77.39%、
+             * CALL EV 1644.52 **逐位不变**；而**同时**给一个手选标签时
+             * 权益确实变了（82.02% → 82.36%）。差别正是这个 `conf`。
+             *
+             * 修法：有实测证据时按**原样使用**融合维度（`conf = 1`），
+             * 与 `facingBetProfile`（`contextBuilder.ts:3984-3987`）**同一条纪律** ——
+             * 标签份额已由融合维度的 `(1−w)` 承担，**不能再折一次**，
+             * 更不能因为「没有标签」把实测一起折成 0。
+             *
+             * 无实测证据时**逐位保持原行为**（标签置信度），确保旧路径不回归。
+             */
+            /*
+             * ============================================================
+             * 🔴 **第二个门（真正的绑定约束）：无标签时 `dimensions` 直接传 `null`**
+             * ============================================================
+             *
+             * 修复前：`playerBuilt.tendency === null ? null : …`。无手选标签 ⇒ 传 `null`
+             * ⇒ `responseTendenciesOf` 在 `betResponse.ts:367` 直接 `dimensions === null`
+             * 早退 ⇒ **即使下面把 `v3Dimensions`（融合后的实测维度）传进去也全被丢弃**。
+             *
+             * 实测证据（修复第一个门之后复测）：`vpip 0.15→0.85` 仍然**逐位不变**
+             * （整体权益 86.28%、CALL EV 1644.52）。⇒ 必须先解开这道门。
+             *
+             * 修法：有实测证据时用**融合维度**当载体（标签份额已由 `(1−w)` 内含），
+             * 与 `betRangeTendenciesForSeat`（本文件 `:3974-3980`）同一手法：
+             * 覆盖四个轴，而不是再叠一层。无实测证据时**逐位保持原行为**。
+             */
             dimensions:
-              playerBuilt.tendency === null ? null : playerBuilt.tendency.dimension.dimensions,
-            profileConfidence: playerBuilt.tendency === null ? 0 : playerBuilt.confidence,
+              playerBuilt.tendency !== null
+                ? playerBuilt.tendency.dimension.dimensions
+                : resolvedV3.observedStatCount > 0
+                  ? {
+                      tightness: resolvedV3.resolved.resolvedDimensions.tightness,
+                      aggression: resolvedV3.resolved.resolvedDimensions.aggression,
+                      bluffTendency: resolvedV3.resolved.resolvedDimensions.bluffTendency,
+                      passivity: resolvedV3.resolved.resolvedDimensions.passivity,
+                      confidence: 0,
+                      sampleSize: 0,
+                      tier: 'OBSERVED_ONLY',
+                    } as unknown as Parameters<typeof responseTendenciesOf>[0]
+                  : null,
+            profileConfidence:
+              resolvedV3.observedStatCount > 0
+                ? 1
+                : playerBuilt.tendency === null
+                  ? 0
+                  : playerBuilt.confidence,
             /* 🔴 PLAYER PROFILE V3：把分街系数与实测维度交给响应层（无统计时逐位不变） */
             v3Street: v3StreetInput,
             /*
@@ -5078,7 +5793,13 @@ export function buildDecisionContext(input: ContextBuildInput): ContextBuildResu
         .map((entry) => entry.build.snapshot)
         .filter((s): s is RangeSnapshot => s !== null),
     ),
-    player: withMeasuredDisclosure(playerBuilt.snapshot, observedForPrimary, input.observedStatsNoteZh ?? null),
+    player: withMeasuredDisclosure(
+      playerBuilt.snapshot,
+      observedForPrimary,
+      input.observedStatsNoteZh ?? null,
+      /* 🔴 D4：三态披露读**同一个**解析结果（与模型实际消费的是同一份证据，不再两处各算） */
+      resolvedV3,
+    ),
     /* 🔴 PLAYER PROFILE V3 的 Profile Trace（诊断 / 审计模式可见） */
     profileV3: Object.freeze({
       baseArchetype: (input.quickProfile ?? null) as string | null,

@@ -310,7 +310,21 @@ export function addPlayer(
           /** 显式身份**不消耗**自动编号（否则连续入座会跳号） */
           nextNumber: state.nextPlayerNumber,
         }
-      : nextPlayer(state);
+      : /*
+         * 🔴 **新玩家名称录入**：不传 `playerId` 时**仍然**沿用自动身份 `p{n}`，
+         * 但 `displayName` 必须尊重调用方给的名字 —— 修复前这里直接返回
+         * `nextPlayer(state)`，于是 `ADD_PLAYER{seatId, displayName}` 的**名字被静默丢弃**
+         * （界面因此根本没有「新建并命名」这条路）。
+         *
+         * ⚠️ 身份与显示名**分开**：`playerId` 仍是自动 `p{n}`（同名不合并、身份只认 id），
+         * 传入的名字只改**显示**；不传名字时逐位等于修复前（`玩家{n}`）。
+         */
+        (() => {
+          const auto = nextPlayer(state);
+          return requestedName !== undefined && requestedName.length > 0
+            ? { ...auto, displayName: requestedName }
+            : auto;
+        })();
 
   return ok(
     patch(state, {
@@ -731,6 +745,63 @@ export function setProfile(
         [found.player.playerId]: Object.freeze({ ...found.player, quickProfile }),
       }),
       notices: Object.freeze([]),
+    }),
+  );
+}
+
+/**
+ * 🔴 **改名：设置已入座玩家的显示名**（`SET_PLAYER_NAME`）。
+ *
+ * ## 为什么必须有这个 op
+ *
+ * `ADD_PLAYER{displayName}` 只能给**空座位**上的**新**玩家命名。
+ * 而实际牌桌上常见的局面是：座位**已经**坐满了（一键补齐 / 逐个加入都会得到
+ * 自动名「玩家N」），这时**没有任何入口**能把名字改成使用者的叫法 ——
+ * 实测使用者反馈正是「加了位置、名字还是玩家2、玩家3」。
+ *
+ * ## 硬约束（与身份纪律一致）
+ *
+ * - **只改显示名，绝不动身份**：`playerId` 不变 ⇒ 历史绑定、统计、画像全都不受影响；
+ * - 同名**不合并**（身份只认 `playerId`，这条不许在这个 op 里被绕过）；
+ * - 名称两端空白去掉后**不得为空**（空名字必须被拒，而不是写进去）；
+ * - 长度上限 **24**（与界面输入框 `maxLength` 同值，避免两处口径不一）。
+ *
+ * ⚠️ **历史记录不会被改写**：名册（`listKnownPlayers`）取的是该 `playerId`
+ * **最新一条记录**里的 `displayName`，因此改名后要等这位玩家**下一次行动落盘**，
+ * 名册里才会显示新名字。这是刻意选择 —— 不为了改个显示名去重写历史文件。
+ */
+export const PLAYER_NAME_MAX_LENGTH = 24;
+
+export function setPlayerName(
+  state: PokerTableState,
+  seatId: string,
+  displayName: string,
+): TableOpOutcome {
+  const found = requireOccupiedSeat(state, seatId);
+  if (!found.ok) return found.outcome;
+  const name = displayName.trim();
+  if (name.length === 0) {
+    return fail([issue('PLAYER_NAME_EMPTY', '玩家名称不能为空（留空请用「清空座位」或直接不改）')]);
+  }
+  if (name.length > PLAYER_NAME_MAX_LENGTH) {
+    return fail([
+      issue(
+        'PLAYER_NAME_TOO_LONG',
+        `玩家名称最长 ${PLAYER_NAME_MAX_LENGTH} 个字符（收到 ${name.length} 个）`,
+      ),
+    ]);
+  }
+  if (found.player.displayName === name) return ok(state);
+  const previous = found.player.displayName;
+  return ok(
+    patch(state, {
+      playersById: Object.freeze({
+        ...state.playersById,
+        [found.player.playerId]: Object.freeze({ ...found.player, displayName: name }),
+      }),
+      notices: Object.freeze([
+        `「${previous}」已更名为「${name}」（身份 ${found.player.playerId} 不变）。`,
+      ]),
     }),
   );
 }

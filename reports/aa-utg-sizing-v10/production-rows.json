@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-09-23T09:15:11.038Z",
+  "gtoStatus": {
+    "enabled": true,
+    "state": "SOLVER_RANGE",
+    "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "elapsedMs": 3,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVED",
+        "fromSolver": true,
+        "cacheSource": "persistent",
+        "reasonZh": null
+      }
+    ],
+    "background": [],
+    "warnings": [],
+    "reasons": []
+  },
+  "rangeProvenance": [
+    {
+      "positionZh": "枪口位",
+      "sourceKind": "EMPIRICAL",
+      "sourceZh": "枪口位 的**求解器**翻前范围（开池）。求解器 92c86ed73aa0856df8479b5c7635e1469f48f1e8，取用动作 [RAISE/ALL_IN]，迭代 12，gap 0.021029559081906044（目标 0.05）。✅ **已通过准入：BR gap 0.021030 < 目标 0.05（停止原因 target_gap）**。⚠️ 翻前是**近似延续模型**，因此这不是完整 GTO，也**不是**已验证数据。",
+      "sourceKindZh": "经验数据（有依据，但未达「已验证」标准）",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+      "effectiveComboCount": 94.05598021718555,
+      "normalizedEntropy": 0.656490709211,
+      "collapsed": false,
+      "gtoOutcomeState": "SOLVED",
+      "gtoReasonZh": null,
+      "gtoPending": false
+    }
+  ],
+  "arrival": null,
+  "rows": []
+}

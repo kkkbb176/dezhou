@@ -1,0 +1,647 @@
+reports/aa-utg-sizing-audit-v8\run.mjs:48:  const f = s.foldLikelihood;
+reports/aa-utg-sizing-audit-v8\run.mjs:49:  const c = s.callLikelihood;
+reports/aa-utg-sizing-audit-v8\run.mjs:50:  const rr = s.reRaiseLikelihood;
+reports/aa-utg-sizing-audit-v8\run.mjs:51:  const eq = s.heroEquityVsRaiseCallRange.value;
+reports/aa-utg-sizing-audit-v8\run.mjs:77:    eqRR: s.heroEquityVsReraiseRange.value,
+src\viewmodels\decisionViewModel.ts:958:              `P(弃) ${num(s['foldLikelihood'])} / P(跟) ${num(s['callLikelihood'])} / P(加) ${num(s['raiseLikelihood'])}｜` +
+src\viewmodels\decisionViewModel.ts:1117:                `${num(s.sizeBB, 1)}BB：弃 ${pct(s.foldLikelihood)} / 跟 ${pct(s.callLikelihood)} / ` +
+src\viewmodels\decisionViewModel.ts:1118:                `再加 ${pct(s.reRaiseLikelihood)}｜需权益 ${num(s.priceRequiredEquity, 4)}`,
+src\viewmodels\decisionViewModel.ts:1127:                `${num(s.sizeBB, 1)}BB：对跟注桶 ${eqOf(s.heroEquityVsRaiseCallRange)}｜` +
+src\viewmodels\decisionViewModel.ts:1128:                `对再加注桶 ${eqOf(s.heroEquityVsReraiseRange)}`,
+reports/aa-utg-sizing-audit-v8\production-rows.json:73:  "modelVersion": "PREFLOP_RAISE_RESPONSE_V1",
+reports/aa-utg-sizing-audit-v8\production-rows.json:78:    "零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）",
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:76:   75: export const PREFLOP_RAISE_RESPONSE_MODEL_VERSION = 'PREFLOP_RAISE_RESPONSE_V1';
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:82:   81:  * `raiseEVOf` 这**唯一一条**现金流公式，契约不同就意味着有一处没跟上。
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:333:  332:   readonly foldLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:334:  333:   readonly callLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:335:  334:   readonly reRaiseLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:485:  484:     foldLikelihood: foldMass / total,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:486:  485:     callLikelihood: callMass / total,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:487:  486:     reRaiseLikelihood: reRaiseMass / total,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:564:  563:  * ⇒ 他根本不能加注（调用方应在此之前把 `reRaiseLikelihood` 归零）。
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:696:   20:  * RAISE EV                        （raiseEVOf，与 CALL EV 同一公式族）
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:709:   33:  * **没有第二套公式**：现金流一律调用 `raiseResponse.raiseEVOf`
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:745:   69: import { raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:792:  116:   readonly foldLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:793:  117:   readonly callLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:794:  118:   readonly reRaiseLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:802:  126:   readonly heroEquityVsRaiseCallRange: PreflopEquityFact;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:803:  127:   readonly heroEquityVsReraiseRange: PreflopEquityFact;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1092:  416:   '零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）',
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1236:  560:     if (response.reRaiseLikelihood <= 0 || response.reRaiseEntries.length === 0) return null;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1291:  615:       : raiseEVOf({
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1292:  616:           foldLikelihood: response.foldLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1293:  617:           callLikelihood: response.callLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1294:  618:           reRaiseLikelihood: response.reRaiseLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1303:  627:     reraiseCallBranchEV === null && response.reRaiseLikelihood > 0
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1327:  651:     foldLikelihood: response.foldLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1328:  652:     callLikelihood: response.callLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1329:  653:     reRaiseLikelihood: response.reRaiseLikelihood,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1336:  660:     heroEquityVsRaiseCallRange: eqVsCall,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1337:  661:     heroEquityVsReraiseRange: eqVsReraise,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1354:  678:       `本尺寸的证据链：他弃 ${(response.foldLikelihood * 100).toFixed(1)}% / 跟 ${(response.callLikelihood * 100).toFixed(1)}% / `
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1355:  679:         + `再加注 ${(response.reRaiseLikelihood * 100).toFixed(1)}%`,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1370:  694:           : `RAISE EV = ${response.foldLikelihood.toFixed(4)}×${args.pot0} + `
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1371:  695:             + `${response.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + `
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1372:  696:             + `${response.reRaiseLikelihood.toFixed(4)}×(${reraiseBranchEV.toFixed(4)}`
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1613:  118:  *（`reRaiseLikelihood` 只有在不是全下时才可能大于 0），也没有建模 Hero 的
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1624:  129: export function raiseEVOf(input: {
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1625:  130:   foldLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1626:  131:   callLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1627:  132:   reRaiseLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1639:  144:   const { foldLikelihood: f, callLikelihood: c, reRaiseLikelihood: rr } = input;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1702:  207:   readonly foldLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1704:  209:   readonly callLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1706:  211:   readonly reRaiseLikelihood: number;
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1914:  419:     foldLikelihood: foldMass / total,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1915:  420:     callLikelihood: callMass / total,
+reports/aa-utg-sizing-audit-v8\full-source-numbered.txt:1916:  421:     reRaiseLikelihood: reRaiseMass / total,
+src\infra\artifactDefinitions.ts:431:      '⚠️ 该文件同时定义 `raiseEVOf`（加注 EV 的唯一公式），改动必须同步 ' +
+src\infra\artifactDefinitions.ts:461:      '⚠️ 现金流必须继续走 `raiseResponse.raiseEVOf`（全项目唯一公式），' +
+scripts\audit-player-profile-sensitivity-v1.ts:103:    `${f2(small?.['foldLikelihood'])}/${f2(small?.['callLikelihood'])}/${f2(small?.['raiseLikelihood'])}│` +
+scripts\audit-player-profile-sensitivity-v1.ts:104:    `${f2(allIn?.['foldLikelihood'])}/${f2(allIn?.['callLikelihood'])}/${f2(allIn?.['raiseLikelihood'])}│` +
+scripts\audit-player-profile-exploit-v1.ts:143:      fold: s['foldLikelihood'] === null ? null : Number(s['foldLikelihood']),
+scripts\audit-player-profile-exploit-v1.ts:144:      call: s['callLikelihood'] === null ? null : Number(s['callLikelihood']),
+scripts\audit-core-decision.ts:81:    smallFold: sizes.get('BET_SMALL')?.['foldLikelihood'] ?? null,
+scripts\bet-decision-probe.ts:103:        `${s.foldLikelihood.toFixed(3)}  ${s.callLikelihood.toFixed(3)}   ${s.raiseLikelihood.toFixed(3)}   ` +
+scripts\cb5-impact-scan.ts:79:      `｜响应: ${rr === null ? '—' : `f=${n(rr['foldLikelihood'], 4)} c=${n(rr['callLikelihood'], 4)} r=${n(rr['reRaiseLikelihood'], 4)} sz=${String(rr['sizeChips'])}`}` +
+scripts\flopriver-agent4-01-core.ts:156:  kv('  raiseResponse.fold/call/reRaise', `${n(((d.pf['raiseResponse'] ?? null) as Rec | null)?.['foldLikelihood'], 6)} / ${n(((d.pf['raiseResponse'] ?? null) as Rec | null)?.['callLikelihood'], 6)} / ${n(((d.pf['raiseResponse'] ?? null) as Rec | null)?.['reRaiseLikelihood'], 6)}`);
+scripts\flopriver-agent4-01-core.ts:183:  kv(`  ${tag}`, `${n(rr?.['foldLikelihood'], 6)} | ${n(rr?.['callLikelihood'], 6)} | ${n(rr?.['reRaiseLikelihood'], 6)}`);
+scripts\flopriver-agent4-02-sweep.ts:40:line('  【Hero 下注节点 · TURN】variant | conf | 融合维度 | tendenciesZh | sizes[0].foldLikelihood');
+scripts\flopriver-agent4-02-sweep.ts:51:  kv('    sizes[0].foldLikelihood / call / raise', `${n(s0?.['foldLikelihood'], 6)} ｜ ${n(s0?.['callLikelihood'], 6)} ｜ ${n(s0?.['raiseLikelihood'], 6)}`);
+scripts\flopriver-agent4-02-sweep.ts:59:  kv(`  ${tag}`, `fold=${n(rr?.['foldLikelihood'], 6)} call=${n(rr?.['callLikelihood'], 6)} reRaise=${n(rr?.['reRaiseLikelihood'], 6)}`);
+scripts\f2-acceptance-and-postflop-regression.ts:87:    `\n  raiseFacts=${rr === null ? 'null' : j({ sz: rr['sizeChips'], ev: rr['raiseEV'], heroAdd: rr['heroAdd'], villainAdd: rr['villainAdd'], heroContestedAdd: rr['heroContestedAdd'], uncalledReturn: rr['uncalledReturn'], finalPot: rr['finalPot'], contract: rr['cashflowContract'], f: rr['foldLikelihood'], c: rr['callLikelihood'], r: rr['reRaiseLikelihood'] }, 420)}` +
+scripts\flopriver-agent4-03-identity.ts:41:  kv('    sizes[0].foldLikelihood', n(s0?.['foldLikelihood'], 6));
+scripts\flopriver-agent4-03-identity.ts:102:  kv('    reRaiseLikelihood / reRaiseCombos', `${n(rr?.['reRaiseLikelihood'], 6)} ｜ ${String(rr?.['reRaiseCombos'])}`);
+scripts\flopriver-agent1-response.ts:45:      `   ${''.padEnd(34)}| ${String(s['size']).padEnd(11)} | ${n(s['foldLikelihood'], 6)} | ${n(s['callLikelihood'], 6)} | ${n(s['raiseLikelihood'], 6)} |` +
+scripts\flopriver-agent4-04-texture.ts:82:  kv('    reRaiseLikelihood / reRaiseCombos', `${n(rr?.['reRaiseLikelihood'], 6)} ｜ ${String(rr?.['reRaiseCombos'])}`);
+scripts\flopriver-audit-v1.ts:149:      ` ｜ resp=${br === null ? '—' : j({ f: br['foldLikelihood'], c: br['callLikelihood'], r: br['reRaiseLikelihood'], sz: br['sizeChips'] }, 120)}/${rr === null ? '—' : j({ f: rr['foldLikelihood'], c: rr['callLikelihood'], r: rr['reRaiseLikelihood'], sz: rr['sizeChips'] }, 120)}` +
+scripts\flopriver-audit-v1.ts:200:      `\n      响应: bet=${br === null ? '—' : j({ f: br['foldLikelihood'], c: br['callLikelihood'], r: br['reRaiseLikelihood'] }, 100)} raise=${rr === null ? '—' : j({ f: rr['foldLikelihood'], c: rr['callLikelihood'], r: rr['reRaiseLikelihood'] }, 100)}` +
+scripts\flopriver-audit-v1.ts:240:    console.log(`            raise=${rr === null ? 'null' : j({ sz: rr['sizeChips'], ev: rr['raiseEV'], f: rr['foldLikelihood'], c: rr['callLikelihood'], r: rr['reRaiseLikelihood'], approx: rr['sizeApproximation'], price: rr['model']?.['priceRequiredEquity'] }, 400)}`);
+scripts\flopriver-audit-v1e.ts:48:    betModel: br === null ? null : { best: br['bestSize'], checkEV: br['checkEV'], sizes: (br['sizes'] ?? []).map((s: Record<string, any>) => `${String(s['size'])}@${num(s['betAmount'], 1)} ev=${num(s['betEV'], 2)} f=${num(s['foldLikelihood'], 3)} c=${num(s['callLikelihood'], 3)} eqVsCall=${num(s['heroEquityVsCallRange'], 3)} callCombos=${String(s['callComboCount'])}`) },
+scripts\flopriver-audit-v1e.ts:49:    raiseModel: rr === null ? null : { sz: rr['sizeChips'], ev: rr['raiseEV'], f: rr['foldLikelihood'], c: rr['callLikelihood'], r: rr['reRaiseLikelihood'], eqCall: rr['heroEquityVsRaiseCallRange'], callCombos: rr['callCombos'], reachable: rr['reachableCombos'] },
+test\betDecisionEngine.test.ts:149:    assert.ok(Number.isFinite(s.foldLikelihood) && Number.isFinite(s.callLikelihood), `${kind} 概率必须有限`);
+test\betDecisionEngine.test.ts:151:      Math.abs(s.foldLikelihood + s.callLikelihood + s.raiseLikelihood - 1) < 1e-9,
+test\betDecisionEngine.test.ts:152:      `${kind} 三概率必须和为 1（实际 ${s.foldLikelihood + s.callLikelihood + s.raiseLikelihood}）`,
+test\betDecisionEngine.test.ts:162:    large.foldLikelihood > small.foldLikelihood,
+test\betDecisionEngine.test.ts:163:    `注越大弃牌越多：小注 ${small.foldLikelihood.toFixed(3)} vs 大注 ${large.foldLikelihood.toFixed(3)}`,
+test\betDecisionEngine.test.ts:166:    small.callLikelihood > large.callLikelihood,
+test\betDecisionEngine.test.ts:167:    `注越大跟注越少：小注 ${small.callLikelihood.toFixed(3)} vs 大注 ${large.callLikelihood.toFixed(3)}`,
+test\betDecisionEngine.test.ts:225:    flopMid.foldLikelihood !== turnMid.foldLikelihood,
+test\betDecisionEngine.test.ts:259:      s.callLikelihood >= n.callLikelihood - 0.01,
+test\betDecisionEngine.test.ts:260:      `${kind}：跟注站的 P(跟) 不得比普通低超过 1 个百分点（${s.callLikelihood.toFixed(4)} vs ${n.callLikelihood.toFixed(4)}）`,
+test\betDecisionEngine.test.ts:263:      s.foldLikelihood <= n.foldLikelihood + 0.01,
+test\betDecisionEngine.test.ts:264:      `${kind}：跟注站的 P(弃) 不得比普通高超过 1 个百分点（${s.foldLikelihood.toFixed(4)} vs ${n.foldLikelihood.toFixed(4)}）`,
+test\betDecisionEngine.test.ts:307:      s.callLikelihood >= n.callLikelihood,
+test\betDecisionEngine.test.ts:308:      `同一范围、同一尺寸：跟注站的 P(跟) 必须不低于普通（${s.callLikelihood.toFixed(4)} vs ${n.callLikelihood.toFixed(4)}）`,
+test\betDecisionEngine.test.ts:311:      s.foldLikelihood <= n.foldLikelihood,
+test\betDecisionEngine.test.ts:312:      `同一范围、同一尺寸：跟注站的 P(弃) 必须不高于普通（${s.foldLikelihood.toFixed(4)} vs ${n.foldLikelihood.toFixed(4)}）`,
+test\betDecisionEngine.test.ts:328:    tLarge.foldLikelihood > nLarge.foldLikelihood,
+test\betDecisionEngine.test.ts:329:    `紧手对大注的弃牌率必须更高：${tLarge.foldLikelihood.toFixed(4)} vs ${nLarge.foldLikelihood.toFixed(4)}`,
+test\betDecisionEngine.test.ts:595:  assert.ok(small.foldLikelihood !== med.foldLikelihood, '小注与中注的弃牌率必须不同');
+test\betDecisionEngine.test.ts:596:  assert.ok(med.foldLikelihood !== large.foldLikelihood, '中注与大注的弃牌率必须不同');
+test\betDecisionEngine.test.ts:609:          ['fold', s.foldLikelihood],
+test\betDecisionEngine.test.ts:610:          ['call', s.callLikelihood],
+test\betDecisionEngine.test.ts:616:        const sum = s.foldLikelihood + s.callLikelihood + s.raiseLikelihood;
+test\betDecisionEngine.test.ts:698:    foldLikelihood: 1,
+test\betDecisionEngine.test.ts:699:    callLikelihood: 0,
+test\betDecisionEngine.test.ts:716:    foldLikelihood: 0,
+test\betDecisionEngine.test.ts:717:    callLikelihood: 1,
+test\betDecisionEngine.test.ts:834:      assert.equal(existing.fold, s.foldLikelihood, '同一合法金额必须同一 P(弃)');
+test\betDecisionEngine.test.ts:835:      assert.equal(existing.call, s.callLikelihood, '同一合法金额必须同一 P(跟)');
+test\betDecisionEngine.test.ts:840:        fold: s.foldLikelihood,
+test\betDecisionEngine.test.ts:841:        call: s.callLikelihood,
+test\betDecisionEngine.test.ts:868:    Math.abs(allIn.foldLikelihood + allIn.callLikelihood - 1) < 1e-9,
+test\betDecisionEngine.test.ts:869:    `全下后必须 P(弃) + P(跟) = 1（实际 ${allIn.foldLikelihood + allIn.callLikelihood}）`,
+test\betDecisionEngine.test.ts:1061:  if (allIn.callLikelihood > 0.99) {
+test\betDecisionEngine.test.ts:1100:    model!.sizes[0]!.foldLikelihood <= model!.sizes[2]!.foldLikelihood,
+scripts\flriver-gent2-probe2.ts:111:      console.log(`   ${String(s['kind'])} amt=${num(s['betAmount'])} r=${num(s['ratioToPot'])} P(f/c/r)=${num(s['foldLikelihood'])}/${num(s['callLikelihood'])}/${num(s['raiseLikelihood'])} evF/C/R=${num(s['evFoldBranch'])}/${num(s['evCallBranch'])}/${num(s['evRaiseBranch'])} betEV=${num(s['betEV'])} dChk=${num(s['deltaVsCheck'])} score=${num(s['score'])} evKind=${String(s['evKind'])}`);
+scripts\flriver-gent2-probe.ts:155:        `P(fold)=${num(s['foldLikelihood'])} P(call)=${num(s['callLikelihood'])} P(raise)=${num(s['raiseLikelihood'])} ` +
+src\domain\decision\decision.types.ts:267:    readonly heroEquityVsReraiseRange: number | null;
+src\domain\decision\decision.types.ts:279:    readonly foldLikelihood: number;
+src\domain\decision\decision.types.ts:280:    readonly callLikelihood: number;
+src\domain\decision\decision.types.ts:281:    readonly reRaiseLikelihood: number;
+src\domain\decision\decision.types.ts:282:    readonly heroEquityVsRaiseCallRange: number | null;
+scripts\hand07-turn-decision-test.ts:114:    fold: Object.fromEntries([...probByKind].map(([k, v]) => [k, Number(v['foldLikelihood'])])),
+scripts\hand07-turn-decision-test.ts:115:    call: Object.fromEntries([...probByKind].map(([k, v]) => [k, Number(v['callLikelihood'])])),
+src\domain\postflop\betResponse.ts:1000:  foldLikelihood: number;
+src\domain\postflop\betResponse.ts:1001:  callLikelihood: number;
+src\domain\postflop\betResponse.ts:1208:        foldLikelihood: foldMass / totalMass,
+src\domain\postflop\betResponse.ts:1209:        callLikelihood: callMass / totalMass,
+src\domain\postflop\betResponse.ts:1614:  foldLikelihood: number;
+src\domain\postflop\betResponse.ts:1615:  callLikelihood: number;
+src\domain\postflop\betResponse.ts:1663:  foldLikelihood: number;
+src\domain\postflop\betResponse.ts:1664:  callLikelihood: number;
+src\domain\postflop\betResponse.ts:1682:  const callNeeded = input.callLikelihood > 0;
+src\domain\postflop\betResponse.ts:1696:  const callContribution = !callNeeded ? 0 : evCall === null ? null : input.callLikelihood * evCall;
+src\domain\postflop\betResponse.ts:1701:      : input.foldLikelihood * evFold + callContribution + raiseContribution;
+src\domain\postflop\betResponse.ts:1707:    foldLikelihood: input.foldLikelihood,
+src\domain\postflop\betResponse.ts:1708:    callLikelihood: input.callLikelihood,
+src\domain\postflop\betResponse.ts:1732:      `${input.foldLikelihood.toFixed(3)}×${evFold.toFixed(1)}` +
+src\domain\postflop\betResponse.ts:1733:      `${callNeeded ? ` + ${input.callLikelihood.toFixed(3)}×${evCall === null ? '—' : evCall.toFixed(1)}` : '（无人跟注桶）'}` +
+scripts\hand06-laozheng-checkback-test.ts:128:    fold: pickProb('foldLikelihood'),
+scripts\hand06-laozheng-checkback-test.ts:129:    call: pickProb('callLikelihood'),
+scripts\hand05-laozheng-test.ts:128:    fold: pickProb('foldLikelihood'),
+scripts\hand05-laozheng-test.ts:129:    call: pickProb('callLikelihood'),
+scripts\hand04-laolin-test.ts:141:    fold: pickProb('foldLikelihood'),
+scripts\hand04-laolin-test.ts:142:    call: pickProb('callLikelihood'),
+scripts\m1-decomp.ts:67:    eqCall: rr?.['heroEquityVsRaiseCallRange'], eqReraise: rr?.['heroEquityVsReraiseRange'],
+scripts\m1-decomp.ts:68:    fold: rr?.['foldLikelihood'], call: rr?.['callLikelihood'], reRaise: rr?.['reRaiseLikelihood'],
+scripts\m1-acceptance-matrix.ts:85:    eqVsRaiseCall: rr?.['heroEquityVsRaiseCallRange'] ?? null,
+scripts\m1-acceptance-matrix.ts:86:    eqVsReraise: rr?.['heroEquityVsReraiseRange'] ?? null,
+scripts\m1-acceptance-matrix.ts:87:    probs: `${n(rr?.['foldLikelihood'], 4)}/${n(rr?.['callLikelihood'], 4)}/${n(rr?.['reRaiseLikelihood'], 4)}`,
+scripts\kq-river-decision.ts:144:  line(`  Villain Fold / Call / Reraise = ${pct(facts['foldLikelihood'], 2)} / ${pct(facts['callLikelihood'], 2)} / ${pct(facts['reRaiseLikelihood'], 2)}`);
+scripts\kq-river-decision.ts:146:  line(`  EqVsRaiseCallRange     = ${num(facts['heroEquityVsRaiseCallRange'], 6)}（${String(facts['equityMethod'])}，${num(facts['equityIterations'], 0)} 次）`);
+scripts\hand10-laoxu-turn-test.ts:117:    fold: Object.fromEntries([...probByKind].map(([k, v]) => [k, Number(v['foldLikelihood'])])),
+scripts\hand10-laoxu-turn-test.ts:118:    call: Object.fromEntries([...probByKind].map(([k, v]) => [k, Number(v['callLikelihood'])])),
+scripts\m1-self-review.ts:68:    eqCall: rr?.['heroEquityVsRaiseCallRange'] ?? null,
+scripts\m1-self-review.ts:69:    probs: rr === null ? null : [rr['foldLikelihood'], rr['callLikelihood'], rr['reRaiseLikelihood']],
+scripts\kq-river-raise-scan.ts:21:import { buildRaiseResponse, raiseEVOf } from '../src/app/manualInput/raiseResponse.ts';
+scripts\kq-river-raise-scan.ts:147:  const ev = eq === null ? null : raiseEVOf({
+scripts\kq-river-raise-scan.ts:148:    foldLikelihood: res.foldLikelihood, callLikelihood: res.callLikelihood, reRaiseLikelihood: res.reRaiseLikelihood,
+scripts\kq-river-raise-scan.ts:155:    pad(pct(res.foldLikelihood), 9) + pad(pct(res.callLikelihood), 9) + pad(pct(res.reRaiseLikelihood), 11) +
+scripts\kq-profile-provenance.ts:79:  line(`  RAISE@${f === null ? '—' : String(f['sizeChips'])} EV = ${f === null ? '—' : n(f['raiseEV'])}｜P(弃)/P(跟)/P(再加) = ${f === null ? '—' : `${n(f['foldLikelihood'], 4)}/${n(f['callLikelihood'], 4)}/${n(f['reRaiseLikelihood'], 4)}`}`);
+scripts\kq-profile-provenance.ts:80:  line(`  EqVsArrivalRange = ${n((dg['conditionalEquities'] ?? {})['arrivalRange'])}｜EqVsRaiseCallRange = ${n(f?.['heroEquityVsRaiseCallRange'])}`);
+scripts\kq-profile-provenance.ts:88:    fold: f === null ? null : (f['foldLikelihood'] as number),
+scripts\kq-profile-provenance.ts:89:    call: f === null ? null : (f['callLikelihood'] as number),
+scripts\kq-profile-provenance.ts:90:    rr: f === null ? null : (f['reRaiseLikelihood'] as number),
+scripts\kq-profile-provenance.ts:91:    eqVsRaiseCall: f === null ? null : (f['heroEquityVsRaiseCallRange'] as number),
+scripts\m1fix-sweep.ts:83:        n(rr?.['foldLikelihood'], 6),
+scripts\m1fix-sweep.ts:84:        n(rr?.['callLikelihood'], 6),
+scripts\m1fix-sweep.ts:85:        n(rr?.['reRaiseLikelihood'], 6),
+scripts\p1a-reraise-repro.ts:75:line(`  模型概率：P(弃) ${pct(F['foldLikelihood'])}｜P(跟) ${pct(F['callLikelihood'])}｜**P(再加注) ${pct(F['reRaiseLikelihood'])}**`);
+scripts\p1a-reraise-repro.ts:76:line(`  RAISE EV = ${n(F['raiseEV'], 4)}｜eqVsRaiseCall = ${n(F['heroEquityVsRaiseCallRange'], 4)}`);
+scripts\p1a-reraise-repro.ts:126:const impossible = F['reRaiseLikelihood'] > 1e-12 && villainAfter.allIn;
+scripts\p1a-reraise-repro.ts:129:    `而模型给出 P(再加注) = ${pct(F['reRaiseLikelihood'])}。`
+scripts\p1a-reraise-repro.ts:132:  `${n((F['finalPot'] as number) * (F['reRaiseLikelihood'] as number) * (F['heroEquityVsRaiseCallRange'] as number), 1)} 筹码（上界）`);
+scripts\p1a-scenario-debug.ts:78:    `   ${n(f['foldLikelihood'], 4)}/${n(f['callLikelihood'], 4)}/${n(f['reRaiseLikelihood'], 4)}`,
+scripts\p12b-facts-probe.ts:60:    n(f['reRaiseLikelihood'], 4).padStart(8) +
+scripts\p12b-facts-probe.ts:66:    n(f['heroEquityVsReraiseRange'], 4).padStart(12) +
+scripts\p12b-facts-probe.ts:74:    line(`    ↳ 逐位精确值：P(弃)=${f['foldLikelihood']}｜P(跟)=${f['callLikelihood']}｜P(再加)=${f['reRaiseLikelihood']}｜RAISE EV=${f['raiseEV']}`);
+scripts\phase2-size-and-uncalled-probe.ts:79:    `｜P(弃/跟/加) ${n(s['foldLikelihood'], 4)}/${n(s['callLikelihood'], 4)}/${n(s['raiseLikelihood'], 4)}` +
+scripts\phase2-size-and-uncalled-probe.ts:114:  line(`  P(弃)/P(跟)/P(再加) = ${n(F2['foldLikelihood'], 6)}/${n(F2['callLikelihood'], 6)}/${n(F2['reRaiseLikelihood'], 6)}` +
+scripts\phase2-size-and-uncalled-probe.ts:115:    `｜EqVsRaiseCall ${n(F2['heroEquityVsRaiseCallRange'], 6)}｜RAISE EV ${n(F2['raiseEV'], 6)}｜CALL EV ${n(callEV2, 6)}`);
+test\playerIdentityRouting.test.ts:140:      eqCall: facts['heroEquityVsRaiseCallRange'],
+test\playerIdentityRouting.test.ts:143:      eqReraise: facts['heroEquityVsReraiseRange'],
+scripts\p14-betresponse-repro.ts:92:    pct(s['foldLikelihood']).padEnd(10) + pct(s['callLikelihood']).padEnd(10) + pct(raise).padEnd(10) +
+scripts\phase2-uncalled-chips.ts:13:import { buildRaiseResponse, raiseEVOf } from '../src/app/manualInput/raiseResponse.ts';
+scripts\phase2-uncalled-chips.ts:121:  const ev = eq === null ? null : raiseEVOf({
+scripts\phase2-uncalled-chips.ts:122:    foldLikelihood: res.foldLikelihood, callLikelihood: res.callLikelihood, reRaiseLikelihood: res.reRaiseLikelihood,
+scripts\phase2-uncalled-chips.ts:125:  rows.push({ to: raiseTo, f: res.foldLikelihood, c: res.callLikelihood, rr: res.reRaiseLikelihood, eq: eq ?? NaN, ev: ev ?? NaN, contested: heroContestedAdd, finalPot });
+scripts\phase2-uncalled-chips.ts:128:    pad(n(res.foldLikelihood, 6), 10) + pad(n(res.callLikelihood, 6), 10) + pad(n(res.reRaiseLikelihood, 6), 10) +
+test\multiwayBetResponse.test.ts:418:      foldLikelihood: size.foldLikelihood,
+test\multiwayBetResponse.test.ts:419:      callLikelihood: size.callLikelihood,
+scripts\player-identity-after-fix.ts:175:      : `｜响应 ${n(rr['foldLikelihood'], 4)}/${n(rr['callLikelihood'], 4)}/${n(rr['reRaiseLikelihood'], 4)}｜RAISE EV ${n(rr['raiseEV'], 4)}`));
+scripts\player-identity-after-fix.ts:189:      row['r']['raise']['foldLikelihood'], row['r']['raise']['callLikelihood'],
+scripts\player-identity-after-fix.ts:190:      row['r']['raise']['reRaiseLikelihood'], row['r']['raise']['raiseEV'],
+scripts\player-identity-before-fix.ts:72:    (rf === null ? '—' : `${n(rf['foldLikelihood'], 4)}/${n(rf['callLikelihood'], 4)}/${n(rf['reRaiseLikelihood'], 4)}`).padStart(28) +
+src\app\manualInput\raiseResponse.ts:118: *（`reRaiseLikelihood` 只有在不是全下时才可能大于 0），也没有建模 Hero 的
+src\app\manualInput\raiseResponse.ts:129:export function raiseEVOf(input: {
+src\app\manualInput\raiseResponse.ts:130:  foldLikelihood: number;
+src\app\manualInput\raiseResponse.ts:131:  callLikelihood: number;
+src\app\manualInput\raiseResponse.ts:132:  reRaiseLikelihood: number;
+src\app\manualInput\raiseResponse.ts:144:  const { foldLikelihood: f, callLikelihood: c, reRaiseLikelihood: rr } = input;
+src\app\manualInput\raiseResponse.ts:207:  readonly foldLikelihood: number;
+src\app\manualInput\raiseResponse.ts:209:  readonly callLikelihood: number;
+src\app\manualInput\raiseResponse.ts:211:  readonly reRaiseLikelihood: number;
+src\app\manualInput\raiseResponse.ts:419:    foldLikelihood: foldMass / total,
+src\app\manualInput\raiseResponse.ts:420:    callLikelihood: callMass / total,
+src\app\manualInput\raiseResponse.ts:421:    reRaiseLikelihood: reRaiseMass / total,
+test\playerProfileV3.test.ts:115:    fold: pick('foldLikelihood'),
+test\playerProfileV3.test.ts:116:    call: pick('callLikelihood'),
+src\app\manualInput\preflopRaiseResponse.ts:75:export const PREFLOP_RAISE_RESPONSE_MODEL_VERSION = 'PREFLOP_RAISE_RESPONSE_V1';
+src\app\manualInput\preflopRaiseResponse.ts:81: * `raiseEVOf` 这**唯一一条**现金流公式，契约不同就意味着有一处没跟上。
+src\app\manualInput\preflopRaiseResponse.ts:332:  readonly foldLikelihood: number;
+src\app\manualInput\preflopRaiseResponse.ts:333:  readonly callLikelihood: number;
+src\app\manualInput\preflopRaiseResponse.ts:334:  readonly reRaiseLikelihood: number;
+src\app\manualInput\preflopRaiseResponse.ts:484:    foldLikelihood: foldMass / total,
+src\app\manualInput\preflopRaiseResponse.ts:485:    callLikelihood: callMass / total,
+src\app\manualInput\preflopRaiseResponse.ts:486:    reRaiseLikelihood: reRaiseMass / total,
+src\app\manualInput\preflopRaiseResponse.ts:563: * ⇒ 他根本不能加注（调用方应在此之前把 `reRaiseLikelihood` 归零）。
+test\playerProfileExploitV1.test.ts:100:  Math.max(...sizes.map((s) => (s['foldLikelihood'] === null ? -1 : Number(s['foldLikelihood']))));
+test\playerProfileExploitV1.test.ts:232:  if (allIn !== undefined && allIn['foldLikelihood'] !== null) return Number(allIn['foldLikelihood']);
+src\app\manualInput\preflopRaiseFacts.ts:20: * RAISE EV                        （raiseEVOf，与 CALL EV 同一公式族）
+src\app\manualInput\preflopRaiseFacts.ts:33: * **没有第二套公式**：现金流一律调用 `raiseResponse.raiseEVOf`
+src\app\manualInput\preflopRaiseFacts.ts:69:import { raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
+src\app\manualInput\preflopRaiseFacts.ts:116:  readonly foldLikelihood: number;
+src\app\manualInput\preflopRaiseFacts.ts:117:  readonly callLikelihood: number;
+src\app\manualInput\preflopRaiseFacts.ts:118:  readonly reRaiseLikelihood: number;
+src\app\manualInput\preflopRaiseFacts.ts:126:  readonly heroEquityVsRaiseCallRange: PreflopEquityFact;
+src\app\manualInput\preflopRaiseFacts.ts:127:  readonly heroEquityVsReraiseRange: PreflopEquityFact;
+src\app\manualInput\preflopRaiseFacts.ts:416:  '零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）',
+src\app\manualInput\preflopRaiseFacts.ts:560:    if (response.reRaiseLikelihood <= 0 || response.reRaiseEntries.length === 0) return null;
+src\app\manualInput\preflopRaiseFacts.ts:615:      : raiseEVOf({
+src\app\manualInput\preflopRaiseFacts.ts:616:          foldLikelihood: response.foldLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:617:          callLikelihood: response.callLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:618:          reRaiseLikelihood: response.reRaiseLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:627:    reraiseCallBranchEV === null && response.reRaiseLikelihood > 0
+src\app\manualInput\preflopRaiseFacts.ts:651:    foldLikelihood: response.foldLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:652:    callLikelihood: response.callLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:653:    reRaiseLikelihood: response.reRaiseLikelihood,
+src\app\manualInput\preflopRaiseFacts.ts:660:    heroEquityVsRaiseCallRange: eqVsCall,
+src\app\manualInput\preflopRaiseFacts.ts:661:    heroEquityVsReraiseRange: eqVsReraise,
+src\app\manualInput\preflopRaiseFacts.ts:678:      `本尺寸的证据链：他弃 ${(response.foldLikelihood * 100).toFixed(1)}% / 跟 ${(response.callLikelihood * 100).toFixed(1)}% / `
+src\app\manualInput\preflopRaiseFacts.ts:679:        + `再加注 ${(response.reRaiseLikelihood * 100).toFixed(1)}%`,
+src\app\manualInput\preflopRaiseFacts.ts:694:          : `RAISE EV = ${response.foldLikelihood.toFixed(4)}×${args.pot0} + `
+src\app\manualInput\preflopRaiseFacts.ts:695:            + `${response.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + `
+src\app\manualInput\preflopRaiseFacts.ts:696:            + `${response.reRaiseLikelihood.toFixed(4)}×(${reraiseBranchEV.toFixed(4)}`
+test\profileAbAndEvNaming.test.ts:120:    fold: pick('foldLikelihood'),
+test\profileAbAndEvNaming.test.ts:121:    call: pick('callLikelihood'),
+test\preflopRaiseE2E.test.ts:207:    assert.equal(typeof s['foldLikelihood'], 'number');
+test\preflopRaiseE2E.test.ts:208:    assert.equal(typeof s['callLikelihood'], 'number');
+test\preflopRaiseE2E.test.ts:209:    assert.equal(typeof s['reRaiseLikelihood'], 'number');
+test\preflopRaiseE2E.test.ts:210:    assert.notEqual(s['heroEquityVsRaiseCallRange']['value'], undefined);
+test\preflopRaiseE2E.test.ts:214:  assert.equal(pr['modelVersion'], 'PREFLOP_RAISE_RESPONSE_V1');
+test\preflopRaiseE2E.test.ts:239:      assert.equal(data['responseModel'], 'PREFLOP_RAISE_RESPONSE_V1', '必须声明用的是哪个响应模型');
+test\preflopRaiseE2E.test.ts:240:      for (const key of ['foldLikelihood', 'callLikelihood', 'reRaiseLikelihood']) {
+test\preflopRaiseE2E.test.ts:525:        assert.equal(s['reRaiseLikelihood'], 0, `${heroStackBB}BB：该尺寸不得有再加注概率`);
+test\preflopRaiseE2E.test.ts:571:    sa.map((s) => [s['sizeChips'], s['raiseEV'], s['foldLikelihood'], s['callLikelihood'], s['reRaiseLikelihood']]),
+test\preflopRaiseE2E.test.ts:572:    sb.map((s) => [s['sizeChips'], s['raiseEV'], s['foldLikelihood'], s['callLikelihood'], s['reRaiseLikelihood']]),
+test\preflopRaiseE2E.test.ts:577:    const eq = s['heroEquityVsRaiseCallRange'] as Record<string, any>;
+test\preflopRaiseE2E.test.ts:650:  assert.equal(pr['modelVersion'], 'PREFLOP_RAISE_RESPONSE_V1');
+test\preflopRaiseE2E.test.ts:655:    assert.ok(['EXACT', 'MONTE_CARLO', 'NOT_AVAILABLE'].includes(String(s['heroEquityVsRaiseCallRange']['method'])));
+test\preflopRaiseE2E.test.ts:656:    assert.equal(typeof s['heroEquityVsRaiseCallRange']['iterations'], 'number');
+test\postflopRangeFoundation.test.ts:36:  callLikelihood,
+test\postflopRangeFoundation.test.ts:360:  assert.equal(callLikelihood(0.5)('AA'), tierWeightOf(call, 0));
+scripts\profile-downstream-audit.ts:126:    eqVsRaiseCall: rr?.['heroEquityVsRaiseCallRange'] ?? null,
+scripts\profile-downstream-audit.ts:127:    eqVsReraise: rr?.['heroEquityVsReraiseRange'] ?? null,
+scripts\profile-downstream-audit.ts:132:    f: rr?.['foldLikelihood'] ?? null,
+scripts\profile-downstream-audit.ts:133:    c: rr?.['callLikelihood'] ?? null,
+scripts\profile-downstream-audit.ts:134:    rrv: rr?.['reRaiseLikelihood'] ?? null,
+scripts\probe3-dual-source.ts:241:      pad(d4(small['foldLikelihood']), 12) + pad(d4(small['callLikelihood']), 12) +
+test\profileResolverV3Fix.test.ts:710:      fold: pick('foldLikelihood'),
+test\profileResolverV3Fix.test.ts:711:      call: pick('callLikelihood'),
+test\preflopRaiseDecision.test.ts:41:import { raiseEVOf, CASHFLOW_CONTRACT } from '../src/app/manualInput/raiseResponse.ts';
+test\preflopRaiseDecision.test.ts:316:  const { foldLikelihood: f, callLikelihood: c, reRaiseLikelihood: r } = built;
+test\preflopRaiseDecision.test.ts:335:  const callMassFromBucket = built.callLikelihood;
+test\preflopRaiseDecision.test.ts:362:    cheap.foldLikelihood < pricey.foldLikelihood,
+test\preflopRaiseDecision.test.ts:363:    `价格越高弃牌率必须越高：便宜 ${cheap.foldLikelihood} vs 昂贵 ${pricey.foldLikelihood}`,
+test\preflopRaiseDecision.test.ts:384:  assert.ok(normal.reRaiseLikelihood > 0, '正常情形下必须有非零的再加注概率（否则闸门形同虚设）');
+test\preflopRaiseDecision.test.ts:385:  assert.equal(heroAllIn.reRaiseLikelihood, 0, 'Hero 全下 ⇒ 他不能再加注');
+test\preflopRaiseDecision.test.ts:386:  assert.equal(villainAllIn.reRaiseLikelihood, 0, '他跟平即全下 ⇒ 他不能再加注');
+test\preflopRaiseDecision.test.ts:390:    Math.abs(heroAllIn.callLikelihood - normal.callLikelihood) < 1e-12
+test\preflopRaiseDecision.test.ts:391:      || heroAllIn.callLikelihood >= normal.callLikelihood,
+test\preflopRaiseDecision.test.ts:392:    `Hero 全下时加注权重必须迁移到跟注：${normal.callLikelihood} → ${heroAllIn.callLikelihood}`,
+test\preflopRaiseDecision.test.ts:395:    Math.abs(heroAllIn.callLikelihood + heroAllIn.foldLikelihood - 1) < 1e-12,
+test\preflopRaiseDecision.test.ts:450:    const foldTerm = size.foldLikelihood * size.currentPot;
+test\preflopRaiseDecision.test.ts:452:      size.callLikelihood
+test\preflopRaiseDecision.test.ts:453:      * (size.heroEquityVsRaiseCallRange.value! * size.finalPot - size.heroContestedAdd);
+test\preflopRaiseDecision.test.ts:454:    const rrTerm = size.reRaiseLikelihood * size.reraiseBranchEV;
+test\preflopRaiseDecision.test.ts:462:    const weightSum = size.foldLikelihood + size.callLikelihood + size.reRaiseLikelihood;
+test\preflopRaiseDecision.test.ts:487:    const viaShared = raiseEVOf({
+test\preflopRaiseDecision.test.ts:488:      foldLikelihood: size.foldLikelihood,
+test\preflopRaiseDecision.test.ts:489:      callLikelihood: size.callLikelihood,
+test\preflopRaiseDecision.test.ts:490:      reRaiseLikelihood: size.reRaiseLikelihood,
+test\preflopRaiseDecision.test.ts:494:      equityVsRaiseCall: size.heroEquityVsRaiseCallRange.value!,
+test\preflopRaiseDecision.test.ts:526:        size.heroEquityVsReraiseRange.value! * (size.finalPot + size.heroAdditionalCallVsReRaise!);
+test\preflopRaiseDecision.test.ts:765:    const withContested = size.foldLikelihood * size.currentPot
+test\preflopRaiseDecision.test.ts:766:      + size.callLikelihood * (size.heroEquityVsRaiseCallRange.value! * size.finalPot - size.heroContestedAdd)
+test\preflopRaiseDecision.test.ts:767:      + size.reRaiseLikelihood * size.reraiseBranchEV;
+test\preflopRaiseDecision.test.ts:768:    const withHeroAdd = size.foldLikelihood * size.currentPot
+test\preflopRaiseDecision.test.ts:769:      + size.callLikelihood * (size.heroEquityVsRaiseCallRange.value! * size.finalPot - size.heroAdd)
+test\preflopRaiseDecision.test.ts:770:      + size.reRaiseLikelihood * size.reraiseBranchEV;
+test\preflopRaiseDecision.test.ts:781:      assert.equal(size.reRaiseLikelihood, 0, '他跟平即全下 ⇒ 再加注概率必须为 0');
+test\preflopRaiseDecision.test.ts:790:  assert.equal(biggest.reRaiseLikelihood, 0);
+test\preflopRaiseDecision.test.ts:919:  assert.equal(a.foldLikelihood, b.foldLikelihood);
+test\preflopRaiseDecision.test.ts:920:  assert.equal(a.callLikelihood, b.callLikelihood);
+test\preflopRaiseDecision.test.ts:921:  assert.equal(a.reRaiseLikelihood, b.reRaiseLikelihood);
+test\preflopRaiseDecision.test.ts:942:    other.foldLikelihood,
+test\preflopRaiseDecision.test.ts:943:    a.foldLikelihood,
+test\preflopRaiseDecision.test.ts:1034:        Math.abs(size.foldLikelihood - expectedResponse.foldLikelihood) < TOL,
+test\preflopRaiseDecision.test.ts:1036:          + `（实测 ${size.foldLikelihood} vs 复算 ${expectedResponse.foldLikelihood}）`,
+test\preflopRaiseDecision.test.ts:1039:        Math.abs(size.callLikelihood - expectedResponse.callLikelihood) < TOL,
+test\preflopRaiseDecision.test.ts:1040:        `${hc} 尺寸 ${size.sizeChips}：跟注概率必须能复算（${size.callLikelihood} vs ${expectedResponse.callLikelihood}）`,
+test\preflopRaiseDecision.test.ts:1043:        Math.abs(size.reRaiseLikelihood - expectedResponse.reRaiseLikelihood) < TOL,
+test\preflopRaiseDecision.test.ts:1044:        `${hc} 尺寸 ${size.sizeChips}：再加注概率必须能复算（${size.reRaiseLikelihood} vs ${expectedResponse.reRaiseLikelihood}）`,
+test\preflopRaiseDecision.test.ts:1083:    a.sizes.map((s) => [s.sizeChips, s.foldLikelihood, s.callLikelihood, s.reRaiseLikelihood, s.raiseEV]),
+test\preflopRaiseDecision.test.ts:1084:    b.sizes.map((s) => [s.sizeChips, s.foldLikelihood, s.callLikelihood, s.reRaiseLikelihood, s.raiseEV]),
+test\profileFacingBetChannel.test.ts:197:      f: raise['foldLikelihood'], c: raise['callLikelihood'], r: raise['reRaiseLikelihood'],
+test\profileFacingBetChannel.test.ts:198:      eqCall: raise['heroEquityVsRaiseCallRange'], eqReraise: raise['heroEquityVsReraiseRange'],
+test\profileFacingBetChannel.test.ts:821:  const p = (raise['foldLikelihood'] as number) + (raise['callLikelihood'] as number) + (raise['reRaiseLikelihood'] as number);
+test\raiseEvCashflowP0.test.ts:34:import { buildRaiseResponse, raiseEVOf } from '../src/app/manualInput/raiseResponse.ts';
+test\raiseEvCashflowP0.test.ts:199:    (f['foldLikelihood'] as number) * currentPot +
+test\raiseEvCashflowP0.test.ts:200:    (f['callLikelihood'] as number) * ((f['heroEquityVsRaiseCallRange'] as number) * finalPot - heroAdd) +
+test\raiseEvCashflowP0.test.ts:201:    (f['reRaiseLikelihood'] as number) * -heroAdd;
+test\raiseEvCashflowP0.test.ts:369:  assert.equal(f['reRaiseLikelihood'], 0, '全下时不得出现再加注分支');
+test\raiseEvCashflowP0.test.ts:400:  const ev = raiseEVOf({
+test\raiseEvCashflowP0.test.ts:401:    foldLikelihood: 1, callLikelihood: 0, reRaiseLikelihood: 0,
+test\raiseEvCashflowP0.test.ts:410:  const ev = raiseEVOf({
+test\raiseEvCashflowP0.test.ts:411:    foldLikelihood: 0, callLikelihood: 1, reRaiseLikelihood: 0,
+test\raiseEvCashflowP0.test.ts:424:  const ev = raiseEVOf({
+test\raiseEvCashflowP0.test.ts:425:    foldLikelihood: 0, callLikelihood: 0, reRaiseLikelihood: 1,
+test\raiseEvCashflowP0.test.ts:433:  const mixed = raiseEVOf({
+test\raiseEvCashflowP0.test.ts:434:    foldLikelihood: 0, callLikelihood: 0, reRaiseLikelihood: 1,
+test\raiseEvCashflowP0.test.ts:447:  assert.equal(f['reRaiseLikelihood'], 0, '全下时他不能再加注');
+test\raiseEvCashflowP0.test.ts:450:    (f['foldLikelihood'] as number) * 93 +
+test\raiseEvCashflowP0.test.ts:451:    (f['callLikelihood'] as number) * ((f['heroEquityVsRaiseCallRange'] as number) * 401 - 174);
+test\raiseReraiseBranchLegality.test.ts:178:    const f = facts['foldLikelihood'] as number;
+test\raiseReraiseBranchLegality.test.ts:179:    const c = facts['callLikelihood'] as number;
+test\raiseReraiseBranchLegality.test.ts:180:    const rr = facts['reRaiseLikelihood'] as number;
+test\raiseReraiseBranchLegality.test.ts:233:  assert.ok((facts['reRaiseLikelihood'] as number) > 0, '他筹码充足 ⇒ 必须有再加注分支');
+test\raiseReraiseBranchLegality.test.ts:244:  assert.equal(facts['reRaiseLikelihood'], 0, 'Hero 全下 ⇒ 不得生成再加注分支');
+test\raiseReraiseBranchLegality.test.ts:246:    Math.abs((facts['foldLikelihood'] as number) + (facts['callLikelihood'] as number) - 1) < 1e-12,
+test\raiseReraiseBranchLegality.test.ts:257:  assert.equal(facts['reRaiseLikelihood'], 0, '🔴 修复的核心断言：不可能的分支必须为 0');
+test\raiseReraiseBranchLegality.test.ts:259:    Math.abs((facts['foldLikelihood'] as number) + (facts['callLikelihood'] as number) - 1) < 1e-12,
+test\raiseReraiseBranchLegality.test.ts:274:  assert.ok((facts['reRaiseLikelihood'] as number) > 0, '🔴 不足最小加注额的全下加注仍然合法 ⇒ 分支必须保留');
+test\raiseReraiseBranchLegality.test.ts:285:  assert.ok((facts['reRaiseLikelihood'] as number) > 0, '必须有再加注分支');
+test\raiseReraiseBranchLegality.test.ts:299:  assert.equal(facts['reRaiseLikelihood'], 0, '他跟注即全下 ⇒ 无再加注分支');
+test\raiseReraiseBranchLegality.test.ts:313:  assert.equal(facts['reRaiseLikelihood'], 0, '边界处同样不得生成再加注分支');
+test\raiseReraiseBranchLegality.test.ts:334:  assert.ok((facts['reRaiseLikelihood'] as number) > 0, '他仍有筹码 ⇒ 加注分支保留');
+test\raiseReraiseBranchLegality.test.ts:383:    Math.abs((allInSize['foldLikelihood'] as number) + (allInSize['callLikelihood'] as number) - 1) < 1e-12,
+test\raiseReraiseBranchLegality.test.ts:401:        Math.abs((s['foldLikelihood'] as number) + (s['callLikelihood'] as number) + raise - 1) < 1e-12,
+test\raiseReraiseBranchLegality.test.ts:434:  assert.equal(facts['reRaiseLikelihood'], 0.16930392476376954, '修复前后必须逐位一致（该节点没有封顶）');
+test\raiseReraiseBranchLegality.test.ts:435:  assert.equal(facts['foldLikelihood'], 0.16952719033920757, '弃牌率逐位一致');
+test\raiseReraiseBranchLegality.test.ts:436:  assert.equal(facts['callLikelihood'], 0.6611688848970236, '跟注率逐位一致');
+src\app\manualInput\likelihoodModel.ts:393: * （见 `callLikelihood`）。保留它只为兼容既有调用与测试；新代码应当用
+src\app\manualInput\likelihoodModel.ts:394: * `checkLikelihood` / `callLikelihood` 明确区分。
+src\app\manualInput\likelihoodModel.ts:447:export function callLikelihood(betRatioToPot?: number): (rankClass: string) => number {
+src\app\manualInput\contextBuilder.ts:191:import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
+src\app\manualInput\contextBuilder.ts:2078:          foldProbability: size.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:2079:          callProbability: size.callLikelihood,
+src\app\manualInput\contextBuilder.ts:2142:          foldProbability: size.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:2143:          callProbability: size.callLikelihood,
+src\app\manualInput\contextBuilder.ts:2148:          foldElasticityVsPrevious: previous === null ? null : size.foldLikelihood - previous.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:2161:            `弃 ${(size.foldLikelihood * 100).toFixed(1)}% / 跟 ${(size.callLikelihood * 100).toFixed(1)}% / ` +
+src\app\manualInput\contextBuilder.ts:2269:                  index === 0 ? 0 : s.foldLikelihood - p.model!.sizes[index - 1]!.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:4272:      if (built.reRaiseLikelihood <= 0 || built.reRaiseEntries.length === 0) return null;
+src\app\manualInput\contextBuilder.ts:4316:        : raiseEVOf({
+src\app\manualInput\contextBuilder.ts:4317:            foldLikelihood: built.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:4318:            callLikelihood: built.callLikelihood,
+src\app\manualInput\contextBuilder.ts:4319:            reRaiseLikelihood: built.reRaiseLikelihood,
+src\app\manualInput\contextBuilder.ts:4351:      heroEquityVsReraiseRange: eqVsReraise.value,
+src\app\manualInput\contextBuilder.ts:4353:        ? (built.reRaiseLikelihood <= 0
+src\app\manualInput\contextBuilder.ts:4374:      foldLikelihood: built.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:4375:      callLikelihood: built.callLikelihood,
+src\app\manualInput\contextBuilder.ts:4376:      reRaiseLikelihood: built.reRaiseLikelihood,
+src\app\manualInput\contextBuilder.ts:4377:      heroEquityVsRaiseCallRange: eqVsCall.value,
+src\app\manualInput\contextBuilder.ts:4416:          : `RAISE EV = ${built.foldLikelihood.toFixed(4)}×${currentPot} + ` +
+src\app\manualInput\contextBuilder.ts:4417:            `${built.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + ` +
+src\app\manualInput\contextBuilder.ts:4419:             * 🔴 **TEST 17**：原先这里写死 `×(−${heroContestedAdd})`，而 `raiseEVOf` 实际用的是
+src\app\manualInput\contextBuilder.ts:4424:            `${built.reRaiseLikelihood.toFixed(4)}×(${reraiseBranchEV.toFixed(4)}` +
+src\app\manualInput\contextBuilder.ts:4768:                  heroEquityVsReraiseRange: raiseResponseFacts.heroEquityVsReraiseRange,
+src\app\manualInput\contextBuilder.ts:4784:                  foldLikelihood: raiseResponseFacts.foldLikelihood,
+src\app\manualInput\contextBuilder.ts:4785:                  callLikelihood: raiseResponseFacts.callLikelihood,
+src\app\manualInput\contextBuilder.ts:4786:                  reRaiseLikelihood: raiseResponseFacts.reRaiseLikelihood,
+src\app\manualInput\contextBuilder.ts:4787:                  heroEquityVsRaiseCallRange: raiseResponseFacts.heroEquityVsRaiseCallRange,
+test\raiseResponseU1.test.ts:146:    [a.foldLikelihood, a.callLikelihood, a.reRaiseLikelihood],
+test\raiseResponseU1.test.ts:147:    [b.foldLikelihood, b.callLikelihood, b.reRaiseLikelihood],
+test\raiseResponseU1.test.ts:189:      cur.foldLikelihood >= prev.foldLikelihood - 1e-12,
+test\raiseResponseU1.test.ts:190:      `加注越大 ⇒ 弃牌率不得下降（${prev.foldLikelihood} → ${cur.foldLikelihood}）`,
+test\raiseResponseU1.test.ts:193:      1 - cur.foldLikelihood <= 1 - prev.foldLikelihood + 1e-12,
+test\raiseResponseU1.test.ts:194:      `加注越大 ⇒ 继续率不得上升（${1 - prev.foldLikelihood} → ${1 - cur.foldLikelihood}）`,
+test\raiseResponseU1.test.ts:197:      cur.reRaiseLikelihood <= prev.reRaiseLikelihood + 1e-12,
+test\raiseResponseU1.test.ts:198:      `加注越大 ⇒ 再加注率不得上升（${prev.reRaiseLikelihood} → ${cur.reRaiseLikelihood}）`,
+test\raiseResponseU1.test.ts:201:  assert.ok(steps[3]!.foldLikelihood > steps[0]!.foldLikelihood, '最大加注的弃牌率必须严格更高');
+test\raiseResponseU1.test.ts:202:  assert.ok(steps[3]!.reRaiseLikelihood <= steps[0]!.reRaiseLikelihood, '最大加注的再加注率必须不更高');
+test\raiseResponseU1.test.ts:231:  assert.ok(mid.callLikelihood > small.callLikelihood, '锯齿仍在：中等尺寸的跟注率高于小尺寸');
+test\raiseResponseU1.test.ts:232:  assert.ok(big.callLikelihood < mid.callLikelihood, '锯齿仍在：更大尺寸的跟注率**回落**');
+test\raiseResponseU1.test.ts:234:    small.foldLikelihood <= mid.foldLikelihood && mid.foldLikelihood < big.foldLikelihood,
+test\raiseResponseU1.test.ts:238:    small.reRaiseLikelihood > mid.reRaiseLikelihood && mid.reRaiseLikelihood > big.reRaiseLikelihood,
+test\raiseResponseU1.test.ts:259:            const { foldLikelihood: f, callLikelihood: c, reRaiseLikelihood: rr } = r!;
+test\raiseResponseU1.test.ts:279:  assert.equal(allIn.reRaiseLikelihood, 0, 'Hero 全下 ⇒ 他不能再加注');
+test\raiseResponseU1.test.ts:280:  assert.ok(notAllIn.reRaiseLikelihood > 0, '前置：不设限时确实存在再加注权重');
+test\raiseResponseU1.test.ts:282:    Math.abs(allIn.foldLikelihood - notAllIn.foldLikelihood) < 1e-12,
+test\raiseResponseU1.test.ts:285:  assert.ok(allIn.callLikelihood > notAllIn.callLikelihood, '再加注权重必须**迁移到跟注**');
+test\raiseResponseU1.test.ts:287:    Math.abs(allIn.foldLikelihood + allIn.callLikelihood - 1) < 1e-12,
+test\raiseResponseU1.test.ts:384:  const evProd = prod.foldLikelihood * currentPot
+test\raiseResponseU1.test.ts:385:    + prod.callLikelihood * (eqProd * finalPot - heroAdd)
+test\raiseResponseU1.test.ts:386:    + prod.reRaiseLikelihood * -heroAdd;
+src\app\decision\decisionEngine.ts:1276:          readonly heroEquityVsReraiseRange?: number | null;
+src\app\decision\decisionEngine.ts:1287:          readonly foldLikelihood: number;
+src\app\decision\decisionEngine.ts:1288:          readonly callLikelihood: number;
+src\app\decision\decisionEngine.ts:1289:          readonly reRaiseLikelihood: number;
+src\app\decision\decisionEngine.ts:1290:          readonly heroEquityVsRaiseCallRange: number | null;
+src\app\decision\decisionEngine.ts:1429:                  foldLikelihood: s.foldLikelihood,
+src\app\decision\decisionEngine.ts:1430:                  callLikelihood: s.callLikelihood,
+src\app\decision\decisionEngine.ts:1610:        heroEquityVsReraiseRange: src.heroEquityVsReraiseRange,
+src\app\decision\decisionEngine.ts:1628:        foldLikelihood: src.foldLikelihood,
+src\app\decision\decisionEngine.ts:1629:                  callLikelihood: src.callLikelihood,
+src\app\decision\decisionEngine.ts:1630:        reRaiseLikelihood: src.reRaiseLikelihood,
+src\app\decision\decisionEngine.ts:1631:        heroEquityVsRaiseCallRange: src.heroEquityVsRaiseCallRange,
+src\app\decision\decisionEngine.ts:2809:          readonly foldLikelihood: number;
+src\app\decision\decisionEngine.ts:2810:          readonly callLikelihood: number;
+src\app\decision\decisionEngine.ts:2811:          readonly reRaiseLikelihood: number;
+src\app\decision\decisionEngine.ts:2817:                foldLikelihood: preflopSizeForReason.foldLikelihood,
+src\app\decision\decisionEngine.ts:2818:                callLikelihood: preflopSizeForReason.callLikelihood,
+src\app\decision\decisionEngine.ts:2819:                reRaiseLikelihood: preflopSizeForReason.reRaiseLikelihood,
+src\app\decision\decisionEngine.ts:2821:                modelNoteZh: 'PREFLOP_RAISE_RESPONSE_V1',
+src\app\decision\decisionEngine.ts:2826:                  foldLikelihood: u1Facts['foldLikelihood'] as number,
+src\app\decision\decisionEngine.ts:2827:                  callLikelihood: u1Facts['callLikelihood'] as number,
+src\app\decision\decisionEngine.ts:2828:                  reRaiseLikelihood: u1Facts['reRaiseLikelihood'] as number,
+src\app\decision\decisionEngine.ts:2849:                  : `｜他面对这次加注：弃 ${(responseFactsForReason.foldLikelihood * 100).toFixed(1)}% / ` +
+src\app\decision\decisionEngine.ts:2850:                    `跟 ${(responseFactsForReason.callLikelihood * 100).toFixed(1)}% / ` +
+src\app\decision\decisionEngine.ts:2851:                    `再加注 ${(responseFactsForReason.reRaiseLikelihood * 100).toFixed(1)}%` +
+src\app\decision\decisionEngine.ts:2891:                        foldLikelihood: Number(responseFactsForReason.foldLikelihood.toFixed(6)),
+src\app\decision\decisionEngine.ts:2892:                        callLikelihood: Number(responseFactsForReason.callLikelihood.toFixed(6)),
+src\app\decision\decisionEngine.ts:2893:                        reRaiseLikelihood: Number(responseFactsForReason.reRaiseLikelihood.toFixed(6)),
+src\app\decision\decisionEngine.ts:3896:        'heroEquityVsRaiseCallRange'
+test\raiseToAmountConsistency.test.ts:408:  assert.equal(rr['reRaiseLikelihood'], 0, '他跟平即全下 ⇒ 再加注概率必须为 0');
+test\raiseToAmountConsistency.test.ts:410:  assert.equal(rr['heroEquityVsReraiseRange'], null, '不存在再加注范围 ⇒ 权益必须为 null（不是 0）');
+src\app\decision\postflopAdvisor.ts:585:        foldLikelihood: size.foldLikelihood,
+src\app\decision\postflopAdvisor.ts:586:        callLikelihood: size.callLikelihood,
+scripts\review-hand-05.ts:130:        `${s.foldLikelihood.toFixed(3)}  ${s.callLikelihood.toFixed(3)}  ${s.raiseLikelihood.toFixed(3)}   ` +
+scripts\review-hand-08.ts:140:          `｜P(弃) ${num(s['foldLikelihood'])} / P(跟) ${num(s['callLikelihood'])} / P(加) ${num(s['raiseLikelihood'])}` +
+scripts\rr-audit-baseline.ts:201:    const eq = s['heroEquityVsRaiseCallRange'] as Record<string, any>;
+scripts\rr-audit-baseline.ts:202:    const eqr = s['heroEquityVsReraiseRange'] as Record<string, any>;
+scripts\rr-audit-baseline.ts:204:      `    ${String(s['sizeBB']).padStart(7)}BB  f/c/rr = ${(s['foldLikelihood'] as number).toFixed(3)}/`
+scripts\rr-audit-baseline.ts:205:      + `${(s['callLikelihood'] as number).toFixed(3)}/${(s['reRaiseLikelihood'] as number).toFixed(3)}`
+scripts\rr-sensitivity.ts:179:    fold: best['foldLikelihood'] as number,
+scripts\rr-sensitivity.ts:180:    call: best['callLikelihood'] as number,
+scripts\rr-sensitivity.ts:181:    rr: best['reRaiseLikelihood'] as number,
+scripts\rrda-freeze.ts:86:line(`    heroEquityVsRaiseCallRange                          = ${'NOT_IMPLEMENTED（无该字段）'}`);
+scripts\rrda-sections345.ts:111:  line(`    · heroEquityVsRaiseCallRange          = NOT_IMPLEMENTED（无此字段）`);
+scripts\rrda-sections345.ts:300:      field: 'heroEquityVsRaiseCallRange',
+test\reraiseBranchP12b.test.ts:100:  const rr = facts['reRaiseLikelihood'] as number;
+test\reraiseBranchP12b.test.ts:106:  assert.notEqual(facts['heroEquityVsReraiseRange'], undefined, '必须上报 EqVsReraiseRange');
+test\reraiseBranchP12b.test.ts:107:  const eqR = facts['heroEquityVsReraiseRange'] as number;
+test\reraiseBranchP12b.test.ts:108:  const eqC = facts['heroEquityVsRaiseCallRange'] as number;
+test\reraiseBranchP12b.test.ts:164:  const eqR = facts['heroEquityVsReraiseRange'] as number;
+test\reraiseBranchP12b.test.ts:181:  assert.equal(p07.facts['reRaiseLikelihood'], 0, '前置：rr = 0');
+test\reraiseBranchP12b.test.ts:189:  assert.equal(p07.facts['foldLikelihood'], 0.05296693816568434);
+test\reraiseBranchP12b.test.ts:190:  assert.equal(p07.facts['callLikelihood'], 0.9470330618343152);
+test\reraiseBranchP12b.test.ts:204:  assert.equal(facts['reRaiseLikelihood'], 0, 'Hero 全下 ⇒ 无再加注分支');
+test\reraiseBranchP12b.test.ts:213:  assert.equal(facts['reRaiseLikelihood'], 0);
+test\reraiseBranchP12b.test.ts:267:    assert.equal(typeof facts['heroEquityVsReraiseRange'], 'number', '算了就必须要权益');
+test\reraiseBranchP12b.test.ts:297:  assert.ok((maniac.facts['reRaiseLikelihood'] as number) > 0, '前置：MANIAC 会再加注');
+test\reraiseBranchP12b.test.ts:298:  assert.ok((tight.facts['reRaiseLikelihood'] as number) > 0, '前置：紧手也会再加注');
+test\reraiseBranchP12b.test.ts:299:  const eqManiac = maniac.facts['heroEquityVsReraiseRange'] as number;
+test\reraiseBranchP12b.test.ts:300:  const eqTight = tight.facts['heroEquityVsReraiseRange'] as number;
+test\reraiseBranchP12b.test.ts:324:  const f = facts['foldLikelihood'] as number;
+test\reraiseBranchP12b.test.ts:325:  const c = facts['callLikelihood'] as number;
+test\reraiseBranchP12b.test.ts:326:  const rr = facts['reRaiseLikelihood'] as number;
+test\reraiseBranchP12b.test.ts:329:    c * ((facts['heroEquityVsRaiseCallRange'] as number) * (facts['finalPot'] as number) - (facts['heroContestedAdd'] as number)) +
+test\test17DisplayDisclosure.test.ts:343:  const f = rr['foldLikelihood'] as number;
+test\test17DisplayDisclosure.test.ts:344:  const c = rr['callLikelihood'] as number;
+test\test17DisplayDisclosure.test.ts:345:  const rrl = rr['reRaiseLikelihood'] as number;
+test\test17DisplayDisclosure.test.ts:346:  const eqCall = rr['heroEquityVsRaiseCallRange'] as number;
+test\test08P0Audit.test.ts:456:  return medium!.callLikelihood;
+scripts\rt-ajcc-turn-raise-audit.ts:186:kv('EqVsRaiseCallRange（他跟我的再加注）', rr === null ? '—' : pct(rr['heroEquityVsRaiseCallRange'], 4));
+scripts\rt-ajcc-turn-raise-audit.ts:187:kv('EqVsReraiseRange（他再次加注）', rr === null ? '—' : pct(rr['heroEquityVsReraiseRange'], 4));
+scripts\rt-ajcc-turn-raise-audit.ts:204:  kv('P(弃) / P(跟) / P(再加注)', `${pct(rr['foldLikelihood'], 4)} ｜ ${pct(rr['callLikelihood'], 4)} ｜ ${pct(rr['reRaiseLikelihood'], 4)}`);
+scripts\rt-ajcc-turn-raise-audit.ts:224:  kv('EqVsReraiseRange', pct(rr['heroEquityVsReraiseRange'], 4));
+scripts\rt-ajcc-turn-raise-audit.ts:288:  eqVsRaiseCall: rr?.['heroEquityVsRaiseCallRange'] ?? null, eqVsReraise: rr?.['heroEquityVsReraiseRange'] ?? null,
+scripts\rt-ajcc-turn-raise-audit.ts:289:  pFold: rr?.['foldLikelihood'] ?? null, pCall: rr?.['callLikelihood'] ?? null, pReRaise: rr?.['reRaiseLikelihood'] ?? null,
+scripts\rt-ajcc-turn-audit.ts:178:kv('EqVsRaiseCallRange（加注后他跟注范围）', rr === null ? '—' : pct(rr['heroEquityVsRaiseCallRange'], 4));
+scripts\rt-ajcc-turn-audit.ts:179:kv('EqVsReraiseRange（被他再加注的范围）', rr === null ? '—' : pct(rr['heroEquityVsReraiseRange'], 4));
+scripts\rt-ajcc-turn-audit.ts:201:  kv('P(弃) / P(跟) / P(再加注)', `${pct(rr['foldLikelihood'], 4)} ｜ ${pct(rr['callLikelihood'], 4)} ｜ ${pct(rr['reRaiseLikelihood'], 4)}`);
+scripts\rt-ajcc-turn-audit.ts:222:  kv('EqVsReraiseRange', pct(rr['heroEquityVsReraiseRange'], 4));
+scripts\rt-ajcc-turn-audit.ts:269:  eqVsRaiseCall: rr?.['heroEquityVsRaiseCallRange'] ?? null,
+scripts\rt-ajcc-turn-audit.ts:270:  eqVsReraise: rr?.['heroEquityVsReraiseRange'] ?? null,
+scripts\rt-ajcc-turn-audit.ts:271:  pFold: rr?.['foldLikelihood'] ?? null, pCall: rr?.['callLikelihood'] ?? null, pReRaise: rr?.['reRaiseLikelihood'] ?? null,
+test\riverRaiseDecisionAudit.test.ts:161:    'heroEquityVsRaiseCallRange' in facts,
+test\riverRaiseDecisionV2.test.ts:228:      Math.abs((raiseFacts!['heroEquityVsRaiseCallRange'] as number) - rc) < 1e-12,
+test\riverRaiseDecisionV2.test.ts:272:   * | 加注响应模型 | `responseModel` + `fold/call/reRaiseLikelihood` + `raiseEV` |
+test\riverRaiseDecisionV2.test.ts:277:      'PREFLOP_RAISE_RESPONSE_V1',
+test\riverRaiseDecisionV2.test.ts:280:    for (const key of ['foldLikelihood', 'callLikelihood', 'reRaiseLikelihood', 'raiseEV', 'callEV']) {
+scripts\test17-ab-recompute.ts:79:line(`  EqVsReraiseRange=${full(rr['heroEquityVsReraiseRange'])} ｜ reraiseBranchKind=${String(rr['reraiseBranchKind'])}`);
+scripts\test17-ab-recompute.ts:82:const b1 = rr['heroEquityVsReraiseRange'] * rr['finalPotAfterCallVsReRaise']
+scripts\test10b-foldturn-sensitivity.ts:250:    pad(pct(sizeOf(c, 'BET_SMALL')?.['foldLikelihood'], 2), 12) +
+scripts\test10b-foldturn-sensitivity.ts:251:    pad(pct(sizeOf(c, 'BET_MEDIUM')?.['foldLikelihood'], 2), 12) +
+scripts\test10b-foldturn-sensitivity.ts:252:    pad(pct(sizeOf(c, 'BET_LARGE')?.['foldLikelihood'], 2), 12) +
+scripts\test10b-foldturn-sensitivity.ts:273:    pad(pct(s?.['callLikelihood'], 2), 11) + pad(pct(s?.['raiseLikelihood'], 2), 11) +
+scripts\test10b-foldturn-sensitivity.ts:274:    pad(pct(m?.['callLikelihood'], 2), 11) + pad(pct(m?.['raiseLikelihood'], 2), 11) +
+scripts\test10b-foldturn-sensitivity.ts:275:    pad(pct(l?.['callLikelihood'], 2), 11) + pad(pct(l?.['raiseLikelihood'], 2), 11) +
+scripts\test10b-foldturn-sensitivity.ts:366:  const xs = CASES.map((c) => sizeOf(c, kind)?.['foldLikelihood'] ?? null) as (number | null)[];
+scripts\test10b-foldturn-sensitivity.ts:379:  (sizeOf(CASES[0]!, 'BET_SMALL')!['foldLikelihood'] as number) >
+scripts\test10b-foldturn-sensitivity.ts:380:  (sizeOf(CASES[4]!, 'BET_SMALL')!['foldLikelihood'] as number);
+scripts\test10b-foldturn-sensitivity.ts:394:const smallFoldDelta = dOf('BET_SMALL', 'foldLikelihood');
+scripts\test10b-foldturn-sensitivity.ts:395:const medFoldDelta = dOf('BET_MEDIUM', 'foldLikelihood');
+scripts\test10b-foldturn-sensitivity.ts:396:const largeFoldDelta = dOf('BET_LARGE', 'foldLikelihood');
+scripts\test10b-foldturn-sensitivity.ts:484:  nonDecreasing(CASES.map((c) => sizeOf(c, kind)?.['foldLikelihood'] ?? null) as (number | null)[], 1e-6));
+scripts\test16-river-trips-probe.ts:27: *   `buildBettingRangeFacts` / `buildRaiseResponse` / `raiseEVOf` / `rangeEquityOfMany`
+scripts\test16-river-trips-probe.ts:38:import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from '../src/app/manualInput/raiseResponse.ts';
+scripts\test16-river-trips-probe.ts:268:line(`  EqVsRaiseCallRange（raiseResponse.heroEquityVsRaiseCallRange）= ${n(FACTS?.['heroEquityVsRaiseCallRange'], 6)}`);
+scripts\test16-river-trips-probe.ts:294:  (FACTS['foldLikelihood'] as number) * (FACTS['currentPot'] as number) +
+scripts\test16-river-trips-probe.ts:295:  (FACTS['callLikelihood'] as number) * ((FACTS['heroEquityVsRaiseCallRange'] as number) * finalPot - heroContestedAdd) +
+scripts\test16-river-trips-probe.ts:296:  (FACTS['reRaiseLikelihood'] as number) * rrEV;
+scripts\test16-river-trips-probe.ts:299:  (FACTS['foldLikelihood'] as number) * (FACTS['currentPot'] as number) +
+scripts\test16-river-trips-probe.ts:300:  (FACTS['callLikelihood'] as number) * ((FACTS['heroEquityVsRaiseCallRange'] as number) * finalPot - heroContestedAdd) +
+scripts\test16-river-trips-probe.ts:301:  (FACTS['reRaiseLikelihood'] as number) * rrEVLowerBound;
+scripts\test16-river-trips-probe.ts:317:  line(`  响应概率（他面对我加注到 ${n(FACTS['sizeChips'], 0)}）：P(弃) = ${pct(FACTS['foldLikelihood'], 4)}｜P(跟) = ${pct(FACTS['callLikelihood'], 4)}｜P(再加注) = ${pct(FACTS['reRaiseLikelihood'], 4)}`);
+scripts\test16-river-trips-probe.ts:318:  line(`        归一校验：三者之和 = ${n((FACTS['foldLikelihood'] as number) + (FACTS['callLikelihood'] as number) + (FACTS['reRaiseLikelihood'] as number), 12)}`);
+scripts\test16-river-trips-probe.ts:320:  line(`  EqVsRaiseCallRange = ${n(FACTS['heroEquityVsRaiseCallRange'], 6)}（方法 ${String(FACTS['equityMethod'])}，${String(FACTS['equityIterations'])} 次）`);
+scripts\test16-river-trips-probe.ts:336:  line(`    EqVsReraiseRange = ${n(FACTS['heroEquityVsReraiseRange'], 6)}｜再加注桶组合 = ${String(FACTS['reRaiseCombos'])}`);
+scripts\test16-river-trips-probe.ts:354:  line(`       = ${n(FACTS['foldLikelihood'], 6)}×${n(FACTS['currentPot'], 0)} + ${n(FACTS['callLikelihood'], 6)}×(${n(FACTS['heroEquityVsRaiseCallRange'], 6)}×${n(finalPot, 0)} − ${n(heroContestedAdd, 0)}) + ${n(FACTS['reRaiseLikelihood'], 6)}×(${n(rrEV, 6)})`);
+scripts\test16-river-trips-probe.ts:356:  line(`    被再加注分支的**贡献量** = P(再加注) × reraiseBranchEV = ${n((FACTS['reRaiseLikelihood'] as number) * rrEV, 6)} 筹码`);
+scripts\test16-river-trips-probe.ts:474:    if (built.reRaiseLikelihood <= 0 || built.reRaiseEntries.length === 0) return null;
+scripts\test16-river-trips-probe.ts:499:  const ev = eqCall.value === null ? null : raiseEVOf({
+scripts\test16-river-trips-probe.ts:500:    foldLikelihood: built.foldLikelihood, callLikelihood: built.callLikelihood, reRaiseLikelihood: built.reRaiseLikelihood,
+scripts\test16-river-trips-probe.ts:504:  const evLowerBound = eqCall.value === null ? null : raiseEVOf({
+scripts\test16-river-trips-probe.ts:505:    foldLikelihood: built.foldLikelihood, callLikelihood: built.callLikelihood, reRaiseLikelihood: built.reRaiseLikelihood,
+scripts\test16-river-trips-probe.ts:510:    f: built.foldLikelihood, c: built.callLikelihood, rr: built.reRaiseLikelihood,
+scripts\test16-river-trips-probe.ts:565:      ['foldLikelihood', prodRow.f, FACTS['foldLikelihood']],
+scripts\test16-river-trips-probe.ts:566:      ['callLikelihood', prodRow.c, FACTS['callLikelihood']],
+scripts\test16-river-trips-probe.ts:567:      ['reRaiseLikelihood', prodRow.rr, FACTS['reRaiseLikelihood']],
+scripts\test16-river-trips-probe.ts:568:      ['EqVsRaiseCallRange', prodRow.eqCall, FACTS['heroEquityVsRaiseCallRange']],
+scripts\test16-river-trips-probe.ts:571:      ['heroEquityVsReraiseRange', prodRow.eqRR, FACTS['heroEquityVsReraiseRange']],
+scripts\test16-river-trips-probe.ts:727:    pad(n(rF?.['heroEquityVsRaiseCallRange'], 6), 13) +
+scripts\test16-river-trips-probe.ts:729:    pad(rF === null ? '—' : `${pct(rF['foldLikelihood'], 2)}/${pct(rF['callLikelihood'], 2)}/${pct(rF['reRaiseLikelihood'], 2)}`, 25) +
+scripts\test16-river-trips-probe.ts:804:  `${n((FACTS?.['reRaiseLikelihood'] ?? 0) * (FACTS?.['reraiseBranchEV'] ?? 0), 2)} 筹码，属**未校准先验**，须谨慎对待。`);
+scripts\station-size-probe.ts:48:        `｜弃 ${Number(s['foldLikelihood']).toFixed(3)} / 跟 ${Number(s['callLikelihood']).toFixed(3)} / 加 ${Number(s['raiseLikelihood']).toFixed(3)}` +
+scripts\test11-river-thin-value.ts:246:      pad(pct(s['foldLikelihood'], 2), 9) +
+scripts\test11-river-thin-value.ts:247:      pad(pct(s['callLikelihood'], 2), 9) +
+scripts\test11-river-thin-value.ts:318:  cmp(`${kind} Fold%`, (r) => pct(sizeOf(r, kind)?.['foldLikelihood'], 2));
+scripts\test11-river-thin-value.ts:322:  cmp(`${kind} Call%`, (r) => pct(sizeOf(r, kind)?.['callLikelihood'], 2));
+scripts\test12-resolver-dimensions.ts:309:row('Small Fold%', (r) => pct(sizeOf(r, 'BET_SMALL')?.['foldLikelihood'], 2));
+scripts\test12-resolver-dimensions.ts:310:row('Small Call%', (r) => pct(sizeOf(r, 'BET_SMALL')?.['callLikelihood'], 2));
+scripts\test12-resolver-dimensions.ts:419:eRow('Small Fold%', (r) => pct(sizeOf(r, 'BET_SMALL')?.['foldLikelihood'], 2));
+scripts\test12-resolver-dimensions.ts:477:  pass: (evA - evB) > 0.5 && Number(sizeOf(A, 'BET_SMALL')?.['callLikelihood'] ?? 0) > Number(sizeOf(B, 'BET_SMALL')?.['callLikelihood'] ?? 1),
+scripts\test12-resolver-dimensions.ts:479:    `A Call% = ${pct(sizeOf(A, 'BET_SMALL')?.['callLikelihood'])} vs B ${pct(sizeOf(B, 'BET_SMALL')?.['callLikelihood'])}`,
+scripts\u1-f01-probe.ts:37:  line(`  P(弃) = ${num(rf['foldLikelihood'])}｜P(跟) = ${num(rf['callLikelihood'])}｜P(再加注) = ${num(rf['reRaiseLikelihood'])}`);
+scripts\u1-f01-probe.ts:38:  line(`  EqVsRaiseCallRange = ${num(rf['heroEquityVsRaiseCallRange'])}｜方法 ${String(rf['equityMethod'])}（${String(rf['equityIterations'])}）`);
+scripts\test16-drift-localize.ts:74:  line(`     P(弃/跟/再加) = ${rr === null ? '—' : `${n(rr['foldLikelihood'], 6)}/${n(rr['callLikelihood'], 6)}/${n(rr['reRaiseLikelihood'], 6)}`}｜RAISE EV = ${n(rr?.['raiseEV'], 6)}`);
+scripts\u1-raise-ev-crosscheck.ts:157:      heroIsAllIn: (facts['reRaiseLikelihood'] as number) === 0,
+scripts\u1-raise-ev-crosscheck.ts:182:    pad(`${num(facts['foldLikelihood'], 3)}/${num(facts['callLikelihood'], 3)}/${num(facts['reRaiseLikelihood'], 3)}`, 18) +
+scripts\u1-response-monotonicity.ts:111:      if (r.foldLikelihood < prev.f - 1e-12) note.push('❌弃牌率下降');
+scripts\u1-response-monotonicity.ts:112:      if (r.callLikelihood > prev.c + 1e-12) note.push('⚠️跟注率上升（锯齿）');
+scripts\u1-response-monotonicity.ts:113:      if (r.reRaiseLikelihood > prev.r + 1e-12) note.push('❌再加注率上升');
+scripts\u1-response-monotonicity.ts:114:      if (r.foldLikelihood <= prev.f + 1e-12 && r.callLikelihood >= prev.c - 1e-12) note.push('弃/跟皆钝');
+scripts\u1-response-monotonicity.ts:117:    pts.push({ inc: raiseTo, price, required: price + r.model.margin, f: r.foldLikelihood, c: r.callLikelihood, r: r.reRaiseLikelihood });
+scripts\u1-response-monotonicity.ts:120:      pad(pct(r.foldLikelihood), 9) + pad(pct(r.callLikelihood), 9) + pad(pct(r.reRaiseLikelihood), 9) + note.join(' '));
+scripts\u1-response-monotonicity.ts:235:      if (built.foldLikelihood < prev.f - 1e-12) note.push('❌弃牌率下降');
+scripts\u1-response-monotonicity.ts:236:      if (built.callLikelihood > prev.c + 1e-12) { note.push('⚠️跟注率上升（锯齿）'); maxHump = Math.max(maxHump, built.callLikelihood - prev.c); }
+scripts\u1-response-monotonicity.ts:237:      if (built.reRaiseLikelihood > prev.r + 1e-12) note.push('❌再加注率上升');
+scripts\u1-response-monotonicity.ts:239:    prev = { f: built.foldLikelihood, c: built.callLikelihood, r: built.reRaiseLikelihood };
+scripts\u1-response-monotonicity.ts:242:      pad(pct(built.foldLikelihood), 9) + pad(pct(built.callLikelihood), 9) + pad(pct(built.reRaiseLikelihood), 9) + note.join(' '));
+scripts\u1-audit-ev-convention.ts:147:  const f = facts['foldLikelihood'] as number;
+scripts\u1-audit-ev-convention.ts:148:  const c = facts['callLikelihood'] as number;
+scripts\u1-audit-ev-convention.ts:149:  const rr = facts['reRaiseLikelihood'] as number;
+scripts\u1-audit-ev-convention.ts:150:  const eq = facts['heroEquityVsRaiseCallRange'] as number;
+scripts\u1-audit-ev-convention.ts:190:    `EqVsReraise ${n(facts['heroEquityVsReraiseRange'], 6)}｜弃牌 ${n(facts['reraiseFoldBranchEV'], 2)} vs 跟注 ${n(facts['reraiseCallBranchEV'], 2)} ⇒ 取 ${n(reraiseBranchEV, 2)}` +
+scripts\u1-river-multisize-audit.ts:15: * | 加注 EV | `raiseEVOf`（生产唯一公式） |
+scripts\u1-river-multisize-audit.ts:22:import { buildRaiseResponse, raiseEVOf } from '../src/app/manualInput/raiseResponse.ts';
+scripts\u1-river-multisize-audit.ts:206:  const ev = eq === null ? null : raiseEVOf({
+scripts\u1-river-multisize-audit.ts:207:    foldLikelihood: res.foldLikelihood, callLikelihood: res.callLikelihood, reRaiseLikelihood: res.reRaiseLikelihood,
+scripts\u1-river-multisize-audit.ts:217:    f: res.foldLikelihood, c: res.callLikelihood, rr: res.reRaiseLikelihood,
+scripts\u1-river-multisize-audit.ts:349:line(`  ⑦ 概率归一：P(弃)+P(跟)+P(再加注) = ${n((PROD_FACTS?.['foldLikelihood'] as number) + (PROD_FACTS?.['callLikelihood'] as number) + (PROD_FACTS?.['reRaiseLikelihood'] as number), 12)}`);
+scripts\u1-raise-fields-probe.ts:71:    line(`    P(弃)=${show(facts['foldLikelihood'])} P(跟)=${show(facts['callLikelihood'])} P(再加注)=${show(facts['reRaiseLikelihood'])}`);
+scripts\v21-decision-impact.ts:116:  foldLikelihood: number | null;
+scripts\v21-decision-impact.ts:117:  callLikelihood: number | null;
+scripts\v21-decision-impact.ts:140:    foldLikelihood: null, callLikelihood: null, raiseLikelihood: null,
+scripts\v21-decision-impact.ts:227:            foldLikelihood: number; callLikelihood: number; raiseLikelihood: number;
+scripts\v21-decision-impact.ts:240:      fold: s.foldLikelihood, call: s.callLikelihood, raise: s.raiseLikelihood,
+scripts\v21-decision-impact.ts:245:      out.foldLikelihood = chosen.foldLikelihood;
+scripts\v21-decision-impact.ts:246:      out.callLikelihood = chosen.callLikelihood;
+scripts\v21-decision-impact.ts:446:      foldLikelihoodDelta:
+scripts\v21-decision-impact.ts:447:        s.foldLikelihood !== null && ref.foldLikelihood !== null ? s.foldLikelihood - ref.foldLikelihood : null,
+scripts\v21-decision-impact.ts:448:      callLikelihoodDelta:
+scripts\v21-decision-impact.ts:449:        s.callLikelihood !== null && ref.callLikelihood !== null ? s.callLikelihood - ref.callLikelihood : null,
+scripts\v21-decision-impact.ts:475:      neutral: { equity: nu.heroEquity, bluffMass: nu.bluffMass, action: nu.action, fold: nu.foldLikelihood },
+scripts\v21-decision-impact.ts:476:      callingStation: { equity: cs.heroEquity, bluffMass: cs.bluffMass, action: cs.action, fold: cs.foldLikelihood },
+scripts\v21-decision-impact.ts:477:      maniac: { equity: ma.heroEquity, bluffMass: ma.bluffMass, action: ma.action, fold: ma.foldLikelihood },
+scripts\v21-decision-impact.ts:512:  neutral: (() => { const s = snapshot(dryInput(), undefined); return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood }; })(),
+scripts\v21-decision-impact.ts:513:  maniac: (() => { const s = snapshot(dryInput(), CASES[4]!.profile); return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood }; })(),
+scripts\v21-decision-impact.ts:514:  station: (() => { const s = snapshot(dryInput(), CASES[2]!.profile); return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood }; })(),
+scripts\v21-decision-impact.ts:522:  tagOnly: (() => { const s = snapshot(s1Input(), behaviorProfileOf({ playerId: 'vt', archetype: 'VERY_TIGHT' as never })); return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood }; })(),
+scripts\v21-decision-impact.ts:526:  })); return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood }; })(),
+scripts\v21-decision-impact.ts:533:      equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood,
+scripts\v21-decision-impact.ts:542:    return { equity: s.heroEquity, bluffMass: s.bluffMass, action: s.action, fold: s.foldLikelihood };
+scripts\v21-decision-impact.ts:586:      action: s.action, fold: s.foldLikelihood, call: s.callLikelihood, raise: s.raiseLikelihood,
+scripts\v21-decision-impact.ts:709:    `${pp(v.foldLikelihoodDelta).padEnd(10)}${num(v.categoryRangeDistance?.totalVariation ?? null, 4).padEnd(10)}` +
+scripts\v21-fmaudit-noise.ts:196:            `折=${String(s['foldLikelihood'])} 跟=${String(s['callLikelihood'])} 加=${String(s['raiseLikelihood'])} ` +
+scripts\v21-profile-sensitivity-audit.ts:370:  foldLikelihood: number | null;
+scripts\v21-profile-sensitivity-audit.ts:371:  callLikelihood: number | null;
+scripts\v21-profile-sensitivity-audit.ts:415:    foldLikelihood: null, callLikelihood: null, raiseLikelihood: null,
+scripts\v21-profile-sensitivity-audit.ts:499:            foldLikelihood: number; callLikelihood: number; raiseLikelihood: number;
+scripts\v21-profile-sensitivity-audit.ts:514:      base.foldLikelihood = chosen.foldLikelihood;
+scripts\v21-profile-sensitivity-audit.ts:515:      base.callLikelihood = chosen.callLikelihood;
+scripts\v21-rev2-final.ts:91:        `${num(s['foldLikelihood'], 4).padEnd(9)}${num(s['callLikelihood'], 4).padEnd(9)}${num(s['raiseLikelihood'], 4).padEnd(9)}` +
+scripts\v21-rev2-final.ts:97:  console.log(`  ⇒ 弃牌率随尺寸↑: ${mono(g('foldLikelihood'), 1) ? 'YES' : 'NO'} [${g('foldLikelihood').map((v) => v.toFixed(4)).join(' → ')}]`);
+scripts\v21-rev2-final.ts:98:  console.log(`  ⇒ 跟注率随尺寸↓: ${mono(g('callLikelihood'), -1) ? 'YES' : 'NO'} [${g('callLikelihood').map((v) => v.toFixed(4)).join(' → ')}]`);
+scripts\v21-rev2-hand.ts:75:    fold: s['foldLikelihood'], call: s['callLikelihood'], raise: s['raiseLikelihood'], ev: s['ev'],
+scripts\v21-rev2-hand.ts:104:    chosen: chosen === null ? null : { label: chosen['labelZh'], fold: chosen['foldLikelihood'], call: chosen['callLikelihood'], raise: chosen['raiseLikelihood'], ratio: chosen['ratioToPot'] },
+scripts\v21-rev2-thin-response.ts:183:        `${num(s['foldLikelihood'], 4).padEnd(11)}${num(s['callLikelihood'], 4).padEnd(11)}${num(s['raiseLikelihood'], 4).padEnd(11)}` +
+scripts\v21-rev2-thin-response.ts:188:  const folds = sizes.map((s) => s['foldLikelihood']).filter((v): v is number => typeof v === 'number');
+scripts\v21-rev2-thin-response.ts:189:  const calls = sizes.map((s) => s['callLikelihood']).filter((v): v is number => typeof v === 'number');
+scripts\v21-small-scale-supplement.ts:176:      fold: Number(s['foldLikelihood']),
+scripts\v21-small-scale-supplement.ts:177:      call: Number(s['callLikelihood']),
+scripts\v21-summarize.ts:32:  foldLikelihood: number | null; callLikelihood: number | null; raiseLikelihood: number | null;
+scripts\v21-small-scale-scenarios.ts:951:    respFold: firstSize ? Number(firstSize['foldLikelihood']) : null,
+scripts\v21-small-scale-scenarios.ts:952:    respCall: firstSize ? Number(firstSize['callLikelihood']) : null,
+scripts\__shadow-contextBuilder.ts:188:import { buildRaiseResponse, raiseEVOf, CASHFLOW_CONTRACT } from '../src/app/manualInput/raiseResponse.ts';
+scripts\__shadow-contextBuilder.ts:2011:          foldProbability: size.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:2012:          callProbability: size.callLikelihood,
+scripts\__shadow-contextBuilder.ts:2075:          foldProbability: size.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:2076:          callProbability: size.callLikelihood,
+scripts\__shadow-contextBuilder.ts:2081:          foldElasticityVsPrevious: previous === null ? null : size.foldLikelihood - previous.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:2094:            `弃 ${(size.foldLikelihood * 100).toFixed(1)}% / 跟 ${(size.callLikelihood * 100).toFixed(1)}% / ` +
+scripts\__shadow-contextBuilder.ts:2202:                  index === 0 ? 0 : s.foldLikelihood - p.model!.sizes[index - 1]!.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:3920:      if (built.reRaiseLikelihood <= 0 || built.reRaiseEntries.length === 0) return null;
+scripts\__shadow-contextBuilder.ts:3964:        : raiseEVOf({
+scripts\__shadow-contextBuilder.ts:3965:            foldLikelihood: built.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:3966:            callLikelihood: built.callLikelihood,
+scripts\__shadow-contextBuilder.ts:3967:            reRaiseLikelihood: built.reRaiseLikelihood,
+scripts\__shadow-contextBuilder.ts:3999:      heroEquityVsReraiseRange: eqVsReraise.value,
+scripts\__shadow-contextBuilder.ts:4001:        ? (built.reRaiseLikelihood <= 0
+scripts\__shadow-contextBuilder.ts:4021:      foldLikelihood: built.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:4022:      callLikelihood: built.callLikelihood,
+scripts\__shadow-contextBuilder.ts:4023:      reRaiseLikelihood: built.reRaiseLikelihood,
+scripts\__shadow-contextBuilder.ts:4024:      heroEquityVsRaiseCallRange: eqVsCall.value,
+scripts\__shadow-contextBuilder.ts:4048:          : `RAISE EV = ${built.foldLikelihood.toFixed(4)}×${currentPot} + ` +
+scripts\__shadow-contextBuilder.ts:4049:            `${built.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + ` +
+scripts\__shadow-contextBuilder.ts:4050:            `${built.reRaiseLikelihood.toFixed(4)}×(−${heroContestedAdd}) = **${raiseEV.toFixed(4)}**` +
+scripts\__shadow-contextBuilder.ts:4381:                  heroEquityVsReraiseRange: raiseResponseFacts.heroEquityVsReraiseRange,
+scripts\__shadow-contextBuilder.ts:4397:                  foldLikelihood: raiseResponseFacts.foldLikelihood,
+scripts\__shadow-contextBuilder.ts:4398:                  callLikelihood: raiseResponseFacts.callLikelihood,
+scripts\__shadow-contextBuilder.ts:4399:                  reRaiseLikelihood: raiseResponseFacts.reRaiseLikelihood,
+scripts\__shadow-contextBuilder.ts:4400:                  heroEquityVsRaiseCallRange: raiseResponseFacts.heroEquityVsRaiseCallRange,

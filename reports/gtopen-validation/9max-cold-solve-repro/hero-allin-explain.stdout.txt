@@ -1,0 +1,29 @@
+{
+  "outPath": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-repro\\hero-allin-explain.json",
+  "elapsedMs": 232,
+  "gtoStatus": {
+    "enabled": true,
+    "state": "SOLVER_RANGE",
+    "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "elapsedMs": 3,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVED",
+        "fromSolver": true,
+        "cacheSource": "persistent",
+        "reasonZh": null
+      }
+    ],
+    "background": [],
+    "warnings": [],
+    "reasons": []
+  },
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "preflopRaiseSummary": {
+    "sizes": []
+  }
+}

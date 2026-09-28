@@ -119,7 +119,30 @@
     analyzeLatestToken: 0,
     /** debounce 定时器 */
     analyzeTimer: null,
+    analyzeController: null,
+    autoEnabled: true,
+    pendingMutation: null,
+    requestSequence: 0,
+    metrics: [],
   };
+  var fastInput = null;
+
+  function metric(entry) {
+    entry.at = Date.now();
+    app.metrics.push(entry);
+    if (app.metrics.length > 400) app.metrics.shift();
+  }
+
+  function invalidateAnalysis() {
+    // Existing debounce callbacks carry revision/epoch and fail closed if stale.
+    // Keep that independent guard; new ready renders replace the one timer.
+    app.analyzeLatestToken += 1;
+    if (app.analyzeController) app.analyzeController.abort();
+    app.analyzeController = null;
+    app.analysis = null;
+    app.autoState = null;
+    app.autoAnalyzedKey = null;
+  }
 
   /** debounce 间隔（毫秒）。一次点击会引发 render + preview + state 三次更新，
    *  必须合并成**一次** Analyze —— 否则一个 revision 会跑三遍决策引擎。 */
@@ -177,10 +200,14 @@
     if (busy()) return Promise.resolve(null);
     app.inflight += 1;
     setControlsDisabled(true);
+    var started = performance.now();
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timeout = fastInput && controller ? window.setTimeout(function () { controller.abort(); }, 15000) : null;
     return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      ...(controller ? { signal: controller.signal } : {}),
     })
       .then(function (res) {
         return res.json();
@@ -190,8 +217,10 @@
         return null;
       })
       .then(function (payload) {
+        if (timeout !== null) window.clearTimeout(timeout);
         app.inflight -= 1;
         setControlsDisabled(false);
+        metric({ kind: 'action-save', requestMs: performance.now() - started, ok: !!(payload && payload.ok), requestId: body.requestId });
         return payload;
       });
   }
@@ -225,7 +254,8 @@
         applied = true;
       }
     }
-    if (payload.preview) app.preview = payload.preview;
+    if (payload.preview && (applied || (app.state && payload.preview.tableId === app.state.tableId && payload.preview.revision === app.revision))) app.preview = payload.preview;
+    if (applied) invalidateAnalysis();
 
     render();
     return applied || Boolean(payload.leaveDecision);
@@ -236,8 +266,34 @@
       toast('牌桌还没准备好', true);
       return Promise.resolve(false);
     }
-    return post('/api/table', { state: app.state, op: op }).then(function (payload) {
-      if (!payload) return false;
+    if (busy() || app.pendingMutation) return Promise.resolve(false);
+    invalidateAnalysis();
+    renderResult();
+    app.requestSequence += 1;
+    app.pendingMutation = { state: app.state, op: op, requestId: app.state.tableId + ':' + app.revision + ':' + Date.now() + ':' + app.requestSequence };
+    return submitPendingMutation();
+  }
+
+  function renderSaveStatus(uncertain) {
+    var box = $('saveStatus'); if (!box) return;
+    clear(box);
+    if (!app.pendingMutation) return;
+    box.appendChild(el('span', null, uncertain ? '未确认是否保存成功。先重试确认这一次操作，再继续录入。' : '正在保存行动…'));
+    if (uncertain) {
+      var retry = el('button', null, '重试确认'); retry.id = 'retrySave';
+      retry.onclick = function () { if (!busy()) submitPendingMutation(); };
+      box.appendChild(retry);
+    }
+  }
+
+  function submitPendingMutation() {
+    var pending = app.pendingMutation;
+    if (!pending || busy()) return Promise.resolve(false);
+    renderSaveStatus(false);
+    return post('/api/table', pending).then(function (payload) {
+      if (!payload) { renderSaveStatus(true); if (fastInput) fastInput.render(); return false; }
+      app.pendingMutation = null;
+      renderSaveStatus(false);
       if (!payload.ok) {
         var messages = (payload.issues || []).map(function (i) {
           return i.message;
@@ -265,6 +321,11 @@
   }
 
   function createTable(tableSize, heroPosition) {
+    if (app.pendingMutation) {
+      renderSaveStatus(true);
+      toast('上一项操作尚未确认保存，请先点“重试确认”，再新建牌桌。', true);
+      return Promise.resolve(false);
+    }
     return post('/api/table', {
       tableSize: tableSize || 6,
       heroPosition: heroPosition || 'BTN',
@@ -308,6 +369,7 @@
     // 录入历史模式：**永不**自动分析。手动点按钮也不发 ——
     // 那会让「补录历史」重新变成一件会弹结果的事。
     if (app.mode === 'HISTORY_ENTRY') return Promise.resolve(null);
+    if (reason === 'auto' && (!app.autoEnabled || busy() || app.pendingMutation)) return Promise.resolve(null);
 
     /*
      * ---- 自动路径 fail-closed ----
@@ -338,15 +400,31 @@
     }
 
     var requestRevision = app.state.revision;
+    var requestTableId = app.state.tableId;
     var requestEpoch = app.modeEpoch;
     app.analyzeToken += 1;
     var token = app.analyzeToken;
     app.analyzeLatestToken = token;
+    if (app.analyzeController) app.analyzeController.abort();
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    app.analyzeController = controller;
+    app.autoAnalyzedKey = keyOf(requestRevision, requestEpoch);
+    app.analysis = null;
 
     app.autoState = 'ANALYZING';
     renderAutoAnalyzeLine();
-
-    return post('/api/analyze', { table: app.state }).then(function (payload) {
+    renderResult();
+    var started = performance.now(), timedOut = false;
+    var timeout = fastInput && controller ? window.setTimeout(function () { timedOut = true; controller.abort(); }, 30000) : null;
+    return fetch('/api/analyze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: app.state, modeEpoch: requestEpoch, requestToken: token }),
+      ...(controller ? { signal: controller.signal } : {}),
+    }).then(function (res) { return res.json(); }).catch(function (error) {
+      if (error.name === 'AbortError' && !timedOut) return null;
+      return { ok: false, stage: timedOut ? 'TIMEOUT' : 'NETWORK', issues: [{message: timedOut ? '分析超时，可点击重新分析；录入仍可继续。' : '分析失败，请检查连接后重新分析。'}] };
+    }).then(function (payload) {
+      if (timeout !== null) window.clearTimeout(timeout);
       /*
        * ---- 迟到响应保护 ----
        *
@@ -356,14 +434,19 @@
        * 3. 模式还是不是当初那个纪元
        */
       if (token !== app.analyzeLatestToken) return null;
-      if (!app.state || app.state.revision !== requestRevision) return null;
+      if (!app.state || app.state.revision !== requestRevision || app.state.tableId !== requestTableId) return null;
       if (app.modeEpoch !== requestEpoch) return null;
       if (app.mode === 'HISTORY_ENTRY') return null;
 
       app.analysis = payload;
+      app.analyzeController = null;
       app.autoAnalyzedKey = keyOf(requestRevision, requestEpoch);
       app.autoState = null; // 交回给 preview 推导
+      var received = performance.now();
       render();
+      var server = payload && payload.meta ? payload.meta.serverTimings : null;
+      metric({ kind: 'analysis', revision: requestRevision, requestMs: received - started, renderMs: performance.now() - received, server: server,
+        transportAndDecodeMs: server ? Math.max(0, received - started - server.totalMs) : null });
       return payload;
     });
   }
@@ -394,7 +477,7 @@
     if (!p || !p.decision) return;
 
     // 录入历史：不自动分析（状态条会显示「自动分析已暂停」）
-    if (app.mode === 'HISTORY_ENTRY') {
+    if (app.mode === 'HISTORY_ENTRY' || !app.autoEnabled || busy() || app.pendingMutation || app.cardEditing) {
       renderAutoAnalyzeLine();
       return;
     }
@@ -448,7 +531,7 @@
     for (var i = 0; i < nodes.length; i += 1) {
       var node = nodes[i];
       if (disabled) {
-        node.dataset.prevDisabled = node.disabled ? '1' : '0';
+        if (node.dataset.prevDisabled === undefined) node.dataset.prevDisabled = node.disabled ? '1' : '0';
         node.disabled = true;
       } else if (node.dataset.prevDisabled !== undefined) {
         node.disabled = node.dataset.prevDisabled === '1';
@@ -456,6 +539,7 @@
       }
     }
     if (!disabled) updateActionDisabled();
+    if (!disabled && fastInput) fastInput.render();
   }
 
   /** 行动按钮与「重新分析」的可用性由**预览**决定 */
@@ -470,7 +554,8 @@
      * 只在**真的可分析**且不在录入历史模式时可用。
      */
     var usable = Boolean(p && p.decision && p.decision.ready) && app.mode !== 'HISTORY_ENTRY';
-    analyzeBtn.disabled = !usable || busy();
+    analyzeBtn.disabled = !usable || busy() || app.autoState === 'ANALYZING';
+    $('newTableBtn').disabled = busy() || Boolean(app.pendingMutation);
     analyzeBtn.title =
       app.mode === 'HISTORY_ENTRY'
         ? '录入历史模式下不分析。切回「当前决策」即可。'
@@ -496,6 +581,11 @@
     DONE: { text: '建议已更新', cls: 'ok' },
     INSUFFICIENT: { text: '信息不足', cls: 'warn' },
     ERROR: { text: '状态错误', cls: 'danger' },
+    TIMEOUT: { text: '分析超时 · 可以重试', cls: 'danger' },
+    FAILED: { text: '分析失败 · 可以重试', cls: 'danger' },
+    UNSUPPORTED: { text: '当前局面不支持', cls: 'warn' },
+    READY: { text: '已就绪，等待分析', cls: 'wait' },
+    PAUSED: { text: '已就绪，可手动重新分析', cls: 'wait' },
   };
 
   function renderAutoAnalyzeLine() {
@@ -522,15 +612,19 @@
      * 显示「建议已更新」或旧状态 —— 那正是「用户猜不到有没有开始分析」。
      */
     var state = app.autoState === 'ANALYZING' ? 'ANALYZING' : p.decision.state;
+    if (app.autoState !== 'ANALYZING' && !app.analysis && p.decision.ready) state = app.autoEnabled ? 'READY' : 'PAUSED';
 
     // 已经拿到结果：区分「有建议」与「信息不足」
-    if (state !== 'ANALYZING' && app.analysis && app.analysis.ok === true) {
+    if (app.autoState !== 'ANALYZING' && app.analysis && app.analysis.ok === true) {
       state = app.analysis.decision && app.analysis.decision.action ? 'DONE' : 'INSUFFICIENT';
+    }
+    if (app.autoState !== 'ANALYZING' && app.analysis && app.analysis.ok === false) {
+      state = app.analysis.stage === 'TIMEOUT' || app.analysis.stage === 'DEADLINE' ? 'TIMEOUT' : 'FAILED';
     }
 
     var info = AUTO_STATE_ZH[state] || { text: String(state), cls: '' };
     node.className = 'autoLine ' + info.cls;
-    node.textContent = '自动分析：开启 · ' + info.text;
+    node.textContent = (app.autoEnabled ? '自动分析：开启 · ' : '自动分析：关闭 · ') + info.text + (state === 'DONE' ? ' · 对应当前局面' : '');
   }
 
   /**
@@ -581,6 +675,7 @@
     if (next === app.mode) return;
     app.mode = next;
     app.modeEpoch += 1;
+    invalidateAnalysis();
 
     // 在途的自动分析作废
     if (app.analyzeTimer !== null) {
@@ -761,8 +856,8 @@
   function renderNotices() {
     var box = $('notices');
     clear(box);
-    var notices = (app.preview.warnings || []).filter(function (w) {
-      return typeof w === 'string' && w.length > 0;
+    var notices = (app.preview.warnings || []).filter(function (w, i, all) {
+      return typeof w === 'string' && w.length > 0 && all.indexOf(w) === i;
     });
     notices.slice(0, 4).forEach(function (text) {
       box.appendChild(el('div', 'banner warn', text));
@@ -772,7 +867,7 @@
         el(
           'div',
           'banner danger',
-          app.preview.issues
+          app.preview.issues.filter(function (v,i,all) { return all.findIndex(function(x){return x.message===v.message;})===i; })
             .map(function (i) {
               return i.message;
             })
@@ -828,7 +923,7 @@
        */
       var rad = ((seat.angleDeg + 90) * Math.PI) / 180;
       var x = 50 + 40 * Math.cos(rad);
-      var y = 48 + 40 * Math.sin(rad);
+      var y = fastInput ? 50 + 34 * Math.sin(rad) : 48 + 40 * Math.sin(rad);
       node.style.left = x + '%';
       node.style.top = y + '%';
 
@@ -859,12 +954,18 @@
             ? seat.stackBB + 'BB'
             : seat.remainingStackBB + 'BB' +
               (seat.committedBB ? '（本街已投 ' + seat.committedBB + 'BB）' : '');
-        node.appendChild(el('div', 'stack', stackText));
+        if (fastInput) stackText = (seat.remainingStackBB === null ? seat.stackBB : seat.remainingStackBB) + ' BB ✎';
+        var stackNode = el('div', 'stack', stackText);
+        if (fastInput) {
+          stackNode.title = '编辑开局筹码；进行中请先重置本手或下一手';
+          stackNode.onclick = function (ev) { ev.stopPropagation(); hideSeatTip(); openModal('筹码管理', seat.displayName + ' · ' + (seat.handRole || seat.logicalPosition), function(m){ appendStackEditor(m,seat); }); };
+        }
+        node.appendChild(stackNode);
         var tags = [];
         if (seat.quickProfileZh && seat.quickProfileZh !== '未知') tags.push(seat.quickProfileZh);
         if (seat.dynamicHintZh && seat.dynamicHintZh !== '未知') tags.push('动态:' + seat.dynamicHintZh);
         if (tags.length > 0) node.appendChild(el('div', 'tags', tags.join(' · ')));
-        node.appendChild(el('div', 'status', seat.isHero ? 'Hero · ' + seat.statusZh : seat.statusZh));
+        node.appendChild(el('div', 'status', seat.isCurrentActor ? '当前行动' : seat.folded ? '已弃牌' : seat.isHero ? 'Hero · ' + seat.statusZh : seat.statusZh));
 
         if (seat.isHero && app.state.heroCards.length > 0) {
           var row = el('div', 'heroCards');
@@ -886,7 +987,7 @@
       };
       node.onmousemove = function (ev) {
         var tip = $('seatTip');
-        if (tip && tip.className === 'show') positionTip(tip, ev);
+        if (tip && tip.className.indexOf('show') >= 0) positionTip(tip, ev);
       };
       node.onmouseleave = hideSeatTip;
       box.appendChild(node);
@@ -897,6 +998,10 @@
     var p = app.preview;
     $('potLine').textContent =
       '底池 ' + p.potBB + 'BB' + (p.currentBetBB > 0 ? '　当前注 ' + p.currentBetBB + 'BB' : '');
+    if (fastInput) {
+      $('potLine').textContent='底池 ' + p.potBB + ' BB';
+      if(p.currentBetBB>0)$('potLine').appendChild(el('small','pot-current','当前注 '+p.currentBetBB+' BB'));
+    }
     var street = p.streetZh;
     if (p.boardSelectionInProgress) street += '（公共牌选择中…）';
     if (p.handComplete) street += '（本手结束）';
@@ -945,6 +1050,10 @@
         }(slot);
       }
       row.appendChild(node);
+      if (fastInput) {
+        node.title = '选择、替换或清除公共牌';
+        node.onclick = function(index){return function(){openCardPicker({kind:'BOARD',slot:Math.min(index,app.state.board.length)});};}(slot);
+      }
     }
   }
 
@@ -979,6 +1088,20 @@
       app.state.heroCards.length === 2
         ? '手牌已选好。点已选的牌可以取消。'
         : '点下方牌面选牌（已选的 ' + app.state.heroCards.length + ' / 2 张）';
+    if (fastInput) {
+      Array.from(row.children).forEach(function(node,index){
+        node.title='选择、替换或清除手牌';
+        node.onclick=function(){openCardPicker({kind:'HERO',slot:Math.min(index,app.state.heroCards.length)});};
+      });
+      $('handHint').textContent=app.state.heroCards.length===2?'点牌可替换或清除':'点空位选择手牌';
+    }
+  }
+
+  function openCardPicker(target) {
+    if (busy() || app.pendingMutation || app.cardEditing) return;
+    app.target=target;
+    $('cardPicker').hidden=false;
+    render();
   }
 
   function usedCards() {
@@ -1035,7 +1158,18 @@
   }
 
   function pickCard(code) {
+    if (fastInput && (busy() || app.pendingMutation || app.cardEditing)) return;
     if (app.target.kind === 'HERO') {
+      if (fastInput && app.target.slot !== undefined && app.state.heroCards[app.target.slot]) {
+        var old=app.state.heroCards[app.target.slot];
+        if (old===code) return;
+        app.cardEditing=true;
+        sendOp({kind:'SET_HERO_CARD',card:old}).then(function(ok){
+          if (!ok) return false;
+          return sendOp({kind:'SET_HERO_CARD',card:code});
+        }).then(function(ok){app.cardEditing=false;if(ok)autoAdvanceTarget();else render();});
+        return;
+      }
       sendOp({ kind: 'SET_HERO_CARD', card: code }).then(function (ok) {
         if (!ok) return;
         autoAdvanceTarget();
@@ -1056,15 +1190,20 @@
       if (app.state.heroCards.length >= 2) {
         app.target = { kind: 'BOARD', slot: app.state.board.length };
         if (app.target.slot > 4) app.target = { kind: 'HERO' };
+        if (fastInput) $('cardPicker').hidden=true;
+      } else if (fastInput) {
+        app.target={kind:'HERO',slot:app.state.heroCards.length};
       }
     } else {
       var next = app.state.board.length;
       app.target = next <= 4 ? { kind: 'BOARD', slot: next } : { kind: 'HERO' };
+      if (fastInput && next >= 3) $('cardPicker').hidden=true;
     }
     render();
   }
 
   function renderActorPanel() {
+    if (fastInput) { fastInput.render(); renderResult(); return; }
     var p = app.preview;
     var line = $('actorLine');
     var stats = $('statGrid');
@@ -1205,7 +1344,7 @@
     var a = app.analysis;
     if (!a) {
       box.className = 'hint';
-      box.textContent = '轮到 Hero 时会自动分析。';
+      box.textContent = app.autoState === 'ANALYZING' ? '正在分析当前局面，行动录入仍可继续。' : '轮到 Hero 时会自动分析。';
       return;
     }
     box.className = '';
@@ -1234,6 +1373,39 @@
     var action = el('div', null, a.viewModel.actionZh);
     action.id = 'resultAction';
     box.appendChild(action);
+
+    /*
+     * 🔴 **牌力档 + 「这条建议该不该信」**（使用者要求：一眼看出要不要信它）。
+     *
+     * 放在动作**正下方**、其它信息**之前** —— 因为它决定「后面那些理由要不要读」。
+     *
+     * 判据来自后端 `handStrengthHint`（`viewmodels/handStrengthHint.ts`）：
+     * 引擎唯一被实测证伪的模块是**弃牌率**（预测 65–75% vs 真实 51.6%，
+     * 与真实弃牌的相关系数 r ≈ −0.03）；而**强牌的利润来自权益、与弃牌率无关**，
+     * 弱牌/听牌几乎全靠弃牌率。
+     *
+     * 用 `trust` 这个**结构化字段**决定样式，不做文案匹配 ——
+     * 文案可以改，字段不会撒谎（本项目在范围来源那一处踩过文案匹配的坑）。
+     */
+    var hs = a.viewModel.handStrengthHint;
+    if (hs) {
+      var hsCls =
+        hs.trust === 'TRUST' ? 'hsTrust' : hs.trust === 'DISCOUNT' ? 'hsDiscount' : 'hsDistrust';
+      var hsBox = el('div', 'hsBox ' + hsCls);
+      hsBox.id = 'resultHandStrength';
+      /*
+       * ⚠️ `strength` 不假设是 number：直接 `hs.strength.toFixed(2)` 在字段缺失/
+       * 被序列化成字符串时会抛错，而**渲染里抛错会冻结整个面板**
+       *（本文件有过前例：`appendChild(box)` 那次，导致时间线/弹层全部不再更新）。
+       * 后端 `handStrengthHintOf` 已经保证是有限数，这里是**便宜的第二道防线**。
+       */
+      var hsStrength = typeof hs.strength === 'number' && isFinite(hs.strength) ? hs.strength.toFixed(2) : '—';
+      hsBox.appendChild(
+        el('div', 'hsTier', hs.tierZh + '（' + hs.roleZh + '，强度 ' + hsStrength + '）'),
+      );
+      hsBox.appendChild(el('div', 'hsTrustLine', hs.trustZh));
+      box.appendChild(hsBox);
+    }
 
     var meta = [a.viewModel.confidenceZh, a.viewModel.classificationZh];
     if (a.viewModel.sizeZh) meta.unshift(a.viewModel.sizeZh);
@@ -1466,6 +1638,43 @@
       }
       box.appendChild(lpBox);
     }
+    if (fastInput) compactResult(box, a);
+  }
+
+  function compactResult(box, a) {
+    var details=el('details','result-details');details.appendChild(el('summary',null,'收益、范围与完整依据'));
+    /*
+     * 🔴 **`keep` 是「紧凑模式下仍然常驻显示」的白名单。**
+     *
+     * 不在名单里的节点会被**搬进折叠的 `<details>`**（`compactResult` 的语义）。
+     *
+     * `resultHandStrength`（牌力档 + 「这条建议该不该信」）**必须留在这里**：
+     * 它是**判断依据**，不是**补充披露**。使用者要先知道「这条建议能不能信」，
+     * 才决定要不要展开看后面的理由 —— 把它折叠起来等于**把最关键的一条藏起来**。
+     *
+     * 踩过的坑：本块最初加进来时**没进白名单**，于是在「快速录入」模式下
+     * 被静默搬进折叠区，界面上看起来「功能没生效」。
+     * 表现形式具有迷惑性：DOM 里节点**存在**、数据也**正确**，只是不在可见区域。
+     */
+    var keep=['resultAction','resultMeta','resultReasons','resultHandStrength'];
+    Array.from(box.children).forEach(function(n){if(keep.indexOf(n.id)<0)details.appendChild(n);});
+    var reasons=$('resultReasons');
+    function shortText(text, limit) { var plain=String(text).replace(/\*\*/g,''); return plain.length>limit?plain.slice(0,limit)+'…':plain; }
+    if(reasons){
+      var more=el('ul');
+      Array.from(reasons.children).forEach(function(n){more.appendChild(n);});
+      details.appendChild(more);
+      (a.viewModel.reasonsZh||[]).slice(0,2).forEach(function(t){reasons.appendChild(el('li',null,shortText(t,82)));});
+    }
+    var prov=a.rangeProvenance||[], from=prov.filter(function(r){return r.fromSolver===true;}).length;
+    var source=prov.length?'范围来源：'+from+'/'+prov.length+' 家为缓存求解器范围'+(from<prov.length?'；其余为启发式先验。':'。'):'来源与适用性：以本次引擎返回依据为准。';
+    var line=el('div','model-source',source);box.appendChild(line);
+    if(a.gtoStatus && a.gtoStatus.state!=='SOLVER_RANGE' && a.gtoStatus.messageZh)box.appendChild(el('div','gtoReason',shortText(a.gtoStatus.messageZh,90)));
+    if((a.viewModel.warningsZh||[]).length)box.appendChild(el('div','warn',shortText(a.viewModel.warningsZh[0],90)));
+    if(a.decision && a.decision.actionable===false)box.appendChild(el('div','warn','当前结果不可直接执行，请查看适用限制。'));
+    var candidates=a.decision && a.decision.candidates;
+    if(candidates)details.appendChild(el('pre','hint',JSON.stringify(candidates,null,2)));
+    box.appendChild(details);
   }
 
   /**
@@ -1935,18 +2144,18 @@
     if (!seat.playerId) {
       body.push('空座位 —— 点击可选择历史玩家或新建玩家');
       tip.textContent = body.join('\n');
-      tip.className = 'show';
+      tip.className = 'seatTip show';
       positionTip(tip, ev);
       return;
     }
     body.push('当前画像：' + (seat.quickProfileZh || '未知') + '（标签先验）');
     if (seat.dynamicHintZh && seat.dynamicHintZh !== '未知') body.push('近期观察：' + seat.dynamicHintZh);
     tip.textContent = body.concat(['统计加载中…']).join('\n');
-    tip.className = 'show';
+    tip.className = 'seatTip show';
     positionTip(tip, ev);
     /** 悬停即取真实统计（只读接口；失败时如实写「读取失败」而不是编数字） */
     fetchRoster('').then(function (res) {
-      if (tip.className !== 'show') return;
+      if (tip.className.indexOf('show') < 0) return;
       if (!res.ok) {
         tip.textContent = body.concat(['实测统计：读取失败（' + (res.issues || [])[0]?.code + '）']).join('\n');
         return;
@@ -1971,7 +2180,7 @@
 
   function hideSeatTip() {
     var tip = $('seatTip');
-    if (tip) tip.className = '';
+    if (tip) tip.className = 'seatTip';
   }
 
   /**
@@ -2098,11 +2307,41 @@
   function openSeatMenu(seat) {
     if (!seat.playerId) {
       openModal('空座位', seat.positionZh + '（' + seat.logicalPosition + '）', function (modal) {
+        /*
+         * 🔴 **新玩家名称录入**（放在最前，由**同一个**「加入玩家」按钮消费）。
+         *
+         * ## 为什么不能配一个单独的「用该名称加入」按钮
+         *
+         * 第一版就是那样做的 —— 结果上方的**主按钮**「加入玩家」仍然忽略已输入的名字：
+         * 使用者填了名字、点最显眼的那个按钮，座位显示的还是「玩家N」。
+         * **这不是后端问题**（实测服务端 `preview.seats[].displayName` 就是填的名字），
+         * 而是**两个按钮抢同一件事**的交互缺陷。现在只有一条路径：
+         * 填了 ⇒ 用该名称；留空 ⇒ 自动命名（与修复前逐位一致）。
+         *
+         * ⚠️ 名称只是**显示名**：身份仍是自动 `p{n}`，同名不合并、也不读取任何旧历史。
+         * 要让同一位玩家延续历史，必须走「选择历史玩家…」（按身份匹配）。
+         */
+        var nameRow = el('div', 'row');
+        nameRow.appendChild(el('div', 'label', '玩家名称（留空 ⇒ 自动命名）'));
+        var nameInput = el('input');
+        nameInput.type = 'text';
+        nameInput.maxLength = 24;
+        nameInput.placeholder = '例如：老张';
+        nameInput.setAttribute('data-testid', 'newPlayerName');
+        nameInput.disabled = busy();
+        nameRow.appendChild(nameInput);
+        modal.appendChild(nameRow);
+
         var row = el('div', 'row');
         var add = el('button', 'primary', '加入玩家');
         add.disabled = busy();
         add.onclick = function () {
-          sendOp({ kind: 'ADD_PLAYER', seatId: seat.seatId }).then(closeUnlessPending);
+          var typed = String(nameInput.value || '').trim();
+          sendOp(
+            typed.length > 0
+              ? { kind: 'ADD_PLAYER', seatId: seat.seatId, displayName: typed }
+              : { kind: 'ADD_PLAYER', seatId: seat.seatId },
+          ).then(closeUnlessPending);
         };
         row.appendChild(add);
         var pickFromHistory = el('button', null, '选择历史玩家…');
@@ -2112,11 +2351,17 @@
         };
         row.appendChild(pickFromHistory);
         modal.appendChild(row);
+        /* 回车即加入 —— 与点「加入玩家」完全等价（少一次鼠标移动） */
+        nameInput.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') add.click();
+        });
+
         modal.appendChild(
           el(
             'div',
             'note',
             '新玩家默认：新身份、' + app.state.defaultStackBB + 'BB、画像「未知」。' +
+              '名称只影响显示，**不代表身份**（同名不合并）。' +
               '本手进行中无法加入（会破坏当前牌局）。',
           ),
         );
@@ -2159,6 +2404,53 @@
             ),
           );
         });
+
+        /*
+         * 🔴 **改名**（`SET_PLAYER_NAME`）。
+         *
+         * ## 为什么必须有这一行
+         *
+         * 座位常常**已经**坐满（一键补齐 / 逐个加入都得到自动名「玩家2、玩家3…」），
+         * 而此前**没有任何入口**能把名字改成使用者的叫法 —— 实测反馈正是
+         * 「加了位置，名字还是玩家2、玩家3」。空座位那边只能给**新**玩家命名，救不了已坐下的。
+         *
+         * ⚠️ 只改**显示名**：身份 `playerId` 不变 ⇒ 历史绑定 / 统计 / 画像都不受影响；
+         * 同名不合并；名册取「最新一条记录」的名字，所以改名后要等这位玩家**下一次行动**
+         * 才会在名册里显示新名字（不为了改显示名去重写历史文件）。
+         */
+        var renameRow = el('div', 'row');
+        renameRow.appendChild(
+          el('div', 'label', '玩家名称' + (seatEditLocked() ? '（本手进行中不可改）' : '')),
+        );
+        var renameInput = el('input');
+        renameInput.type = 'text';
+        renameInput.maxLength = 24;
+        renameInput.value = String(seat.displayName || '');
+        renameInput.setAttribute('data-testid', 'playerName');
+        /*
+         * ⚠️ 与筹码编辑**同一条门禁**（`seatEditLocked()`）：本手进行中禁用。
+         * 改名本身不改牌局状态，但一手之内改名字会让**这一手的行动记录**里
+         * 前后名字不一致（记录写的是当时的名字），所以按同一纪律一起禁掉。
+         */
+        renameInput.disabled = seatEditLocked() || busy();
+        renameRow.appendChild(renameInput);
+        var renameSave = el('button', null, '保存名称');
+        renameSave.disabled = seatEditLocked() || busy();
+        renameSave.onclick = function () {
+          var typed = String(renameInput.value || '').trim();
+          if (typed.length === 0) {
+            toast('玩家名称不能为空', true);
+            return;
+          }
+          sendOp({ kind: 'SET_PLAYER_NAME', seatId: seat.seatId, displayName: typed }).then(
+            closeUnlessPending,
+          );
+        };
+        renameRow.appendChild(renameSave);
+        renameInput.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') renameSave.click();
+        });
+        modal.appendChild(renameRow);
 
         // ---- 画像 ----
         var profileRow = el('div', 'row');
@@ -2300,8 +2592,19 @@
    * ⚠️ 唯一门禁来自后端：本手进行中不允许改筹码（本手的筹码守恒基于开局筹码）。
    * 这里按同一条件**禁用**控件并写明原因 —— 点了才被拒是更差的体验。
    */
+  /**
+   * 🔴 **座位编辑的统一门禁**：本手进行中 ⇒ 编辑控件必须禁用。
+   *
+   * 唯一门禁来自后端（本手的筹码守恒基于开局筹码）；这里按**同一个条件**禁用控件，
+   * 点了才被拒是更差的体验。抽成函数是为了让「筹码编辑」与「改名」**共用一处判据** ——
+   * 两处各写一遍 `handActive === true` 正是本项目最忌讳的「两处口径」。
+   */
+  function seatEditLocked() {
+    return app.state.handActive === true;
+  }
+
   function appendStackEditor(modal, seat) {
-    var locked = app.state.handActive === true;
+    var locked = seatEditLocked();
 
     var row = el('div', 'row');
     row.appendChild(el('div', 'label', '编辑筹码（本手未开始时可用）'));
@@ -2373,6 +2676,11 @@
    * 而且中间那一瞬间的牌桌是错的（Hero 在 BTN 而实际不坐在那儿）。
    */
   function openNewTableModal() {
+    if (app.pendingMutation) {
+      renderSaveStatus(true);
+      toast('上一项操作尚未确认保存，请先点“重试确认”，再新建牌桌。', true);
+      return;
+    }
     var meta = app.meta || {};
     var sizes = meta.tableSizes || [
       { value: 6, labelZh: '6 人桌', positions: [] },
@@ -2616,7 +2924,9 @@
   }
 
   function boot() {
+    if (window.FastInput) fastInput=window.FastInput.create({app:app,$:$,el:el,clear:clear,busy:busy,sendOp:sendOp,closeModal:closeModal,actionZh:function(type){return {FOLD:'弃牌',CHECK:'过牌',CALL:'跟注',BET:'下注',RAISE:'加注到',ALL_IN:'全下'}[type]||type;}});
     bindTopbar();
+    if (fastInput) bindFastUi();
     /*
      * 「GTO 范围」入口。
      *
@@ -2642,6 +2952,21 @@
       .catch(function (error) {
         toast('初始化失败：' + String(error), true);
       });
+  }
+
+  function bindFastUi() {
+    $('autoToggleBtn').onclick=function(){app.autoEnabled=!app.autoEnabled;invalidateAnalysis();render();};
+    $('tableTab').onclick=function(){ $('tableSettings').open=false; $('inputDock').scrollIntoView({block:'nearest'}); };
+    $('playersBtn').onclick=function(){openModal('玩家档案','选择座位查看真实玩家资料与历史记录',function(m){app.preview.seats.forEach(function(s){var b=el('button',null,(s.displayName||'空座位')+' · '+(s.handRole||s.logicalPosition));b.onclick=function(){openSeatMenu(s);};m.appendChild(b);});});};
+    $('closePickerBtn').onclick=function(){$('cardPicker').hidden=true;};
+    $('clearCardBtn').onclick=function(){
+      if(busy()||app.pendingMutation||app.cardEditing)return;
+      var t=app.target, index=t.slot===undefined?app.state.heroCards.length-1:t.slot;
+      var card=t.kind==='HERO'?app.state.heroCards[index]:app.state.board[index];
+      if(!card){toast('当前槽位没有牌');return;}
+      sendOp(t.kind==='HERO'?{kind:'SET_HERO_CARD',card:card}:{kind:'SET_BOARD_CARD',slot:index,card:card}).then(function(ok){if(ok){app.target=t.kind==='HERO'?{kind:'HERO',slot:app.state.heroCards.length}:{kind:'BOARD',slot:Math.min(index,app.state.board.length)};render();}});
+    };
+    ['pointerdown','input'].forEach(function(type){document.addEventListener(type,function(e){var started=performance.now();var target=e.target.id||e.target.tagName;requestAnimationFrame(function(){metric({kind:'ui-feedback',event:type,target:target,frameMs:performance.now()-started});});},true);});
   }
 
   if (document.readyState === 'loading') {

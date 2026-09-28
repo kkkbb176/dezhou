@@ -1,0 +1,3699 @@
+{
+  "storeVersion": "gto-strategy-store-v1",
+  "cacheKey": "c7348fc89",
+  "scenarioHash": "g0d4f06d8",
+  "treeId": "t06d8712b",
+  "solveFingerprint": "saacba66b",
+  "scenario": {
+    "kind": "RFI",
+    "gameType": "CASH",
+    "tableSize": 9,
+    "effectiveStackBB": 100,
+    "heroPosition": "UTG",
+    "villainPosition": null,
+    "actionHistory": [],
+    "raiseSizesBB": [],
+    "blinds": {
+      "sbBB": 0.5,
+      "bbBB": 1,
+      "anteBB": 0
+    },
+    "heroAlreadyActed": false
+  },
+  "solve": {
+    "engine": "gtopen",
+    "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+    "solverVersion": null,
+    "openSizesBB": [
+      2.5
+    ],
+    "raiseMults": [
+      3
+    ],
+    "maxRaises": 2,
+    "limp": false,
+    "addAllin": false,
+    "rakePct": 0,
+    "rakeCap": 0,
+    "realization": "static",
+    "multiwayEquityModel": "coupled_deck_v1",
+    "iterations": 12,
+    "targetGap": 0.05,
+    "checkEvery": 20,
+    "enginePositions": [
+      "UTG",
+      "UTG1",
+      "UTG2",
+      "LJ",
+      "HJ",
+      "CO",
+      "BTN",
+      "SB",
+      "BB"
+    ],
+    "posts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.5,
+      1
+    ],
+    "ante": 0
+  },
+  "range": {
+    "actorPosition": "UTG",
+    "actionMenu": [
+      {
+        "kind": "FOLD",
+        "sizeBB": null,
+        "rawLabel": "Fold"
+      },
+      {
+        "kind": "RAISE",
+        "sizeBB": 2.5,
+        "rawLabel": "Raise 2.5"
+      }
+    ],
+    "hands": [
+      {
+        "hand": "22",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "32o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "42o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "52o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "62o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "72o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "82o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "92o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A2o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "32s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "33",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "43o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "53o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "63o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "73o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "83o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "93o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A3o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "42s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "43s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "44",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "54o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "64o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "74o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "84o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "94o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A4o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "52s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "53s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "54s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "55",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.95412636,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.045873653,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "65o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "75o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "85o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "95o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A5o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "62s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "63s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "64s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "65s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "66",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "76o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "86o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "96o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A6o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "72s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "73s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "74s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "75s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "76s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "77",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "87o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "97o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A7o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "82s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "83s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "84s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "85s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "86s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "87s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "88",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "98o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A8o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "92s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "93s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "94s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "95s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "96s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "97s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "98s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "99",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A9o",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "T9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9929384,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0070615425,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "TT",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "JTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "QTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KTo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9927876,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.007212414,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "ATo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.65117675,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.34882328,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "J9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "JTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.98957205,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0104279695,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "JJ",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "QJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99250764,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.007492326,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99033135,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0096686045,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AJo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.1931551,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.8068449,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "Q9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9919264,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.008073594,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "QTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9838893,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.016110731,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "QJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.97242314,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.027576838,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "QQ",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KQo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.91383046,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.086169496,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AQo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99254954,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0074504893,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "K9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.98943985,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.010560148,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KTs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.9882474,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.011752588,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KQs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "KK",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AKo",
+        "combos": 12,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A2s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A3s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A4s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A5s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99203825,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.007961728,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A6s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99227965,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.0077203843,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A7s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.99175465,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.008245297,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A8s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.91395116,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.08604879,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "A9s",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.49374056,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.5062594,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "ATs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AJs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AQs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AKs",
+        "combos": 4,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.99923074,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      },
+      {
+        "hand": "AA",
+        "combos": 6,
+        "reach": 1,
+        "actions": [
+          {
+            "kind": "FOLD",
+            "sizeBB": null,
+            "frequency": 0.0007692308,
+            "evBB": null,
+            "rawLabel": "Fold"
+          },
+          {
+            "kind": "RAISE",
+            "sizeBB": 2.5,
+            "frequency": 0.9992308,
+            "evBB": null,
+            "rawLabel": "Raise 2.5"
+          }
+        ]
+      }
+    ],
+    "potBB": 1.5,
+    "reachable": true,
+    "unavailableReason": null
+  },
+  "solveMeta": {
+    "brGapTotal": 0.021029559081906044,
+    "seatGaps": [],
+    "seatEvs": [],
+    "stopReason": "target_gap",
+    "solverState": "done",
+    "iterationsCompleted": 12,
+    "iterationsRequested": 12,
+    "targetGap": 0.05,
+    "solveDurationMs": 29005,
+    "multiwayEquityModel": "coupled_deck_v1",
+    "realizationNote": "",
+    "gpu": false
+  },
+  "quality": "LOW_CONVERGENCE",
+  "qualitySummaryZh": "未做稳定性复核：BR gap 之和 0.021030，迭代 12 次。已达到本次收敛目标，但缺少重复求解稳定性证据，因此仍降为低收敛；频率可作近似参考，不可当作均衡。",
+  "qualityReasonsZh": [
+    "求解器返回了真实策略：12 次迭代，停止原因 target_gap。",
+    "达到本次设定的收敛目标：BR gap 之和 0.02102956 < 0.05。⚠️ 这个目标只对**同一棵树**有意义（跨桌型/跨动作树的 gap 不可比）。",
+    "迭代 12 次，已达到 9 人桌的预算下限 12 次。",
+    "🔴 求解器使用**近似延续模型**：它收敛的是建模后的收益，不是真实扑克。因此本结果的等级**上限是「近似策略」**，无论收敛多好都不会更高。"
+  ],
+  "qualityBlockersZh": [
+    "**没有实测过该场景的重复求解稳定性** —— 没有证据就不给高等级（这是刻意的）。"
+  ],
+  "approximationFlags": {
+    "approximateModel": true,
+    "notConverged": false,
+    "multiwayContinuation": true,
+    "compressedPrecision": false,
+    "fromCache": false,
+    "notes": [
+      "GTOpen 的翻前使用「近似延续模型」：它求解的是建模后的延续收益，不是完整的翻牌后博弈（源码 crates/solver/src/preflop/mod.rs 文件头自述）。",
+      "本场景有 9 名玩家：3 人以上的底池使用 coupled_deck_v1（1024 个确定性潜在强度样本），不是真实共同发牌，也不代表完整的多人翻牌后求解。",
+      "169 类机会模型忽略联合去牌效应：范围越窄、重叠越多，误差越大。",
+      "本次动作树被刻意压缩（开池 2.5BB、再加注 3×、加注上限 2 次、跛入 关闭），以便在纯 CPU 上跑完。**因此没有跛入频率**；且更细的尺寸菜单会给出不同的频率。",
+      "本次动作菜单**不含全下**（2.5BB 开池 / 3× 再加注两条分支之外没有 all-in）。原因：本机实测显示，把全下放进动作树会让每次迭代慢约 5 倍，并且在 8/9 人桌上 10 次迭代后仍无法收敛（BR gap 之和 > 5）。与其给出一个**未收敛的全下频率**，不如明确不提供它。需要全下频率时请把 `addAllinByTableSize` 打开并接受更长的求解时间。"
+    ]
+  },
+  "source": {
+    "kind": "SOLVER",
+    "engine": "gtopen",
+    "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+    "solverVersion": null,
+    "endpoint": "http://127.0.0.1:3761"
+  },
+  "createdAt": "2026-09-23T03:16:12.380Z",
+  "fingerprintLines": [
+    "场景 9MAX / 100BB / Hero=UTG",
+    "问题 RFI",
+    "前序 无（Hero 是第一个行动的人）",
+    "求解 开池 [2.5] · 再加注 [3]× · 加注上限 2 · 跛入 关闭 · 全下 不提供",
+    "引擎 gtopen @ 92c86ed · 多路权益模型 coupled_deck_v1",
+    "预算 迭代 12 · 目标 gap 0.05 · 检查间隔 20",
+    "盲注 SB 0.5 / BB 1 / 前注 0",
+    "座位 UTG → UTG1 → UTG2 → LJ → HJ → CO → BTN → SB → BB · 下注 [0,0,0,0,0,0,0,0.5,1]",
+    "键 scenario=g0d4f06d8 · tree=t06d8712b · cache=c7348fc89 · solve=saacba66b"
+  ],
+  "unavailableFields": [
+    "evBB（逐动作 EV）—— GTOpen 的翻前节点接口不返回逐手牌、逐动作的 EV；只有状态接口给出逐座位总 EV",
+    "sourceVersion（求解器版本）—— GTOpen 没有版本端点，能力接口只返回能力布尔值",
+    "equity（权益）—— GTOpen 内部有权益表，但没有对外的权益查询接口"
+  ]
+}

@@ -1,0 +1,118 @@
+真实牌局验证 —— 引擎答案 vs 真实牌局
+数据：D:\德州\third_party\phh-dataset
+牌局数（本次）：455
+
+========================================================================
+① 解析
+========================================================================
+读过文件          455
+成功解析          455
+含可验证决策点    243
+  排除 NO_DECISION_POINT        212
+
+被跳过的决策节点（**不是**「本来不该问」，而是重放/重建失败）：
+  ENGINE_CANNOT_REBUILD    15
+       · RECONSTRUCT :: ACTION_REJECTED: 第 12 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 78.75BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 12 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：小盲位 RAISE 59.8BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 13 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：大盲位 RAISE 62.5BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 14 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：劫持位 RAISE 70.25BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 15 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：关煞位 RAISE 65.25BB）
+       · RECONSTRUCT :: ACTION_REJECTED: 第 11 条行动记录被规则拒绝：ISSUE.BET_EXCEEDS_STACK。（记录内容：劫持位 RAISE 22BB）
+
+========================================================================
+② 决策规模
+========================================================================
+决策点总数        1302
+引擎给出可执行建议 1262（96.9%）
+平均单次耗时      262.3ms
+
+引擎建议分布：
+  BET                  725
+  CHECK                180
+  FOLD                 132
+  RAISE                124
+  CALL                 101
+
+========================================================================
+③ 客观检验：合法性（违反 = 确诊缺陷）
+========================================================================
+动作不被该节点允许  0
+尺寸越界            0
+
+引擎**未能给出建议**的阶段：
+  CONTEXT              40
+  细分原因：
+    CONTEXT_BUILD_FAILED               40
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=FLOP 我=SB
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=FLOP 我=BB
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=TURN 我=SB
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=TURN 我=BB
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=RIVER 我=SB
+         · 构建决策上下文失败：rfiTierByPositionName: 「BB」没有开池范围 —— 大盲位不能开池，请改用 3Bet / 防守范围 ｜ 翻前[UTGFOLD HJFOLD COFOLD BTNFOLD SBCALL BBRAISE SBCALL] 街=RIVER 我=BB
+
+========================================================================
+③b 引擎**自己的价值门槛**（不是与真人比，是它自己两个模块之间是否自洽）
+========================================================================
+「更差 X%」= 对手范围里比我这手更差的组合占比（引擎 VALUE_GATE 自己算的）
+
+动作      样本    更差%均值   更差<50%（我落后）      更差<25%（我明显落后）   无门槛字段
+AGGRESSIVE  725       43.6%     423 ( 58.3%)     257 ( 35.4%)     124
+PASSIVE       0        0.0%       0 (     —)       0 (     —)     413
+
+「引擎为什么这么打」—— 动作 × 落后与否 ｜ 理由码（前 24 条）
+  BET/落后 ｜ VALUE_GATE                                  1404
+  BET/领先 ｜ VALUE_GATE                                  620
+  BET/落后 ｜ STRATEGIC_VALUE_BET                         423
+  BET/落后 ｜ ENVIRONMENT_DIRECTION                       388
+  BET/领先 ｜ STRATEGIC_VALUE_BET                         302
+  BET/领先 ｜ ENVIRONMENT_DIRECTION                       302
+  BET/领先 ｜ RAKE_MODEL                                  299
+  BET/领先 ｜ DECISION_BASIS                              246
+  CHECK/无门槛 ｜ STRATEGIC_CHECK                          180
+  CHECK/无门槛 ｜ ENVIRONMENT_DIRECTION                    180
+  CHECK/无门槛 ｜ RAKE_MODEL                               180
+  CHECK/无门槛 ｜ DECISION_BASIS                           180
+  BET/落后 ｜ RAKE_MODEL                                  152
+  FOLD/无门槛 ｜ POSTFLOP_ROLE                             132
+  FOLD/无门槛 ｜ BOARD_DELTA                               132
+  FOLD/无门槛 ｜ SPR_COMMITMENT                            132
+  FOLD/无门槛 ｜ MATH_FOLD_DOMINANT                        132
+  FOLD/无门槛 ｜ MATH_REQUIRED_EQUITY                      132
+  FOLD/无门槛 ｜ MATH_ESTIMATED_EQUITY                     132
+  RAISE/无门槛 ｜ POSTFLOP_ROLE                            124
+  RAISE/无门槛 ｜ BOARD_DELTA                              124
+  RAISE/无门槛 ｜ SPR_COMMITMENT                           124
+  RAISE/无门槛 ｜ MATH_CALL_SUPPORTED                      124
+  RAISE/无门槛 ｜ RAISE_MODEL_EV                           124
+
+========================================================================
+④ 对照：引擎建议 vs 真实玩家动作（**不同 ≠ 错**）
+========================================================================
+完全一致          314 / 1262 = 24.9%
+
+分街道：
+  FLOP         83 /  641 = 12.9%
+  RIVER       116 /  248 = 46.8%
+  TURN        115 /  373 = 30.8%
+
+真实动作 → 引擎建议（前 20 种组合）：
+  CHECK → BET                        462
+  RAISE → BET                        263
+  CHECK → CHECK                      130
+  FOLD → FOLD                        108
+  CALL → RAISE                       66
+  CALL → CALL                        59
+  RAISE → CHECK                      50
+  FOLD → RAISE                       41
+  FOLD → CALL                        35
+  CALL → FOLD                        21
+  RAISE → RAISE                      17
+  RAISE → CALL                       7
+  RAISE → FOLD                       3
+
+========================================================================
+⑤ 结果对照（仅参考 —— 单次结果噪声极大）
+========================================================================
+无「引擎建议弃牌、摊牌却赢」的样本。
+
+已写入 D:\德州\reports\real-hand-validation-out.txt

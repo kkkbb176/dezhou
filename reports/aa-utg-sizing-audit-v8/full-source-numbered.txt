@@ -1,0 +1,1929 @@
+===== src/app/manualInput/preflopRaiseResponse.ts =====
+    1: /**
+    2:  * ============================================================================
+    3:  * 翻前加注响应（PREFLOP RAISE RESPONSE）—— 「他会不会跟我的 3Bet / 4Bet」
+    4:  * ============================================================================
+    5:  *
+    6:  * ## 这个模块补的是什么
+    7:  *
+    8:  * 在它之前，**翻前的加注在全项目里没有任何筹码 EV**：
+    9:  * `raiseResponse.ts`（U1）的响应模型要求 `board.length >= 3`，
+   10:  * 而翻前 `board` 恒为空 ⇒ `buildRaiseResponse` 返回 `null` ⇒
+   11:  * `contextBuilder` 不产出 `raiseResponse` 事实包 ⇒ 决策层把**每一个**加注金额
+   12:  * 列进 `unevaluatedActions`，理由码 `RAISE_EV_NOT_IMPLEMENTED`。
+   13:  *
+   14:  * 实测（`scripts/rr-audit-baseline.ts`，6 人桌 BB 持 AA 面对 BTN 开池 2.5BB）：
+   15:  *
+   16:  * ```text
+   17:  * 建议动作        = RAISE 7.5BB   ← 来自启发式（STRATEGIC_RAISE_FOR_VALUE）
+   18:  * CALL EV         = +313.09 筹码
+   19:  * 每个加注尺寸 EV = null          ← 7 个候选（4/4.5/6/7.5/9/12/100BB）全部未评估
+   20:  * ```
+   21:  *
+   22:  * 于是「加注 7.5BB 是否比跟注 +313.09 更好」**无法被计算** ——
+   23:  * 建议是启发式给的，而界面同时说「加注 EV 未实现」。这正是本项目
+   24:  * 在 `MATH_DOMINANCE` 里已经写明的口径：「下注/加注的 EV 依赖对手弃牌率，
+   25:  * 本项目无可信估计，**不在此比较之内**」。
+   26:  *
+   27:  * 本模块给出**翻前专属**的响应模型与逐尺寸 EV，使翻前加注第一次拥有
+   28:  * 与 CALL 同一零点、同一单位、可独立复算的模型 EV。
+   29:  *
+   30:  * ## 🔴 口径：只用**公共信息**（不读 Hero 的隐藏底牌）
+   31:  *
+   32:  * | 轴 | 来源 | 是否读 Hero 底牌 |
+   33:  * |---|---|---|
+   34:  * | 对手到达范围 | `RangeSnapshot`（已按他的行动历史贝叶斯更新） | ❌ |
+   35:  * | 起手牌强度 | `preflopStrengthOf(rankClass)`（本文件的结构阶梯） | ❌ |
+   36:  * | 价格 | `villainAdd / finalPot` ——【数学确定】 | ❌ |
+   37:  * | 画像 | `ResponseTendencies`（call/fold/raise/bluffRaise 四个倍率） | ❌ |
+   38:  *
+   39:  * 强度只用**他的**组合算，与 Hero 拿什么牌无关 —— 有测试锁定
+   40:  * 「换掉 Hero 底牌，响应概率逐位不变」。
+   41:  *
+   42:  * ## 🔴🔴 资金记账：本模块**不自己算底池**
+   43:  *
+   44:  * 与 `raiseResponse.ts` 同一条纪律（U1 P0 修复的教训）：
+   45:  *
+   46:  * ```text
+   47:  * currentPot      = 决策时完整底池（**含**对手这次加注）
+   48:  * heroAdd         = 我这次加注真正新增的筹码
+   49:  * villainAdd      = 对手跟平还要补的筹码（短筹码时按他实际能投的封顶）
+   50:  * finalPot        = 双方投入后**我能争夺到**的底池（引擎分层口径）
+   51:  * price           = villainAdd / finalPot        ← 他跟注所需的最低权益
+   52:  * ```
+   53:  *
+   54:  * 这些量**全部由 `contextBuilder` 用引擎（`computePot` / `previewCommit` /
+   55:  * `applyAction`）算好后传入**，本模块只做响应建模。资金口径只有一处事实来源。
+   56:  *
+   57:  * ## ⚠️ 未校准声明（与 U1 / `betProbabilityByBand` 同一纪律）
+   58:  *
+   59:  * 本模块只声称三件事：
+   60:  * 1. **单调**：起手牌越强 ⇒ 越可能继续（价格相同时）；
+   61:  * 2. **价格敏感**：加注越大 ⇒ 继续门槛越高（`required = price + margin`）；
+   62:  * 3. **非退化**：每个强度档的继续权重都在 (0,1) 内，不会整类消失。
+   63:  *
+   64:  * 它**不声称**任何具体频率是真实的。全部结构性取值随
+   65:  * `model.strengthLadder` 一起导出，供将来用真实统计替换。
+   66:  */
+   67: 
+   68: import type { ResponseTendencies } from '../../domain/postflop/betResponse.ts';
+   69: 
+   70: /* ============================================================
+   71:  * 版本
+   72:  * ============================================================ */
+   73: 
+   74: /** 模型版本（进诊断与决策快照；结构性取值变化必须升版本） */
+   75: export const PREFLOP_RAISE_RESPONSE_MODEL_VERSION = 'PREFLOP_RAISE_RESPONSE_V1';
+   76: 
+   77: /**
+   78:  * 🔴 **资金口径契约版本**。
+   79:  *
+   80:  * 与 `raiseResponse.CASHFLOW_CONTRACT` **必须是同一个值**：两种模型共用
+   81:  * `raiseEVOf` 这**唯一一条**现金流公式，契约不同就意味着有一处没跟上。
+   82:  * 有测试断言两者字面相等。
+   83:  */
+   84: export const PREFLOP_RAISE_CASHFLOW_CONTRACT = 'NODE_INCREMENTAL_CHIPS_V2' as const;
+   85: 
+   86: /* ============================================================
+   87:  * 起手牌强度阶梯（**结构性**，只有序关系有意义）
+   88:  * ============================================================ */
+   89: 
+   90: /**
+   91:  * 🔴 **起手牌强弱的锚点**（0..1）—— 只是对外的**可读刻度**。
+   92:  *
+   93:  * ## 为什么不是「用开池范围权重当强度」
+   94:  *
+   95:  * 用 `rfiWeights` 的权重当强度会**抹平顶端差异**：按钮位的 RFI 表给
+   96:  * `AA` 与 `22` **都是 1.0**（「几乎总会开」），于是「AA 与 22 一样强」——
+   97:  * 而 4Bet 范围必须由顶端构成，抹平顶端就等于建不出 4Bet 范围。
+   98:  *
+   99:  * ## 🔴 「锚点」不是「查表兜底」—— 全域只有**一个**函数
+  100:  *
+  101:  * 第一版写成「锚点命中直接返回、未命中才算公式」，两套口径拼在一起会产生
+  102:  * **互相矛盾**的序（实测 `A9s = 0.34` 而 `A9o = 0.63` ⇒「同花反而不如不同花」）。
+  103:  *
+  104:  * 现在只有 `preflopStrengthOf` 一个函数；本表由它算出，且
+  105:  * `selfCheckPreflopStrength()` 会**逐条断言**两者一致（不是注释，是测试）。
+  106:  *
+  107:  * 刻度只表达**序关系**：不声称任何数值等于胜率、权益或频率。
+  108:  */
+  109: export const PREFLOP_STRENGTH_ANCHORS: readonly { readonly key: string; readonly value: number }[] =
+  110:   Object.freeze([
+  111:     Object.freeze({ key: 'AA', value: 1.0 }),
+  112:     Object.freeze({ key: 'KK', value: 0.955 }),
+  113:     Object.freeze({ key: 'QQ', value: 0.91 }),
+  114:     Object.freeze({ key: 'JJ', value: 0.865 }),
+  115:     Object.freeze({ key: 'TT', value: 0.82 }),
+  116:     Object.freeze({ key: '99', value: 0.775 }),
+  117:     Object.freeze({ key: '88', value: 0.73 }),
+  118:     Object.freeze({ key: '77', value: 0.685 }),
+  119:     Object.freeze({ key: '66', value: 0.64 }),
+  120:     Object.freeze({ key: '55', value: 0.595 }),
+  121:     Object.freeze({ key: '44', value: 0.55 }),
+  122:     Object.freeze({ key: '33', value: 0.505 }),
+  123:     Object.freeze({ key: '22', value: 0.46 }),
+  124:     Object.freeze({ key: 'AKs', value: 0.573 }),
+  125:     Object.freeze({ key: 'AQs', value: 0.553 }),
+  126:     Object.freeze({ key: 'AKo', value: 0.538 }),
+  127:     Object.freeze({ key: 'KQs', value: 0.533 }),
+  128:     Object.freeze({ key: 'AQo', value: 0.518 }),
+  129:     Object.freeze({ key: 'AJs', value: 0.525 }),
+  130:     Object.freeze({ key: 'KQo', value: 0.498 }),
+  131:     Object.freeze({ key: 'A2s', value: 0.345 }),
+  132:     Object.freeze({ key: '76s', value: 0.293 }),
+  133:     Object.freeze({ key: '32o', value: 0.098 }),
+  134:   ]);
+  135: 
+  136: const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] as const;
+  137: 
+  138: /** 点数名 → 0（A）..12（2） */
+  139: function rankIndexOf(char: string): number {
+  140:   return RANKS.indexOf(char as (typeof RANKS)[number]);
+  141: }
+  142: 
+  143: /* ---- 结构式的结构性系数（全部导出 ⇒ 可独立复算） ---- */
+  144: 
+  145: /** 对子区间的步长：`AA = 1.00`，每个点数名递减 0.045 ⇒ `22 = 0.46` */
+  146: const S_PAIR_STEP = 0.045;
+  147: /** 非对子结构基准的斜率：`base(n) = 0.55 − 0.020 × n`（n = 两个点数名序号之和） */
+  148: const S_NONPAIR_BASE = 0.55;
+  149: const S_NONPAIR_SLOPE = 0.02;
+  150: /** 同花加成 */
+  151: const S_SUITED = 0.035;
+  152: /** 连张加成（近似顺子潜力，公开扑克理论的结构性描述） */
+  153: const S_CONNECTOR = 0.008;
+  154: 
+  155: /**
+  156:  * 起手牌类别的**强度**（0..1）—— 本模型**唯一**的强度来源。
+  157:  *
+  158:  * ```text
+  159:  * 对子     ：1.00 − 0.045 × 点数名序号  （AA = 1.00 … 22 = 0.46）
+  160:  * 非对子   ：0.55 − 0.020 × (高牌序号 + 低牌序号) + 同花加成 0.035 + 连张加成 0.008
+  161:  * ```
+  162:  *
+  163:  * 五条性质（由 `selfCheckPreflopStrength()` **逐条断言**，不靠注释）：
+  164:  *
+  165:  * | 性质 | 依据 |
+  166:  * |---|---|
+  167:  * | 对子按点数严格递减 | 步长恒为 0.045 |
+  168:  * | 同花严格高于同点数的不同花 | `suited = offsuit + 0.035 > 0` |
+  169:  * | A 高严格高于 K 高（同低牌、同结构） | 相邻档差为 0.020 < 0.035 |
+  170:  * | 全部落在 (0, 1]，AA 是全域最大值 | 非对子上限 0.99、对子上限 1.00 |
+  171:  * | 锚点表与结构式逐位一致 | 同一条断言 |
+  172:  *
+  173:  * ⚠️ 它是**序关系刻度**：不声称任何具体数值等于胜率或频率。
+  174:  * 改这些系数会改变响应概率 ⇒ 已在报告的敏感度分析里覆盖。
+  175:  */
+  176: export function preflopStrengthOf(rankClass: string): number {
+  177:   const isPair = rankClass.length === 2;
+  178:   const suited = rankClass.endsWith('s');
+  179:   const high = rankIndexOf(rankClass[0]!);
+  180:   const low = rankIndexOf(rankClass[1]!);
+  181:   if (high < 0 || low < 0) return 0.1; // 未知类别 ⇒ 中性偏低，绝不假装强
+  182: 
+  183:   if (isPair) return 1 - S_PAIR_STEP * high;
+  184: 
+  185:   const connector = Math.abs(low - high - 1) <= 1 ? S_CONNECTOR : 0;
+  186:   const value = S_NONPAIR_BASE - S_NONPAIR_SLOPE * (high + low) + (suited ? S_SUITED : 0) + connector;
+  187:   return Math.max(0.05, Math.min(0.99, value));
+  188: }
+  189: 
+  190: /* ============================================================
+  191:  * 结构性系数（全部导出，供独立复算与敏感度分析）
+  192:  * ============================================================ */
+  193: 
+  194: /**
+  195:  * 继续所需的**余量**（`requiredStrength = price + margin`，`price = villainAdd / finalPot`）。
+  196:  *
+  197:  * ## 为什么必须有这个余量（不是可选的装饰）
+  198:  *
+  199:  * `price` 是他跟注的**盈亏平衡权益** —— 只按它继续会**系统性高估他的继续比例**，
+  200:  * 因为翻前的原始摊牌权益不等于能实现的权益（他还要在三条街上打完，
+  201:  * 且位置/可玩性都会影响实现率）。
+  202:  *
+  203:  * 实测这个缺陷的规模（第一版把价格敏感度写成「固定 0.04 的推移」）：
+  204:  *
+  205:  * ```text
+  206:  * Hero BB AA 面对 BTN 开池 2.5BB，100BB 深
+  207:  *   全下 100BB 的模型 EV = +955  ← 看起来「全下最好」
+  208:  * Hero BB 55 在同一节点
+  209:  *   全下 100BB 也被选中         ← **不可信**：55 面对 100BB 冷 4Bet 不可能继续
+  210:  * 根因：他的继续门槛只要求强度 ≥ 0.397，而对 49.5% 的价格这是荒谬的宽松。
+  211:  * ```
+  212:  *
+  213:  * 现在 `requiredStrength = price + margin`：全下时 `price ≈ 0.49` ⇒
+  214:  * 门槛 `≈ 0.68` ⇒ 只有 AA / KK / QQ / AKs 这一档才会继续 ——
+  215:  * 与「面对 100BB 冷 4Bet 只能拿顶端继续」这一公开扑克理论描述一致。
+  216:  *
+  217:  * ## 取值的依据（0.19 = 「正常 3Bet 的继续范围约 15%」这一公开量级）
+  218:  *
+  219:  * 翻前加注的典型局面是「开池 2.5BB、我 3Bet 到 7.5BB」：
+  220:  *
+  221:  * ```text
+  222:  * price  = 5 / 15.5   ≈ 0.323
+  223:  * 门槛   = 0.323 + 0.19 = 0.513
+  224:  * ```
+  225:  *
+  226:  * 而本模型的强度刻度上 `≥ 0.513` 的类别是
+  227:  * **AA … 55、AKs/AQs/AKo/KQs/AJs/AQo/KJs/ATs/KQo/JTs/AJo/33/A9s/KTs** ——
+  228:  * 也就是他开池范围里大约 **15%** 的那一段。这正是公开扑克理论对
+  229:  * 「面对 3Bet 的继续范围」给出的量级（12–18%）。
+  230:  *
+  231:  * 🔴 **`HEURISTIC_THRESHOLD`**：0.19 是**工程取值**，不是从数据估出的参数。
+  232:  * 它随模型一起导出，并在 `reports/PREFLOP_RAISE_DECISION_V1.md` 第 5 节
+  233:  * 的敏感度分析里被逐档扫过（0.00 / 0.06 / 0.09 / 0.12 / 0.18 / 0.24）。
+  234:  */
+  235: export const PREFLOP_CONTINUE_MARGIN = 0.19;
+  236: 
+  237: /**
+  238:  * 价格对继续门槛的**额外推移**（画像的 `foldScale` 走这条通道）。
+  239:  *
+  240:  * 与 `raiseResponse.ts` 的 `0.05 × foldScale` 同量纲、可直接比较；
+  241:  * 取值比翻后小，因为翻前加注的相对涨幅通常小于翻后。
+  242:  */
+  243: export const PREFLOP_FOLD_SCALE_WEIGHT = 0.03;
+  244: 
+  245: /** 再加注（4Bet）的强度门槛：低于它只能是「诈唬 4Bet」，高于它才是价值 4Bet */
+  246: export const PREFLOP_RERAISE_VALUE_THRESHOLD = 0.6;
+  247: 
+  248: /** 价值端 4Bet 的最大比例（强到顶时全部再加注） */
+  249: export const PREFLOP_RERAISE_MAX_SHARE = 0.85;
+  250: 
+  251: /** 诈唬端 4Bet 的最大比例（最弱的一档） */
+  252: export const PREFLOP_RERAISE_BLUFF_MAX_SHARE = 0.12;
+  253: 
+  254: /** 诈唬 4Bet 需要画像偏诈唬：`bluffRaiseScale` 超过它才启用 */
+  255: export const PREFLOP_BLUFF_RERAISE_MIN_SCALE = 1.1;
+  256: 
+  257: /**
+  258:  * 🔴 **再加注桶（4Bet）的强度门槛**。
+  259:  *
+  260:  * 只有强度 ≥ 门槛的组合才**可能**再加注 —— 这是「4Bet 范围由顶端构成」
+  261:  * 这一公开扑克理论描述的可执行形式。
+  262:  *
+  263:  * 当前取值 0.44 对应本模型的强度刻度上：**所有对子 + AKs/AQs/AKo/KQs/AJs** 及以上。
+  264:  * 它直接决定 `P(他 4Bet)` 的量级 ⇒ 必须随模型一起导出并做敏感度分析
+  265:  *（`reports/PREFLOP_RAISE_DECISION_V1.md` 的第 5 节）。
+  266:  */
+  267: export const PREFLOP_RERAISE_GATE = 0.44;
+  268: 
+  269: /** 门槛内**线性**映射到再加注比例下界（0 = 刚过门槛只偶尔再加注） */
+  270: export const PREFLOP_RERAISE_VALUE_FLOOR = 0.25;
+  271: 
+  272: /**
+  273:  * 🔴 **可注入的模型调参**（默认 = 下面的生产常数）。
+  274:  *
+  275:  * ## 为什么要有这个入口（不是「为测试开后门」）
+  276:  *
+  277:  * 使用者第七节要求：新增系数必须记录来源、假设、版本和**敏感性分析**，
+  278:  * 并报告「改变合理假设后，推荐动作或尺寸是否变化」。
+  279:  *
+  280:  * 若常数被写死在函数体里，敏感性分析就只能**复制一份公式**去改数字 ——
+  281:  * 那正是本项目最忌讳的「两处口径」：分析用的公式与生产用的公式会漂移，
+  282:  * 于是「敏感度报告」证明的是另一套代码。
+  283:  *
+  284:  * 因此唯一的公式接受一个**显式**的调参对象，默认值等于生产常数：
+  285:  *
+  286:  * - 生产：不传 ⇒ 逐位使用下方常数；
+  287:  * - 敏感性探针：显式传入被扫的值 ⇒ **同一条公式**、同一份代码。
+  288:  */
+  289: export type PreflopRaiseTuning = {
+  290:   /** 继续门槛余量（默认 `PREFLOP_CONTINUE_MARGIN`） */
+  291:   readonly continueMargin: number;
+  292:   /** 4Bet 闸门（默认 `PREFLOP_RERAISE_GATE`） */
+  293:   readonly reRaiseGate: number;
+  294:   /** 价值 4Bet 的强度门槛（默认 `PREFLOP_RERAISE_VALUE_THRESHOLD`） */
+  295:   readonly reRaiseValueThreshold: number;
+  296:   /** 价值端 4Bet 的最大比例（默认 `PREFLOP_RERAISE_MAX_SHARE`） */
+  297:   readonly reRaiseMaxShare: number;
+  298:   /** 门槛内线性映射的下界（默认 `PREFLOP_RERAISE_VALUE_FLOOR`） */
+  299:   readonly reRaiseValueFloor: number;
+  300: };
+  301: 
+  302: /** 生产默认调参（`Object.freeze` 且被测试锁定为「等于上方常数」） */
+  303: export const PREFLOP_RAISE_TUNING: PreflopRaiseTuning = Object.freeze({
+  304:   continueMargin: PREFLOP_CONTINUE_MARGIN,
+  305:   reRaiseGate: PREFLOP_RERAISE_GATE,
+  306:   reRaiseValueThreshold: PREFLOP_RERAISE_VALUE_THRESHOLD,
+  307:   reRaiseMaxShare: PREFLOP_RERAISE_MAX_SHARE,
+  308:   reRaiseValueFloor: PREFLOP_RERAISE_VALUE_FLOOR,
+  309: });
+  310: 
+  311: /* ============================================================
+  312:  * 价格
+  313:  * ============================================================ */
+  314: 
+  315: /**
+  316:  * 他面对这次加注所需的**权益**（他跟注要补的筹码占他跟注后底池的比例）。
+  317:  *
+  318:  * 【数学确定】：`villainAdd / finalPot`，不含任何模型假设。
+  319:  */
+  320: export function preflopPriceOf(input: { villainAdd: number; finalPot: number }): number {
+  321:   if (!(input.finalPot > 0)) return 1;
+  322:   return input.villainAdd / input.finalPot;
+  323: }
+  324: 
+  325: /* ============================================================
+  326:  * 响应模型
+  327:  * ============================================================ */
+  328: 
+  329: export type PreflopRaiseResponseBucket = 'FOLD' | 'CALL' | 'RERAISE';
+  330: 
+  331: export type PreflopRaiseResponse = {
+  332:   readonly foldLikelihood: number;
+  333:   readonly callLikelihood: number;
+  334:   readonly reRaiseLikelihood: number;
+  335:   /** 跟注桶的**条件范围**（桶内归一化） */
+  336:   readonly callEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  337:   /** 再加注桶的**条件范围**（桶内归一化；桶空 ⇒ 空数组，绝不伪造） */
+  338:   readonly reRaiseEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  339:   readonly reachableCombos: number;
+  340:   readonly callCombos: number;
+  341:   readonly reRaiseCombos: number;
+  342:   /** 他面对这次加注需要的权益（【数学确定】） */
+  343:   readonly priceRequiredEquity: number;
+  344:   /** 模型使用的余量 */
+  345:   readonly margin: number;
+  346:   readonly requiredStrength: number;
+  347:   readonly noteZh: string;
+  348: };
+  349: 
+  350: /**
+  351:  * 构建「他面对我的翻前加注」的响应。
+  352:  *
+  353:  * @param arrivalEntries 他**到达范围**的逐组合权重（由引擎的贝叶斯更新产生，
+  354:  *   已按他的开池行动条件化 —— 不做这一步就等于忽略他开过池这个事实）
+  355:  * @param currentPot 决策时完整底池（**含**他这次加注）
+  356:  * @param heroAdd 我这次加注真正新增的筹码
+  357:  * @param villainAdd 他跟平还要补的筹码（调用方已按他的剩余筹码封顶）
+  358:  * @param finalPot 双方投入后我能争夺到的底池
+  359:  * @param tendencies 他面对加注的响应倍率（**只来自公共信息**）
+  360:  * @param heroIsAllIn 我已把筹码投光 ⇒ 他不能再加注
+  361:  * @param villainIsAllInByCall 他跟平即投光 ⇒ 他不能再加注
+  362:  * @returns `null` 表示输入不足（无组合、价格非法）—— 调用方必须如实回落，不猜
+  363:  */
+  364: export function buildPreflopRaiseResponse(input: {
+  365:   readonly arrivalEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  366:   readonly currentPot: number;
+  367:   readonly heroAdd: number;
+  368:   readonly villainAdd: number;
+  369:   readonly finalPot: number;
+  370:   readonly tendencies: ResponseTendencies;
+  371:   readonly heroIsAllIn: boolean;
+  372:   readonly villainIsAllInByCall: boolean;
+  373:   /** 契约：**禁止**读 Hero 底牌。调用方无从传入，这里显式记入事实包 */
+  374:   /** 🔴 可注入调参（默认 = 生产常数）；仅供**同一条公式**的敏感性分析使用 */
+  375:   readonly tuning?: PreflopRaiseTuning;
+  376: }): PreflopRaiseResponse | null {
+  377:   const tuning = input.tuning ?? PREFLOP_RAISE_TUNING;
+  378:   if (!(input.currentPot > 0)) return null;
+  379:   if (!(input.heroAdd > 0)) return null;
+  380:   if (!(input.villainAdd > 0)) return null;
+  381:   if (!(input.finalPot > 0)) return null;
+  382: 
+  383:   const price = preflopPriceOf({ villainAdd: input.villainAdd, finalPot: input.finalPot });
+  384:   if (!Number.isFinite(price) || price <= 0 || price >= 1) return null;
+  385: 
+  386:   const required = price + tuning.continueMargin;
+  387: 
+  388:   const t = input.tendencies;
+  389:   const callScale = Number.isFinite(t.callScale) ? t.callScale : 1;
+  390:   const foldScale = Number.isFinite(t.foldScale) ? t.foldScale : 1;
+  391:   const raiseScale = Number.isFinite(t.raiseScale) ? t.raiseScale : 1;
+  392:   const bluffRaiseScale = Number.isFinite(t.bluffRaiseScale) ? t.bluffRaiseScale : 1;
+  393: 
+  394:   /*
+  395:    * 🔴 **门槛 = 价格 + 余量**，再叠加一点画像折扣（`foldScale` 越大 ⇒ 他越爱弃
+  396:    * ⇒ 门槛略降）。**不再**用一个固定的「0.04 推移」——
+  397:    * 那会让 100BB 全下（价格 ≈ 0.49）也只需要强度 0.397，于是任何对子都能「继续」。
+  398:    */
+  399:   const requiredStrength = Math.max(0, required - PREFLOP_FOLD_SCALE_WEIGHT * (foldScale - 1));
+  400: 
+  401:   let foldMass = 0;
+  402:   let callMass = 0;
+  403:   let reRaiseMass = 0;
+  404:   let total = 0;
+  405:   let reachable = 0;
+  406:   const callEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+  407:   const reRaiseEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+  408:   /** 再加注闸门的实际作用范围（诊断用） */
+  409:   let gateCombos = 0;
+  410:   let gateMass = 0;
+  411: 
+  412:   const canReRaise = !input.heroIsAllIn && !input.villainIsAllInByCall;
+  413: 
+  414:   for (const entry of input.arrivalEntries) {
+  415:     const p = entry.probability;
+  416:     if (!(p > 0)) continue;
+  417:     reachable += 1;
+  418:     total += p;
+  419: 
+  420:     const strength = preflopStrengthOf(rankClassOfIndices(entry.cardIndices));
+  421:     /*
+  422:      * 与 U1 同构的「继续指数」：`强度 × callScale`（他越爱跟 ⇒ 同强度更容易继续），
+  423:      * 与 `requiredStrength`（= 价格 + 余量）比较。两者都是 0..1 的无量纲刻度。
+  424:      */
+  425:     const continueIndex = strength * callScale;
+  426: 
+  427:     if (continueIndex < requiredStrength) {
+  428:       foldMass += p;
+  429:       continue;
+  430:     }
+  431: 
+  432:     let reRaiseShare = 0;
+  433:     if (canReRaise) {
+  434:       const gateActive = strength >= tuning.reRaiseGate;
+  435:       if (gateActive) {
+  436:         gateCombos += 1;
+  437:         gateMass += p;
+  438:         const span = 1 - tuning.reRaiseGate;
+  439:         const positionInGate = span > 0 ? (strength - tuning.reRaiseGate) / span : 0;
+  440:         const isValue = strength >= tuning.reRaiseValueThreshold;
+  441:         const valueShare = isValue
+  442:           ? tuning.reRaiseValueFloor +
+  443:             (tuning.reRaiseMaxShare - tuning.reRaiseValueFloor) *
+  444:               Math.max(0, Math.min(1, positionInGate))
+  445:           : 0;
+  446:         /*
+  447:          * 诈唬 4Bet 只在**画像明确偏诈唬**时启用（`bluffRaiseScale > 1.1`）。
+  448:          * 没有画像时 `bluffRaiseScale === 1` ⇒ 恒为 0 ⇒ 不凭空造诈唬。
+  449:          * 这是「画像只改概率、不制造组合」的既有纪律。
+  450:          */
+  451:         const bluffShare =
+  452:           bluffRaiseScale > PREFLOP_BLUFF_RERAISE_MIN_SCALE
+  453:             ? Math.min(
+  454:                 PREFLOP_RERAISE_BLUFF_MAX_SHARE,
+  455:                 PREFLOP_RERAISE_BLUFF_MAX_SHARE *
+  456:                   Math.max(0, 1 - positionInGate) *
+  457:                   (bluffRaiseScale - 1),
+  458:               )
+  459:             : 0;
+  460:         reRaiseShare = Math.max(valueShare, bluffShare);
+  461:         reRaiseShare = Math.max(0, Math.min(1, reRaiseShare * raiseScale0(raiseScale)));
+  462:       }
+  463:     }
+  464: 
+  465:     const callShare = 1 - reRaiseShare;
+  466:     callMass += p * callShare;
+  467:     reRaiseMass += p * reRaiseShare;
+  468:     if (callShare > 0) callEntries.push({ cardIndices: entry.cardIndices, probability: p * callShare });
+  469:     if (reRaiseShare > 0) reRaiseEntries.push({ cardIndices: entry.cardIndices, probability: p * reRaiseShare });
+  470:   }
+  471: 
+  472:   if (reachable === 0 || !(total > 0)) return null;
+  473: 
+  474:   const callTotal = callEntries.reduce((a, x) => a + x.probability, 0);
+  475:   const normalizedCall = callTotal > 0
+  476:     ? callEntries.map((x) => ({ cardIndices: x.cardIndices, probability: x.probability / callTotal }))
+  477:     : [];
+  478:   const reRaiseTotal = reRaiseEntries.reduce((a, x) => a + x.probability, 0);
+  479:   const normalizedReRaise = reRaiseTotal > 0
+  480:     ? reRaiseEntries.map((x) => ({ cardIndices: x.cardIndices, probability: x.probability / reRaiseTotal }))
+  481:     : [];
+  482: 
+  483:   return Object.freeze({
+  484:     foldLikelihood: foldMass / total,
+  485:     callLikelihood: callMass / total,
+  486:     reRaiseLikelihood: reRaiseMass / total,
+  487:     callEntries: Object.freeze(normalizedCall.map((x) => Object.freeze(x))),
+  488:     reRaiseEntries: Object.freeze(normalizedReRaise.map((x) => Object.freeze(x))),
+  489:     reachableCombos: reachable,
+  490:     callCombos: normalizedCall.length,
+  491:     reRaiseCombos: normalizedReRaise.length,
+  492:     priceRequiredEquity: price,
+  493:     margin: PREFLOP_CONTINUE_MARGIN,
+  494:     requiredStrength,
+  495:     noteZh:
+  496:       `他面对加注（**${PREFLOP_RAISE_RESPONSE_MODEL_VERSION}**，结构性先验、未经统计校准）：` +
+  497:       `弃 ${((foldMass / total) * 100).toFixed(1)}% / 跟 ${((callMass / total) * 100).toFixed(1)}% / ` +
+  498:       `再加注 ${((reRaiseMass / total) * 100).toFixed(1)}%｜` +
+  499:       `他要补 ${input.villainAdd.toFixed(2)}、终池 ${input.finalPot.toFixed(2)}，` +
+  500:       `价格 ${price.toFixed(4)} + 余量 ${PREFLOP_CONTINUE_MARGIN.toFixed(2)} = 门槛 ${requiredStrength.toFixed(4)}｜` +
+  501:       `跟注桶 ${normalizedCall.length} 组合、再加注桶 ${normalizedReRaise.length} 组合` +
+  502:       `（闸门 ${PREFLOP_RERAISE_GATE} 内 ${gateCombos} 组合 / 质量 ${(total > 0 ? gateMass / total : 0).toFixed(4)}）｜` +
+  503:       `强度只用**他的**起手牌类别（不读 Hero 底牌）`,
+  504:   });
+  505: }
+  506: 
+  507: /** 画像「更爱加注」倍率对再加注比例的缩放（有界，避免 >1） */
+  508: function raiseScale0(raiseScale: number): number {
+  509:   if (!Number.isFinite(raiseScale)) return 1;
+  510:   // 1 ± 0.35 的画像倍率 ⇒ 0.65..1.35 的缩放；夹在 [0.5, 1.5]
+  511:   return Math.max(0.5, Math.min(1.5, 0.5 + 0.5 * raiseScale));
+  512: }
+  513: 
+  514: /* ============================================================
+  515:  * 类别解析
+  516:  * ============================================================ */
+  517: 
+  518: const RANK_CHARS_OUT = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] as const;
+  519: 
+  520: /**
+  521:  * 由组合的两张牌下标求**类别键**（`AA` / `AKs` / `AKo`）。
+  522:  *
+  523:  * ⚠️ 只看点数与是否同花 —— 与「读 Hero 底牌」没有任何关系：
+  524:  * 这里读的是**对手自己**的组合。
+  525:  */
+  526: export function rankClassOfIndices(cardIndices: readonly [number, number]): string {
+  527:   /*
+  528:    * 🔴 索引编码以 `domain/poker/cards.ts` 的 `cardIndex` 为**唯一权威**：
+  529:    * `index = suitIndex × 13 + (rank − 2)`。
+  530:    * 因此排名 = `index % 13`（0 = 2 … 12 = A）、花色 = `floor(index / 13)`。
+  531:    * 绝不在这里自己造一套位移编码 —— 那种「两处口径」正是本项目最忌讳的形态。
+  532:    */
+  533:   const a = cardIndices[0];
+  534:   const b = cardIndices[1];
+  535:   const rankA = a % 13;
+  536:   const rankB = b % 13;
+  537:   const suitA = Math.floor(a / 13);
+  538:   const suitB = Math.floor(b / 13);
+  539:   if (rankA === rankB) return `${RANK_CHARS_OUT[12 - rankA]}${RANK_CHARS_OUT[12 - rankA]}`;
+  540:   const high = Math.max(rankA, rankB);
+  541:   const low = Math.min(rankA, rankB);
+  542:   const suited = suitA === suitB ? 's' : 'o';
+  543:   return `${RANK_CHARS_OUT[12 - high]}${RANK_CHARS_OUT[12 - low]}${suited}`;
+  544: }
+  545: 
+  546: /* ============================================================
+  547:  * 翻前再加注尺寸（从真实行动状态推导，不用固定倍数）
+  548:  * ============================================================ */
+  549: 
+  550: /**
+  551:  * 他面对我的加注后**再加注到多少**。
+  552:  *
+  553:  * 规则（与引擎一致，不从模型编造）：
+  554:  *
+  555:  * ```text
+  556:  * minReRaiseTo = 我的加注额 + (我的加注额 − 加注前他的本街投入)   ← 最小完整加注
+  557:  * villainMaxTo = 他跟平后的本街总额 + 他剩余的筹码               ← 他的全下上限
+  558:  * reRaiseTo    = min(minReRaiseTo, villainMaxTo)
+  559:  * ```
+  560:  *
+  561:  * 他买不起完整再加注时**只能全下（under-raise）** —— 那条法律上仍有效
+  562:  * （TDA：不足一个完整加注的全下仍然合法）。若连全下都超不过我的总额
+  563:  * ⇒ 他根本不能加注（调用方应在此之前把 `reRaiseLikelihood` 归零）。
+  564:  */
+  565: export function preflopReRaiseToOf(input: {
+  566:   /** 我这次加注到多少（本街总额） */
+  567:   readonly raiseTo: number;
+  568:   /** 我加注**之前**他的本街投入 */
+  569:   readonly villainCommittedBefore: number;
+  570:   /** 他跟平我的加注之后的本街总额 */
+  571:   readonly villainStreetTotalAfterCall: number;
+  572:   /** 他跟平之后还剩多少筹码 */
+  573:   readonly villainRemainingAfterCall: number;
+  574: }): {
+  575:   readonly minReRaiseTo: number;
+  576:   readonly villainMaxTo: number;
+  577:   readonly reRaiseTo: number;
+  578:   readonly isAllIn: boolean;
+  579: } {
+  580:   const minReRaiseTo = input.raiseTo + (input.raiseTo - input.villainCommittedBefore);
+  581:   const villainMaxTo = input.villainStreetTotalAfterCall + Math.max(0, input.villainRemainingAfterCall);
+  582:   const reRaiseTo = Math.min(minReRaiseTo, villainMaxTo);
+  583:   return Object.freeze({
+  584:     minReRaiseTo,
+  585:     villainMaxTo,
+  586:     reRaiseTo,
+  587:     isAllIn: reRaiseTo >= villainMaxTo - 1e-9,
+  588:   });
+  589: }
+  590: 
+  591: /* ============================================================
+  592:  * 自检（构建期与测试用）
+  593:  * ============================================================ */
+  594: 
+  595: /**
+  596:  * 强度阶梯自检：六条不变量。
+  597:  *
+  598:  * 1. 全部落在 (0, 1]
+  599:  * 2. 对子按点数严格递减（AA > KK > … > 22）
+  600:  * 3. 同花严格高于同点数的不同花
+  601:  * 4. A 高严格高于同结构 / 同低牌的非 A 类别
+  602:  * 5. **锚点表与结构式逐位一致**（防止「表说 0.9、公式算 0.7」这类两处口径）
+  603:  * 6. AA 是全域最大值
+  604:  *
+  605:  * 返回空数组表示全部通过 —— 与项目其余 `selfCheck*` 同一形状。
+  606:  */
+  607: export function selfCheckPreflopStrength(): string[] {
+  608:   const problems: string[] = [];
+  609:   const all: string[] = [];
+  610:   for (let i = 0; i < RANKS.length; i += 1) {
+  611:     for (let j = 0; j < RANKS.length; j += 1) {
+  612:       const a = RANKS[i]!;
+  613:       const b = RANKS[j]!;
+  614:       if (i === j) all.push(`${a}${b}`);
+  615:       else if (i < j) all.push(`${a}${b}s`, `${a}${b}o`);
+  616:     }
+  617:   }
+  618:   // 1. 值域
+  619:   for (const key of all) {
+  620:     const v = preflopStrengthOf(key);
+  621:     if (!Number.isFinite(v) || v <= 0 || v > 1) problems.push(`${key} 强度越界：${v}`);
+  622:   }
+  623:   // 2. 对子单调
+  624:   for (let i = 0; i + 1 < RANKS.length; i += 1) {
+  625:     const higher = `${RANKS[i]}${RANKS[i]}`;
+  626:     const lower = `${RANKS[i + 1]}${RANKS[i + 1]}`;
+  627:     if (!(preflopStrengthOf(higher) > preflopStrengthOf(lower))) {
+  628:       problems.push(`对子不单调：${higher} ${preflopStrengthOf(higher)} !> ${lower} ${preflopStrengthOf(lower)}`);
+  629:     }
+  630:   }
+  631:   // 3. 同花 > 不同花
+  632:   for (const key of all) {
+  633:     if (!key.endsWith('s')) continue;
+  634:     const offsuit = `${key.slice(0, 2)}o`;
+  635:     if (!(preflopStrengthOf(key) > preflopStrengthOf(offsuit))) {
+  636:       problems.push(
+  637:         `同花未高于不同花：${key} ${preflopStrengthOf(key)} !> ${offsuit} ${preflopStrengthOf(offsuit)}`,
+  638:       );
+  639:     }
+  640:   }
+  641:   // 4. A 高 > K 高（同低牌、同结构）
+  642:   for (let low = 1; low < RANKS.length; low += 1) {
+  643:     const lowChar = RANKS[low]!;
+  644:     for (const suffix of ['s', 'o'] as const) {
+  645:       const aceHigh = `A${lowChar}${suffix}`;
+  646:       const kingHigh = `K${lowChar}${suffix}`;
+  647:       if (!(preflopStrengthOf(aceHigh) > preflopStrengthOf(kingHigh))) {
+  648:         problems.push(
+  649:           `A 高未高于 K 高：${aceHigh} ${preflopStrengthOf(aceHigh)} !> ${kingHigh} ${preflopStrengthOf(kingHigh)}`,
+  650:         );
+  651:       }
+  652:     }
+  653:   }
+  654:   // 5. 锚点表与结构式一致（容差 1e-9；锚点表只是刻度展示）
+  655:   for (const anchor of PREFLOP_STRENGTH_ANCHORS) {
+  656:     const computed = preflopStrengthOf(anchor.key);
+  657:     if (Math.abs(computed - anchor.value) > 1e-9) {
+  658:       problems.push(`锚点 ${anchor.key} 与结构式不一致：表 ${anchor.value} vs 公式 ${computed}`);
+  659:     }
+  660:   }
+  661:   // 6. AA 最大
+  662:   for (const key of all) {
+  663:     if (preflopStrengthOf(key) > preflopStrengthOf('AA') + 1e-12) {
+  664:       problems.push(`${key} 强于 AA：${preflopStrengthOf(key)} > ${preflopStrengthOf('AA')}`);
+  665:     }
+  666:   }
+  667:   return problems;
+  668: }
+  669: 
+  670: /** 供诊断与测试读取的位置相关说明（本模型不按位置改强度，位置只改范围与价格） */
+  671: export const PREFLOP_RAISE_POSITION_NOTE =
+  672:   '位置影响的是**他的到达范围**（开池档位由位置决定）与**价格**，' +
+  673:   '不在本模块里对强度另加位置系数 —— 避免同一份位置证据收两次费';
+  674: 
+===== src/app/manualInput/preflopRaiseFacts.ts =====
+    1: /**
+    2:  * ============================================================================
+    3:  * 翻前加注事实包（PREFLOP RAISE FACTS）—— 逐尺寸的响应、条件范围、再加注分支与 EV
+    4:  * ============================================================================
+    5:  *
+    6:  * ## 这个模块补的是什么（阶段 B 的核心）
+    7:  *
+    8:  * 在它之前，翻前的**每一个**加注金额都没有自有 EV：决策层把它们全部列进
+    9:  * `unevaluatedActions`（理由码 `RAISE_EV_NOT_IMPLEMENTED`），
+   10:  * 于是「加注是否比跟注好」只能靠启发式 —— 而启发式正是本项目在河牌
+   11:  * 推出一对牌 87BB 全下的那个来源。
+   12:  *
+   13:  * 本模块对**尺寸网格里的每一个合法尺寸**分别给出：
+   14:  *
+   15:  * ```text
+   16:  * 他弃牌 / 跟注 / 再加注 的概率   （由 buildPreflopRaiseResponse 产出）
+   17:  * 跟注桶条件范围 + 对它的权益     （EqVsRaiseCallRange）
+   18:  * 再加注桶条件范围 + 对它的权益   （EqVsReraiseRange）
+   19:  * 被再加注后的 Hero 最佳应对       （FOLD / CALL 两选一，零点统一）
+   20:  * RAISE EV                        （raiseEVOf，与 CALL EV 同一公式族）
+   21:  * ```
+   22:  *
+   23:  * ## 🔴 零点与单位（与 CALL EV 完全一致）
+   24:  *
+   25:  * ```text
+   26:  * 零点 = 当前 Hero 决策节点（弃牌 ≡ 0；此前投入是沉没成本）
+   27:  * 单位 = 筹码
+   28:  * RAISE EV = f × currentPot
+   29:  *          + c × (EqVsRaiseCallRange × finalPot − heroContestedAdd)
+   30:  *          + rr × reraiseBranchEV
+   31:  * ```
+   32:  *
+   33:  * **没有第二套公式**：现金流一律调用 `raiseResponse.raiseEVOf`
+   34:  * （全项目唯一的加注 EV 公式），本模块只负责把输入凑齐。
+   35:  *
+   36:  * ## ⚠️ 明确不支持（必须如实披露，不得静默按单挑算）
+   37:  *
+   38:  * | 情形 | 行为 |
+   39:  * |---|---|
+   40:  * | 活跃对手 ≠ 1 | 返回 `NOT_HEADS_UP`，**不给任何 EV** |
+   41:  * | 身后还有人未行动 | 返回 `PLAYERS_BEHIND`，**不给任何 EV** |
+   42:  * | 拿不到对手到达范围 | 返回 `NO_ARRIVAL_RANGE` |
+   43:  * | 拿不到跟注桶权益 | 该尺寸 `raiseEV = null`（**不是 0**） |
+   44:  *
+   45:  * ## ⚠️ 未来街：翻前**全下**分支是精确的，非全下不是
+   46:  *
+   47:  * - 全下（我或他）⇒ 权益就是最终摊牌权益，**没有未来街** ⇒ 该分支精确；
+   48:  * - 非全下 ⇒ `EqVsRaiseCallRange` 是「打到摊牌、后续街不再下注」的
+   49:  *   **终止近似**。这一点在 `assumptionsZh` 与 `evKind` 里逐条写明，
+   50:  *   **不允许**把它叫做「真实完整 EV」或「严格下界」。
+   51:  */
+   52: 
+   53: import { Position, type Street } from '../../domain/types.ts';
+   54: import {
+   55:   ActionType,
+   56:   computePot,
+   57:   committedThisStreet,
+   58:   type GameState,
+   59:   type PlayerState,
+   60: } from '../../domain/poker/gameState.ts';
+   61: import { applyAction } from '../../domain/poker/engine.ts';
+   62: import { previewCommit } from '../../domain/poker/pots.ts';
+   63: import type { Card } from '../../domain/types.ts';
+   64: import type { ResponseTendencies } from '../../domain/postflop/betResponse.ts';
+   65: import { ALL_COMBOS, type ExactCombo } from '../../domain/range/combo.ts';
+   66: import { deadCardsFrom, isBlocked } from '../../domain/range/rangeBlockers.ts';
+   67: import type { Range } from '../../domain/range/range.types.ts';
+   68: import { buildSizeGrid, closestSizeTo, type LegalActions, type SizeOption } from './legalActions.ts';
+   69: import { raiseEVOf, CASHFLOW_CONTRACT } from './raiseResponse.ts';
+   70: import {
+   71:   PREFLOP_RAISE_RESPONSE_MODEL_VERSION,
+   72:   buildPreflopRaiseResponse,
+   73:   preflopReRaiseToOf,
+   74:   type PreflopRaiseResponse,
+   75:   type PreflopRaiseTuning,
+   76: } from './preflopRaiseResponse.ts';
+   77: 
+   78: /* ============================================================
+   79:  * 版本
+   80:  * ============================================================ */
+   81: 
+   82: export const PREFLOP_RAISE_FACTS_VERSION = 'PREFLOP_RAISE_FACTS_V1';
+   83: 
+   84: /* ============================================================
+   85:  * 事实类型
+   86:  * ============================================================ */
+   87: 
+   88: export type PreflopEquityFact = {
+   89:   readonly value: number | null;
+   90:   readonly method: 'EXACT' | 'MONTE_CARLO' | 'NOT_AVAILABLE';
+   91:   readonly iterations: number;
+   92:   /** 95% 置信区间半宽（蒙特卡洛的**抽样**误差，不是模型误差） */
+   93:   readonly confidenceHalfWidth: number | null;
+   94: };
+   95: 
+   96: export type PreflopRaiseSizeFacts = {
+   97:   readonly sizeChips: number;
+   98:   readonly sizeBB: number;
+   99:   readonly labelZh: string;
+  100:   readonly isAllIn: boolean;
+  101: 
+  102:   /* ---- 资金口径（引擎算好，模型只读） ---- */
+  103:   readonly currentPot: number;
+  104:   readonly heroStreetCommitted: number;
+  105:   readonly villainStreetCommitted: number;
+  106:   readonly heroAdd: number;
+  107:   readonly villainAddRaw: number;
+  108:   readonly villainAdd: number;
+  109:   readonly heroContestedAdd: number;
+  110:   readonly finalPot: number;
+  111:   readonly uncalledReturn: number;
+  112:   readonly villainIsAllInByCall: boolean;
+  113:   readonly heroIsAllIn: boolean;
+  114: 
+  115:   /* ---- 响应（公共信息口径） ---- */
+  116:   readonly foldLikelihood: number;
+  117:   readonly callLikelihood: number;
+  118:   readonly reRaiseLikelihood: number;
+  119:   readonly reachableCombos: number;
+  120:   readonly callCombos: number;
+  121:   readonly reRaiseCombos: number;
+  122:   readonly priceRequiredEquity: number;
+  123:   readonly priceMargin: number;
+  124: 
+  125:   /* ---- 条件权益 ---- */
+  126:   readonly heroEquityVsRaiseCallRange: PreflopEquityFact;
+  127:   readonly heroEquityVsReraiseRange: PreflopEquityFact;
+  128: 
+  129:   /* ---- 被再加注分支（零点 = 原始 Hero 节点） ---- */
+  130:   readonly reraiseAvailable: boolean;
+  131:   readonly reRaiseTo: number | null;
+  132:   readonly reRaiseMinLegalTo: number | null;
+  133:   readonly villainReRaiseIsAllIn: boolean | null;
+  134:   readonly heroAdditionalCallVsReRaise: number | null;
+  135:   readonly finalPotAfterCallVsReRaise: number | null;
+  136:   /** Hero 弃牌：损失从原始节点至今已新增且损失的投入 */
+  137:   readonly reraiseFoldBranchEV: number;
+  138:   /** Hero 跟注：用再加注条件范围算，并扣除累计新增投入 */
+  139:   readonly reraiseCallBranchEV: number | null;
+  140:   /** `max(FOLD, CALL)` —— 只有在两支都可算时才是「应对」；否则退化为 FOLD 下界 */
+  141:   readonly reraiseBranchEV: number;
+  142:   readonly reraiseBranchKind: 'FOLD' | 'CALL' | 'FOLD_ONLY_UNAVAILABLE';
+  143:   /** 🔴 只支持 FOLD / CALL —— Hero 的 5Bet 应对**未**展开 */
+  144:   readonly heroFiveBetExpanded: false;
+  145:   readonly reraiseBranchUnsupportedZh: string | null;
+  146: 
+  147:   /* ---- EV ---- */
+  148:   readonly raiseEV: number | null;
+  149: 
+  150:   /* ---- 假设 ---- */
+  151:   readonly assumptionsZh: readonly string[];
+  152:   readonly noteZh: string;
+  153: };
+  154: 
+  155: export type PreflopRaiseFacts = {
+  156:   readonly kind: 'PREFLOP_RAISE_FACTS';
+  157:   readonly version: string;
+  158:   readonly modelVersion: string;
+  159:   readonly evidence: 'HEURISTIC_STRUCTURAL';
+  160:   readonly cashflowContract: string;
+  161:   /** 权重是否读过 Hero 的隐藏底牌 —— **恒为 false**（由测试锁定） */
+  162:   readonly usesHeroHiddenCards: false;
+  163:   readonly rakeStatus: 'NOT_APPLIED';
+  164: 
+  165:   readonly street: Street;
+  166:   readonly heroPosition: Position;
+  167:   readonly opponentPosition: Position;
+  168:   readonly bigBlind: number;
+  169: 
+  170:   readonly currentPot: number;
+  171:   readonly heroCallCost: number;
+  172:   readonly heroRemaining: number;
+  173:   readonly effectiveStackChips: number;
+  174:   readonly sprAfterCall: number | null;
+  175: 
+  176:   readonly heroIsAllIn: boolean;
+  177:   readonly villainIsAllInByCall: boolean;
+  178:   readonly allInToAmount: number;
+  179:   readonly minRaiseToAmount: number;
+  180: 
+  181:   /** 到达范围（他开池后的后验）的统计 */
+  182:   readonly arrival: {
+  183:     readonly comboCount: number;
+  184:     readonly mass: number;
+  185:     readonly source: string;
+  186:   };
+  187: 
+  188:   /** 🔴 **逐尺寸**的事实 —— 每个被比较的加注尺寸都拥有属于它自己的数字 */
+  189:   readonly sizes: readonly PreflopRaiseSizeFacts[];
+  190: 
+  191:   /** 被选中用于诊断输出的尺寸（与决策层同一个选择规则） */
+  192:   readonly chosenSizeChips: number | null;
+  193: 
+  194:   readonly assumptionsZh: readonly string[];
+  195:   readonly noteZh: string;
+  196: };
+  197: 
+  198: /** 不给事实包的**原因**（必须显式说出去，不得静默按单挑算） */
+  199: export const PreflopRaiseSkipReason = {
+  200:   NOT_PREFLOP: 'NOT_PREFLOP',
+  201:   NO_OPPONENT: 'NO_OPPONENT',
+  202:   NOT_HEADS_UP: 'NOT_HEADS_UP',
+  203:   PLAYERS_BEHIND: 'PLAYERS_BEHIND',
+  204:   NO_ARRIVAL_RANGE: 'NO_ARRIVAL_RANGE',
+  205:   NO_CALL_COST: 'NO_CALL_COST',
+  206:   NO_GRID: 'NO_GRID',
+  207:   HERO_NO_CARDS: 'HERO_NO_CARDS',
+  208: } as const;
+  209: export type PreflopRaiseSkipReason =
+  210:   (typeof PreflopRaiseSkipReason)[keyof typeof PreflopRaiseSkipReason];
+  211: 
+  212: export const PREFLOP_RAISE_SKIP_ZH: Readonly<Record<PreflopRaiseSkipReason, string>> = Object.freeze({
+  213:   NOT_PREFLOP: '不是翻前节点 —— 翻前加注事实包只在翻前构建',
+  214:   NO_OPPONENT: '找不到对手：本手没有第二个未弃牌的玩家',
+  215:   NOT_HEADS_UP: '**不是单挑**：活跃对手不是 1 家（只按首要对手偷偷算单挑是错的）——'
+  216:     + '「面对加注的响应模型」只按**单挑**口径建模，未建模其余玩家的跟注/再加注，'
+  217:     + '因此**不产出**任何加注 EV。请等身后玩家行动完毕后再分析。',
+  218:   PLAYERS_BEHIND: '身后**还有玩家未行动**（`playersRemainingToAct > 0`）——'
+  219:     + '「面对加注的响应模型」只按**单挑**口径建模，未建模身后玩家的跟注/再加注，'
+  220:     + '因此**不产出**任何加注 EV（不偷偷按单挑算）。请先录入他们的行动。',
+  221:   NO_ARRIVAL_RANGE: '拿不到对手的到达范围（范围快照不可用，或与我的底牌重叠后没有剩余组合）',
+  222:   NO_CALL_COST: '本节点没有需要跟注的金额（不是面对加注）',
+  223:   NO_GRID: '合法尺寸网格为空（没有可加注的金额）',
+  224:   HERO_NO_CARDS: 'Hero 底牌不完整（需要两张已知底牌才能算条件权益）',
+  225: });
+  226: 
+  227: export type PreflopRaiseFactsBuild =
+  228:   | { readonly ok: true; readonly facts: PreflopRaiseFacts }
+  229:   | { readonly ok: false; readonly reason: PreflopRaiseSkipReason; readonly noteZh: string };
+  230: 
+  231: /* ============================================================
+  232:  * 输入
+  233:  * ============================================================ */
+  234: 
+  235: export type BuildPreflopRaiseFactsInput = {
+  236:   readonly state: GameState;
+  237:   readonly hero: PlayerState;
+  238:   readonly opponent: PlayerState;
+  239:   readonly legal: LegalActions;
+  240:   /** 对手**到达范围**的逐组合权重（由范围引擎的贝叶斯更新产出） */
+  241:   readonly arrivalEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  242:   /** 到达范围的来源说明（进诊断） */
+  243:   readonly arrivalSource: string;
+  244:   /** 参与模型的身份说明（只用于诊断；模型本身不读 Hero 底牌） */
+  245:   readonly range: Range | null;
+  246:   /** 他面对加注的响应倍率（**只来自公共信息**） */
+  247:   readonly tendencies: ResponseTendencies;
+  248:   /** 我之后还需要行动的对手数（取自引擎 `pendingQueue`） */
+  249:   readonly playersRemainingToAct: number;
+  250:   /** 权益随机种子 */
+  251:   readonly seed: number;
+  252:   /** 权益计算函数（注入 ⇒ 测试可用确定性桩替代，生产用 contextBuilder 的实现） */
+  253:   readonly equityOf: (
+  254:     entries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[],
+  255:     seedOffset: number,
+  256:   ) => PreflopEquityFact;
+  257:   /**
+  258:    * 逐尺寸的候选（由调用方用**与决策层相同的**规则给出）。
+  259:    *
+  260:    * 缺省 ⇒ 用 `buildSizeGrid(legal, pot, 'RAISE')`。
+  261:    * 显式传入是为了让「决策层实际比较的那些尺寸」与「建模的尺寸」**同源**，
+  262:    * 避免两处各算一套网格。
+  263:    */
+  264:   readonly sizes?: readonly SizeOption[];
+  265:   /**
+  266:    * 🔴 **可注入的模型调参**（缺省 = 生产常数）。
+  267:    *
+  268:    * 只为**敏感性分析**服务：使用者第七节要求「新增系数必须记录来源、假设、
+  269:    * 版本和敏感性分析」，而如果常数写死在函数体里，分析就只能复制一份公式 ——
+  270:    * 那会让分析的公式与生产的公式漂移。这里让**同一条公式**接受显式参数。
+  271:    */
+  272:   readonly tuning?: PreflopRaiseTuning;
+  273: };
+  274: 
+  275: /* ============================================================
+  276:  * 主入口
+  277:  * ============================================================ */
+  278: 
+  279: export function buildPreflopRaiseFacts(input: BuildPreflopRaiseFactsInput): PreflopRaiseFactsBuild {
+  280:   const { state, hero, opponent, legal } = input;
+  281: 
+  282:   const skip = (reason: PreflopRaiseSkipReason): PreflopRaiseFactsBuild => ({
+  283:     ok: false,
+  284:     reason,
+  285:     noteZh: `翻前加注 EV 不适用：${PREFLOP_RAISE_SKIP_ZH[reason]}`,
+  286:   });
+  287: 
+  288:   if (state.street !== 'PREFLOP') return skip(PreflopRaiseSkipReason.NOT_PREFLOP);
+  289:   if (hero.holeCards === null || hero.holeCards.length !== 2) return skip(PreflopRaiseSkipReason.HERO_NO_CARDS);
+  290:   if (legal.callCost <= 0 || state.currentBet <= 0) return skip(PreflopRaiseSkipReason.NO_CALL_COST);
+  291: 
+  292:   /*
+  293:    * 🔴 **单挑门槛与「身后有人」门槛**都必须显式拦住，不能偷偷按单挑算。
+  294:    *
+  295:    * 与 `contextBuilder` 的 postflop raiseResponse 守卫**同一条纪律**：
+  296:    * 模型只针对**一个**对手建模，两个以上活跃对手时把身后的跟注/再加注
+  297:    * 当作不存在会系统性高估加注。
+  298:    */
+  299:   if (input.playersRemainingToAct > 0) return skip(PreflopRaiseSkipReason.PLAYERS_BEHIND);
+  300: 
+  301:   const activeOpponents = state.players.filter((p) => p.id !== hero.id && !p.folded);
+  302:   if (activeOpponents.length === 0) return skip(PreflopRaiseSkipReason.NO_OPPONENT);
+  303:   if (activeOpponents.length !== 1) return skip(PreflopRaiseSkipReason.NOT_HEADS_UP);
+  304:   if (activeOpponents[0]!.id !== opponent.id) return skip(PreflopRaiseSkipReason.NOT_HEADS_UP);
+  305: 
+  306:   if (input.arrivalEntries.length === 0) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+  307: 
+  308:   const pot0 = computePot(state);
+  309:   if (!(pot0 > 0)) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+  310: 
+  311:   /* ---- 他的到达范围先过一遍死牌（我的底牌是**公共信息**：我已经看到了） ---- */
+  312:   const dead = deadCardsFrom([...hero.holeCards, ...boardOf(state)]);
+  313:   let arrivalComboCount = 0;
+  314:   let arrivalMass = 0;
+  315:   const arrival: { cardIndices: readonly [number, number]; probability: number }[] = [];
+  316:   for (const entry of input.arrivalEntries) {
+  317:     const p = entry.probability;
+  318:     if (!(p > 0)) continue;
+  319:     const combo = comboOfIndexPair(entry.cardIndices);
+  320:     if (combo === null) continue;
+  321:     if (isBlocked(combo, dead)) continue;
+  322:     arrivalComboCount += 1;
+  323:     arrivalMass += p;
+  324:     arrival.push({ cardIndices: entry.cardIndices, probability: p });
+  325:   }
+  326:   if (arrivalComboCount === 0 || !(arrivalMass > 0)) return skip(PreflopRaiseSkipReason.NO_ARRIVAL_RANGE);
+  327: 
+  328:   const heroStreetCommitted = committedThisStreet(state, hero.id);
+  329:   const villainStreetCommitted = committedThisStreet(state, opponent.id);
+  330:   const heroRemaining = Math.max(0, hero.remainingStack);
+  331:   const effectiveStackChips = input.legal.allInToAmount - heroStreetCommitted;
+  332: 
+  333:   /* ---- 尺寸集合：缺省 = 决策层同一个网格 ---- */
+  334:   const grid = input.sizes !== undefined && input.sizes.length > 0
+  335:     ? input.sizes
+  336:     : buildSizeGrid(legal, pot0, 'RAISE');
+  337:   if (grid.length === 0) return skip(PreflopRaiseSkipReason.NO_GRID);
+  338: 
+  339:   const sizes: PreflopRaiseSizeFacts[] = [];
+  340:   for (const option of grid) {
+  341:     const built = buildOneSize({
+  342:       state,
+  343:       hero,
+  344:       opponent,
+  345:       legal,
+  346:       option,
+  347:       arrival,
+  348:       arrivalMass,
+  349:       heroStreetCommitted,
+  350:       villainStreetCommitted,
+  351:       tendencies: input.tendencies,
+  352:       heroCards: hero.holeCards,
+  353:       seed: input.seed,
+  354:       equityOf: input.equityOf,
+  355:       pot0,
+  356:       ...(input.tuning === undefined ? {} : { tuning: input.tuning }),
+  357:     });
+  358:     if (built !== null) sizes.push(built);
+  359:   }
+  360:   if (sizes.length === 0) return skip(PreflopRaiseSkipReason.NO_GRID);
+  361: 
+  362:   /* ---- 诊断用「被选中的尺寸」：与决策层同一个规则（最近似 pot + 2×跟注额） ---- */
+  363:   const desiredTo = pot0 + 2 * legal.callCost;
+  364:   const chosen = closestSizeTo(grid, desiredTo, (o) => o.toAmount);
+  365: 
+  366:   const sprAfterCall = (() => {
+  367:     if (!(legal.callCost > 0)) return null;
+  368:     const preview = previewCommit(state, hero.id, legal.callCost);
+  369:     if (!(preview.winnable > 0)) return null;
+  370:     const remaining = heroRemaining - legal.callCost;
+  371:     if (!(remaining > 0)) return 0;
+  372:     return remaining / preview.winnable;
+  373:   })();
+  374: 
+  375:   const facts: PreflopRaiseFacts = Object.freeze({
+  376:     kind: 'PREFLOP_RAISE_FACTS' as const,
+  377:     version: PREFLOP_RAISE_FACTS_VERSION,
+  378:     modelVersion: PREFLOP_RAISE_RESPONSE_MODEL_VERSION,
+  379:     evidence: 'HEURISTIC_STRUCTURAL' as const,
+  380:     cashflowContract: CASHFLOW_CONTRACT,
+  381:     usesHeroHiddenCards: false as const,
+  382:     rakeStatus: 'NOT_APPLIED' as const,
+  383:     street: state.street,
+  384:     heroPosition: hero.position,
+  385:     opponentPosition: opponent.position,
+  386:     bigBlind: state.config.bigBlind,
+  387:     currentPot: pot0,
+  388:     heroCallCost: legal.callCost,
+  389:     heroRemaining,
+  390:     effectiveStackChips,
+  391:     sprAfterCall,
+  392:     heroIsAllIn: legal.myRemainingStack <= 0,
+  393:     villainIsAllInByCall: opponent.remainingStack <= 0,
+  394:     allInToAmount: legal.allInToAmount,
+  395:     minRaiseToAmount: legal.minRaiseToAmount,
+  396:     arrival: Object.freeze({
+  397:       comboCount: arrivalComboCount,
+  398:       mass: arrivalMass,
+  399:       source: input.arrivalSource,
+  400:     }),
+  401:     sizes: Object.freeze(sizes),
+  402:     chosenSizeChips: chosen === null ? null : chosen.toAmount,
+  403:     assumptionsZh: Object.freeze(ASSUMPTIONS_ZH),
+  404:     noteZh:
+  405:       `**翻前加注事实包**（${PREFLOP_RAISE_FACTS_VERSION} / 响应模型 ${PREFLOP_RAISE_RESPONSE_MODEL_VERSION}）：` +
+  406:       `单挑、共 ${sizes.length} 个合法尺寸拥有**各自**的响应概率、条件范围与 EV｜` +
+  407:       `到达范围 ${arrivalComboCount} 组合（${input.arrivalSource}）｜` +
+  408:       `零点 = 弃牌 ≡ 0，单位 = 筹码｜⚠️ 被再加注分支只展开 FOLD / CALL（**未展开 Hero 的 5Bet**）`,
+  409:   });
+  410: 
+  411:   return { ok: true, facts };
+  412: }
+  413: 
+  414: const ASSUMPTIONS_ZH: readonly string[] = Object.freeze([
+  415:   '响应概率是**结构性先验**（他的到达范围 + 起手牌强度阶梯 + 价格 + 画像倍率），**未经统计校准**',
+  416:   '零点 = 弃牌 ≡ 0；单位 = 筹码；与 CALL EV 使用**同一条**现金流公式（raiseEVOf）',
+  417:   '他弃牌 ⇒ 我赢下完整底池 currentPot；他跟注 ⇒ 终池 finalPot（引擎分层口径，含退回修正）',
+  418:   '⚠️ **非全下**时 `EqVsRaiseCallRange` 是「打到摊牌、后续街不再下注」的**终止近似** —— '
+  419:     + '权益已枚举未来公共牌，但**未模拟**后续街的下注/过牌/弃牌 ⇒ 不是真实完整 EV，也不是严格下界',
+  420:   '✅ **全下**（我全下或他跟注即全下）时没有后续街 ⇒ 该分支的摊牌权益与收益是**精确**的',
+  421:   '被再加注分支只展开 Hero 的 FOLD / CALL；**Hero 的 5Bet 应对未展开**（`heroFiveBetExpanded = false`）',
+  422:   '再加注尺寸由**真实行动状态**推导（最小完整加注 vs 他的全下上限），不用固定倍数',
+  423:   'RAKE = NOT_APPLIED（本项目无 Rake Engine ⇒ 全部 EV **未计抽水**）',
+  424:   '身后还有玩家未行动时**不产出**本事实包（不按单挑偷偷计算）',
+  425: ]);
+  426: 
+  427: /* ============================================================
+  428:  * 单个尺寸
+  429:  * ============================================================ */
+  430: 
+  431: function buildOneSize(args: {
+  432:   state: GameState;
+  433:   hero: PlayerState;
+  434:   opponent: PlayerState;
+  435:   legal: LegalActions;
+  436:   option: SizeOption;
+  437:   arrival: readonly { cardIndices: readonly [number, number]; probability: number }[];
+  438:   arrivalMass: number;
+  439:   heroStreetCommitted: number;
+  440:   villainStreetCommitted: number;
+  441:   tendencies: ResponseTendencies;
+  442:   heroCards: readonly Card[];
+  443:   seed: number;
+  444:   equityOf: (
+  445:     entries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[],
+  446:     seedOffset: number,
+  447:   ) => PreflopEquityFact;
+  448:   pot0: number;
+  449:   /** 🔴 可注入调参（缺省 = 生产常数；只为敏感性分析） */
+  450:   tuning?: PreflopRaiseTuning;
+  451: }): PreflopRaiseSizeFacts | null {
+  452:   const { state, hero, opponent, legal, option } = args;
+  453:   const raiseTo = option.toAmount;
+  454: 
+  455:   /* ---- 资金记账（唯一事实来源：引擎） ---- */
+  456:   const heroAdd = Math.max(0, raiseTo - args.heroStreetCommitted);
+  457:   if (!(heroAdd > 0)) return null;
+  458:   const villainAddRaw = Math.max(0, raiseTo - args.villainStreetCommitted);
+  459:   const villainAdd = Math.min(villainAddRaw, Math.max(0, opponent.remainingStack));
+  460:   if (!(villainAdd > 0)) return null;
+  461: 
+  462:   /*
+  463:    * 他跟平即投光：判据看**他投完之后还剩多少**，而不是「封顶有没有生效」。
+  464:    * （恰好用光那一行 `raw === remaining` 不会触发 `min`，只看封顶会漏掉。）
+  465:    */
+  466:   const villainIsAllInByCall = opponent.remainingStack <= villainAdd + 1e-9;
+  467:   const villainStreetTotalAfterCall = args.villainStreetCommitted + villainAdd;
+  468:   /*
+  469:    * ============================================================
+  470:    * 🔴 **已由引擎台账 `computeLayeredPot` 逐位裁定**（54 个尺寸 × 6 组筹码）
+  471:    *
+  472:    * 事故经过：同一行错了**两轮**，第三轮的「修复」又引入了新错。全部记录在此，
+  473:    * 因为这一行是「测试全绿 + 公式错误」同时成立过的地方。
+  474:    *
+  475:    * | 版本 | `被跟注增量` | `finalPot` | 100BB 1550 | 60BB 10000 | 引擎裁定 |
+  476:    * |---|---|---|---|---|---|
+  477:    * | 第一轮 | `min(heroAdd, villainAdd)` | `+ 该值 + villainAdd` | 2600 | — | ❌ 54/54 全错 |
+  478:    * | **第二轮（保留）** | `min(heroAdd, villainAddTotal − 我本街已投)` | `pot0 + 该值 + villainAdd` | 3250 | 12150 | ✅ 54/54 全对 |
+  479:    * | 第三轮（已撤销） | 同上 | `pot0 + 2 × min(双方本街总额)` | — | 12000 | ❌ 漏掉死钱 |
+  480:    *
+  481:    * 第一轮错在把「他跟注要补的**差价**」当成「他投入的**量**」：
+  482:    * 他从 900 补齐到 1550，真正与我匹配的是 650，差价恰好也是 650，所以 100BB
+  483:    * 下只丢了 650；差值恒为 `heroContestedAdd − villainAdd`。
+  484:    *
+  485:    * 第三轮错在把「他本街总额」当成「他从头到尾的全部投入」——
+  486:    * `villainStreetTotalAfterCall` **不含**他在**前面街**的投入，也不含盲注/前注/
+  487:    * 弃牌者的**死钱**。引擎台账实测（60BB、加注到 10000）：
+  488:    *
+  489:    * ```text
+  490:    * computeLayeredPot ⇒ { contested: 12150, deadMoney: 150, returned: { seat_CO: 4000 } }
+  491:    *   双方本街各 6000 ⇒ 2×6000 = 12000，还差 **150** = 死钱（盲注已弃）
+  492:    * ```
+  493:    *
+  494:    * 所以第三轮会在**每一个**尺寸上系统性低估 150（死钱），并让 `price` 的分母
+  495:    * 偏小、`EqVsCall × finalPot` 偏小。
+  496:    *
+  497:    * ## 保留的公式与恒等式（`test/preflopRaiseCashflow.test.ts` 锁定）
+  498:    *
+  499:    * ```text
+  500:    * heroAdd         = raiseTo − 我本街已投                ← 我这次加注要新增的筹码
+  501:    * villainAddRaw   = raiseTo − 他本街已投
+  502:    * villainAdd      = min(villainAddRaw, 他剩余筹码)      ← 他跟注要补的差价（被他的全下封顶）
+  503:    * villainTotal    = 他本街已投 + villainAdd             ← 他跟平后的本街总额
+  504:    * heroContestedAdd= min(heroAdd, villainTotal − 我本街已投)   ← 我新增投入中**被匹配**的部分
+  505:    * finalPot         = pot0(死钱) + heroContestedAdd + villainAdd = 引擎 `main`
+  506:    * uncalledReturn   = heroAdd − heroContestedAdd
+  507:    * ```
+  508:    *
+  509:    * ⚠️ `finalPot` 与 `computePot`（引擎**未退回**口径）**不相等**：
+  510:    * `computePot = finalPot + uncalledReturn`。60BB/10000 实测 `16150 = 12150 + 4000`。
+  511:    * 判据是引擎台账的 `main` / `contested`，**不是** `computePot`。
+  512:    *
+  513:    * ## 影响链（为什么是 P0）
+  514:    *
+  515:    * | 消费者 | 公式 | 用错后的后果 |
+  516:    * |---|---|---|
+  517:    * | 跟注分支成本 | `EqVsRaiseCall × finalPot − heroContestedAdd` | 终池被低估 ⇒ **RAISE EV 被低估** |
+  518:    * | 他继续的价格 | `price = villainAdd / finalPot` | 分母被低估 ⇒ price 被高估 ⇒ 他显得更紧 ⇒ 加注显得更易成功 |
+  519:    *
+  520:    * 两条方向相反 ⇒ **不能**靠「EV 变了多少」判断修没修对；唯一判据是与引擎一致。
+  521:    */
+  522:   /** 双方能匹配上的量 = min(我的新增投入, 他跟平后我还能匹配的量) */
+  523:   const contestedAdd = Math.max(
+  524:     0,
+  525:     Math.min(heroAdd, villainStreetTotalAfterCall - args.heroStreetCommitted),
+  526:   );
+  527:   const heroContestedAdd = contestedAdd;
+  528:   if (!(heroContestedAdd > 0)) return null;
+  529:   /*
+  530:    * 终池 = 死钱 + 我被跟注的量 + 他实际投入的量。
+  531:    *
+  532:    * ⚠️ **不要**改写成 `pot0 + 2 × contested`：`villainStreetTotalAfterCall` 与
+  533:    * `heroStreetCommitted` 都只是**本街**口径，不含前面街的投入，也不含死钱；
+  534:    * 那样写会漏掉死钱（实测每个尺寸少 150）。
+  535:    * `Math.min(villainAdd, contestedAdd)` 显式写出「他实际能匹配多少」。
+  536:    */
+  537:   const finalPot = args.pot0 + heroContestedAdd + Math.min(villainAdd, contestedAdd);
+  538:   const heroIsAllIn = raiseTo >= legal.allInToAmount - 1e-9;
+  539: 
+  540:   /* ---- 响应 ---- */
+  541:   const response: PreflopRaiseResponse | null = buildPreflopRaiseResponse({
+  542:     arrivalEntries: args.arrival,
+  543:     currentPot: args.pot0,
+  544:     heroAdd,
+  545:     villainAdd,
+  546:     finalPot,
+  547:     tendencies: args.tendencies,
+  548:     heroIsAllIn,
+  549:     villainIsAllInByCall,
+  550:     ...(args.tuning === undefined ? {} : { tuning: args.tuning }),
+  551:   });
+  552:   if (response === null) return null;
+  553: 
+  554:   /* ---- 条件权益 ---- */
+  555:   const eqVsCall = args.equityOf(response.callEntries, 1301);
+  556:   const eqVsReraise = args.equityOf(response.reRaiseEntries, 2601);
+  557: 
+  558:   /* ---- 被再加注分支 ---- */
+  559:   const reRaisePlan = (() => {
+  560:     if (response.reRaiseLikelihood <= 0 || response.reRaiseEntries.length === 0) return null;
+  561:     const villainRemainingAfterCall = Math.max(0, opponent.remainingStack - villainAdd);
+  562:     const plan = preflopReRaiseToOf({
+  563:       raiseTo,
+  564:       villainCommittedBefore: args.villainStreetCommitted,
+  565:       villainStreetTotalAfterCall,
+  566:       villainRemainingAfterCall,
+  567:     });
+  568:     if (!(plan.reRaiseTo > raiseTo + 1e-9)) return null;
+  569:     const heroRemainingAfterRaise = Math.max(0, legal.myRemainingStack - heroAdd);
+  570:     const additionalCall = Math.min(plan.reRaiseTo - raiseTo, heroRemainingAfterRaise);
+  571:     if (!(additionalCall > 0)) return null;
+  572:     return { ...plan, additionalCall, heroRemainingAfterRaise };
+  573:   })();
+  574: 
+  575:   const reraiseFoldBranchEV = -heroContestedAdd;
+  576:   const reraiseCallBranchEV = (() => {
+  577:     if (reRaisePlan === null) return null;
+  578:     if (eqVsReraise.value === null) return null;
+  579:     /*
+  580:      * 后续资金用**引擎自己的**动作与分层底池算：
+  581:      * Hero 加注 → 他再加注 → Hero 跟注 ⇒ 我能争夺到的量（与 CALL EV 同一口径）。
+  582:      */
+  583:     const afterRaise = applyAction(state, {
+  584:       playerId: hero.id,
+  585:       type: ActionType.RAISE,
+  586:       amount: raiseTo,
+  587:     });
+  588:     if (!afterRaise.ok) return null;
+  589:     const afterReRaise = applyAction(afterRaise.state, {
+  590:       playerId: opponent.id,
+  591:       type: ActionType.RAISE,
+  592:       amount: reRaisePlan.reRaiseTo,
+  593:     });
+  594:     if (!afterReRaise.ok) return null;
+  595:     const winnable = previewCommit(afterReRaise.state, hero.id, reRaisePlan.additionalCall).winnable;
+  596:     if (!(winnable > 0)) return null;
+  597:     return eqVsReraise.value * winnable - heroContestedAdd - reRaisePlan.additionalCall;
+  598:   })();
+  599: 
+  600:   const reraiseBranchEV =
+  601:     reraiseCallBranchEV === null
+  602:       ? reraiseFoldBranchEV
+  603:       : Math.max(reraiseFoldBranchEV, reraiseCallBranchEV);
+  604:   const reraiseBranchKind: PreflopRaiseSizeFacts['reraiseBranchKind'] =
+  605:     reraiseCallBranchEV === null
+  606:       ? 'FOLD_ONLY_UNAVAILABLE'
+  607:       : reraiseCallBranchEV > reraiseFoldBranchEV + 1e-9
+  608:         ? 'CALL'
+  609:         : 'FOLD';
+  610: 
+  611:   /* ---- EV ---- */
+  612:   const raiseEV =
+  613:     eqVsCall.value === null
+  614:       ? null
+  615:       : raiseEVOf({
+  616:           foldLikelihood: response.foldLikelihood,
+  617:           callLikelihood: response.callLikelihood,
+  618:           reRaiseLikelihood: response.reRaiseLikelihood,
+  619:           currentPot: args.pot0,
+  620:           heroContestedAdd,
+  621:           finalPot,
+  622:           equityVsRaiseCall: eqVsCall.value,
+  623:           reraiseBranchEV,
+  624:         });
+  625: 
+  626:   const reraiseBranchUnsupportedZh =
+  627:     reraiseCallBranchEV === null && response.reRaiseLikelihood > 0
+  628:       ? '再加注分支不可计算（缺再加注范围条件权益或后续资金）⇒ 该分支按「放弃本次投入」计入；'
+  629:         + '这是**建模假设下的保守值**，不是对真实牌局 EV 的严格保证'
+  630:       : null;
+  631: 
+  632:   return Object.freeze({
+  633:     sizeChips: raiseTo,
+  634:     sizeBB: raiseTo / state.config.bigBlind,
+  635:     labelZh: option.labelZh,
+  636:     isAllIn: option.isAllIn,
+  637: 
+  638:     currentPot: args.pot0,
+  639:     heroStreetCommitted: args.heroStreetCommitted,
+  640:     villainStreetCommitted: args.villainStreetCommitted,
+  641:     heroAdd,
+  642:     villainAddRaw,
+  643:     villainAdd,
+  644:     heroContestedAdd,
+  645:     finalPot,
+  646:     /* 退回 = 我新增投入中没被匹配的部分 */
+  647:     uncalledReturn: Math.max(0, heroAdd - heroContestedAdd),
+  648:     villainIsAllInByCall,
+  649:     heroIsAllIn,
+  650: 
+  651:     foldLikelihood: response.foldLikelihood,
+  652:     callLikelihood: response.callLikelihood,
+  653:     reRaiseLikelihood: response.reRaiseLikelihood,
+  654:     reachableCombos: response.reachableCombos,
+  655:     callCombos: response.callCombos,
+  656:     reRaiseCombos: response.reRaiseCombos,
+  657:     priceRequiredEquity: response.priceRequiredEquity,
+  658:     priceMargin: response.margin,
+  659: 
+  660:     heroEquityVsRaiseCallRange: eqVsCall,
+  661:     heroEquityVsReraiseRange: eqVsReraise,
+  662: 
+  663:     reraiseAvailable: reRaisePlan !== null,
+  664:     reRaiseTo: reRaisePlan === null ? null : reRaisePlan.reRaiseTo,
+  665:     reRaiseMinLegalTo: reRaisePlan === null ? null : reRaisePlan.minReRaiseTo,
+  666:     villainReRaiseIsAllIn: reRaisePlan === null ? null : reRaisePlan.isAllIn,
+  667:     heroAdditionalCallVsReRaise: reRaisePlan === null ? null : reRaisePlan.additionalCall,
+  668:     finalPotAfterCallVsReRaise: null,
+  669:     reraiseFoldBranchEV,
+  670:     reraiseCallBranchEV,
+  671:     reraiseBranchEV,
+  672:     reraiseBranchKind,
+  673:     heroFiveBetExpanded: false as const,
+  674:     reraiseBranchUnsupportedZh,
+  675: 
+  676:     raiseEV,
+  677:     assumptionsZh: Object.freeze([
+  678:       `本尺寸的证据链：他弃 ${(response.foldLikelihood * 100).toFixed(1)}% / 跟 ${(response.callLikelihood * 100).toFixed(1)}% / `
+  679:         + `再加注 ${(response.reRaiseLikelihood * 100).toFixed(1)}%`,
+  680:       `他跟注桶条件范围权益 ${eqVsCall.value === null ? 'NOT_AVAILABLE' : (eqVsCall.value * 100).toFixed(2) + '%'}`
+  681:         + `（${eqVsCall.method}，${eqVsCall.iterations} 次迭代）`,
+  682:       `他再加注桶条件范围权益 ${eqVsReraise.value === null ? 'NOT_AVAILABLE' : (eqVsReraise.value * 100).toFixed(2) + '%'}`
+  683:         + `（${eqVsReraise.method}）`,
+  684:       heroIsAllIn || villainIsAllInByCall
+  685:         ? '✅ 本尺寸至少一方全下 ⇒ 没有后续街，摊牌权益与收益**精确**'
+  686:         : '⚠️ 本尺寸双方都还有筹码 ⇒ 跟注分支是**摊牌终止近似**（后续街不再下注）',
+  687:     ]),
+  688:     noteZh:
+  689:       `加注到 ${raiseTo}${option.isAllIn ? '（全下）' : ''}：我方新增 ${heroAdd}`
+  690:       + `${heroAdd === heroContestedAdd ? '' : `（其中被跟注 ${heroContestedAdd}、退回 ${heroAdd - heroContestedAdd}）`}`
+  691:       + `，他补 ${villainAdd}${villainIsAllInByCall ? '（他跟平即全下 ⇒ 不会再有再加注分支）' : ''}，终池 ${finalPot} ⇒ `
+  692:       + (raiseEV === null
+  693:           ? 'RAISE EV 不可算（跟注桶条件权益不可得）'
+  694:           : `RAISE EV = ${response.foldLikelihood.toFixed(4)}×${args.pot0} + `
+  695:             + `${response.callLikelihood.toFixed(4)}×(${(eqVsCall.value ?? 0).toFixed(4)}×${finalPot} − ${heroContestedAdd}) + `
+  696:             + `${response.reRaiseLikelihood.toFixed(4)}×(${reraiseBranchEV.toFixed(4)}`
+  697:             + `${reraiseBranchKind === 'FOLD_ONLY_UNAVAILABLE' ? '=下界' : `=${reraiseBranchKind}分支`}) `
+  698:             + `= **${raiseEV.toFixed(4)}** 筹码`),
+  699:   });
+  700: }
+  701: 
+  702: /* ============================================================
+  703:  * 辅助
+  704:  * ============================================================ */
+  705: 
+  706: function boardOf(state: GameState): readonly Card[] {
+  707:   return [...state.board.flop, ...state.board.turn, ...state.board.river];
+  708: }
+  709: 
+  710: /**
+  711:  * 组合对象查找（O(1)）。
+  712:  *
+  713:  * ⚠️ 用 `domain/range/combo.ts` 的 `ALL_COMBOS`（唯一权威的 1326 组合宇宙），
+  714:  * 不自己造组合 —— 死牌判据（`rangeBlockers.isBlocked`）只认它的形状。
+  715:  *
+  716:  * 为什么必须建索引而不是线性扫描：本函数在每个尺寸的到达范围上跑一遍
+  717:  * （≈1000 组合 × 7 个尺寸），线性扫描会变成 9000 次 × 1326 次比较。
+  718:  */
+  719: const COMBO_INDEX: readonly (ExactCombo | null)[] = (() => {
+  720:   const table: (ExactCombo | null)[] = new Array(52 * 52).fill(null);
+  721:   for (const combo of ALL_COMBOS) {
+  722:     const [a, b] = combo.cardIndices;
+  723:     table[a * 52 + b] = combo;
+  724:     table[b * 52 + a] = combo;
+  725:   }
+  726:   return Object.freeze(table);
+  727: })();
+  728: 
+  729: function comboOfIndexPair(cardIndices: readonly [number, number]): ExactCombo | null {
+  730:   const [a, b] = cardIndices;
+  731:   if (!(a >= 0 && a < 52 && b >= 0 && b < 52)) return null;
+  732:   return COMBO_INDEX[a * 52 + b] ?? null;
+  733: }
+  734: 
+  735: /** 把 `Range` 的 entries 转成本模块的 `cardIndices` 形状（唯一转换点） */
+  736: export function arrivalEntriesOf(
+  737:   range: Range | null,
+  738: ): readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[] {
+  739:   if (range === null) return Object.freeze([]);
+  740:   return Object.freeze(
+  741:     range.entries
+  742:       .filter((e) => e.probability > 0)
+  743:       .map((e) => Object.freeze({
+  744:         cardIndices: Object.freeze([e.combo.cardIndices[0], e.combo.cardIndices[1]]) as unknown as readonly [number, number],
+  745:         probability: e.probability,
+  746:       })),
+  747:   );
+  748: }
+  749: 
+  750: /* ============================================================
+  751:  * 模型选择（决策层与测试共用**同一个**判据）
+  752:  * ============================================================ */
+  753: 
+  754: export type PreflopRaiseModelEvaluation = {
+  755:   readonly usable: boolean;
+  756:   /** 不可用的原因（中文，可直接进诊断） */
+  757:   readonly unavailableZh: string | null;
+  758: };
+  759: 
+  760: /**
+  761:  * 某个候选尺寸能否使用**属于它自己**的翻前加注 EV。
+  762:  *
+  763:  * ## 为什么必须是一个共享函数
+  764:  *
+  765:  * 「尺寸对不上却拿另一个尺寸的 EV 说事」是本项目已经踩过的坑
+  766:  * （U1 的 `raiseModelUsable`、隔离加注的 `isoUsable` 都为此设了同一条纪律）。
+  767:  * 把判据写成**一处**，决策层与测试就不可能各有一套。
+  768:  *
+  769:  * 判据（缺一不可）：
+  770:  * 1. 事实包存在且**资金口径契约**匹配（旧口径的事实包永远无法重新获得资格）；
+  771:  * 2. 候选确实是加注族（RAISE / ALL_IN）；
+  772:  * 3. 候选金额与该尺寸事实的 `sizeChips` **完全相等**；
+  773:  * 4. 该尺寸的 `raiseEV !== null`。
+  774:  *
+  775:  * ⚠️ 返回 `usable = false` 时，调用方必须把该候选计入「未评估动作」，
+  776:  * **不得**用其他尺寸的 EV 顶替，**不得**填 0。
+  777:  */
+  778: export function evaluatePreflopRaiseModel(input: {
+  779:   readonly facts: PreflopRaiseFacts | null | undefined;
+  780:   /** 候选的本街累计金额（raise-to 口径） */
+  781:   readonly candidateSizeChips: number | undefined;
+  782:   readonly actionIsRaiseLike: boolean;
+  783: }): PreflopRaiseModelEvaluation {
+  784:   const facts = input.facts ?? null;
+  785:   if (facts === null) return { usable: false, unavailableZh: '本节点没有翻前加注事实包' };
+  786:   if (facts.cashflowContract !== CASHFLOW_CONTRACT) {
+  787:     return {
+  788:       usable: false,
+  789:       unavailableZh: `翻前加注事实包的资金口径契约不符（${facts.cashflowContract} ≠ ${CASHFLOW_CONTRACT}）`,
+  790:     };
+  791:   }
+  792:   if (!input.actionIsRaiseLike) return { usable: false, unavailableZh: '该动作不是加注族' };
+  793:   if (input.candidateSizeChips === undefined) {
+  794:     return { usable: false, unavailableZh: '该加注候选没有金额（无法与事实包对齐）' };
+  795:   }
+  796:   const size = facts.sizes.find((s) => s.sizeChips === input.candidateSizeChips);
+  797:   if (size === undefined) {
+  798:     return {
+  799:       usable: false,
+  800:       unavailableZh: `该尺寸（${input.candidateSizeChips} 筹码）不在翻前加注事实包里 `
+  801:         + `⇒ **不得**借用其它尺寸的 EV`,
+  802:     };
+  803:   }
+  804:   if (size.raiseEV === null) {
+  805:     return { usable: false, unavailableZh: `该尺寸（${size.sizeBB.toFixed(2)}BB）的翻前加注 EV 不可算` };
+  806:   }
+  807:   return { usable: true, unavailableZh: null };
+  808: }
+  809: 
+  810: /** 取某个尺寸的事实（找不到 ⇒ null；绝不返回别的尺寸） */
+  811: export function preflopRaiseSizeFactsOf(
+  812:   facts: PreflopRaiseFacts | null | undefined,
+  813:   sizeChips: number | undefined,
+  814: ): PreflopRaiseSizeFacts | null {
+  815:   if (facts === null || facts === undefined || sizeChips === undefined) return null;
+  816:   return facts.sizes.find((s) => s.sizeChips === sizeChips) ?? null;
+  817: }
+  818: 
+===== src/app/manualInput/raiseResponse.ts =====
+    1: /**
+    2:  * ============================================================================
+    3:  * 面对加注的响应（RAISE RESPONSE）—— 「他跟不跟这一注」
+    4:  * ============================================================================
+    5:  *
+    6:  * ## 这个模块补的是什么（U1 · `NOT_IMPLEMENTED` → 实现）
+    7:  *
+    8:  * 在它之前，`RAISE` 这个动作在全项目里**没有任何筹码 EV**：
+    9:  * `reports/UNCERTAINTY_REGISTER.md` 的 U1 记录了这条缺口，产品自述
+   10:  * `checkTree.raiseResponse = 'NOT_IMPLEMENTED'`（`betResponse.ts`）。
+   11:  * 后果是「加注是否比跟注好」无法被计算，只能靠启发式 —— 而启发式在河牌
+   12:  * 把一对牌推成了 87BB 全下（`reports/RIVER_RAISE_DECISION_AUDIT.md`）。
+   13:  *
+   14:  * ## 🔴 口径：**公共信息**（不读 Hero 的隐藏底牌）
+   15:  *
+   16:  * 与 `bettingRange.ts`（RIVER BET RANGE V2）同一条纪律：
+   17:  *
+   18:  * | 轴 | 来源 | 是否读 Hero 底牌 |
+   19:  * |---|---|---|
+   20:  * | 手牌强度 | `publicStrengthBandOf(他的底牌, 公共牌)`（9 档） | ❌ |
+   21:  * | 可玩性 | `drawProfileOf(他的底牌, 公共牌)`（同花听/两头顺/卡顺） | ❌ |
+   22:  * | 价格 | `villainAdd / finalPot` ——【数学确定】 | ❌ |
+   23:  * | 画像 | `ResponseTendencies`（aggression / bluffTendency / passivity） | ❌ |
+   24:  *
+   25:  * ## 🔴🔴 资金记账（U1 P0 修复）：本模块**不再自己算底池**
+   26:  *
+   27:  * 修复前本模块收到的是「扣掉对手这一注的底池 + 2×增量」，
+   28:  * 于是价格分母少了对手已经下注的那笔筹码（实测 HAND A：0.4174 vs 正确 0.3342，
+   29:  * 系统性把对手的继续门槛抬高 8.3 个百分点）。现在：
+   30:  *
+   31:  * ```text
+   32:  * currentPot      = 决策时完整底池（**含**对手这一注）
+   33:  * heroAdd         = 我这次加注真正要新增的筹码
+   34:  * villainAdd      = 对手跟注还要补的筹码（短筹码时按他实际能投的封顶）
+   35:  * finalPot        = 双方投入后**我能争夺到**的底池（引擎分层口径）
+   36:  * price           = villainAdd / finalPot        ← 他跟注所需的最低权益
+   37:  * ratioToPot      = heroAdd / currentPot         ← 我的加注相对当前底池的大小
+   38:  * ```
+   39:  *
+   40:  * ⚠️ 这些量**全部由引擎（`contextBuilder` 第 4d 步）用
+   41:  * `committedThisStreet` / `computePot` / `previewCommit` 算好后传入**，
+   42:  * 本模块只做响应建模 —— 资金口径只有**一处**事实来源，避免两个地方各算一遍。
+   43:  *
+   44:  * 与既有响应模型（`betResponse.classifyVillainAfterCheck` / `classifyResponse`）
+   45:  * 的关系：**形状相同、强度基准不同**。既有模型用 `versusHero + tier` 作强度，
+   46:  * 那是**上帝视角**（也正因如此不能用于下注范围权重）；
+   47:  * 本模块改用公共强度带 ⇒ 两者构成**互相独立**的两把尺子，
+   48:  * 这正是 U1 要求的「方案②生产 + 方案①独立对照」。
+   49:  *
+   50:  * ## ⚠️ 未校准声明（与 `betProbabilityByBand` 同一纪律）
+   51:  *
+   52:  * 本模块只声称三件事：
+   53:  * 1. **单调**：手牌越强 ⇒ 越可能继续（价格相同的前提下）；
+   54:  * 2. **价格敏感**：加注越大 ⇒ 继续的门槛越高（`required = price + margin`）；
+   55:  * 3. **非退化**：每个强度带的继续权重都在 (0,1) 内，不会整类消失。
+   56:  *
+   57:  * 它**不声称**任何具体频率是真实的：`BAND_STRENGTH` 与 `RAISE_SHARE_*`
+   58:  * 全部是结构性取值，随 `model.strengthOfBand` 一起导出，供将来用真实统计替换。
+   59:  */
+   60: 
+   61: import type { Card } from '../../domain/types.ts';
+   62: import { ALL_CARDS } from '../../domain/poker/cards.ts';
+   63: import { drawProfileOf } from '../../domain/postflop/draws.ts';
+   64: import type { ResponseTendencies } from '../../domain/postflop/betResponse.ts';
+   65: import {
+   66:   PublicStrengthBand,
+   67:   publicStrengthBandOf,
+   68: } from './bettingRange.ts';
+   69: 
+   70: /**
+   71:  * 🔴 **公共强度带 → 继续强度代理**（0..1）。
+   72:  *
+   73:  * 含义：这手牌「在公共信息下有多值得继续」。
+   74:  * 取值是**结构性阶梯**（只声称序关系），不是任何实测频率。
+   75:  */
+   76: export const RAISE_RESPONSE_BAND_STRENGTH: Readonly<Record<PublicStrengthBand, number>> = Object.freeze({
+   77:   NUT: 0.97,
+   78:   STRONG_MADE: 0.86,
+   79:   TWO_PAIR: 0.72,
+   80:   OVERPAIR: 0.62,
+   81:   TOP_PAIR_GOOD: 0.52,
+   82:   TOP_PAIR_WEAK: 0.4,
+   83:   MIDDLE_PAIR: 0.3,
+   84:   WEAK_PAIR: 0.2,
+   85:   AIR: 0.07,
+   86: });
+   87: 
+   88: /** 听牌带来的可玩性（隐含赔率），与既有响应模型的刻度一致 */
+   89: const PLAYABILITY_STRONG_DRAW = 0.1;
+   90: const PLAYABILITY_WEAK_DRAW = 0.05;
+   91: 
+   92: /**
+   93:  * 🔴 **资金口径契约版本**（U1 P0 修复）。
+   94:  *
+   95:  * 决策层要求事实包带这个标记才允许把加注 EV 放进跨动作比较 ⇒
+   96:  * 旧口径的（或缓存里的）事实包永远无法重新获得 MODEL_EV 资格。
+   97:  */
+   98: export const CASHFLOW_CONTRACT = 'NODE_INCREMENTAL_CHIPS_V2' as const;
+   99: 
+  100: /**
+  101:  * ============================================================================
+  102:  * RAISE EV —— **与 CALL EV 同一套筹码口径**（U1 P0 修复后的唯一公式）
+  103:  * ============================================================================
+  104:  *
+  105:  * ```text
+  106:  * RAISE EV = P(弃) × currentPot                                  ← 他弃牌：我赢下**完整**底池
+  107:  *          + P(跟) × (EqVsRaiseCallRange × finalPot − 我留在池中的投入)
+  108:  *          + P(再加注) × (−我留在池中的投入)                       ← Hero 全下 ⇒ 该权恒为 0
+  109:  * ```
+  110:  *
+  111:  * 零点 = 弃牌 ≡ 0；单位 = 筹码；时点 = Hero 本次决策。
+  112:  *
+  113:  * ⚠️ **本公式与 CALL EV 完全同口径**：CALL EV = `EqVsBetRange × winnable − callCost`，
+  114:  * 其中 `winnable` 同样是「按引擎分层口径我能争夺到的底池」、`callCost` 同样是
+  115:  * 「我真正新增的投入」。
+  116:  *
+  117:  * ⚠️ **这不是「最优后续」的 EV**：再加注分支假定 Hero 弃牌
+  118:  *（`reRaiseLikelihood` 只有在不是全下时才可能大于 0），也没有建模 Hero 的
+  119:  * 后续再加注、多人底池与抽水。
+  120:  *
+  121:  * @param input.heroContestedAdd 我真正留在池中的筹码。双方都跟得满时
+  122:  *        `heroContestedAdd === heroAdd`；对手筹码不足时差额是**退回**，
+  123:  *        不得计入投入（旧公式在这里会多扣）。
+  124:  * @param input.reraiseBranchEV 🔴 **P1-2b：被再加注分支的 EV**，**必须与其它分支同一零点**
+  125:  *        （= 首次加注前的决策节点）。调用方按
+  126:  *        `max(−heroContestedAdd, EqVsReraiseRange × 跟注后终池 − heroContestedAdd − 我需再投)`
+  127:  *        算出后传入；拿不到再加注范围时**退回下界** `−heroContestedAdd` 并如实标注未实现。
+  128:  */
+  129: export function raiseEVOf(input: {
+  130:   foldLikelihood: number;
+  131:   callLikelihood: number;
+  132:   reRaiseLikelihood: number;
+  133:   /** 决策时完整底池（含对手这一注） */
+  134:   currentPot: number;
+  135:   /** 我真正留在池中的筹码 */
+  136:   heroContestedAdd: number;
+  137:   /** 双方投入后我能争夺到的底池 */
+  138:   finalPot: number;
+  139:   /** 他跟注我时的条件权益（`EqVsRaiseCallRange`） */
+  140:   equityVsRaiseCall: number;
+  141:   /** 🔴 P1-2b：被再加注分支的 EV（与其它分支同一零点；下界 = `−heroContestedAdd`） */
+  142:   reraiseBranchEV: number;
+  143: }): number {
+  144:   const { foldLikelihood: f, callLikelihood: c, reRaiseLikelihood: rr } = input;
+  145:   return (
+  146:     f * input.currentPot +
+  147:     c * (input.equityVsRaiseCall * input.finalPot - input.heroContestedAdd) +
+  148:     rr * input.reraiseBranchEV
+  149:   );
+  150: }
+  151: 
+  152: /** 继续所需的**余量**（越靠后街隐含赔率越少 ⇒ 余量越小），与既有响应模型同刻度 */
+  153: function marginOfStreet(street: 'FLOP' | 'TURN' | 'RIVER'): number {
+  154:   return street === 'FLOP' ? 0.16 : street === 'TURN' ? 0.14 : 0.1;
+  155: }
+  156: 
+  157: /** 价值再加注的门槛超出额（比继续门槛再高这么多才值得再加注） */
+  158: const VALUE_RERAISE_EXCESS = 0.2;
+  159: const VALUE_RERAISE_BASE = 0.45;
+  160: const VALUE_RERAISE_SLOPE = 0.35;
+  161: const RAISE_SCALE_WEIGHT = 0.25;
+  162: /** 诈唬再加注：只有真听牌 / 纯空气 + 画像偏诈唬 + 我的加注不太大时才出现 */
+  163: const BLUFF_RERAISE_BASE = 0.15;
+  164: const BLUFF_RERAISE_BLUFF_WEIGHT = 0.2;
+  165: const BLUFF_RERAISE_MAX_RATIO = 0.8;
+  166: 
+  167: export type RaiseResponseModelFacts = {
+  168:   readonly kind: 'PUBLIC_BAND_RAISE_RESPONSE_V1';
+  169:   readonly evidence: 'HEURISTIC_STRUCTURAL';
+  170:   /** 权重是否读过 Hero 的隐藏底牌 —— 恒为 false（由测试锁定） */
+  171:   readonly usesHeroHiddenCards: false;
+  172:   /**
+  173:    * 🔴 **资金口径契约标记**（U1 P0 修复）。
+  174:    *
+  175:    * 决策层**只有**看到这个标记才允许把该 EV 放进跨动作比较
+  176:    *（`raiseModelUsable` 的硬条件）—— 这样「旧口径 / 缓存里的旧事实包」
+  177:    * 永远无法重新获得 MODEL_EV 比较资格。
+  178:    */
+  179:   readonly cashflowContract: 'NODE_INCREMENTAL_CHIPS_V2';
+  180:   /** 决策时完整底池（**含**对手这一注） */
+  181:   readonly currentPot: number;
+  182:   /** Hero 本次加注真正新增的筹码 */
+  183:   readonly heroAdd: number;
+  184:   /** 对手跟注还要补的筹码（短筹码时按他实际能投的封顶） */
+  185:   readonly villainAdd: number;
+  186:   /** Hero 真正**留在池中**的筹码（对手跟不起时小于 `heroAdd`，差额退回） */
+  187:   readonly heroContestedAdd: number;
+  188:   /** 双方投入后 Hero 能争夺到的底池（引擎分层口径） */
+  189:   readonly finalPot: number;
+  190:   /** 他面对这次加注需要的权益（= `villainAdd / finalPot`）【数学确定】 */
+  191:   readonly priceRequiredEquity: number;
+  192:   /** 模型使用的余量（价格 + margin 才是继续门槛） */
+  193:   readonly margin: number;
+  194:   /** 我的加注相对**当前底池**的大小（= `heroAdd / currentPot`） */
+  195:   readonly ratioToPot: number;
+  196:   readonly street: 'FLOP' | 'TURN' | 'RIVER';
+  197:   /** Hero 是否已全下（真 ⇒ 他不能再加注，权重迁移到跟注） */
+  198:   readonly heroIsAllIn: boolean;
+  199:   /** 🔴 P1-2a：对手跟注即全下（真 ⇒ 他不能再加注，权重迁移到跟注） */
+  200:   readonly villainIsAllInByCall: boolean;
+  201:   readonly strengthOfBand: Readonly<Record<PublicStrengthBand, number>>;
+  202:   readonly noteZh: string;
+  203: };
+  204: 
+  205: export type RaiseResponseResult = {
+  206:   /** 他弃牌的概率（质量口径） */
+  207:   readonly foldLikelihood: number;
+  208:   /** 他跟注的概率（质量口径） */
+  209:   readonly callLikelihood: number;
+  210:   /** 他再加注的概率（质量口径；`heroIsAllIn` 时恒为 0） */
+  211:   readonly reRaiseLikelihood: number;
+  212:   /** 跟注桶的**条件范围**（已归一化）—— 用于算 `EqVsRaiseContinueRange` */
+  213:   readonly callContinueEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  214:   /**
+  215:    * 🔴 **P1-2b：再加注桶的条件范围**（已归一化）—— 用于算 `EqVsReraiseRange`。
+  216:    *
+  217:    * 与跟注桶**同源同权重**（同一个逐组合循环、同一套死牌过滤与范围条件），
+  218:    * 但**不是**跟注桶：前者是「他决定跟」，这里是「他决定再加注」。
+  219:    * `P(再加注) = 0` 时恒为空数组与 0 组合 ⇒ 不得生成虚假的再加注分支。
+  220:    */
+  221:   readonly reRaiseEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  222:   readonly reachableCombos: number;
+  223:   /** 跟注桶组合数 */
+  224:   readonly callCombos: number;
+  225:   /** 🔴 P1-2b：再加注桶组合数（0 ⇒ 没有再加注分支，`reRaiseEntries` 为空） */
+  226:   readonly reRaiseCombos: number;
+  227:   readonly model: RaiseResponseModelFacts;
+  228:   readonly noteZh: string;
+  229: };
+  230: 
+  231: /**
+  232:  * 构建「他面对我的加注」的响应。
+  233:  *
+  234:  * @param input.betRangeEntries 他**下注范围**的逐组合权重（V2 口径，已归一化）
+  235:  * @param input.currentPot 决策时完整底池（**含**对手这一注）
+  236:  * @param input.heroAdd 我这次加注真正新增的筹码
+  237:  * @param input.villainAdd 对手跟注还要补的筹码（调用方已按他的剩余筹码封顶）
+  238:  * @param input.heroContestedAdd 我真正留在池中的筹码（对手跟不起时小于 `heroAdd`）
+  239:  * @param input.finalPot 双方投入后我能争夺到的底池（调用方用分层底池算好）
+  240:  * @returns `null` 表示输入不足（无组合、价格非法、牌面不足）—— 调用方必须如实回落，不猜
+  241:  */
+  242: export function buildRaiseResponse(input: {
+  243:   betRangeEntries: readonly { readonly cardIndices: readonly [number, number]; readonly probability: number }[];
+  244:   board: readonly Card[];
+  245:   /** 决策时完整底池（含对手这一注） */
+  246:   currentPot: number;
+  247:   /** 我这次加注新增的筹码 */
+  248:   heroAdd: number;
+  249:   /** 对手跟注还要补的筹码（已封顶） */
+  250:   villainAdd: number;
+  251:   /** 我真正留在池中的筹码（≤ heroAdd；差额是对手跟不起的退回） */
+  252:   heroContestedAdd: number;
+  253:   /** 双方投入后我能争夺到的底池 */
+  254:   finalPot: number;
+  255:   street: 'FLOP' | 'TURN' | 'RIVER';
+  256:   tendencies: ResponseTendencies;
+  257:   heroIsAllIn: boolean;
+  258:   /**
+  259:    * 🔴 **P1-2a：对手「跟注即全下」**（他的剩余筹码 ≤ 他为了跟平还需要的筹码）。
+  260:    *
+  261:    * 这种情形下他跟注之后**下注轮就结束了**（他 allIn、无筹码可再投），
+  262:    * 引擎会拒绝他的任何再加注（`ISSUE.ACTION_AFTER_HAND_OVER`）——
+  263:    * 因此**不得**产出再加注分支。与 `heroIsAllIn` 是**两个独立判据**：
+  264:    * 前者是「我不能再加注」，后者是「他不能再加注」。
+  265:    */
+  266:   villainIsAllInByCall: boolean;
+  267: }): RaiseResponseResult | null {
+  268:   const { board } = input;
+  269:   if (board.length < 3) return null;
+  270:   if (!(input.currentPot > 0)) return null;
+  271:   if (!(input.heroAdd > 0)) return null;
+  272:   if (!(input.villainAdd > 0)) return null;
+  273:   if (!(input.finalPot > 0)) return null;
+  274:   /*
+  275:    * 🔴 价格 = 他跟注所需的最低权益 = `villainAdd / finalPot`（【数学确定】）。
+  276:    *
+  277:    * 这是他**自己**的跟注赔率：他要补 `villainAdd`，跟注后底池是 `finalPot`。
+  278:    * 修复前用的是 `增量 / (扣掉他这一注的底池 + 2×增量)` —— 分母少了他已经投入的钱，
+  279:    * 门槛被系统性抬高（HAND A：0.417445 vs 0.334165）。
+  280:    */
+  281:   const price = input.villainAdd / input.finalPot;
+  282:   if (!Number.isFinite(price) || price <= 0 || price >= 1) return null;
+  283: 
+  284:   const margin = marginOfStreet(input.street);
+  285:   const required = price + margin;
+  286:   /** 我的加注相对**当前底池**的大小（与 `heroAdd` 同口径；修复前用的是「对手增量 / 扣掉他这一注的底池」） */
+  287:   const ratioToPot = input.heroAdd / input.currentPot;
+  288: 
+  289:   const t = input.tendencies;
+  290:   const callScale = Number.isFinite(t.callScale) ? t.callScale : 1;
+  291:   const foldScale = Number.isFinite(t.foldScale) ? t.foldScale : 1;
+  292:   const raiseScale = Number.isFinite(t.raiseScale) ? t.raiseScale : 1;
+  293:   const bluffRaiseScale = Number.isFinite(t.bluffRaiseScale) ? t.bluffRaiseScale : 1;
+  294: 
+  295:   let foldMass = 0;
+  296:   let callMass = 0;
+  297:   let reRaiseMass = 0;
+  298:   let total = 0;
+  299:   let reachable = 0;
+  300:   const callEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+  301:   const reRaiseEntries: { cardIndices: readonly [number, number]; probability: number }[] = [];
+  302: 
+  303:   for (const entry of input.betRangeEntries) {
+  304:     const p = entry.probability;
+  305:     if (!(p > 0)) continue;
+  306:     const hole: [Card, Card] = [ALL_CARDS[entry.cardIndices[0]]!, ALL_CARDS[entry.cardIndices[1]]!];
+  307:     const band = publicStrengthBandOf(hole, board);
+  308:     if (band === null) continue;
+  309:     reachable += 1;
+  310:     total += p;
+  311: 
+  312:     const draw = drawProfileOf(hole, board);
+  313:     const playability = draw.flushDraw || draw.openEnded
+  314:       ? PLAYABILITY_STRONG_DRAW
+  315:       : draw.gutshot
+  316:         ? PLAYABILITY_WEAK_DRAW
+  317:         : 0;
+  318:     const strength = RAISE_RESPONSE_BAND_STRENGTH[band] + playability;
+  319:     const continueIndex = Math.max(0, Math.min(1, strength * callScale - 0.05 * foldScale));
+  320: 
+  321:     if (continueIndex < required) {
+  322:       foldMass += p;
+  323:       continue;
+  324:     }
+  325:     /*
+  326:      * 继续：再分「跟注 / 再加注」。
+  327:      *
+  328:      * ⚠️ **Hero 已全下 ⇒ 他不能再加注**（与既有响应模型同一条契约）：
+  329:      * 加注权重**迁移到跟注**，而不是从条件范围里消失 ——
+  330:      * 否则「Hero 全下」会假装把强牌从他的继续范围里删掉。
+  331:      *
+  332:      * 🔴 **P1-2a：对手「跟注即全下」时同样不能再加注**。
+  333:      *
+  334:      * 判据是**他的**筹码，不是我的：他跟平所需要的筹码 ≥ 他的全部剩余
+  335:      * ⇒ 他跟注即 allIn，下注轮随即结束，引擎拒绝他的任何再加注
+  336:      *（实测 `ISSUE.ACTION_AFTER_HAND_OVER`）。此时若仍产出再加注分支，
+  337:      * 就等于凭空给他一个**不可能存在的动作**，并按「Hero 弃牌、损失全部投入」计价。
+  338:      *
+  339:      * 两个判据**必须分开**（不得合并成一个 `isAllIn`）：
+  340:      * | 判据 | 含义 | 谁不能再加注 |
+  341:      * |---|---|---|
+  342:      * | `heroIsAllIn` | 我已经把筹码投光 | **他**不能再加注（没人能跟） |
+  343:      * | `villainIsAllInByCall` | 他跟平即投光 | **他**不能再加注（跟注后轮次结束） |
+  344:      *
+  345:      * ⚠️ 与「他可以做**不足最小加注额的短筹码全下加注**」是两回事：
+  346:      * 只要他跟完之后**还剩筹码**（哪怕不够一次完整再加注），加注就仍然合法，
+  347:      * 本分支照旧保留（实测：`RAISE 174`（min 280）被引擎接受）。
+  348:      */
+  349:     let reRaiseShare = 0;
+  350:     if (!input.heroIsAllIn && !input.villainIsAllInByCall) {
+  351:       const valueRaise =
+  352:         strength >= required + VALUE_RERAISE_EXCESS
+  353:           ? Math.max(
+  354:               0,
+  355:               Math.min(
+  356:                 1,
+  357:                 VALUE_RERAISE_BASE +
+  358:                   VALUE_RERAISE_SLOPE * (strength - (required + VALUE_RERAISE_EXCESS)) +
+  359:                   RAISE_SCALE_WEIGHT * (raiseScale - 1),
+  360:               ),
+  361:             )
+  362:           : 0;
+  363:       const bluffRaise =
+  364:         (band === PublicStrengthBand.AIR || band === PublicStrengthBand.WEAK_PAIR) &&
+  365:         bluffRaiseScale > 1.05 &&
+  366:         ratioToPot <= BLUFF_RERAISE_MAX_RATIO
+  367:           ? Math.max(0, Math.min(1, BLUFF_RERAISE_BASE + BLUFF_RERAISE_BLUFF_WEIGHT * (bluffRaiseScale - 1)))
+  368:           : 0;
+  369:       reRaiseShare = Math.max(valueRaise, bluffRaise);
+  370:     }
+  371:     const callShare = 1 - reRaiseShare;
+  372:     callMass += p * callShare;
+  373:     reRaiseMass += p * reRaiseShare;
+  374:     if (callShare > 0) callEntries.push({ cardIndices: entry.cardIndices, probability: p * callShare });
+  375:     /* 🔴 P1-2b：再加注桶**逐组合**收集（与跟注桶同一循环、同一权重来源） */
+  376:     if (reRaiseShare > 0) reRaiseEntries.push({ cardIndices: entry.cardIndices, probability: p * reRaiseShare });
+  377:   }
+  378: 
+  379:   if (reachable === 0 || !(total > 0)) return null;
+  380: 
+  381:   const callTotal = callEntries.reduce((a, x) => a + x.probability, 0);
+  382:   const normalized = callTotal > 0
+  383:     ? callEntries.map((x) => ({ cardIndices: x.cardIndices, probability: x.probability / callTotal }))
+  384:     : [];
+  385:   /* 🔴 P1-2b：再加注桶同样按桶内质量归一化（桶为空 ⇒ 空数组，绝不伪造） */
+  386:   const reRaiseTotal = reRaiseEntries.reduce((a, x) => a + x.probability, 0);
+  387:   const normalizedReRaise = reRaiseTotal > 0
+  388:     ? reRaiseEntries.map((x) => ({ cardIndices: x.cardIndices, probability: x.probability / reRaiseTotal }))
+  389:     : [];
+  390: 
+  391:   const model: RaiseResponseModelFacts = Object.freeze({
+  392:     kind: 'PUBLIC_BAND_RAISE_RESPONSE_V1',
+  393:     evidence: 'HEURISTIC_STRUCTURAL',
+  394:     usesHeroHiddenCards: false,
+  395:     cashflowContract: CASHFLOW_CONTRACT,
+  396:     currentPot: input.currentPot,
+  397:     heroAdd: input.heroAdd,
+  398:     villainAdd: input.villainAdd,
+  399:     heroContestedAdd: input.heroContestedAdd,
+  400:     finalPot: input.finalPot,
+  401:     priceRequiredEquity: price,
+  402:     margin,
+  403:     ratioToPot,
+  404:     street: input.street,
+  405:     heroIsAllIn: input.heroIsAllIn,
+  406:     villainIsAllInByCall: input.villainIsAllInByCall,
+  407:     strengthOfBand: RAISE_RESPONSE_BAND_STRENGTH,
+  408:     noteZh:
+  409:       `面对加注的响应（**结构性先验，未经统计校准**）：他需再投 ${input.villainAdd.toFixed(2)}（价格 ${price.toFixed(4)} = ` +
+  410:       `${input.villainAdd.toFixed(2)}/${input.finalPot.toFixed(2)}，门槛 ${required.toFixed(4)} = 价格 + ${margin.toFixed(2)}）｜` +
+  411:       `继续指数 = 公共强度 × callScale − 0.05×foldScale` +
+  412:       `（callScale ${callScale.toFixed(3)}、foldScale ${foldScale.toFixed(3)}、raiseScale ${raiseScale.toFixed(3)}）｜` +
+  413:       `Hero 全下 = ${input.heroIsAllIn}（真 ⇒ 他不能再加注，加注权重迁移到跟注）｜` +
+  414:       `对手跟注即全下 = ${input.villainIsAllInByCall}（真 ⇒ 同理，他不会再有再加注分支）｜` +
+  415:       '强度只用**公共强度带 + 听牌**（不读 Hero 底牌）',
+  416:   });
+  417: 
+  418:   return Object.freeze({
+  419:     foldLikelihood: foldMass / total,
+  420:     callLikelihood: callMass / total,
+  421:     reRaiseLikelihood: reRaiseMass / total,
+  422:     callContinueEntries: Object.freeze(normalized.map((x) => Object.freeze(x))),
+  423:     reRaiseEntries: Object.freeze(normalizedReRaise.map((x) => Object.freeze(x))),
+  424:     reachableCombos: reachable,
+  425:     callCombos: normalized.length,
+  426:     reRaiseCombos: normalizedReRaise.length,
+  427:     model,
+  428:     noteZh:
+  429:       `他面对加注：弃 ${((foldMass / total) * 100).toFixed(1)}% / 跟 ${((callMass / total) * 100).toFixed(1)}% / ` +
+  430:       `再加注 ${((reRaiseMass / total) * 100).toFixed(1)}%｜跟注桶 ${normalized.length} 组合` +
+  431:       `（他要补 ${input.villainAdd.toFixed(2)}，终池 ${input.finalPot.toFixed(2)}，价格 ${price.toFixed(4)}）`,
+  432:   });
+  433: }
+  434: 

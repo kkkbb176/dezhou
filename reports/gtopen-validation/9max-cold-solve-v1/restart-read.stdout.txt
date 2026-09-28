@@ -1,0 +1,51 @@
+{
+  "processId": 64696,
+  "elapsedMs": 237,
+  "httpStatus": 200,
+  "gtoStatus": {
+    "enabled": true,
+    "state": "SOLVER_RANGE",
+    "messageZh": "1 家对手的范围来自**已缓存的 GTO 策略**。",
+    "elapsedMs": 3,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVED",
+        "fromSolver": true,
+        "cacheSource": "persistent",
+        "reasonZh": null
+      }
+    ],
+    "background": [],
+    "warnings": [],
+    "reasons": []
+  },
+  "rangeProvenance": [
+    {
+      "positionZh": "枪口位",
+      "sourceKind": "EMPIRICAL",
+      "fromSolver": true,
+      "confidence": 0.55,
+      "supportSize": 1225,
+      "effectiveComboCount": 94.05598021718555,
+      "normalizedEntropy": 0.656490709211,
+      "gtoOutcomeState": "SOLVED",
+      "gtoReasonZh": null
+    }
+  ],
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "equity": "83.93%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+  "cacheFiles": [
+    {
+      "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\index.json",
+      "bytes": 727
+    },
+    {
+      "path": "D:\\德州决策\\reports\\gtopen-validation\\9max-cold-solve-v1\\cache\\strategy\\c7348fc89.json",
+      "bytes": 84418
+    }
+  ]
+}

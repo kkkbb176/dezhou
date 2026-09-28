@@ -98,6 +98,14 @@ const PLAYABILITY_WEAK_DRAW = 0.05;
 export const CASHFLOW_CONTRACT = 'NODE_INCREMENTAL_CHIPS_V2' as const;
 
 /**
+ * 🔴 **P0（本轮）：逐组合分类缓存的命中统计**（**只读诊断**）。
+ *
+ * 回答「跨档位去重到底省掉了多少次 `describeHand` / 听牌评估」。
+ * **不参与任何计算**，也不影响任何数值；供 `scripts/latency-median.ts` 读取。
+ */
+export const RAISE_COMBO_MEMO_STATS = { hits: 0, misses: 0 };
+
+/**
  * ============================================================================
  * RAISE EV —— **与 CALL EV 同一套筹码口径**（U1 P0 修复后的唯一公式）
  * ============================================================================
@@ -264,6 +272,16 @@ export function buildRaiseResponse(input: {
    * 前者是「我不能再加注」，后者是「他不能再加注」。
    */
   villainIsAllInByCall: boolean;
+  /**
+   * 🔴 **P0（本轮）**：逐组合牌面分类的**跨档位复用缓存**（可选）。
+   *
+   * 由调用方在同一决策内创建一次并复用（`contextBuilder` 的 `factsForRaiseTo` 循环）。
+   * 键 = `cardIndices` 拼串；值 = `{ band, draw }`。
+   *
+   * **缺省 ⇒ 每次重算**（与修复前逐位相同的路径，供既有调用方/测试使用）。
+   * 给了它**只减少重复计算**，不改变任何数值（见循环内的说明）。
+   */
+  comboClassificationMemo?: Map<string, { band: ReturnType<typeof publicStrengthBandOf>; draw: ReturnType<typeof drawProfileOf> }>;
 }): RaiseResponseResult | null {
   const { board } = input;
   if (board.length < 3) return null;
@@ -286,11 +304,39 @@ export function buildRaiseResponse(input: {
   /** 我的加注相对**当前底池**的大小（与 `heroAdd` 同口径；修复前用的是「对手增量 / 扣掉他这一注的底池」） */
   const ratioToPot = input.heroAdd / input.currentPot;
 
+  /** 🔴 P0（本轮）：跨档位复用的逐组合分类缓存；缺省 ⇒ 与修复前逐位相同的重算路径 */
+  const memo = input.comboClassificationMemo ?? null;
+
   const t = input.tendencies;
   const callScale = Number.isFinite(t.callScale) ? t.callScale : 1;
   const foldScale = Number.isFinite(t.foldScale) ? t.foldScale : 1;
   const raiseScale = Number.isFinite(t.raiseScale) ? t.raiseScale : 1;
   const bluffRaiseScale = Number.isFinite(t.bluffRaiseScale) ? t.bluffRaiseScale : 1;
+  /*
+   * 🔴 **P1（本轮）：让「他面对下注弃多少」也驱动「他面对我加注怎么反应」**
+   *
+   * ## 缺陷
+   *
+   * `foldTo{街}Bet` 原先**只**进 `streetFoldScale`（面对下注的分流），
+   * `buildRaiseResponse` 完全不吃它。实测（`scripts/foldtrait-direction-probe.ts`）：
+   * 同一节点把 `foldToFlopCBet` 从 25% 调到 90%，**我下注**时的 `P(他弃)` 从 43.5%
+   * 走到 90.2%（方向正确、且连尺寸都跟着变）—— 但**我加注**时他弃/跟/再加注的比例
+   * **一位不变**。后果：对「弃给下注」的紧手，加注 EV 被系统性**低估**（少赚）。
+   *
+   * ## 方向（必须与响应层同向，否则同一个人会出现两套性格）
+   *
+   * 这条统计的语义是「**他**面对下注弃多少」，与「`streetFoldScale`」**同刻度但反向命名**：
+   * 高弃牌率 ⇒ `streetFoldScale > 1`，而响应层里 `streetFoldScale > 1` 对应的是`continueIndex` **更高**
+   * （他更爱继续）—— 两者在**同一个真人**身上是自洽的（爱弃的人本来就不爱继续），
+   * 所以这里**不能**直接拿 `streetFoldScale` 去乘 `continueIndex`（那会把方向弄反）。
+   *
+   * 正确做法：用 **`streetCallScale`** —— 它与响应层（面对下注）用的是**同一个量**，
+   * 方向也已在那边校准：`foldScale ↑ ⇒ callScale = 2 − foldScale ↓ ⇒ 他更少继续`。
+   * 因此这里直接复用它，保证「同一个人在两个模块里是同一个性格」。
+   *
+   * ⚠️ **缺省（无分街统计）⇒ `streetCallScale` 精确为 1 ⇒ 本项恒等**（旧路径逐位不变）。
+   */
+  const streetCallScale = Number.isFinite(t.streetCallScale) ? (t.streetCallScale as number) : 1;
 
   let foldMass = 0;
   let callMass = 0;
@@ -304,19 +350,61 @@ export function buildRaiseResponse(input: {
     const p = entry.probability;
     if (!(p > 0)) continue;
     const hole: [Card, Card] = [ALL_CARDS[entry.cardIndices[0]]!, ALL_CARDS[entry.cardIndices[1]]!];
-    const band = publicStrengthBandOf(hole, board);
-    if (band === null) continue;
+    /*
+     * ============================================================
+     * 🔴 **P0（本轮）：逐组合的牌面分类**跨档位复用**（纯去重，不改数学）
+     * ============================================================
+     *
+     * ## 实测到的重复
+     *
+     * 同一节点里 `factsForRaiseTo` 会**按尺寸各跑一次**（加注网格 7 档 ⇒ 7 次），
+     * 而**公共牌与对手范围在这 7 次里完全相同** —— 于是
+     * `publicStrengthBandOf`（内部 `describeHand`，完整牌型评估）与
+     * `drawProfileOf`（听牌评估）被**逐条重复计算 7 次**。
+     * 实测：面对下注节点 wall 2,312ms，其中 `raiseResponse` 占 **1,224ms**。
+     *
+     * ## 为什么这是等价变换（不是降精度）
+     *
+     * 两个函数的输入**只有**（该组合的底牌, 公共牌），两者在 7 档之间都不变
+     * ⇒ 命中缓存时返回**同一个对象**，下游只读 `band` / `flushDraw` / `openEnded` / `gutshot`。
+     * **没有任何数值被改变**：不抽样、不近似、不裁剪候选。
+     *
+     * ⚠️ 缓存由调用方逐决策传入（`Map` 按 `cardIndices` 索引）⇒ 决策之间不串味。
+     */
+    const cacheKey = `${entry.cardIndices[0]}:${entry.cardIndices[1]}`;
+    let combo = memo?.get(cacheKey) ?? null;
+    if (combo === null) {
+      /* 🔴 P0 诊断计数（只读；供审计观察去重率，不参与任何计算） */
+      if (memo !== null) RAISE_COMBO_MEMO_STATS.misses += 1;
+      const bandOfCombo = publicStrengthBandOf(hole, board);
+      if (bandOfCombo === null) {
+        /* 分类不出来 ⇒ 与修复前一样跳过（不写缓存，避免把 null 当结论存下来） */
+        continue;
+      }
+      combo = { band: bandOfCombo, draw: drawProfileOf(hole, board) };
+      memo?.set(cacheKey, combo);
+    } else if (memo !== null) {
+      RAISE_COMBO_MEMO_STATS.hits += 1;
+    }
+    const draw = combo.draw;
+    const band = combo.band;
+    if (band === null) continue; /* 类型收窄（缓存里不会存 null，这里只是把契约写实） */
     reachable += 1;
     total += p;
-
-    const draw = drawProfileOf(hole, board);
     const playability = draw.flushDraw || draw.openEnded
       ? PLAYABILITY_STRONG_DRAW
       : draw.gutshot
         ? PLAYABILITY_WEAK_DRAW
         : 0;
     const strength = RAISE_RESPONSE_BAND_STRENGTH[band] + playability;
-    const continueIndex = Math.max(0, Math.min(1, strength * callScale - 0.05 * foldScale));
+    /*
+     * 🔴 **P1**：`streetBetScale` 让「他这一街面对下注的继续倾向」也进入加注响应。
+     * 无分街统计时它精确为 1 ⇒ 与修复前**逐位相同**。
+     */
+    const continueIndex = Math.max(
+      0,
+      Math.min(1, strength * callScale * streetCallScale - 0.05 * foldScale),
+    );
 
     if (continueIndex < required) {
       foldMass += p;
@@ -431,3 +519,5 @@ export function buildRaiseResponse(input: {
       `（他要补 ${input.villainAdd.toFixed(2)}，终池 ${input.finalPot.toFixed(2)}，价格 ${price.toFixed(4)}）`,
   });
 }
+
+

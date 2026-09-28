@@ -1,0 +1,14 @@
+=== CALLING_STATION ===
+action= BET sizeChips= 350 betEV= undefined checkEV= undefined
+pot= 350 bigBlind= 100
+gate bet= 0.38448181761440525 check= 0.07121642513093555
+   BET_SMALL amt= 116.66666666666666 fold= 0.7437 call= 0.2515 raise= 0.0048 eqCall= 0.6164
+   BET_MEDIUM amt= 233.33333333333331 fold= 0.8440 call= 0.1560 raise= 0.0000 eqCall= 0.5528
+   BET_LARGE amt= 350 fold= 0.8865 call= 0.1135 raise= 0.0000 eqCall= 0.5207
+=== VERY_TIGHT ===
+action= BET sizeChips= 350 betEV= undefined checkEV= undefined
+pot= 350 bigBlind= 100
+gate bet= 0.29629604784831104 check= 0.08856910999510134
+   BET_SMALL amt= 116.66666666666666 fold= 0.8303 call= 0.1644 raise= 0.0053 eqCall= 0.5541
+   BET_MEDIUM amt= 233.33333333333331 fold= 0.9091 call= 0.0909 raise= 0.0000 eqCall= 0.4798
+   BET_LARGE amt= 350 fold= 0.9454 call= 0.0546 raise= 0.0000 eqCall= 0.4296

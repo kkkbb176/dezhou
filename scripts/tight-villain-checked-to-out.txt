@@ -1,0 +1,46 @@
+局面：K♠7♥2♣（POT 6.5BB）｜UTG 开池 3BB → Hero BTN 跟注 → UTG **过牌** → Hero 决策
+
+Hero 手牌 A♠5♠（纯空气 / 后门坚果同花听牌）
+
+对手画像                      动作    尺寸BB   池比    对手范围: strengthFloor nutDensity  airDensity
+----------------------------------------------------------------------------------------------------------------------
+画像未给（中立）              BET     7.50     100%    0.5296                  0.3167      0.3849
+NORMAL(标签)                  BET     7.50     100%    0.5296                  0.3167      0.3849
+VERY_TIGHT(标签)              BET     7.50     100%    0.5295                  0.3174      0.3848
+CALLING_STATION(标签)         BET     7.50     100%    0.5285                  0.3150      0.3852
+MANIAC(标签)                  BET     7.50     100%    0.5315                  0.3186      0.3845
+实测: VPIP12/PFR9/FoldCbet72  BET     7.50     100%    0.5295                  0.3174      0.3848
+实测: 只改 FoldCbet=0.9       BET     7.50     100%    0.5295                  0.3174      0.3848
+
+
+逐尺寸响应概率（Hero 下注时，对手弃 / 跟 / 加）：
+对手画像                      尺寸      P(弃)    P(跟)    P(加)    BetEV
+----------------------------------------------------------------------------------------------------------------------
+画像未给（中立）              250.00    —        —        —        456.7
+画像未给（中立）              500.00    —        —        —        509.8
+画像未给（中立）              750.00    —        —        —        535.2
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=125.6
+NORMAL(标签)                  250.00    —        —        —        456.7
+NORMAL(标签)                  500.00    —        —        —        509.8
+NORMAL(标签)                  750.00    —        —        —        535.2
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=125.6
+VERY_TIGHT(标签)              250.00    —        —        —        500.5
+VERY_TIGHT(标签)              500.00    —        —        —        553.9
+VERY_TIGHT(标签)              750.00    —        —        —        586.5
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=124.1
+CALLING_STATION(标签)         250.00    —        —        —        394.6
+CALLING_STATION(标签)         500.00    —        —        —        454.9
+CALLING_STATION(标签)         750.00    —        —        —        459.9
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=125.7
+MANIAC(标签)                  250.00    —        —        —        442.7
+MANIAC(标签)                  500.00    —        —        —        496.9
+MANIAC(标签)                  750.00    —        —        —        520.4
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=125.9
+实测: VPIP12/PFR9/FoldCbet72  250.00    —        —        —        538.3
+实测: VPIP12/PFR9/FoldCbet72  500.00    —        —        —        601.3
+实测: VPIP12/PFR9/FoldCbet72  750.00    —        —        —        641.2
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=124.1
+实测: 只改 FoldCbet=0.9       250.00    —        —        —        538.3
+实测: 只改 FoldCbet=0.9       500.00    —        —        —        601.3
+实测: 只改 FoldCbet=0.9       750.00    —        —        —        641.2
+                               ⇒ 引擎首选：BET_LARGE（amount undefined），过牌 EV=124.1

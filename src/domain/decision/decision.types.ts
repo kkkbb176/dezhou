@@ -235,6 +235,76 @@ export type PostflopFacts = {
   /** 与 `opponentRangeFacts` 同名的量，但取自**下注范围** */
   heroEquityVsBetRange?: number | null;
   /**
+   * ============================================================
+   * 🔴 **阶段二（多尺寸 EV 决策闭环）：网格内每个合法尺寸各自的事实包**
+   * ============================================================
+   *
+   * 与 `raiseResponse`（被启发式选中的那一档）**由同一个闭包产出** ⇒
+   * 公式、资金台账、响应模型、容差带口径**逐位一致**，因此可以横向比较。
+   *
+   * 每个元素提供该尺寸**自己的**：
+   * `P(弃) / P(跟) / P(再加注)`、条件继续范围权益、资金流与 `raiseEV`。
+   *
+   * ## 三种评估状态（**必须**在披露层区分，不得混为一谈）
+   *
+   * | 状态 | 判据 |
+   * |---|---|
+   * | **已完整计算** | 在数组内且 `reraiseBranchKind !== 'LOWER_BOUND_NOT_IMPLEMENTED'` |
+   * | **近似计算** | 在数组内但再加注分支退回下界（摊牌终止近似） |
+   * | **未计算** | **不**在数组内 ⇒ 该尺寸没有任何 EV（未评估 ≠ 低 EV） |
+   *
+   * ⚠️ 数组为空 = 本节点**不适用**加注模型（例：多人池被显式拦截），
+   * 与「算出来是 0」不是一回事。
+   * ⚠️ 所有 EV 均为**未计抽水**、且非全下分支按**摊牌终止近似**计入 ⇒
+   * 不得据此声称任何尺寸是「全局最高 EV」。
+   */
+  raiseResponseAll?: readonly {
+    readonly sizeChips: number;
+    readonly sizeBB: number;
+    readonly raiseIncrement: number;
+    readonly heroAdd: number;
+    readonly villainAdd: number;
+    readonly villainIsAllInByCall: boolean;
+    readonly heroContestedAdd: number;
+    readonly finalPot: number;
+    readonly uncalledReturn: number;
+    readonly foldLikelihood: number;
+    readonly callLikelihood: number;
+    readonly reRaiseLikelihood: number;
+    readonly heroEquityVsRaiseCallRange: number | null;
+    readonly reraiseBranchEV: number;
+    readonly reraiseBranchKind: 'FOLD' | 'CALL' | 'LOWER_BOUND_NOT_IMPLEMENTED';
+    readonly heroFourBetSupported: boolean | null;
+    readonly raiseEV: number | null;
+    readonly evKind: string;
+    readonly reachableCombos: number;
+    readonly callCombos: number;
+  }[];
+  /**
+   * 🔴 **阶段二「局部尺寸搜索必要性」诊断探测**（**仅诊断，绝不参与决策**）。
+   *
+   * 存放网格之外若干**离网**尺寸各自的事实包（同一个闭包、同一套口径），
+   * 用于回答用户的直接提问：「是否有必要通过局部尺寸搜索覆盖相邻尺寸，
+   * 以避免固定网格造成明显的选择偏差？」
+   *
+   * 判据是**可证伪的**：是否存在离网尺寸，其 `raiseEV` 超过网格最优达
+   * 「工程容差带」以上。若没有 ⇒ 局部搜索在本节点**不产生可分辨的改进**。
+   *
+   * ⚠️ 这些尺寸**不进候选层、不进 EV 回填、不改变动作**。
+   */
+  raiseResponseLocalProbe?: readonly {
+    readonly sizeChips: number;
+    readonly sizeBB: number;
+    readonly foldLikelihood: number;
+    readonly callLikelihood: number;
+    readonly reRaiseLikelihood: number;
+    readonly heroEquityVsRaiseCallRange: number | null;
+    readonly raiseEV: number | null;
+    readonly finalPot: number;
+    readonly heroAdd: number;
+    readonly villainAdd: number;
+  }[];
+  /**
    * 🔴 **U1：面对加注的响应 + 加注 EV**（`reports/UNCERTAINTY_REGISTER.md`）。
    *
    * 不 `bettingRangeFacts` 并列但回答
@@ -796,11 +866,42 @@ export type PlayerSnapshot = {
    * | `handsObserved` | 该玩家累计被记录的真实手数（来自历史存储） |
    * | `usedStatKeys` | **本次真正进入模型**的统计项（其余项没有输入通道） |
    * | `noteZh` | 中文披露：样本量 / 有效机会数 / 哪几项接入 / 哪些未接入 |
+   *
+   * 🔴 **D4 修复（KQ_FLOP_DECISION_REPAIR · 阶段一）**：`usedStatKeys` 原本来自
+   * 一张**硬编码两项**（`foldToRiverBet` / `riverCheckRaise`）的清单，于是
+   * `vpip` / `pfr` 明明改变了数值，界面却宣称「无模型支持的统计项」——
+   * 披露**不实**。现在改为**三态**逐项披露，状态由真实执行路径
+   *（`resolvedV3.trace` + `deniedStreetTraits`）得出，不靠字段名或用户输入猜测：
+   *
+   * | 状态 | 含义 |
+   * |---|---|
+   * | `USED` | 有通道、当前节点适用，**且有效统计证据实际参与了本次计算** |
+   * | `NOT_APPLICABLE` | 有通道，但当前节点不满足适用条件（语义门挡下） |
+   * | `UNSUPPORTED` | 模型确实**不存在**该统计项的通道 |
+   * | `NO_DATA` | 有通道但本次没有有效数值（或机会数为 0 ⇒ 走先验） |
+   * | `UNCONFIRMED` | 当前结构**无法可靠判定** —— 显式标注，**绝不默认 USED** |
    */
   measuredStats?: {
     readonly handsObserved: number;
+    /**
+     * **真正进入模型**的统计项（= `statStatuses` 中状态为 `USED` 的项）。
+     * 语义与本修复前**保持一致**（它是「已使用」而不是「已接线」）。
+     */
     readonly usedStatKeys: readonly string[];
     readonly noteZh: string;
+    /** 逐项三态披露（键 = 统计项名，如 `vpip` / `pfr` / `flopCheckRaise`） */
+    readonly statStatuses?: readonly {
+      readonly stat: string;
+      readonly status: 'USED' | 'NOT_APPLICABLE' | 'UNSUPPORTED' | 'NO_DATA' | 'UNCONFIRMED';
+      /** 为什么是这个状态（可读、可核对） */
+      readonly reasonZh: string;
+      /** 有效机会数（可得时给出；`null` = 不适用/未知） */
+      readonly opportunities: number | null;
+      /** 该证据是否走「手数 × 频率」近似机会数，且是否被先验收缩 */
+      readonly approximated: boolean | null;
+      /** 后验可信度（0..1；可得时给出） */
+      readonly confidence: number | null;
+    }[];
   };
   /** 调整因子（**只影响概率**，不含任何动作） */
   adjustment: ProfileAdjustment;
@@ -916,7 +1017,20 @@ export type DecisionMargin = (typeof DecisionMargin)[keyof typeof DecisionMargin
 export const DECISION_MARGIN_ZH: Readonly<Record<DecisionMargin, string>> = Object.freeze({
   CLEAR_FOLD: '明显弃牌（真实 EV 明显低于 0）',
   MARGINAL: '边缘（真实 EV 落在工程容差带内）',
-  CLEAR_CALL_OVER_FOLD: '明显优于弃牌（**仅**已证明 CALL > FOLD，未比较加注）',
+  /*
+   * 🔴 **D2 修复**（KQ_FLOP_DECISION_REPAIR · 阶段一）：
+   *
+   * 原文写死「**仅**已证明 CALL > FOLD，**未比较加注**」。后半句是一个
+   * **全局性的否定断言**，而它在本节点可能是**假的** —— 翻后响应模型可用时，
+   * 被选中的加注尺寸确实带着 `MODEL_EV` 与 CALL 在**同一零点**上比过
+   * （见 `decisionSource` 的「RAISE vs CALL … 跨动作比较已做」）。
+   * 两句话并排显示就是用户报告的 D2 自相矛盾。
+   *
+   * 现在标签只陈述**这条轴本身证明了什么**（CALL > FOLD），
+   * 不再对「加注是否被比较过」下任何断言 —— 那件事由
+   * `DecisionMarginFacts.scope` 与边际说明里的「加注 EV 覆盖面」四态如实报出。
+   */
+  CLEAR_CALL_OVER_FOLD: '明显优于弃牌（本条只证明 CALL > FOLD）',
 });
 
 /**
@@ -1215,6 +1329,36 @@ export type DecisionCandidate = {  action: DecisionAction;
   feasibleNoteZh?: string;
   /** 中文说明 */
   noteZh: string;
+  /**
+   * 🔴 **D1 披露**（KQ_FLOP_DECISION_REPAIR · 阶段一）：该候选的 EV 来自哪一档证据
+   *（例 `MODEL_EV` / `PROXY_EV` / `EXACT` / `INDEPENDENT_STRATEGIC_EVIDENCE`）。
+   *
+   * · 只在 `ev !== null` 时有意义；
+   * · 缺省（`undefined`）表示**本尺寸未评估** —— 与「EV = 0」和「EV 更低」都不是一回事；
+   * · 它**只用于披露**，不参与任何比较或排序（比较只读 `ev`）。
+   */
+  evEstimateType?: string;
+  /**
+   * 🔴 **阶段二披露**：该尺寸**自己的**响应分支概率与条件权益。
+   *
+   * 只在 `ev !== null` 时有意义 —— 它让「这个 EV 是怎么来的」可以**逐尺寸**
+   * 被核对（而不是只有被选中的那一档有）。缺省 = 未计算。
+   */
+  evBranches?: {
+    readonly fold: number;
+    readonly call: number;
+    readonly reRaise: number;
+    /** 他跟注我时的条件权益（`EqVsRaiseCallRange`）；`null` = 算不出 */
+    readonly equity: number | null;
+  };
+  /**
+   * 🔴 **阶段二披露**：该尺寸的 EV 是否含**近似**成分。
+   *
+   * `true` ⇒ 再加注分支退回下界（`LOWER_BOUND_NOT_IMPLEMENTED`），
+   * 即按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌）。
+   * 披露层**必须**把「已完整计算」与「近似计算」分开，不得混为一谈。
+   */
+  evApproximatedReraise?: boolean;
 };
 
 /**
@@ -1771,7 +1915,36 @@ export const DYNAMIC_FLIP_MIN_CONFIDENCE = 0.5;
  *     不 `v3Dimensions` 仍
 *只在** `observedStatCount > 0` 时注入（P1 / P1b 锁定）。
  */
-export const ALPHA_DECISION_MODEL_VERSION = '1.0.7';
+export const ALPHA_DECISION_MODEL_VERSION = '1.0.9';
+/*
+ * ============================================================
+ * 变更：1.0.7 → 1.0.8（KQ_FLOP_DECISION_REPAIR · 阶段一：D1–D5 披露层修复）
+ * ============================================================
+ *
+ * - `DecisionCandidate` 新增**可选**字段 `evEstimateType`（「这个 EV 来自哪一档
+ *   证据」，例 `MODEL_EV` / `PROXY_EV`）。缺省 = **该尺寸未被评估** ——
+ *   与「EV = 0」和「EV 更低」都不是一回事。它是**披露**字段，
+ *   **不参与任何比较或排序**（比较只读 `ev`）。
+ *
+ * - `DECISION_MARGIN_ZH.CLEAR_CALL_OVER_FOLD` 的**文案**改为
+ *   「明显优于弃牌（本条只证明 CALL > FOLD）」：原文含「**未比较加注**」这一
+ *   **全局否定断言**，而它在加注 EV 实际参与比较的节点上是**假的**（D2 缺陷）。
+ *
+ * - 🔴 **为什么仍然必须升版本**：`artifactDefinitions.ts:357` 对本文件的纪律是
+ *   「该文件改动**必须**升 `ALPHA_DECISION_MODEL_VERSION`」，措辞**无条件** ——
+ *   与 `1.0.5` → `1.0.6`（同样只加诊断字段）同一条纪律。不升版本，
+ *   JSONL 日志里同一版本号会同时对应「候选表自称无可信估计」与
+ *   「候选表如实回填 EV」两种披露口径，无法解释 digest 与首屏文案的差异。
+ *
+ * - 🔴 **明确未改动的部分（全部冻结，已由测试锁定）**：资金流内核、权益算法、
+ *   `buildSizeGrid` 尺寸生成、加注响应模型（`PUBLIC_BAND_RAISE_RESPONSE_V1`）、
+ *   正式决策排序、全部判定阈值与容差带。
+ *
+ *   实测（黄金局面 + 5 种画像共 6 次运行）：动作 `RAISE`、金额 `4200`、
+ *   `inputHash hbb5baa22`、`P(弃)=88.0% / P(跟)=7.7% / P(再加)=4.3%`、
+ *   `RAISE EV 1948.14`、`CALL EV 1644.52`、`对手下注范围权益 80.43%`
+ *   **逐位不变**；`test/kqFlopDisclosureRepair.test.ts` 的 D0-a / D0-b 已锁死。
+ */
 /**
  * 决策**上下文
 *（`DecisionContext` / `MathSnapshot`）的形状与语义版本。

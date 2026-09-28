@@ -1,0 +1,14 @@
+=== CALLING_STATION pot= 350
+  sizing.gridRatio= 0.6666666666666666 targetRatio= 0.6381
+  betDecision.bestSize= BET_LARGE bestAmount= 350 bestScore= 0.7011
+     BET_SMALL ratioToPot= 0.3333333333333333 amount= 116.66666666666666 score= 0.6568
+     BET_MEDIUM ratioToPot= 0.6666666666666666 amount= 233.33333333333331 score= 0.6872
+     BET_LARGE ratioToPot= 1 amount= 350 score= 0.7011
+  FINAL action= BET sizeChips= 350 (pot ratio 1.000 )
+=== VERY_TIGHT pot= 350
+  sizing.gridRatio= 0.6666666666666666 targetRatio= 0.5858
+  betDecision.bestSize= BET_LARGE bestAmount= 350 bestScore= 0.7191
+     BET_SMALL ratioToPot= 0.3333333333333333 amount= 116.66666666666666 score= 0.6722
+     BET_MEDIUM ratioToPot= 0.6666666666666666 amount= 233.33333333333331 score= 0.7029
+     BET_LARGE ratioToPot= 1 amount= 350 score= 0.7191
+  FINAL action= BET sizeChips= 350 (pot ratio 1.000 )

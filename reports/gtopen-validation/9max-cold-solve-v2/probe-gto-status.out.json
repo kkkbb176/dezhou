@@ -1,0 +1,63 @@
+{
+  "httpStatus": 200,
+  "gtoStatus": {
+    "enabled": true,
+    "state": "BACKGROUND_SOLVING",
+    "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+    "elapsedMs": 1,
+    "outcomes": [
+      {
+        "opponentId": "seat_UTG",
+        "position": "UTG",
+        "positionZh": "枪口位",
+        "state": "SOLVING",
+        "fromSolver": false,
+        "cacheSource": null,
+        "reasonZh": null
+      }
+    ],
+    "background": [
+      {
+        "cacheKey": "c7348fc89",
+        "thingZh": "9 人桌 枪口位 开池",
+        "state": "RUNNING",
+        "iterationZh": "正在求解"
+      }
+    ],
+    "warnings": [
+      "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+    ],
+    "reasons": [
+      "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+    ]
+  },
+  "rangeProvenance": [
+    {
+      "positionZh": "枪口位",
+      "sourceKind": "HEURISTIC",
+      "sourceZh": "启发式翻牌前范围先验：依据公开讨论的粗略量级（前位约 15%、按钮位约 45%）自行整理为 169 个起手牌类别的相对权重。**不是求解器输出，不是 GTO 范围。**（枪口位的启发式开池范围（对手主动加注，按本手 9 人取档））",
+      "sourceKindZh": "自建启发式先验 —— **非**求解器输出、**非**实测数据",
+      "fromSolver": false,
+      "confidence": 0.3,
+      "supportSize": 239,
+      "supportSizeNoteZh": "正权重（rawWeight > 0）组合数；求解器范围通常等于全部合法组合，**不反映范围宽窄**",
+      "effectiveComboCount": 152.32943191550063,
+      "normalizedEntropy": 0.9461023926239274,
+      "collapsed": false,
+      "gtoOutcomeState": "SOLVING",
+      "gtoReasonZh": null,
+      "gtoPending": true
+    }
+  ],
+  "actionZh": "建议：全下",
+  "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+  "decision": {
+    "action": "RAISE",
+    "sizeChips": 10000,
+    "sizeBB": 100,
+    "confidence": 0.3,
+    "band": "MEDIUM_LOW",
+    "classification": "MARGINAL",
+    "actionable": true
+  }
+}

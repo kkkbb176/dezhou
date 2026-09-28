@@ -1,0 +1,30 @@
+[
+  {
+    "at": "2026-09-24T05:09:51.983Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1790226591983.44,
+        "url": "http://127.0.0.1:52917/favicon.ico",
+        "networkRequestId": "10236.12"
+      }
+    }
+  },
+  {
+    "at": "2026-09-24T05:09:53.406Z",
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "source": "network",
+        "level": "error",
+        "text": "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+        "timestamp": 1790226593406.421,
+        "url": "http://127.0.0.1:52917/api/table",
+        "networkRequestId": "10236.16"
+      }
+    }
+  }
+]

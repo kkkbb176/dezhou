@@ -20,6 +20,7 @@ import { buildDecisionContext } from '../src/app/manualInput/contextBuilder.ts';
 import { parseManualInput, type ManualHandInput } from '../src/app/manualInput/manualInput.ts';
 import { buildAnalyzableState } from '../src/app/manualInput/reconstruct.ts';
 import { loadKnowledgeBaseOrThrow } from '../src/domain/knowledge/knowledgeLoader.ts';
+import { advisePostflop } from '../src/app/decision/postflopAdvisor.ts';
 import { composeBetEV, jointStatesOf, type MultiwayBetFacts } from '../src/domain/postflop/betResponse.ts';
 
 const RULES = loadKnowledgeBaseOrThrow().allRules();
@@ -391,9 +392,25 @@ test('T8：单挑节点不得使用联合树，BetEV 必须等于旧单挑公式
     assert.equal(size.multiway, null);
     assert.equal(size.evKind, 'SINGLE_OPPONENT_MODEL_EV');
   }
-  // 逐位复算旧公式（与 `postflopAdvisor` 同一条）
+  /*
+   * 逐位复算旧公式 —— 必须核对**生产建议路径**真正拿去比较的那个 EV。
+   *
+   * ⚠️ 原断言是 `assert.equal(legacy.betEV, legacy.betEV)`：变量与自身比较，
+   * 恒真且什么都不证明（本轮信息边界审计抓到的空测试）。`betDecision.sizes`
+   * 上根本没有 `betEV` 字段（它是 `SizeResponseWithEquity`）；单挑 EV 是在
+   * `advisePostflop` 里由 `composeBetEV` 算出来的，因此必须走
+   * `advisePostflop(...).betDecision.sizes[i].betEV` 才能真交叉核对。
+   */
+  const advice = advisePostflop(context, {
+    facingBet: false,
+    requiredEquity: context.math.requiredEquity,
+    potAfterCall: context.math.pot,
+  });
+  assert.notEqual(advice, null, '单挑无人下注节点必须产出下注建议');
+  const recommended = advice!.betDecision;
+  assert.equal(recommended!.sizes.length, bd!.sizes.length, '生产建议与事实包必须逐尺寸一一对应');
   const checkEV = bd!.checkTree.checkEV;
-  for (const size of bd!.sizes) {
+  for (const size of recommended!.sizes) {
     const legacy = composeBetEV({
       kind: size.kind as never,
       ratioToPot: size.ratioToPot,
@@ -406,7 +423,11 @@ test('T8：单挑节点不得使用联合树，BetEV 必须等于旧单挑公式
       realizationFactor: bd!.realization.factor,
       checkEV,
     });
-    assert.equal(legacy.betEV, legacy.betEV, '单挑 EV 必须可算');
+    assert.equal(
+      size.betEV,
+      legacy.betEV,
+      `${size.kind}: 生产单挑 EV 必须逐位等于旧公式（单挑不得走联合树）`,
+    );
   }
   // 决策照常给出（旧契约不回归）
   const r = analyzeManualHand(headsUp(), OPTIONS);
@@ -414,9 +435,26 @@ test('T8：单挑节点不得使用联合树，BetEV 必须等于旧单挑公式
   if (!r.ok) return;
   assert.ok(['CHECK', 'BET', 'CALL', 'FOLD'].includes(String(r.decision.action)));
   // 多人节点的 EV 必须与单挑旧值不同（证明真的换了口径）
+  /*
+   * 多人节点的证据等级必须**逐尺寸如实标注**：只有真正存在非零 `ANY_RAISE`
+   * 分支时才允许标 HEURISTIC（加注分支只有下界）；加注概率为 0 的尺寸就是
+   * 纯粹的独立联合 EV，不得无差别贴启发式标签。
+   *
+   * ⚠️ 原断言要求**所有**尺寸都标 HEURISTIC，是过宽断言：实测中/大注的
+   * `raiseProbability` 精确为 0，标 `MODEL_EV_MULTIWAY` 才是如实标注。
+   */
   const multi = factsOf(threeWay());
-  assert.ok(
-    multi.totalBetEV.every((t) => t.evKind === 'MODEL_EV_WITH_HEURISTIC_RAISE_BRANCH'),
-    '多人 EV 的证据等级必须如实标注（加注分支是启发式下界）',
-  );
+  assert.ok(multi.totalBetEV.length > 0, '多人树必须逐尺寸给出 EV');
+  for (const total of multi.totalBetEV) {
+    const detail = multi.branchEVs.find((b) => b.kind === total.kind);
+    assert.notEqual(detail, undefined, `${String(total.kind)}: 必须有分支明细`);
+    const hasRaiseBranch = (detail?.branches ?? []).some(
+      (b) => b.kind === 'ANY_RAISE' && b.probability > 1e-9,
+    );
+    assert.equal(
+      total.evKind,
+      hasRaiseBranch ? 'MODEL_EV_WITH_HEURISTIC_RAISE_BRANCH' : 'MODEL_EV_MULTIWAY',
+      `${String(total.kind)}: 证据等级必须与是否真的存在加注分支一致`,
+    );
+  }
 });

@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-09-24T05:17:32.741Z",
+  "percentile": "Nearest rank ceil(0.95*n); milliseconds; duplicate snapshots removed by exact metric identity",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600KF",
+    "cpuCount": 20,
+    "os": "10.0.26200",
+    "node": "v24.19.0",
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    }
+  },
+  "verification": {
+    "counts": {
+      "tests": 2271,
+      "suites": 137,
+      "pass": 2271,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 93733.8042
+    },
+    "logSha256": "8709080af64e938046a2c1f2aed8ce943832379ef20a81b7b1d6b25cce4be407"
+  },
+  "browser": {
+    "primaryApplicable": {
+      "passed": 25,
+      "failed": 0
+    },
+    "responsiveApplicable": {
+      "passed": 6,
+      "failed": 1,
+      "supersededHarnessFailure": "player profile attempt clicked the nested stack target and opened chip management; corrected selector reran separately"
+    },
+    "playerFinal": {
+      "passed": 1,
+      "failed": 0
+    },
+    "cacheFinal": {
+      "passed": 1,
+      "failed": 0
+    },
+    "evidenceFiles": [
+      "browser/acceptance.json",
+      "browser-final-supplement/acceptance.json",
+      "browser-player-final/acceptance.json",
+      "browser-cache-final/acceptance.json"
+    ]
+  },
+  "uiFeedback": {
+    "n": 269,
+    "p50": 12.299999952316284,
+    "p95": 16.600000023841858,
+    "max": 17.19999998807907
+  },
+  "actionSave": {
+    "n": 127,
+    "p50": 16.19999998807907,
+    "p95": 17.69999998807907,
+    "max": 18.600000023841858
+  },
+  "cacheHit": {
+    "nodes": [
+      "9MAX BB AhAd vs UTG 2.5BB",
+      "9MAX BB AsKs vs UTG 2.5BB",
+      "9MAX BB QhQd vs UTG 2.5BB"
+    ],
+    "samples": 30,
+    "observedDisplay": {
+      "n": 30,
+      "p50": 893.3178999999982,
+      "p95": 954.9958000000006,
+      "max": 997.5571000000018
+    },
+    "request": {
+      "n": 30,
+      "p50": 839,
+      "p95": 915.9000000357628,
+      "max": 952.0999999642372
+    },
+    "render": {
+      "n": 30,
+      "p50": 0.7000000476837158,
+      "p95": 1.300000011920929,
+      "max": 1.5
+    },
+    "queue": {
+      "n": 30,
+      "p50": 0.012000000000625732,
+      "p95": 0.02659999999923457,
+      "max": 0.03630000000339351
+    },
+    "prepare": {
+      "n": 30,
+      "p50": 0.38739999999961583,
+      "p95": 0.8024000000004889,
+      "max": 0.9341999999996915
+    },
+    "compute": {
+      "n": 30,
+      "p50": 668.9776999999995,
+      "p95": 710.8029999999999,
+      "max": 751.4088000000011
+    },
+    "worker": {
+      "n": 30,
+      "p50": 834.8706999999995,
+      "p95": 910.9130000000005,
+      "max": 946.9046999999991
+    },
+    "transportAndDecode": {
+      "n": 30,
+      "p50": 3.479099964235502,
+      "p95": 4.2360999761585845,
+      "max": 4.332299952316134
+    },
+    "firstPersistedCacheRequest": {
+      "kind": "serverAnalysis",
+      "serverTimings": {
+        "queueMs": 0.12449999999989814,
+        "prepareMs": 13.788300000000163,
+        "computeMs": 694.8449999999993,
+        "workerMs": 879.2239,
+        "totalMs": 893.7804999999998
+      },
+      "ok": true
+    },
+    "caveat": "No fresh solver run. Persisted cache copied read-only for these tests; repeated decisions are recomputed, not cached. Observed display includes CDP polling up to 40ms. Transport residual also includes response assembly/decode; not isolated wire time."
+  },
+  "protectedChanges": [
+    "data/artifact-manifest.json",
+    "src/infra/artifactDefinitions.ts",
+    "src/app/table/table.types.ts",
+    "src/app/table/tablePreview.ts"
+  ],
+  "finalSourceHashes": {
+    "src/app/web/index.html": "31ea6b783e40afbc7c10173ac406ed922159a484083979c772f266e3bee7c844",
+    "src/app/web/table.js": "794e5efcd5eca67861695fb7b98468d4bc7af2614d2959af5906c3d9be47f039",
+    "src/app/web/fast-input.js": "c5be9cd3de1964bc46088a709c607c06755a87a746a9bbbd0b1f7ee977a1ca07",
+    "src/app/web/fast-ui.css": "27fc305a32df10c5c9aee1eb49d0efa8c0b7b51f4e1a0dd5301ab6d93c6aaf9a",
+    "src/app/webServer.ts": "79f8a659525d1ac34bba5d424a746b3959dee2ea2db537bd90e897c744b716c6",
+    "src/app/analysisScheduler.ts": "29d5b7b5482b4178552b8772247a39e6f8ee7aa755f44b17e369a75138dbe81d",
+    "src/app/analysisWork.ts": "9da31d67faaa8cdf5d27672fcdc28babd4cf08506e27fed9c0a6d580a2e85fd8",
+    "src/app/analysisWorker.ts": "8e61edad8b64c655b0eab0336aec10e3acceaf588eb7682e3d1b4b59d88b5b21",
+    "src/app/mutationMemo.ts": "fec836ea5164b2f41833b9ac94f668b425011a39d1b071040cc146093fa31240",
+    "src/app/table/tablePreview.ts": "ba84fe4513f4c7520feac0bc57e83e45a4388b054da84025570ed96b9fc85223",
+    "src/app/table/table.types.ts": "61c9cbc972551b0b6b31e97727f2849f2a2b7c7df18ed44acce772b76e9b4381"
+  },
+  "consoleExceptions": [],
+  "limitations": [
+    "Primary browser timings collected while verification ran; cached-node performance collected separately after verify completed.",
+    "No fresh uncached solver completion performance measurement; no reduced solver quality to meet targets."
+  ]
+}

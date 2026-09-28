@@ -44,6 +44,18 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
       '（四种结论定义 / 八条强制规则 / 九行报告格式）',
   },
   {
+    path: 'reports/DECISION_CORRECTNESS_BASELINE_V1.md',
+    category: ManifestCategory.REPORT,
+    impact:
+      '决策正确性修复与基线验收的唯一收口报告变化 → 资金流/信息边界/画像消费/实时保护的验收结论与仍未解决项必须同步更新；' +
+      '它缺失或过期时，不得声称本轮修复已通过基线验收',
+  },
+  {
+    path: 'reports/FAST_INPUT_DECISION_UI_V2.md',
+    category: ManifestCategory.REPORT,
+    impact: '快速录入 UI V2 的真实浏览器、性能、计算一致性与未覆盖项验收报告；证据不足时不得宣称完成。',
+  },
+  {
     path: 'reports/UNCERTAINTY_REGISTER.md',
     category: ManifestCategory.REPORT,
     impact:
@@ -488,6 +500,33 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     impact:
       'ViewModel 映射变化 → **界面显示的内容发生变化**' +
       '（必须忠实映射引擎输出，不得二次推导结论）',
+  },
+  /*
+   * 🔴 **牌力档 → 「这条建议该不该信」的映射**（使用者要求：一眼看出要不要信）。
+   *
+   * ## 为什么这一个展示层文件必须登记
+   *
+   * 它**不改变任何引擎决策** —— 所以不进任何 EV、也不进决策类测试的判据。
+   * 但它会改变**界面对「这条建议能不能信」的表述**，而使用者据此决定是否照做。
+   *
+   * ⇒ 改错那张映射（例如把 `PURE_BLUFF` 划进「✅ 可以信」）的后果是：
+   *   **引擎建议完全不变、测试也不一定拦得住、但界面在说谎**。
+   *   使用者会照着一个错误的「可以信」下注。
+   *
+   * 这是本功能**唯一**能造成的伤害，而它不体现在任何数值上 ——
+   * 因此必须靠清单把「改这个文件意味着什么」显形。
+   *
+   * 依据：`reports/HAND_STRENGTH_HINT_STATUS.md`
+   *（信任分档的机理 = 引擎弃牌率模块被实测证伪，强牌不依赖它、弱牌几乎全靠它）。
+   */
+  {
+    path: 'src/viewmodels/handStrengthHint.ts',
+    category: ManifestCategory.DECISION,
+    impact:
+      '牌力档 → 「这条建议该不该信」的映射变化（相对牌力角色 → 强/中/弱 + 信任等级）→ ' +
+      '**不改变任何引擎决策，但会改变界面对「这条建议能不能信」的表述**；' +
+      '映射写错会让使用者照着一个错误的「可以信」下注（须与 ' +
+      '`test/handStrengthHint.test.ts` 的 H1–H7 同步）',
   },
 
   /* ---- 决策引擎 ---- */
@@ -1126,6 +1165,15 @@ export const ARTIFACT_DEFINITIONS: readonly ArtifactDefinition[] = Object.freeze
     category: ManifestCategory.DECISION,
     impact: '牌桌样式变化 → 只影响观感；不得借样式隐藏状态（例如把「暂离」画成「在座」）',
   },
+  { path: 'src/app/web/fast-input.js', category: ManifestCategory.DECISION, impact: '快速录入的金额精度、固定动作与快捷键保护；所有合法边界来自后端，不包含策略规则。' },
+  { path: 'src/app/web/fast-ui.css', category: ManifestCategory.DECISION, impact: '快速录入桌面布局与小窗口可达性。' },
+  { path: 'src/app/analysisScheduler.ts', category: ManifestCategory.DECISION, impact: '分析工作线程的有界调度及实际取消；不改变计算参数。' },
+  { path: 'src/app/analysisWorker.ts', category: ManifestCategory.DECISION, impact: '原有计算入口的线程边界。' },
+  { path: 'src/app/analysisWork.ts', category: ManifestCategory.DECISION, impact: '正式分析与既有影子分析的原样调用。' },
+  { path: 'src/app/mutationMemo.ts', category: ManifestCategory.DECISION, impact: '传输重试回执，避免已保存行动因响应丢失被重复记录。' },
+  { path: 'test/fastAmountInput.test.ts', category: ManifestCategory.REPORT, impact: '金额精度与非法输入回归。' },
+  { path: 'test/fastInputContract.test.ts', category: ManifestCategory.REPORT, impact: '精确筹码、34BB 最低加注及短码合法动作回归。' },
+  { path: 'test/analysisScheduling.test.ts', category: ManifestCategory.REPORT, impact: '真实 CPU 分析期间继续录入、取消与幂等重试回归。' },
   {
     path: 'test/interactiveTable.test.ts',
     category: ManifestCategory.DECISION,

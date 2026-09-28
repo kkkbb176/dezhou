@@ -65,6 +65,23 @@ function modalButtons(harness: TableJsHarness): StubNode[] {
   return allButtons(harness.node('modal'));
 }
 
+/**
+ * 🔴 **按类型精确定位筹码输入框**（不再用 `allInputs(modal)[0]` 这种位置索引）。
+ *
+ * 位置索引会把「座位菜单里新增了一个输入框」误判成「筹码框坏了」——
+ * 实测就是加了「玩家名称」输入框之后，`STACK-03` 与「本手进行中禁用输入框」
+ * 两条断言同时指向了**改名框**。桩节点是普通对象，`.type` 会被保留，
+ * 因此按 `type === 'number'` 定位既精确又不需要改共享测试设施。
+ */
+function stackInput(container: StubNode): StubNode | undefined {
+  return allInputs(container).find((i) => (i as { type?: string }).type === 'number');
+}
+
+/** 按 `type === 'text'` 定位文本输入框（当前只有「玩家名称」） */
+function textInputs(container: StubNode): StubNode[] {
+  return allInputs(container).filter((i) => (i as { type?: string }).type === 'text');
+}
+
 /** 点开某个座位的菜单（按座位节点的可见文本定位，与真人点牌桌一致） */
 function openSeat(harness: TableJsHarness, matchText: string): void {
   const seat = harness
@@ -154,7 +171,7 @@ test('STACK-03：手动输入任意筹码仍然可用', async () => {
   openSeat(h, '我（Hero）');
 
   const modal = h.node('modal');
-  const input = allInputs(modal)[0];
+  const input = stackInput(modal);
   assert.ok(input !== undefined, '必须有数字输入框');
   assert.equal(input!.disabled, false, '本手未开始 ⇒ 输入框必须可用');
 
@@ -226,5 +243,15 @@ test('STACK-05：本手进行中 → 筹码控件禁用且写明原因', async (
     '本手进行中 ⇒ 保存筹码必须禁用',
   );
   assert.equal(buttonByDeepText(modal, '150BB')!.disabled, true, '本手进行中 ⇒ 预设必须禁用');
-  assert.equal(allInputs(modal)[0]!.disabled, true, '本手进行中 ⇒ 输入框必须禁用');
+  /*
+   * 🔴 筹码输入框必须禁用（**按类型定位**，见 `stackInput` 的说明）。
+   * 同时断言「玩家名称」输入框也遵守**同一条门禁** —— 这是刻意的：
+   * 一手之内改名字会让这一手的行动记录前后名字不一致。
+   */
+  assert.equal(stackInput(modal)!.disabled, true, '本手进行中 ⇒ 筹码输入框必须禁用');
+  const nameInputs = textInputs(modal);
+  assert.ok(nameInputs.length > 0, '座位菜单必须有「玩家名称」输入框');
+  for (const i of nameInputs) {
+    assert.equal(i.disabled, true, '本手进行中 ⇒ 改名输入框同样必须禁用（与筹码同一条门禁）');
+  }
 });

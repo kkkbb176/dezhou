@@ -149,8 +149,28 @@ test('没有观测机会的指标必须为 null（**不得显示为 0%**）；�
   const p = listed.players[0]!;
   assert.equal(p.foldToRiverBet, null, '没有河牌面对下注的机会 ⇒ null（不是 0%）');
   assert.equal(p.riverCheckRaise, null, '没有过牌-加注机会 ⇒ null（不是 0%）');
-  assert.equal(p.connectedStatKeys.length, 0, '没有任何接通项时不得声称已进入模型');
-  assert.equal(p.unconnectedStatKeys.length, 8, '未接通的 8 项必须如实列出');
+  /*
+   * 🔴 **契约更新（KQ 阶段四）**：`statsFromRecords` 现在**还会**从真实记录推导
+   * 翻前三项（`vpip` / `pfr` / `threeBet`），因此「有通道且有数据」的项不再是 0 个。
+   *
+   * 「宁缺勿假」的**本意完整保留**，并改成更强的形式断言：
+   * · **没有机会**的项（这里的两个河牌项）一律**不得**出现在已接通列表；
+   * · **有机会**的项（翻前有行动）**必须**出现；
+   * · 两个列表必须**互斥**（有通道且有数据 vs 尚无通道）。
+   */
+  assert.ok(!p.connectedStatKeys.includes('foldToRiverBet'), '河牌无机会 ⇒ 不得声称已接通');
+  assert.ok(!p.connectedStatKeys.includes('riverCheckRaise'), '河牌无机会 ⇒ 不得声称已接通');
+  assert.ok(p.connectedStatKeys.includes('vpip'), '翻前有行动 ⇒ vpip 必须已接通');
+  assert.ok(p.connectedStatKeys.includes('pfr'), '翻前有行动 ⇒ pfr 必须已接通');
+  for (const k of p.connectedStatKeys) {
+    assert.ok(!p.unconnectedStatKeys.includes(k), `${k} 不得同时出现在「已接通」与「无通道」两个列表里`);
+  }
+  assert.equal(
+    p.unconnectedStatKeys.length,
+    3,
+    '尚无通道的 3 项（wtsd / foldToTurnCBet / turnCheckRaise）必须如实列出；' +
+      '阶段四第二轮已接通 foldToFlopCBet 与 flopCheckRaise',
+  );
   assert.ok(p.noteZh.includes('实测历史'), '必须带中文披露');
 });
 
@@ -227,16 +247,24 @@ test('选择历史玩家入座 ⇒ 读取其真实历史并按身份绑定（换
   assert.notEqual(seated, undefined, '必须按 playerId 复用同一位玩家');
   assert.equal(state.seats.find((s) => s.seatId === hjSeat)!.playerId, 'player_001', '座位只是位置，身份是 playerId');
   /**
-   * 🔴 **宁缺勿假**：该玩家目前只有 1 手翻前记录 ⇒ 两项已接通统计都**没有机会**
-   * ⇒ 不产出 `observedStats`、不注入决策（而不是编一个 0% 出来）。
-   * 他的真实历史仍可从名册读取（界面显示「暂无机会」）。
+   * 🔴 **契约更新（KQ 阶段四）**：该玩家有 1 手**翻前**记录 ⇒ 翻前三项现在有
+   * 真实机会（`vpip`/`pfr` 由记录推导）；**河牌两项仍无机会**。
+   *
+   * 「宁缺勿假」的本意（**没有机会就绝不出数，更不得编 0%**）完整保留，
+   * 并改为对**具体键**断言：无机会的键**不得出现**在 `observedStats` 里。
    */
-  assert.equal(seated!.observedStats, undefined, '没有有效机会 ⇒ 不得注入任何统计');
+  const os = seated!.observedStats;
+  assert.notEqual(os, undefined, '翻前有行动 ⇒ 必须产出翻前统计');
+  assert.equal(os!.handsObserved, 1, '样本量必须如实为 1 手');
+  assert.ok(!('foldToRiverBet' in os!), '河牌无机会 ⇒ 不得出现 foldToRiverBet（不是 0%）');
+  assert.ok(!('riverCheckRaise' in os!), '河牌无机会 ⇒ 不得出现 riverCheckRaise（不是 0%）');
+  assert.ok(typeof os!.vpip === 'number' && os!.vpip >= 0 && os!.vpip <= 1, 'vpip 必须落在 0..1');
   const listed = listKnownPlayers(dir, 'player_001');
   assert.equal(listed.ok, true);
   if (!listed.ok) return;
   assert.equal(listed.players[0]!.handsObserved, 1, '真实历史仍必须可从名册读取');
   assert.equal(listed.players[0]!.foldToRiverBet, null, '无机会 ⇒ null');
+  assert.ok(listed.players[0]!.connectedStatKeys.includes('vpip'), '翻前有机会 ⇒ 名册必须报已接通');
 });
 
 /* ============================================================
@@ -296,9 +324,29 @@ test('前端资源包含选人弹窗与悬停画像实现（且不硬编码统�
       '暂无机会',
       '尚未接通',
       'duplicateName',
+      /* 🔴 新玩家名称录入（本次新增）：**单一路径** —— 主按钮消费输入框 */
+      'newPlayerName',
+      'displayName: typed',
+      '名称只影响显示',
+      /* 🔴 改名（`SET_PLAYER_NAME`）：已入座玩家也能改名字 */
+      "kind: 'SET_PLAYER_NAME'",
+      "'playerName'",
+      '保存名称',
     ]) {
       assert.ok(js.includes(marker), `table.js 必须包含「${marker}」`);
     }
+    /*
+     * 🔴 **负向断言**：不得再出现独立的第二颗「用该名称加入」按钮。
+     *
+     * 实测缺陷：第一版给输入框配了一颗**新**按钮，而上方的**主按钮**「加入玩家」
+     * 仍然忽略已输入的名字 —— 使用者填了名字、点最显眼的那个按钮，
+     * 座位显示的还是「玩家N」（服务端其实是好的：`preview.seats[].displayName`
+     * 就是填的名字）。**两颗按钮抢同一件事**才是缺陷本体。
+     */
+    assert.ok(
+      !/el\(\s*'button'[^)]*'用该名称加入'/.test(js),
+      '不得存在独立的「用该名称加入」按钮 —— 主按钮必须自己消费输入框，否则会重现「填了名字却按主按钮」的陷阱',
+    );
     assert.ok(html.includes('id="seatTip"'), 'index.html 必须有悬停提示容器');
     assert.ok(css.includes('.seatTip'), 'table.css 必须有悬停提示样式');
     assert.ok(
@@ -310,6 +358,96 @@ test('前端资源包含选人弹窗与悬停画像实现（且不硬编码统�
     await server.close();
     delete process.env['DSH_PLAYER_HISTORY_DIR'];
   }
+});
+
+test('新玩家名称录入：传入 displayName 必须生效（修复前被静默丢弃），留空则逐位不变', () => {
+  /*
+   * 🔴 **本次修复**：`addPlayer` 在**不传 `playerId`** 时直接返回 `nextPlayer(state)`，
+   * 于是 `ADD_PLAYER{seatId, displayName}` 里的名字被**静默丢弃** ——
+   * 界面因此根本没有「新建并命名」这条路（新玩家一律叫「玩家N」）。
+   *
+   * 现在：留空 ⇒ 与修复前**逐位一致**；填了 ⇒ 用该名称显示。
+   * ⚠️ 名称只是**显示名**：身份仍是自动 `p{n}`（同名不合并，身份只认 id）。
+   */
+  const dir = tmp();
+  const base = createTable({ tableSize: 9, heroPosition: 'BTN' as Position, defaultStackBB: 100 });
+  const seat = [...base.seats].find((s) => s.playerId === null)!;
+  const seatPlayer = (s: PokerTableState) => {
+    const st = s.seats.find((x) => x.seatId === seat.seatId)!;
+    return s.playersById[st.playerId!]!;
+  };
+  const nameOf = (s: PokerTableState): string => String(seatPlayer(s).displayName);
+  const idOf = (s: PokerTableState): string => String(seatPlayer(s).playerId);
+
+  /* ① 不传名字 ⇒ 与修复前一致：自动 `p{n}` + 「玩家N」 */
+  const auto = go(base, { kind: 'ADD_PLAYER', seatId: seat.seatId }, dir);
+  assert.match(idOf(auto), /^p\d+$/, '不传名字时身份仍是自动 p{n}');
+  assert.match(nameOf(auto), /^玩家\d+$/, '不传名字时显示名仍是「玩家N」');
+
+  /* ② 传名字 ⇒ 必须生效（两端空白去掉）；身份仍为自动 `p{n}` */
+  const named = go(base, { kind: 'ADD_PLAYER', seatId: seat.seatId, displayName: '  老张  ' }, dir);
+  assert.equal(nameOf(named), '老张', '传入的名称必须生效，且两端空白被去掉');
+  assert.match(idOf(named), /^p\d+$/, '名称只影响显示，身份仍是自动 p{n}');
+
+  /* ③ 全空白 ⇒ 退回自动命名（不得造出空名字） */
+  const blank = go(base, { kind: 'ADD_PLAYER', seatId: seat.seatId, displayName: '   ' }, dir);
+  assert.match(nameOf(blank), /^玩家\d+$/, '全空白必须退回自动命名，不得出现空显示名');
+});
+
+test('改名：SET_PLAYER_NAME 只改显示名（身份不变），空名字 / 超长 / 空座位必须被拒', () => {
+  /*
+   * 🔴 **本次新增**：`ADD_PLAYER{displayName}` 只能给**空座位的新**玩家命名，
+   * 而实际牌桌上座位常常**已经**坐满（一键补齐 / 逐个加入都得到自动名「玩家N」）——
+   * 那时**没有任何入口**能改成使用者的叫法。实测反馈即「加了位置，名字还是玩家2、玩家3」。
+   */
+  const dir = tmp();
+  let state = createTable({ tableSize: 9, heroPosition: 'BTN' as Position, defaultStackBB: 100 });
+  const seat = state.seats.find((s) => s.playerId === null)!;
+  state = go(state, { kind: 'ADD_PLAYER', seatId: seat.seatId }, dir);
+  const pid = state.seats.find((s) => s.seatId === seat.seatId)!.playerId!;
+  const nameOf = (s: PokerTableState): string => String(s.playersById[pid]!.displayName);
+  assert.match(nameOf(state), /^玩家\d+$/, '前置：新玩家是自动名');
+
+  /* ① 改名生效；两端空白去掉；**身份 playerId 不变**（历史绑定不受影响） */
+  const renamed = go(
+    state,
+    { kind: 'SET_PLAYER_NAME', seatId: seat.seatId, displayName: '  老张 ' },
+    dir,
+  );
+  assert.equal(nameOf(renamed), '老张', '必须改掉显示名（两端空白去掉）');
+  assert.equal(
+    renamed.seats.find((s) => s.seatId === seat.seatId)!.playerId,
+    pid,
+    '改名不得改变身份 playerId',
+  );
+
+  /* ② 作用域：只改这一座，别的座位不受影响 */
+  const otherSeat = state.seats.find((s) => s.playerId !== null && s.seatId !== seat.seatId)!;
+  const otherName = String(state.playersById[otherSeat.playerId!]!.displayName);
+  assert.equal(
+    String(renamed.playersById[otherSeat.playerId!]!.displayName),
+    otherName,
+    '改名只作用于该座位',
+  );
+
+  const attempt = (seatId: string, displayName: string) =>
+    applyUserOpWithHistory({ state, op: { kind: 'SET_PLAYER_NAME', seatId, displayName }, historyDir: dir }).outcome;
+
+  /* ③ 空 / 全空白必须被拒（不得静默写入空名字） */
+  for (const blank of ['', '   ']) {
+    const r = attempt(seat.seatId, blank);
+    assert.equal(r.ok, false, `空名字必须被拒（收到 ${JSON.stringify(blank)}）`);
+    if (!r.ok) assert.ok(r.issues.some((i) => i.code === 'PLAYER_NAME_EMPTY'));
+  }
+  /* ④ 超长必须被拒 */
+  const tooLong = attempt(seat.seatId, 'x'.repeat(25));
+  assert.equal(tooLong.ok, false, '超长必须被拒');
+  if (!tooLong.ok) assert.ok(tooLong.issues.some((i) => i.code === 'PLAYER_NAME_TOO_LONG'));
+  /* ⑤ 空座位不能改名 */
+  const emptySeat = state.seats.find((s) => s.playerId === null)!;
+  const onEmpty = attempt(emptySeat.seatId, '甲');
+  assert.equal(onEmpty.ok, false, '空座位不能改名');
+  if (!onEmpty.ok) assert.ok(onEmpty.issues.some((i) => i.code === 'SEAT_EMPTY'));
 });
 
 test('前端不得把统计写死：所有画像数字都来自接口字段', async () => {

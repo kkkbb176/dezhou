@@ -1,0 +1,32 @@
+======================================================================================================================================================
+100 手语料 × 3 街 × 5 画像 ⇒ 共 300 个决策点；缺陷 0 项
+======================================================================================================================================================
+
+--- 按街聚合（动作分布） ---
+  FLOP   n=100   RAISE 37 ｜ CALL 23 ｜ BET 20 ｜ FOLD 20
+  TURN   n=100   BET 30 ｜ FOLD 29 ｜ CALL 21 ｜ RAISE 10 ｜ CHECK 10
+  RIVER  n=100   FOLD 44 ｜ CHECK 34 ｜ RAISE 10 ｜ CALL 6 ｜ BET 6
+
+--- 按画像聚合（跨全部街） ---
+画像              n     FOLD   CHECK  CALL   BET    RAISE  ALL_IN 平均权益
+NORMAL            60    19     9      8      11     13     0      34.4%
+VERY_TIGHT        60    22     5      6      15     12     0      28.0%
+CALLING_STATION   60    20     13     15     7      5      0      30.7%
+MANIAC            60    16     8      11     12     13     0      37.5%
+LOOSE             60    16     9      10     11     14     0      38.0%
+
+--- 按线型聚合（动作分布） ---
+  ①6max BTN单开·BB跟（单挑，我无主动权）   n=60   BET 20 ｜ FOLD 19 ｜ CALL 13 ｜ RAISE 8
+  ②6max CO开·BTN跟（单挑，我在位）         n=60   RAISE 18 ｜ FOLD 17 ｜ BET 14 ｜ CHECK 6 ｜ CALL 5
+  ③6max BTN开·BB3Bet（面对3Bet后我跟）     n=60   FOLD 17 ｜ CHECK 16 ｜ CALL 13 ｜ RAISE 10 ｜ BET 4
+  ④9max UTG开·两家跟（三人池）             n=60   FOLD 19 ｜ CHECK 18 ｜ RAISE 11 ｜ CALL 10 ｜ BET 2
+  ⑤9max BTN开·SB3Bet·BB跟（三人·面对3Bet） n=60   FOLD 21 ｜ BET 16 ｜ RAISE 10 ｜ CALL 9 ｜ CHECK 4
+
+--- 按牌面聚合（动作分布） ---
+  干燥 K72r        n=75   FOLD 19 ｜ RAISE 16 ｜ CALL 15 ｜ BET 13 ｜ CHECK 12
+  湿润 QJs8ss      n=75   FOLD 28 ｜ CALL 14 ｜ BET 13 ｜ CHECK 12 ｜ RAISE 8
+  成对 K77         n=75   FOLD 24 ｜ RAISE 17 ｜ BET 15 ｜ CHECK 10 ｜ CALL 9
+  连通 987r        n=75   FOLD 22 ｜ RAISE 16 ｜ BET 15 ｜ CALL 12 ｜ CHECK 10
+
+--- 缺陷清单 ---
+  ✅ 无缺陷

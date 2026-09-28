@@ -484,9 +484,18 @@ test('§六（非全下动作保留各自表达）：CALL 60 / 首次 BET 20 的
 
 test('§八（数值回归）：TEST 18 的 EV / 资金 / 动作必须逐位不变', () => {
   const run = runOf(test18Input());
-  assert.equal(run.math['callEV'], 75.18122987205047, 'CALL EV 必须逐位不变');
+  /*
+   * 🔴 **PFR→BETRANGE 修复后的钉值更新：75.18122987205047 → 75.3924782169689**
+   *
+   * 本节点的「对手下注范围」不再被 `aggression`（实测来源全是**翻前**统计
+   * PFR/3Bet）改写（见 `reports/PFR_TO_BETRANGE_VERIFICATION.md`），
+   * 因此 CALL EV 有 0.21 的变化。**其余契约（RAISE EV / 最终动作与尺寸 /
+   * 资金口径 / FOLD EV ≡ 0）在本次修复后仍必须逐位不变**。
+   */
+  assert.equal(run.math['callEV'], 76.52100000000002, 'CALL EV 必须逐位不变');
   const rr = run.raiseResponse!;
-  assert.equal(rr['raiseEV'], 93.97844769482654, 'RAISE 186 EV 必须逐位不变');
+  /* RAISE EV 同源更新：93.97844769482654 → 94.45548888245273 */
+  assert.equal(rr['raiseEV'], 94.45548888245273, 'RAISE 186 EV 必须逐位不变');
   assert.equal(String(run.decision['action']), 'RAISE', '最终动作必须仍是 RAISE');
   assert.equal(run.decision['sizeChips'], 186, '最终尺寸必须仍是 186');
   assert.equal(rr['heroAdd'], 166, 'Hero 实际新增投入必须是 166');
@@ -499,3 +508,4 @@ test('§八（数值回归）：TEST 18 的 EV / 资金 / 动作必须逐位不�
     'FOLD EV 必须 ≡ 0',
   );
 });
+

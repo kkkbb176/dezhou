@@ -303,13 +303,43 @@ test('V2-5（§六）：条件权益必须分列；加注门槛不得用 math.he
  * V2-6 —— 未评估的合法动作必须披露（§三）
  * ============================================================ */
 
-test('V2-6（§三）：必须披露「尚有未评估的合法动作」，不得声称全局最优', () => {
+test('V2-6（§三）：必须披露未评估动作的**真实范围**，且不得声称全局最优', () => {
+  /*
+   * 🔴 **契约更新（D6 · `RAISE_EV_DISCLOSURE_SINGLE_SOURCE`）**
+   *
+   * 原断言要求「加注**必须**被列为未评估动作并给出 RAISE_EV_NOT_IMPLEMENTED」。
+   * 该前提在阶段二之后**已为假**：实测本节点 5 档加注候选**全部**有自有 EV
+   * （80/100/120/160/174）⇒ 清单**本就该为空**；要求它非空 = 要求引擎谎报。
+   *
+   * 新断言**更强**，拆成两条**全称**命题：
+   * ① 未评估清单必须覆盖**每一个**真的未被评估的加注金额 ——
+   *    这条**蕴含**原断言想守的那条线：只要真的还有未评估的加注，清单里就一定有它；
+   * ② 「不得声称全局最优」这条保留意见**必须仍然可见**：清单为空时，承担这个职责的是
+   *    加注覆盖面文案里的「进入本次动作比较…**已算出 ≠ 已入选，更 ≠ 更好**」。
+   */
   const { diag } = decide(akInput());
   const unevaluated = diag['unevaluatedActions'] as Diag[] | undefined;
   assert.notEqual(unevaluated, undefined, '必须输出未评估动作清单（unevaluatedActions）');
+  const listedRaiseSizes = (unevaluated ?? [])
+    .filter((u) => u['reasonCode'] === 'RAISE_EV_NOT_IMPLEMENTED')
+    .map((u) => u['sizeChips'] as number);
+  for (const c of (diag['candidates'] ?? []) as Diag[]) {
+    if (c['action'] !== 'RAISE' && c['action'] !== 'ALL_IN') continue;
+    if (c['ev'] !== null || c['sizeChips'] === undefined) continue;
+    const size = c['sizeChips'] as number;
+    assert.ok(
+      listedRaiseSizes.some((x) => Math.abs(x - size) < 1e-9),
+      `未被评估的加注金额 ${size} 必须出现在未评估清单里` +
+        `（清单：${JSON.stringify(listedRaiseSizes)}）`,
+    );
+  }
+  /* ② 保留意见不得因为「清单为空」而消失 */
+  const note = String((diag['decisionMargin'] as Diag | undefined)?.['noteZh'] ?? '');
   assert.ok(
-    (unevaluated ?? []).some((u) => String(u['action']) === 'RAISE' && u['reasonCode'] === 'RAISE_EV_NOT_IMPLEMENTED'),
-    `加注必须被列为未评估动作并给出 RAISE_EV_NOT_IMPLEMENTED（实际 ${JSON.stringify(unevaluated)}）`,
+    note.includes('进入本次动作比较') ||
+      note.includes('已算出 ≠ 已入选') ||
+      note.includes('不是所有合法动作中的最优解'),
+    `不得声称全局最优：必须保留「本次比较范围有限」的披露，实际：${note}`,
   );
 });
 
@@ -474,20 +504,106 @@ test('V2-14：每个加注金额都不得有伪造 EV；全下保护只在真正
   const raiseLike = candidates.filter((c) => c['action'] === 'RAISE' || c['action'] === 'ALL_IN');
   assert.ok(raiseLike.length >= 3, `必须给出多个加注候选（实际 ${raiseLike.length}）`);
 
-  // ① 任何金额的加注/全下都不得有伪造的 EV（本轮没有加注 EV 模型）
+  /*
+   * ① 加注/全下的 EV 只允许出现在**真正被逐尺寸评估过**的金额上。
+   *
+   * 🔴 **契约更新（阶段一 · D1）**：原断言是「**任何**加注/全下 EV 都必须为 null」，
+   * 其注释写着「本轮没有加注 EV 模型」—— 该前提**早已过期**（本文件 V2-15 自己就写
+   * 「加注 EV 挂在 `actionEvidence` 上」）。候选表一律 null 反而是 D1 缺陷。
+   *
+   * 🔴 **契约更新（阶段二）**：阶段一只回填**被启发式选中的那一档**，
+   * 因此当时以证据层的 `raiseSizesWithOwnEV`（恰好一个）定义「已评估」。
+   * 阶段二起 `contextBuilder` 用**同一个闭包**为网格内**每一档**算出各自的事实包，
+   * 于是候选层里带 EV 的金额**多于**证据层那一条 ⇒ 必须改用**候选层自己的**
+   * 评估状态来判定，否则会把「真的算过」误判成「伪造」。
+   *
+   * 判据因此变成（**更强**，因为它同时覆盖多档）：
+   * · 未被评估（`ev === null`）⇒ 必须确实为 `null`，且**不得**带来源；
+   * · 被评估 ⇒ EV 必须有限、必须带来源、必须带 `evBranches` 三分支且**和为 1**；
+   * · **各档 EV 必须互不相同** ⇒ 证明不是把同一档的数字复制到别的金额。
+   */
+  const sizesWithOwnEV = ((diag['allInGuard'] as Diag)?.['raiseSizesWithOwnEV'] ?? []) as number[];
+  const raiseEvidence = raiseEvidenceOf(diag);
+  const evaluatedValues: number[] = [];
   for (const c of raiseLike) {
+    const size = c['sizeChips'] as number;
+    if (c['ev'] === null) {
+      assert.equal(
+        c['evEstimateType'],
+        undefined,
+        `未被评估的加注/全下候选 raise-to=${size} 不得带 EV 来源`,
+      );
+      continue;
+    }
+    assert.ok(
+      Number.isFinite(c['ev'] as number),
+      `raise-to=${size} 的 EV 必须是有限数（不得伪造）`,
+    );
     assert.equal(
-      c['ev'],
-      null,
-      `加注/全下候选 raise-to=${String(c['sizeChips'])} 的 EV 必须保持 null（不得伪造）`,
+      c['evEstimateType'],
+      'MODEL_EV',
+      `raise-to=${size} 的 EV 来源必须如实标出`,
+    );
+    const br = c['evBranches'] as { fold: number; call: number; reRaise: number } | undefined;
+    assert.ok(br, `raise-to=${size} 必须带自己的响应分支概率`);
+    assert.ok(
+      Math.abs(br!.fold + br!.call + br!.reRaise - 1) < 1e-9,
+      `raise-to=${size} 的三分支概率必须和为 1，实际 ${br!.fold + br!.call + br!.reRaise}`,
+    );
+    evaluatedValues.push(c['ev'] as number);
+  }
+  assert.ok(evaluatedValues.length >= 1, '本节点必须至少有一个加注金额被评估');
+  assert.equal(
+    new Set(evaluatedValues.map((v) => v.toFixed(6))).size,
+    evaluatedValues.length,
+    `各档 EV 必须互不相同（不得复制同一档的数字）：${JSON.stringify(evaluatedValues)}`,
+  );
+  // 证据层声明的那个尺寸必须**仍在**被评估之列（两层不得脱节）
+  for (const s of sizesWithOwnEV) {
+    const hit = raiseLike.find((c) => Math.abs((c['sizeChips'] as number) - s) < 1e-9);
+    if (hit !== undefined) {
+      assert.notEqual(
+        hit['ev'],
+        null,
+        `证据层声明 raise-to=${s} 有自有 EV，候选层必须也给出它的 EV`,
+      );
+      if (raiseEvidence !== null && raiseEvidence !== undefined) {
+        assert.equal(
+          hit['ev'],
+          raiseEvidence['ev'],
+          `被选中的 raise-to=${s} 必须与证据层是**同一个数**`,
+        );
+      }
+    }
+  }
+  /*
+   * ② 未评估动作清单必须与候选表的评估状态**逐档等价**。
+   *
+   * 🔴 **契约更新（D6 · `RAISE_EV_DISCLOSURE_SINGLE_SOURCE`）**
+   *
+   * 原断言是「加注必须出现在未评估动作清单里」—— 前提是「本节点仍有未建模的加注金额」。
+   * 阶段二把逐尺寸 EV 铺满网格后该前提**已为假**（本节点 5 档全部有自有 EV），
+   * 于是清单本就该为空。继续要求非空等于要求引擎**谎报**。
+   *
+   * 新断言**更强**：不再做存在性判断，而是要求**逐档等价** ——
+   * `ev === null` ⇔ 出现在 `RAISE_EV_NOT_IMPLEMENTED` 清单里。
+   * 前半句蕴含原断言想守的那条线（真有未建模尺寸时清单不可能被清空），
+   * 后半句是原断言没有覆盖的方向（不得把已算过的尺寸说成未算）。
+   */
+  const unevaluated = (diag['unevaluatedActions'] ?? []) as Diag[];
+  const listedRaiseSizes = unevaluated
+    .filter((u) => u['reasonCode'] === 'RAISE_EV_NOT_IMPLEMENTED')
+    .map((u) => u['sizeChips'] as number);
+  for (const c of raiseLike) {
+    const size = c['sizeChips'] as number;
+    const listed = listedRaiseSizes.some((x) => Math.abs(x - size) < 1e-9);
+    assert.equal(
+      listed,
+      c['ev'] === null,
+      `raise-to=${size} 的披露必须与候选表一致（候选表 ev=${String(c['ev'])}，` +
+        `清单${listed ? '**有**' : '**没有**'}它；清单：${JSON.stringify(listedRaiseSizes)}）`,
     );
   }
-  // ② 未评估动作清单必须覆盖加注
-  const unevaluated = (diag['unevaluatedActions'] ?? []) as Diag[];
-  assert.ok(
-    unevaluated.some((u) => u['reasonCode'] === 'RAISE_EV_NOT_IMPLEMENTED'),
-    '加注必须出现在未评估动作清单里',
-  );
 
   // ③ 保护的作用域：只有 raise-to = allInToAmount 的那一个金额才是「打光筹码」
   const allInTo = diag['actionShape']['allInToAmount'] as number;
@@ -551,10 +667,40 @@ test('V2-15【U1 披露一致性】：有自有 EV 的加注尺寸**不得**被�
       !listedSizes.some((x) => Math.abs(x - s) < 1e-9),
       `有自有 EV 的加注尺寸 ${s} 不得出现在未评估清单里（清单：${JSON.stringify(listedSizes)}）`,
     );
-    assert.ok(
-      listedSizes.length > 0,
-      '其余加注金额确实仍未建模 ⇒ 披露不得被一并清空（否则等于声称所有金额都算过了）',
-    );
+  }
+  /*
+   * 🔴 **契约更新（D6 · `RAISE_EV_DISCLOSURE_SINGLE_SOURCE`）**
+   *
+   * 原断言是 `listedSizes.length > 0`，理由是「其余加注金额确实仍未建模」。
+   * 该**前提**在阶段二之后**已为假**：实测本节点 5 档加注候选**全部**有自有 EV
+   * （80/100/120/160/174 → `6.66 / 9.12 / 5.59 / −4.55 / −7.38`）
+   * ⇒ 未评估清单**本就该为空**。继续要求它非空，等于要求引擎**谎报**有未建模的尺寸。
+   *
+   * 新断言**更强**：不再做存在性判断，而是要求未评估清单与候选表**双向等价** ——
+   * ① `ev === null` 的加注尺寸**必须**在清单里
+   *    （这条**蕴含**原断言想守的那条线：只要真的还有未建模尺寸，清单就不可能被清空）；
+   * ② `ev !== null` 的加注尺寸**必须不在**清单里（原断言未覆盖的方向）。
+   */
+  const raiseCandidatesInTable = (diag['candidates'] as Diag[]).filter(
+    (c) => c['action'] === 'RAISE' || c['action'] === 'ALL_IN',
+  );
+  const withSize = raiseCandidatesInTable.filter((c) => c['sizeChips'] !== undefined);
+  for (const c of withSize) {
+    const size = c['sizeChips'] as number;
+    const listed = listedSizes.some((x) => Math.abs(x - size) < 1e-9);
+    if (c['ev'] === null) {
+      assert.ok(
+        listed,
+        `候选表标为未评估的加注尺寸 ${size} 必须出现在未评估清单里` +
+          `（清单：${JSON.stringify(listedSizes)}）`,
+      );
+    } else {
+      assert.ok(
+        !listed,
+        `候选表已有 EV 的加注尺寸 ${size} 不得出现在未评估清单里` +
+          `（清单：${JSON.stringify(listedSizes)}）`,
+      );
+    }
   }
 
   // 对外话术也必须改口：有 EV 时不得再说「加注的 EV 无法计算」

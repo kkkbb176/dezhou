@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const p = 'reports/gtopen-validation/9max-cold-solve-v1/analysis/raw-production-response.json';
+const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+const vm = j.raw.viewModel;
+const pr = vm.debug.preflopRaise;
+console.log('preflopRaise type=', Array.isArray(pr) ? 'array' : typeof pr);
+if (Array.isArray(pr)) console.log(JSON.stringify(pr, null, 2));
+else console.log(Object.keys(pr));
+const dg = j.raw.decision.diagnostics;
+console.log('decision.diagnostics=', dg ? Object.keys(dg) : null);
+const c = vm.debug.candidates;
+console.log('candidates=', JSON.stringify(c, null, 2));

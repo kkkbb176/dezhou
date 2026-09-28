@@ -27,6 +27,7 @@ import {
 import { t } from '../i18n/index.ts';
 import { consistencyErrorZh } from '../domain/decision/decisionConsistency.ts';
 import { cardCodeOf } from '../app/manualInput/manualInput.ts';
+import { handStrengthHintOf, type HandStrengthHint } from './handStrengthHint.ts';
 
 /* ============================================================
  * i18n 词条键（动态取词的类型安全桥）
@@ -72,6 +73,23 @@ export type DecisionViewModel = {
   allReasonsZh: readonly string[];
   /** 警告（信息不足、口径说明、降级） */
   warningsZh: readonly string[];
+  /**
+   * 🔴 **牌力档 + 「这条建议该不该信」**（使用者要求：一眼看出要不要信它）。
+   *
+   * 为什么它与可信度挂钩（不是泛泛的"牌越强越信"，而是**有明确机理**）：
+   * 引擎唯一被实测证伪的模块就是**弃牌率**（预测 65–75% vs 真实 51.6%，
+   * 且与真实弃牌的相关系数 r ≈ −0.03）；而**强牌的利润来自权益、与弃牌率无关**，
+   * 弱牌/听牌的利润**几乎全靠弃牌率**。所以：
+   *
+   * | 档 | 利润来源 | 该不该信 |
+   * |---|---|---|
+   * | 强牌 | 摊牌权益（数学） | ✅ 可以信 |
+   * | 中等牌 | 混合 | ⚠️ 打折 |
+   * | 弱牌/听牌 | 弃牌率（引擎算高了） | ❌ 最不可信 |
+   *
+   * 见 `reports/REAL_HAND_VALIDATION.md` §6。翻前 / 引擎未给角色时为 `null`。
+   */
+  handStrengthHint: HandStrengthHint | null;
   /** 是否有可执行建议 */
   actionable: boolean;
   /** 调试区（可折叠） */
@@ -438,7 +456,42 @@ export function toDecisionViewModel(
       d.candidates.map((c) => ({
         actionZh: actionZhOf(c.action),
         sizeZh: c.sizeChips === undefined ? '—' : bbZh(c.sizeChips, bb),
-        evZh: c.ev === null ? '—（依赖弃牌率，本项目无可信估计）' : `${c.ev.toFixed(2)} ${t('common.chips')}`,
+        /*
+         * 🔴 **D1 修复**（KQ_FLOP_DECISION_REPAIR · 阶段一）：
+         * 原文对**每一个** `ev === null` 的候选都写「依赖弃牌率，本项目无可信估计」——
+         * 这句话对**被评估过**的加注尺寸是**假的**（决策层正是拿它的 MODEL_EV 选的加注），
+         * 于是候选表与「动作来源」互相打架。
+         *
+         * 🔴 **阶段二扩充**：现在还要区分**三种**评估状态，并给出该尺寸**自己的**
+         * 响应分支与条件权益（不再是只有被选中的那一档有数字）。
+         *
+         * | 状态 | 文案 |
+         * |---|---|
+         * | 已完整计算 | `<EV>（来源 MODEL_EV；**已完整计算**）` |
+         * | 近似计算 | `<EV>（来源 MODEL_EV；**近似计算** —— <近似原因>）` |
+         * | 未计算 | `—（**本尺寸未被评估**；未评估 ≠ 低 EV，也 ≠ EV 0）` |
+         */
+        evZh:
+          c.ev === null
+            ? '—（**本尺寸未被评估**；未评估 ≠ 低 EV，也 ≠ EV 0）'
+            : `${c.ev.toFixed(2)} ${t('common.chips')}` +
+              (c.evEstimateType === undefined ? '' : `（来源 ${c.evEstimateType}；`) +
+              (c.evApproximatedReraise === true
+                ? '**近似计算** —— 再加注分支按**摊牌终止近似**计入（未模拟后续街的下注/过牌/弃牌），' +
+                  '因此该 EV 偏低且**不构成**严格下界）'
+                : '**已完整计算**）') +
+              /*
+               * 逐尺寸的响应分支与条件权益：让「这个 EV 是怎么来的」可以被**逐档**核对，
+               * 而不是只有被选中的那一档能核对。
+               */
+              (c.evBranches === undefined
+                ? ''
+                : `｜本尺寸：弃 ${(c.evBranches.fold * 100).toFixed(1)}% / ` +
+                  `跟 ${(c.evBranches.call * 100).toFixed(1)}% / ` +
+                  `再加注 ${(c.evBranches.reRaise * 100).toFixed(1)}%` +
+                  (c.evBranches.equity === null
+                    ? '｜条件权益 —（算不出）'
+                    : `｜条件权益 ${(c.evBranches.equity * 100).toFixed(2)}%`)),
         feasibleZh: c.feasibleNoteZh ?? (c.mathFeasible ? '数学可行' : '数学不成立'),
       })),
     ),
@@ -747,7 +800,24 @@ export function toDecisionViewModel(
       d.player === null
         ? Object.freeze([row('对手画像', '—')])
         : Object.freeze([
-            row('标签', d.player.labelZh),
+            /*
+             * 🔴 **D3 修复**（KQ_FLOP_DECISION_REPAIR · 阶段一）：
+             * 原行标签叫「标签」，值是**分类器推断**（未判出时为 `UNKNOWN`）；
+             * 而下面「说明」行写的是**模型实际采用了什么**（例：用户手选画像 AGGRESSIVE）。
+             * 两行语义不同却并排、且都叫「标签」⇒ 读起来就是自相矛盾。
+             *
+             * 现在把两件事显式分开：本行只报**推断结果**，并在推断失败但画像
+             * 实际生效时**就地说明**实际来源（数据取自已存在的 `profileRange.dimensionTier`，
+             * 不新增任何推断）。
+             */
+            row(
+              '推断标签（分类器）',
+              d.player.labelZh === 'UNKNOWN'
+                ? d.profileRange?.dimensionTier !== undefined
+                  ? `未判出（UNKNOWN）—— 但本次**实际采用**的画像来源是「${d.profileRange.dimensionTierZh}」`
+                  : '未判出（UNKNOWN）'
+                : d.player.labelZh,
+            ),
             /*
              * 🔴 **PLAYER PROFILE EXPLOIT V1 · 披露修复**。
              *
@@ -766,11 +836,26 @@ export function toDecisionViewModel(
               ? []
               : [
                   row('实测统计来源', d.player.measuredStats.noteZh),
+                  /*
+                   * 🔴 **D4 修复**：原文在没有命中那张硬编码两项清单时写
+                   * 「无（该玩家尚无模型支持的统计项）」—— 这句话**不实**：
+                   * `vpip` / `pfr` 确实改变了数值，只是没被旧清单认出来。
+                   * 现在改为逐项三态披露，且「无」的含义被精确限定为
+                   * 「有通道 + 本节点适用 + 机会数 > 0」三者同时成立的项为零。
+                   */
                   row(
                     '本次进入模型',
                     d.player.measuredStats.usedStatKeys.length === 0
-                      ? '无（该玩家尚无模型支持的统计项）'
+                      ? '无（**没有任何统计项**同时满足「有通道 + 本节点适用 + 机会数 > 0」）'
                       : d.player.measuredStats.usedStatKeys.join('、'),
+                  ),
+                  ...(d.player.measuredStats.statStatuses ?? []).map((s) =>
+                    row(
+                      `统计项 ${s.stat}`,
+                      `${s.status} —— ${s.reasonZh}` +
+                        (s.opportunities === null ? '' : `｜机会数 ${s.opportunities}`) +
+                        (s.confidence === null ? '' : `｜可信度 ${s.confidence.toFixed(2)}`),
+                    ),
                   ),
                 ]),
             row('可信度', d.player.confidence.toFixed(2)),
@@ -1141,14 +1226,18 @@ export function toDecisionViewModel(
             .join('；'),
         ),
         row(
-          '被再加注分支（只展开 Hero 的 FOLD / CALL）',
+          '被再加注后的 Hero 应对（FOLD / CALL / 5Bet / 全下）',
           pr.sizes
             .map((s) =>
               s.reraiseAvailable
                 ? `${num(s.sizeBB, 1)}BB：他再加到 ${num(s.reRaiseTo)}（最小合法 ${num(s.reRaiseMinLegalTo)}` +
                   `${s.villainReRaiseIsAllIn ? '，全下' : ''}）⇒ Hero 弃牌 ${num(s.reraiseFoldBranchEV)} / ` +
-                  `跟注 ${num(s.reraiseCallBranchEV)} ⇒ 取 **${num(s.reraiseBranchEV)}**（${s.reraiseBranchKind}）` +
-                  `｜我再跟需 ${num(s.heroAdditionalCallVsReRaise)}`
+                  `跟注 ${num(s.reraiseCallBranchEV)} / 5Bet ${num(s.heroFiveBetBranchEV)} ` +
+                  `⇒ 取 **${num(s.reraiseBranchEV)}**（${s.reraiseBranchKind} / ${s.heroFiveBetChoice}）` +
+                  `｜我再跟需 ${num(s.heroAdditionalCallVsReRaise)}` +
+                  `｜5Bet候选 ${Array.isArray(s.heroFiveBetCandidates) && s.heroFiveBetCandidates.length > 0
+                    ? s.heroFiveBetCandidates.map((c) => `${num(c.sizeChips)}:${num(c.branchEV)}`).join(', ')
+                    : '无'}`
                 : `${num(s.sizeBB, 1)}BB：不产出再加注分支` +
                   `${s.reraiseBranchKind === 'FOLD_ONLY_UNAVAILABLE' ? '（权益不可得 ⇒ 该支按下界计）' : ''}`,
             )
@@ -1156,12 +1245,16 @@ export function toDecisionViewModel(
         ),
         row(
           '未支持（必须与上面的数字一起读）',
-          '① 被再加注分支**只**比较 Hero 的 FOLD / CALL —— **Hero 的 5Bet 应对未展开**' +
-            `（heroFiveBetExpanded = ${String(pr.sizes[0]?.heroFiveBetExpanded ?? false)}）；` +
-            '② 非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌）；' +
-            '③ 全下分支没有后续街 ⇒ 精确；' +
-            '④ 多人池 / 身后有人未行动时**不产出**本事实包（不按单挑偷偷计算）；' +
-            `⑤ 抽水 ${pr.rakeStatus}（本项目无 Rake Engine）`,
+          `① Hero 面对 4Bet 的 5Bet 分支 ${
+            pr.sizes.some((s) => s.heroFiveBetExpanded)
+              ? '**已展开**（逐尺寸候选、对手响应、条件权益均已参与 EV）'
+              : '**无合法候选或无法可靠计算**（请按 heroFiveBetUnsupportedZh 处理，不得假装支持）'
+          }；` +
+            '② 对手面对 5Bet 的响应仍是**结构性先验**，未经统计校准；' +
+            '③ 非全下分支是**摊牌终止近似**（未模拟后续街的下注/过牌/弃牌）；' +
+            '④ 全下分支没有后续街 ⇒ 精确；' +
+            '⑤ 多人池 / 身后有人未行动时**不产出**本事实包（不按单挑偷偷计算）；' +
+            `⑥ 抽水 ${pr.rakeStatus}（本项目无 Rake Engine）`,
         ),
         row('模型假设（逐条）', pr.assumptionsZh.join('；')),
       ]);
@@ -1367,6 +1460,11 @@ export function toDecisionViewModel(
     reasonsZh: Object.freeze(decision.reasons.slice(0, 3).map((r) => r.textZh)),
     allReasonsZh: Object.freeze(decision.reasons.map((r) => r.textZh)),
     warningsZh: Object.freeze(warnings),
+    /* 🔴 牌力档 + 信任等级：数据全部来自领域层已有的 `d.postflop`，本层只做翻译 */
+    handStrengthHint:
+      d.postflop === undefined
+        ? null
+        : handStrengthHintOf(String(d.postflop.handRole), d.postflop.roleStrength),
     actionable: decision.actionable,
     debug,
   });

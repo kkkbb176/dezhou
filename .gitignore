@@ -31,6 +31,18 @@ Thumbs.db
 data/player-history.jsonl
 data/table-dynamics-log.jsonl
 
+# 🔴 **第三方真实牌局数据集 —— 绝不进版本控制**
+#
+# `third_party/phh-dataset/` 是从 `github.com/uoftcprg/phh-dataset`
+# （MIT 许可；PHH = Poker Hand History 格式）下载的**真实牌局**，
+# 用于「拿真牌局验证引擎」这条线。
+#
+# 为什么不入库：
+# ① **不是我们的代码**（第三方数据，体积大且会变动）；
+# ② 它含**具体底牌与玩家显示名** —— 与上面三类运行数据同一纪律；
+# ③ 复现方式是**按需重新下载**（`scripts/fetch-real-hands.ts`），而不是提交进仓库。
+third_party/
+
 # 🔴 GTOpen 是**外部求解器**（第三方源码 + 工具链 + 分发包，约 260 MB），
 # 不属于本项目的版本控制范围 —— 它按 commit `92c86ed` 固定在本地，
 # 能力与限制见 reports/GTOPEN_MULTI_TABLE_AUDIT.md。

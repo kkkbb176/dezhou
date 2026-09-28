@@ -141,8 +141,16 @@ test('P1-A（原始 99 节点）：CALL EV 为正 ⇒ 动作不得是 FOLD，且
   /* 输入事实（复现审计报告里的原始节点） */
   assert.equal(run.requiredEquity, 20 / 69, '所需权益必须是 20/69 = 28.9855%');
   assert.equal(run.winnable, 69, '可争夺量必须是 69');
-  assert.ok(Math.abs((run.callEV ?? 0) - 2.705235410024) < 1e-9, `CALL EV 必须复现 +2.705235410024（实际 ${String(run.callEV)}）`);
-  assert.equal(run.eqBetRange !== null && Math.abs(run.eqBetRange - 0.32906138275397) < 1e-12, true, '对手下注范围权益必须是 32.906138275397%');
+  /*
+   * 🔴 **P0（本轮）钉值更新：+2.6317493125308147 → +3.3277500000000018**
+   *
+   * 起因：面对下注节点的**分桶权益**原先被引擎**静默升级为精确枚举**
+   *（调用方只申请 `iterations: 6000`，实际却跑 53k–77k 局），占该节点 98% 的耗时。
+   * 现在按声明跑 6000 次抽样（固定 seed ⇒ 仍确定）⇒ 本节点的 EV 取值随之更新。
+   * **契约本身未变**：EV > 0 ⇒ 不得弃牌、一致性必须通过、动作必须可执行。
+   */
+  assert.ok(Math.abs((run.callEV ?? 0) - 3.3277500000000018) < 1e-9, `CALL EV 必须复现 +3.3277500000000018（实际 ${String(run.callEV)}）`);
+  assert.equal(run.eqBetRange !== null && Math.abs(run.eqBetRange - 0.33808333333333335) < 1e-12, true, '对手下注范围权益必须是 33.808333333333%');
   assert.equal(run.eqArrival !== null && Math.abs(run.eqArrival - 0.21545565973459) < 1e-12, true, '整体范围权益必须是 21.545565973459%');
 
   /* 🔴 契约：EV > +ε ⇒ 不得弃牌（修复前这里失败：动作是 FOLD） */

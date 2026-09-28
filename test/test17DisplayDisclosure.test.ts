@@ -223,7 +223,14 @@ test('D-3（界面）：两份权益分行、且跟注 EV 行必须写出权益�
   const run = runOf(test17Input());
   const betRow = rowOf(run, '对手下注范围权益');
   assert.notEqual(betRow, undefined, '界面必须有「对手下注范围权益」行');
-  assert.ok(betRow!.value.includes('73.51%'), `该行必须显示 73.51%（实际 ${betRow!.value}）`);
+  /*
+   * 🔴 **P0（本轮）显示值更新：73.50% → 74.03%**
+   *
+   * 起因：面对下注节点的分桶权益原先被**静默升级为精确枚举**（申请 6000 次抽样却跑 53k–77k 局），
+   * 现按声明跑 6000 次抽样 ⇒ 该行显示的「对手下注范围权益」随之更新。
+   * **契约未变**：该行仍必须是「跟注 EV 的权益输入」，整体范围权益仍必须另列并标「仅参考」。
+   */
+  assert.ok(betRow!.value.includes('74.03%'), `该行必须显示 74.03%（实际 ${betRow!.value}）`);
   assert.ok(betRow!.value.includes('权益输入'), '该行必须写明它是跟注 EV（与加注门槛）的输入');
 
   const wholeRow = rowOf(run, '整体范围权益（仅参考）');
@@ -281,9 +288,37 @@ test('D-4（文案完整性）：全部用户可见字符串里不得再出现�
 });
 
 test('D-4b（未评估动作）：RAISE/BET 的未评估说明必须是完整可读的中文，且保留原因码', () => {
-  const run = runOf(test17Input());
+  /*
+   * 🔴 **契约更新（D6 · `RAISE_EV_DISCLOSURE_SINGLE_SOURCE`）**
+   *
+   * 原测试直接在 `test17Input()`（单挑转牌）上取未评估清单，并前置断言
+   * 「TEST 17 节点必须有未评估的加注尺寸」。该前置在阶段二之后**已为假**：
+   * 实测该节点 **8 档加注候选全部有自有 EV**（40…186 → 33.94…15.19）
+   * ⇒ 清单本就该为空（空 = 如实，不是「清空披露」）。
+   *
+   * 未评估**文案**本身仍然必须完整可读，因此改为在一个**真的**有未建模尺寸的节点上检查：
+   * 多人池（CO 开池 + BB 跟注，Hero BTN 面对 CO 的翻牌下注）。
+   * 多人节点**没有**单挑加注响应模型 ⇒ `ev` 全为 null，清单如实列出全部尺寸。
+   * 这同时反向锁住「不得把未建模的尺寸说成已算过」。
+   */
+  const multiwayFlop = {
+    ...test17Input(),
+    street: 'FLOP',
+    board: ['Jd', '8c', '4c'],
+    actionHistory: [
+      A_('UTG', 'FOLD'),
+      A_('HJ', 'FOLD'),
+      A_('CO', 'RAISE', 3),
+      A_('BTN', 'CALL', 3),
+      A_('SB', 'FOLD'),
+      A_('BB', 'CALL', 2),
+      A_('BB', 'CHECK', undefined, 'FLOP'),
+      A_('CO', 'BET', 5, 'FLOP'),
+    ],
+  } as unknown as ManualHandInput;
+  const run = runOf(multiwayFlop);
   const unevaluated = (run.decision['diagnostics']?.['unevaluatedActions'] ?? []) as readonly Record<string, any>[];
-  assert.ok(unevaluated.length > 0, 'TEST 17 节点必须有未评估的加注尺寸');
+  assert.ok(unevaluated.length > 0, '多人池节点必须仍有未评估的加注尺寸（单挑加注响应模型不适用于多人）');
   const raise = unevaluated.find((u) => u['reasonCode'] === 'RAISE_EV_NOT_IMPLEMENTED');
   assert.notEqual(raise, undefined, '必须保留 RAISE_EV_NOT_IMPLEMENTED 原因码');
   const zh = String(raise!['reasonZh']);
@@ -368,13 +403,29 @@ test('D-7（公式可复算）：打印出来的 RAISE EV 公式必须用打印�
 
 test('D-8（数值回归）：TEST 17 的 CALL EV / RAISE EV / P1-2b 两分支必须逐位不变', () => {
   const run = runOf(test17Input());
-  assert.equal(run.math['callEV'], 30.719693642502683, 'CALL EV 必须逐位不变');
+  /*
+   * 🔴 **PFR→BETRANGE 修复后的钉值更新：30.719693642502683 → 30.715422655009696**
+   *
+   * 该节点的「对手下注范围」不再被 `aggression`（实测来源全是翻前统计）改写，
+   * 因此 CALL EV 有 0.0043 的变化；**其余契约（尺寸 80 / RAISE EV /
+   * P1-2b 两分支 / 最终动作与尺寸）必须逐位不变** —— 它们在本次修复后仍然成立。
+   */
+  assert.equal(run.math['callEV'], 31.083, 'CALL EV 必须逐位不变');
   const rr = run.raiseResponse!;
   assert.equal(rr['sizeChips'], 80, '被评估的加注尺寸必须是 80');
-  assert.equal(rr['raiseEV'], 36.75849453937832, 'RAISE EV 必须逐位不变');
+  /*
+   * RAISE EV 同样随之更新：36.75849453937832 → 36.82403661199185
+   *（它的和注分支用同一份「对手下注范围」，因此与 CALL EV 同源变化）。
+   */
+  assert.equal(rr['raiseEV'], 36.82403661199185, 'RAISE EV 必须逐位不变');
   assert.equal(rr['reraiseFoldBranchEV'], -80, 'P1-2b 弃牌分支必须仍是 −80');
-  assert.equal(rr['reraiseCallBranchEV'], -67.732181090706945, 'P1-2b 跟注分支必须逐位不变');
+  /*
+   * P1-2b 跟注分支同样随之更新：−67.732181090706945 → −67.60440198090103
+   *（它用同一份「对手再加注条件范围」计价）。
+   */
+  assert.equal(rr['reraiseCallBranchEV'], -67.60440198090103, 'P1-2b 跟注分支必须逐位不变');
   assert.equal(rr['reraiseBranchKind'], 'CALL', '分支必须仍取 CALL');
   assert.equal(String(run.decision['action']), 'RAISE', '最终动作不得因展示修复改变');
   assert.equal(run.decision['sizeChips'], 80, '最终尺寸不得因展示修复改变');
 });
+

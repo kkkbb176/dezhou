@@ -538,18 +538,94 @@ test('B-04c：被再加注分支必须与其它分支**同一零点**（不是�
     }
     assert.equal(
       size.reraiseBranchEV,
-      size.reraiseCallBranchEV === null
-        ? size.reraiseFoldBranchEV
-        : Math.max(size.reraiseFoldBranchEV, size.reraiseCallBranchEV),
-      `被再加注分支的取值必须是 max(弃牌, 跟注) 或退化为弃牌下界（尺寸 ${size.sizeBB}BB）`,
+      Math.max(
+        size.reraiseFoldBranchEV,
+        size.reraiseCallBranchEV ?? Number.NEGATIVE_INFINITY,
+        size.heroFiveBetBranchEV ?? Number.NEGATIVE_INFINITY,
+      ),
+      `被再加注分支的取值必须是 max(弃牌, 跟注, 最佳 5Bet)（尺寸 ${size.sizeBB}BB）`,
     );
-    /* 🔴 必须如实声明「Hero 的 5Bet 未展开」 */
-    assert.equal(size.heroFiveBetExpanded, false);
+    assert.equal(
+      size.heroFiveBetExpanded,
+      size.heroFiveBetCandidates.some((candidate) => candidate.supported),
+      '5Bet 展开标记必须与受支持候选一致',
+    );
+    assert.equal(size.heroFiveBetChoice, size.reraiseBranchKind, '实际应对与最佳分支类型必须一致');
     if (size.reraiseAvailable) {
       assert.notEqual(size.reRaiseTo, null, '有再加注分支时必须有代表尺寸');
       assert.ok(size.reRaiseTo! > size.sizeChips, '他的再加注必须高于我的加注额');
       assert.notEqual(size.heroAdditionalCallVsReRaise, null);
     }
+  }
+});
+
+test('B-04c2：存在合法 4Bet 时必须按 Hero RAISE → Villain 4Bet → Hero 5Bet 回放并产出 5Bet 候选', () => {
+  const facts = mustFacts(bbVsBtnOpen(), { equity: { call: 0.6, reraise: 0.65 } });
+  const expandable = facts.sizes.find(
+    (size) => size.reraiseAvailable && size.reRaiseTo !== null && size.villainReRaiseIsAllIn === false,
+  );
+
+  assert.notEqual(expandable, undefined, '夹具必须至少有一个非全下 4Bet 分支');
+  assert.equal(expandable!.heroFiveBetExpanded, true, '有合法 5Bet 时不得因错误行动回放而退化成空候选');
+  assert.ok(expandable!.heroFiveBetCandidates.length >= 1, '至少必须产出一个合法 5Bet 候选');
+  for (const candidate of expandable!.heroFiveBetCandidates) {
+    assert.ok(candidate.sizeChips > expandable!.reRaiseTo!, '5Bet 总额必须严格高于对手 4Bet 总额');
+    assert.equal(candidate.supported, true, `合法候选 ${candidate.sizeChips} 不得被错误标成未支持`);
+    const weightSum = candidate.foldLikelihood + candidate.callLikelihood + candidate.reRaiseLikelihood;
+    assert.ok(Math.abs(weightSum - 1) < 1e-12, `5Bet 后对手响应概率必须守恒：${weightSum}`);
+  }
+});
+
+test('B-04c3：每个 5Bet 候选必须以首次加注前为零点独立复算现金流', () => {
+  const facts = mustFacts(bbVsBtnOpen(), { equity: { call: 0.6, reraise: 0.65 } });
+  const size = facts.sizes.find((item) => item.heroFiveBetCandidates.length > 0);
+  assert.notEqual(size, undefined, '夹具必须产出 5Bet 候选');
+
+  const villainFourBetAdd = size!.reRaiseTo! - size!.villainStreetCommitted;
+  const foldWinFromOriginalNode = size!.currentPot + villainFourBetAdd;
+  for (const candidate of size!.heroFiveBetCandidates) {
+    const totalHeroAdditional = candidate.sizeChips - size!.heroStreetCommitted;
+    assert.equal(
+      candidate.heroAdditional,
+      totalHeroAdditional,
+      '5Bet 成本必须包含首次 3Bet 与面对 4Bet 后的全部新增投入，不能漏掉中间一段',
+    );
+    const heroContestedFromOriginalNode = candidate.heroAdditional - candidate.uncalledReturn;
+    const eq = candidate.heroEquityVs5BetCallRange.value;
+    assert.notEqual(eq, null, '受支持候选必须有被跟注时的条件权益');
+    const recomputed =
+      candidate.foldLikelihood * foldWinFromOriginalNode
+      + candidate.callLikelihood * (eq! * candidate.finalPot - heroContestedFromOriginalNode)
+      + candidate.reRaiseLikelihood * (-heroContestedFromOriginalNode);
+    assert.ok(
+      Math.abs(recomputed - candidate.branchEV) < 1e-9,
+      `5Bet ${candidate.sizeChips} 的原节点现金流 ${recomputed} ≠ 生产 ${candidate.branchEV}`,
+    );
+  }
+});
+
+test('B-04c4：面对 4Bet 的实际应对必须在 FOLD / CALL / 5Bet / 全下中按最大 EV 选择', () => {
+  const facts = mustFacts(bbVsBtnOpen(), { equity: { call: 0.6, reraise: 0.05 } });
+  const sizes = facts.sizes.filter((size) => size.heroFiveBetCandidates.length > 0);
+  assert.ok(sizes.length > 0, '夹具必须产出可比较的 5Bet 候选');
+
+  for (const size of sizes) {
+    const alternatives = [
+      { kind: 'FOLD', ev: size.reraiseFoldBranchEV },
+      ...(size.reraiseCallBranchEV === null ? [] : [{ kind: 'CALL', ev: size.reraiseCallBranchEV }]),
+      ...(size.heroFiveBetBranchEV === null
+        ? []
+        : [{
+            kind: size.heroFiveBetCandidates.find((c) => c.branchEV === size.heroFiveBetBranchEV)?.isAllIn
+              ? 'ALL_IN'
+              : 'RERAISE',
+            ev: size.heroFiveBetBranchEV,
+          }]),
+    ];
+    const expected = alternatives.reduce((best, item) => (item.ev > best.ev ? item : best));
+    assert.equal(size.reraiseBranchEV, expected.ev, `尺寸 ${size.sizeBB}BB 必须选最高 EV`);
+    assert.equal(size.reraiseBranchKind, expected.kind, `尺寸 ${size.sizeBB}BB 的分支类型必须忠实标注`);
+    assert.equal(size.heroFiveBetChoice, expected.kind, `尺寸 ${size.sizeBB}BB 的实际应对字段不得另报一个动作`);
   }
 });
 

@@ -69,6 +69,7 @@ import {
   type PokerTableState,
   type SeatView,
   type TableActionButton,
+  type TableAmountInput,
   type TableIssue,
   type TablePreview,
 } from './table.types.ts';
@@ -187,6 +188,45 @@ function seatsView(
 /* ============================================================
  * 动作按钮（**只包含后端判定的合法动作**）
  * ============================================================ */
+
+function amountInputFrom(legal: LegalActions, pot: number, bigBlindChips: number): TableAmountInput | null {
+  // These are engine values, never reconstructed from the rounded BB labels.
+  const amounts = {
+    bigBlindChips,
+    potChips: pot,
+    currentBetChips: legal.currentBet,
+    committedChips: legal.allInToAmount - legal.myRemainingStack,
+    remainingChips: legal.myRemainingStack,
+    callChips: legal.callCost,
+    minBetChips: legal.minBet,
+    minRaiseToChips: legal.minRaiseToAmount,
+    allInToChips: legal.allInToAmount,
+  };
+  if (bigBlindChips <= 0 || Object.values(amounts).some((amount) => !Number.isSafeInteger(amount) || amount < 0)) {
+    return null;
+  }
+  const mode = legal.canBet ? 'BET' : legal.canRaise ? 'RAISE' : null;
+  // buildSizeGrid already includes the exact minimum when affordable. Short
+  // all-ins below that floor remain available through the existing ALL_IN action.
+  const quickAmounts = mode === null ? [] : buildSizeGrid(legal, pot, mode).map((option) => Object.freeze({
+    type: mode,
+    labelZh: option.labelZh,
+    toChips: option.toAmount,
+    isAllIn: option.isAllIn,
+    explanationZh: mode === 'BET'
+      ? '底池比例按当前底池计算；金额为本街下注到的总额。'
+      : '倍数按需要补跟的筹码计算，底池比例按当前底池计算；金额为本街加注到的总额。',
+  }));
+  if (quickAmounts.some((option) => !Number.isSafeInteger(option.toChips))) return null;
+  return Object.freeze({
+    ...amounts,
+    chipUnit: 1,
+    callIsAllIn: legal.callIsAllIn,
+    canBet: legal.canBet,
+    canRaise: legal.canRaise,
+    quickAmounts: Object.freeze(quickAmounts),
+  });
+}
 
 function actionButtonsFrom(legal: LegalActions, pot: number, bigBlindChips: number): readonly TableActionButton[] {
   const toBB = (chips: number): number => Number((chips / bigBlindChips).toFixed(3));
@@ -589,6 +629,7 @@ export function buildTablePreview(state: PokerTableState): TablePreview {
       minBetBB: null,
       minRaiseToBB: null,
       allInToBB: null,
+      amountInput: null,
       actionButtons: Object.freeze([]),
       legalActionTypes: Object.freeze([]),
       seats: seatsView(state, null, null, bigBlindChips, topology),
@@ -849,6 +890,7 @@ export function buildTablePreview(state: PokerTableState): TablePreview {
     minBetBB: legal !== null ? toBB(legal.minBet) : null,
     minRaiseToBB: legal !== null ? toBB(legal.minRaiseToAmount) : null,
     allInToBB: legal !== null ? toBB(legal.allInToAmount) : null,
+    amountInput: legal === null || validation.blocked ? null : amountInputFrom(legal, pot, state.bigBlindBB),
     actionButtons: legal === null ? Object.freeze([]) : actionButtonsFrom(legal, pot, bigBlind),
     legalActionTypes: Object.freeze(legalTypes),
     seats,

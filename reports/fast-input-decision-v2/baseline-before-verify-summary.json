@@ -1,0 +1,9 @@
+{
+  "command": "npm run verify",
+  "exitCode": 0,
+  "elapsedMs": 107925,
+  "counts": {},
+  "manifestMismatch": false,
+  "logPath": "D:\\德州决策\\reports\\fast-input-decision-v2\\baseline-before-verify.log",
+  "sha256": "9a0a7615e6f7f3aadb704d80003a818f594506b280e6b215a3e0f893938a6e43"
+}

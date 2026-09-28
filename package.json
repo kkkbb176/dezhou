@@ -14,6 +14,9 @@
     "verify": "npm run typecheck && npm run manifest:check && npm test",
     "manifest": "node --experimental-strip-types scripts/generateManifest.ts",
     "manifest:check": "node --experimental-strip-types scripts/generateManifest.ts --check",
+    "fetch:real-hands": "node --experimental-strip-types scripts/fetch-real-hands.ts",
+    "validate:real-hands": "node --experimental-strip-types scripts/validate-real-hands.ts",
+    "calibrate:real-hands": "node --experimental-strip-types scripts/calibrate-real-hands.ts",
     "demo": "node --experimental-strip-types src/index.ts"
   },
   "devDependencies": {

@@ -1,0 +1,116 @@
+{
+  "modern": {
+    "tableSize": 6,
+    "heroPosition": "BTN",
+    "heroCards": [
+      "As",
+      "Kd"
+    ],
+    "board": [],
+    "street": "PREFLOP",
+    "effectiveStackBB": 100,
+    "actionHistory": [
+      {
+        "position": "UTG",
+        "type": "FOLD",
+        "street": "PREFLOP"
+      },
+      {
+        "position": "HJ",
+        "type": "FOLD",
+        "street": "PREFLOP"
+      },
+      {
+        "position": "CO",
+        "type": "RAISE",
+        "amountBB": 3,
+        "street": "PREFLOP"
+      }
+    ],
+    "environment": "MID_LOW_STAKES",
+    "bigBlindBB": 100,
+    "villain": {
+      "playerId": "seat_CO",
+      "persistentPlayerId": "p4",
+      "seatId": "seat_CO",
+      "displayName": "玩家4",
+      "quickProfile": "UNKNOWN",
+      "dynamicHint": "UNKNOWN",
+      "stackBB": 100
+    },
+    "seatStacksBB": {
+      "UTG": 100,
+      "HJ": 100,
+      "CO": 100,
+      "BTN": 100,
+      "SB": 100,
+      "BB": 100
+    },
+    "occupiedPositions": [
+      "UTG",
+      "HJ",
+      "CO",
+      "BTN",
+      "SB",
+      "BB"
+    ],
+    "buttonPosition": "BTN"
+  },
+  "legacy": {
+    "tableSize": 6,
+    "heroPosition": "BTN",
+    "heroCards": [
+      "As",
+      "Kd"
+    ],
+    "board": [],
+    "street": "PREFLOP",
+    "effectiveStackBB": 100,
+    "actionHistory": [
+      {
+        "position": "UTG",
+        "type": "FOLD",
+        "street": "PREFLOP"
+      },
+      {
+        "position": "HJ",
+        "type": "FOLD",
+        "street": "PREFLOP"
+      },
+      {
+        "position": "CO",
+        "type": "RAISE",
+        "amountBB": 3,
+        "street": "PREFLOP"
+      }
+    ],
+    "environment": "MID_LOW_STAKES",
+    "bigBlindBB": 100,
+    "villain": {
+      "playerId": "seat_CO",
+      "persistentPlayerId": "p4",
+      "seatId": "seat_CO",
+      "displayName": "玩家4",
+      "quickProfile": "UNKNOWN",
+      "dynamicHint": "UNKNOWN",
+      "stackBB": 100
+    },
+    "seatStacksBB": {
+      "UTG": 100,
+      "HJ": 100,
+      "CO": 100,
+      "BTN": 100,
+      "SB": 100,
+      "BB": 100
+    },
+    "occupiedPositions": [
+      "UTG",
+      "HJ",
+      "CO",
+      "BTN",
+      "SB",
+      "BB"
+    ],
+    "buttonPosition": "BTN"
+  }
+}

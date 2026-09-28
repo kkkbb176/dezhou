@@ -294,6 +294,18 @@ export type BetProbabilityModelFacts = {
   readonly boardTexture: string | null;
   /** 未校准的因子（全部列出来，便于将来用真实统计替换） */
   readonly factors: Readonly<Record<string, number>>;
+  /**
+   * 🔴 **本次计算实际使用的 aggression 与该值的来源（PFR→BETRANGE 修复）**。
+   *
+   * 有了它，外部（界面 / 测试 / 审计）才能**复算**本层的带速率并与生产逐位比对；
+   * 修复前这个量隐含在维度里，因此「该层到底吃了哪份 aggression」无法从快照验证。
+   */
+  readonly aggressionInput: {
+    /** 实际传入 `centered()` 的取值 */
+    readonly value: number;
+    /** `dimension` = 退回读维度（旧入口）；`betAggression` = 只吃翻后统计的值 */
+    readonly source: 'dimension' | 'betAggression';
+  };
   readonly noteZh: string;
 };
 
@@ -392,7 +404,25 @@ export function betProbabilityByBand(input: {
     const x = Number.isFinite(v) ? Math.max(0, Math.min(1, v as number)) : 0.5;
     return (x - 0.5) * 2;
   };
-  const aggro = centered(dims?.aggression);
+  /**
+   * 🔴 **PFR→BETRANGE 修复**：本层读的是**下注范围专用** aggression。
+   *
+   * 修复前这里读 `dims.aggression`，而该轴唯一的实测来源是**翻前**统计
+   * （`PFR` / `3Bet`）⇒ 一条 `pfr=9%` 的观测可以把 `thinAnchor` 从 −0.0002
+   * 推到 −0.0766，把「顶对/中对」整档踢出他的下注范围（空气占比 35% → 47%，
+   * 我方权益被抬高 8.6pp）。而本项目源码明文禁止这条推论
+   * （`observedStats.ts` 的 `STAT_DIMENSION_POLARITY`：「PFR 不碰 bluffTendency
+   * （禁止「翻前凶 ⇒ 河牌爱诈唬」）」）—— 修复前它经 `aggression` 这条侧门成立。
+   *
+   * `aggressionForBetRange` 由 `resolvePlayerProfile` 提供，**只吃翻后统计**，
+   * 且无翻后证据时逐位等于标签原型的 `aggression`（= 修复前取值）；
+   * 调用方没给（旧入口 / 测试 / 审计脚本）⇒ 退回读维度，**行为逐位不变**。
+   */
+  const aggro = centered(
+    Number.isFinite(input.tendencies.aggressionForBetRange)
+      ? input.tendencies.aggressionForBetRange
+      : dims?.aggression,
+  );
   const bluff = centered(dims?.bluffTendency);
   const passive = centered(dims?.passivity);
   const bluffTendency = Number.isFinite(dims?.bluffTendency)
@@ -511,6 +541,10 @@ export function betProbabilityByBand(input: {
     ratioToPot: ratio,
     boardTexture: texture,
     factors: Object.freeze({ ...factors, textureThin, textureMid, valueExponent, bluffExponent }),
+    aggressionInput: Object.freeze({
+      value: input.tendencies.aggressionForBetRange ?? dims?.aggression ?? 0.5,
+      source: Number.isFinite(input.tendencies.aggressionForBetRange) ? 'betAggression' : 'dimension',
+    }),
     noteZh:
       `公共强度带模型（结构性先验，**未经统计校准**）：软化 ${SOFTNESS}，` +
       `尺寸比 ${ratio.toFixed(3)}${clamped ? '（已按模型取值域 [0,4] 限制）' : ''}，` +

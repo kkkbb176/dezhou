@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-09-22T08:39:20.002Z",
+  "code": {
+    "decisionHead": "7dffffc (main)",
+    "decisionDirty": "existing working-tree changes preserved; GTO verification only",
+    "solverProcess": "D:\\德州GTO\\target\\desktop-runtime\\release\\gto-server.exe (PID 20356)",
+    "solverEndpoint": "http://127.0.0.1:3737"
+  },
+  "candidate": {
+    "label": "9MAX / 100BB / BB vs UTG open 2.5BB / AhAd",
+    "cacheKey": "c80e2e90a",
+    "scenarioHash": "gee7f177e",
+    "treeId": "t06d8712b",
+    "scenario": {
+      "kind": "VS_OPEN",
+      "gameType": "CASH",
+      "tableSize": 9,
+      "effectiveStackBB": 100,
+      "heroPosition": "BB",
+      "villainPosition": "UTG",
+      "actionHistory": [
+        {
+          "position": "UTG",
+          "kind": "RAISE",
+          "sizeBB": 2.5
+        },
+        {
+          "position": "UTG1",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "UTG2",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "LJ",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "HJ",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "CO",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "BTN",
+          "kind": "FOLD",
+          "sizeBB": null
+        },
+        {
+          "position": "SB",
+          "kind": "FOLD",
+          "sizeBB": null
+        }
+      ],
+      "raiseSizesBB": [
+        2.5
+      ],
+      "blinds": {
+        "sbBB": 0.5,
+        "bbBB": 1,
+        "anteBB": 0
+      },
+      "heroAlreadyActed": false
+    },
+    "solveMeta": {
+      "brGapTotal": 0.02115291714591222,
+      "seatGaps": [],
+      "seatEvs": [],
+      "stopReason": "target_gap",
+      "solverState": "done",
+      "iterationsCompleted": 12,
+      "iterationsRequested": 12,
+      "targetGap": 0.05,
+      "solveDurationMs": 72,
+      "multiwayEquityModel": "coupled_deck_v1",
+      "realizationNote": "",
+      "gpu": false
+    },
+    "quality": "LOW_CONVERGENCE",
+    "qualitySummaryZh": "低收敛：BR gap 之和 0.021153，迭代 12 次。频率是**未收敛快照**，不可当作均衡。",
+    "source": {
+      "kind": "SOLVER",
+      "engine": "gtopen",
+      "engineCommit": "92c86ed73aa0856df8479b5c7635e1469f48f1e8",
+      "solverVersion": null,
+      "endpoint": "http://127.0.0.1:3737"
+    },
+    "caveat": "cacheKey c80e2e90a 与 9MAX RFI c7348fc89 共用 treeId 且 BR gap 完全相同；失败假设已排除（后者未覆盖，直接 json 对比 169 类频率逐类不同）"
+  },
+  "serviceHealth": {
+    "A": null,
+    "B": null
+  },
+  "A_noSolverRange": {
+    "ok": true,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "confidenceZh": "中低",
+    "classificationZh": "边缘决策",
+    "equity": "83.42%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "308.80 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "308.80 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "reasonsZh": [
+      "整体范围权益（回落口径：本节点没有可用的下注范围） 83.4% 高于跟注所需 27.3%：跟注 EV = 308.80 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）",
+      "加注： 100.0BB。**翻前加注响应模型 EV** = 2542.57 筹码 vs 跟注 308.80 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 62.8% / 跟 37.2% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现",
+      "当前底池赔率需要 27.3% 权益"
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "BACKGROUND_SOLVING",
+      "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+      "elapsedMs": 1,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVING",
+          "fromSolver": false,
+          "cacheSource": null,
+          "reasonZh": null
+        }
+      ],
+      "background": [],
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ],
+      "reasons": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "HEURISTIC",
+        "fromSolver": false,
+        "confidence": 0.3,
+        "supportSize": 239,
+        "effectiveComboCount": 152.32943191550063,
+        "normalizedEntropy": 0.9461023926239274,
+        "sourceZh": "启发式翻牌前范围先验：依据公开讨论的粗略量级（前位约 15%、按钮位约 45%）自行整理为 169 个起手牌类别的相对权重。**不是求解器输出，不是 GTO 范围。**（枪口位的启发式开池范围（对手主动加注，按本手 9 人取档））"
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 0,
+        "context": 201,
+        "decide": 3,
+        "viewmodel": 11,
+        "total": 216
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    }
+  },
+  "B_solverRange": {
+    "ok": true,
+    "actionZh": "建议：全下",
+    "sizeZh": "加注至 10000 筹码（100.0BB，本街累计；本注即全下）｜本次再投入 9900 筹码（99.0BB）",
+    "confidenceZh": "中低",
+    "classificationZh": "边缘决策",
+    "equity": "83.42%｜本次跟注 EV 的**回落**输入（本节点没有下注范围）",
+    "callEv": "308.80 筹码｜参考点：从当前决策点往后算，**弃牌 EV ≡ 0**（已投入的筹码是沉没成本）｜权益输入：**整体范围权益**（回落口径，本节点没有下注范围）｜按单一门槛口径算",
+    "candidates": [
+      {
+        "action": "弃牌",
+        "size": "—",
+        "ev": "0.00 筹码"
+      },
+      {
+        "action": "跟注",
+        "size": "1.50BB",
+        "ev": "308.80 筹码"
+      },
+      {
+        "action": "加注",
+        "size": "4.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "4.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "6.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "7.50BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "9.00BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "12.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      },
+      {
+        "action": "加注",
+        "size": "100.0BB",
+        "ev": "—（依赖弃牌率，本项目无可信估计）"
+      }
+    ],
+    "reasonsZh": [
+      "整体范围权益（回落口径：本节点没有可用的下注范围） 83.4% 高于跟注所需 27.3%：跟注 EV = 308.80 筹码（该 EV 的权益输入 = 整体范围权益（回落口径：本节点没有可用的下注范围）），弃牌 EV ≡ 0 ⇒ **跟注 EV 更高**（本句只比较 CALL vs FOLD）",
+      "加注： 100.0BB。**翻前加注响应模型 EV** = 2542.57 筹码 vs 跟注 308.80 筹码（同一零点 = 弃牌 0）⇒ 依据来源 = **SUPPORTED_ACTION_PRIORITY**｜他面对这次加注：弃 62.8% / 跟 37.2% / 再加注 0.0%（价格 0.4863，模型 PREFLOP_RAISE_RESPONSE_V1）；⚠️ 响应模型是**结构性先验、未经统计校准**（公共信息口径，不读我的底牌）；本尺寸不产出再加注分支（他不可能再加注，或他 4Bet 即全下）；即便有该分支，**Hero 的 5Bet 应对也未展开**（`heroFiveBetExpanded = false`）；非全下分支是**摊牌终止近似**（未模拟后续街行动 ⇒ 不构成严格下界）；RAKE 未实现",
+      "当前底池赔率需要 27.3% 权益"
+    ],
+    "gtoStatus": {
+      "enabled": true,
+      "state": "BACKGROUND_SOLVING",
+      "messageZh": "本次全部使用启发式范围 —— **GTO 正在后台计算**（1 个场景）。算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**，不需要任何操作。",
+      "elapsedMs": 1,
+      "outcomes": [
+        {
+          "opponentId": "seat_UTG",
+          "position": "UTG",
+          "positionZh": "枪口位",
+          "state": "SOLVING",
+          "fromSolver": false,
+          "cacheSource": null,
+          "reasonZh": null
+        }
+      ],
+      "background": [],
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ],
+      "reasons": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    },
+    "rangeProvenance": [
+      {
+        "positionZh": "枪口位",
+        "sourceKind": "HEURISTIC",
+        "fromSolver": false,
+        "confidence": 0.3,
+        "supportSize": 239,
+        "effectiveComboCount": 152.32943191550063,
+        "normalizedEntropy": 0.9461023926239274,
+        "sourceZh": "启发式翻牌前范围先验：依据公开讨论的粗略量级（前位约 15%、按钮位约 45%）自行整理为 169 个起手牌类别的相对权重。**不是求解器输出，不是 GTO 范围。**（枪口位的启发式开池范围（对手主动加注，按本手 9 人取档））"
+      }
+    ],
+    "meta": {
+      "computedPot": 400,
+      "claimedPot": null,
+      "inputHash": "he4b46f48",
+      "timings": {
+        "parse": 0,
+        "validate": 0,
+        "context": 182,
+        "decide": 0,
+        "viewmodel": 0,
+        "total": 183
+      },
+      "layeredPot": {
+        "total": 400,
+        "contested": 250,
+        "main": 250,
+        "sideTotal": 0,
+        "returned": {},
+        "returnedTotal": 0,
+        "pendingUnmatched": {
+          "seat_UTG": 150
+        },
+        "pendingTotal": 150,
+        "roundClosed": false,
+        "scope": "LEDGER_LAYERED",
+        "scopeZh": "投入台账分层（多人 / 全下 / 边池）",
+        "events": [
+          {
+            "id": "PREFLOP|LAYER|-|250|layer0",
+            "kind": "LAYER",
+            "street": "PREFLOP",
+            "playerId": null,
+            "playerLabelZh": "主池",
+            "amount": 250,
+            "final": true,
+            "sequence": 0,
+            "textZh": "主池 250（含已弃牌者投入 50），2 家有资格"
+          },
+          {
+            "id": "PREFLOP|PENDING_UNMATCHED|seat_UTG|150|pending",
+            "kind": "PENDING_UNMATCHED",
+            "street": "PREFLOP",
+            "playerId": "seat_UTG",
+            "playerLabelZh": null,
+            "amount": 150,
+            "final": false,
+            "sequence": 1,
+            "textZh": "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+          }
+        ],
+        "duplicateEventIds": [],
+        "hasLayering": false,
+        "hasPendingUnmatched": true,
+        "linesZh": [
+          "主池 250（含已弃牌者投入 50），2 家有资格",
+          "尚待跟注 150（下注轮未结束：还有人可以跟 —— 这**不是**退回，跟注后会并入底池）"
+        ]
+      },
+      "warnings": [
+        "枪口位：GTO 正在后台计算 —— 算完会写入本地缓存，**之后同样的局面会自动改用 GTO 范围**"
+      ]
+    }
+  },
+  "rangeSummary": {
+    "handClasses": 169,
+    "totalCombos": 1326,
+    "positiveClasses": 169,
+    "positiveComboMass_unclamped": 54.17986873595997,
+    "actionMass_sumOverClasses": 8.637524719000004,
+    "AA": {
+      "FOLD": 0.00051282055,
+      "CALL": 0.00051282055,
+      "RAISE": 0.9989744
+    },
+    "AJo": {
+      "FOLD": 0.00051282055,
+      "CALL": 0.9961894,
+      "RAISE": 0.0032978607
+    },
+    "72o": {
+      "FOLD": 0.9921042,
+      "CALL": 0.0073831347,
+      "RAISE": 0.0005128206
+    },
+    "firstFive": [
+      "22",
+      "32o",
+      "42o",
+      "52o",
+      "62o"
+    ]
+  },
+  "independentRecompute": {
+    "method": "read cache raw JSON; per hand-class name, sum RAISE + ALL_IN frequency; clamp [0,1]",
+    "checks": {
+      "handClasses169": true,
+      "namedHandsPresent": true,
+      "actionMassFinite": true,
+      "actionMassNotEqualToComboMass": true
+    }
+  }
+}

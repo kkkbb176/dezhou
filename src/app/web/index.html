@@ -1,171 +1,54 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>德州扑克 · 牌桌快速录入（内部 Alpha）</title>
-    <link rel="stylesheet" href="/table.css" />
-  </head>
-  <body>
-    <!--
-      交互式牌桌录入（Internal Alpha）
-
-      🔴 本页面**不含任何策略判断，也不含任何牌局状态机**。
-
-      它只做两件事：
-        1. 把用户的点击翻译成一个「操作意图」，POST 给 /api/table
-        2. 把服务端返回的 state + preview **渲染**出来
-
-      「轮到谁」「谁能做什么」「底池多少」「街道推进到哪」全部来自后端。
-      这样「前端认为轮到 UTG、后端认为是 CO」这类分歧在结构上不可能发生。
-    -->
-
-    <div id="topbar">
-      <div class="group">
-        <span class="label">桌型</span>
-        <span id="tableSizeButtons" class="position-buttons"></span>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>德州助手 · 牌桌快速录入与决策</title>
+  <link rel="stylesheet" href="/table.css" />
+  <link rel="stylesheet" href="/fast-ui.css" />
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand"><span aria-hidden="true">♠</span> 德州助手 <small>快速录入</small></div>
+    <nav aria-label="主要功能"><button class="nav-current" id="tableTab">牌桌</button><button id="playersBtn">玩家档案</button><button id="gotoGtoBtn">GTO 范围</button></nav>
+    <span id="modeButtons" class="position-buttons"></span><span id="tableSizeButtons" class="position-buttons"></span>
+    <details id="tableSettings"><summary>牌桌设置</summary><div class="settings-popover">
+      <div class="label">Hero 座位</div><div id="heroPositionButtons" class="position-buttons"></div>
+      <label class="group">环境 <select id="environmentSelect"></select></label>
+      <div class="group"><button id="newTableBtn">新牌桌</button><button id="resetHandBtn">重置本手</button></div><button id="clearVillainsBtn">清空其他玩家</button>
+    </div></details>
+  </header>
+  <main id="main">
+    <section id="left" aria-label="牌桌与录入">
+      <div class="table-toolbar"><strong id="streetLine">等待开局</strong><span id="handSize" class="hint">—</span><button id="fillSeatsBtn">一键加入玩家</button><button id="nextHandBtn" class="primary">下一手 →</button></div>
+      <div id="notices" aria-live="polite"></div>
+      <div id="tableWrap">
+        <div class="table-outline" aria-hidden="true"></div>
+        <div id="tableCenter"><div id="potLine">底池 —</div><div id="boardRow" aria-label="公共牌"></div><div id="handPanel"><span class="hint">我的手牌</span><div id="heroHandRow"></div><div id="handHint" class="hint"></div></div></div>
+        <div id="seats"></div>
+        <section id="cardPicker" hidden aria-label="选牌面板"><div class="picker-heading"><strong id="pickerTarget">选择手牌</strong><button id="clearCardBtn">清除当前牌</button><button id="closePickerBtn" aria-label="关闭选牌">关闭 ×</button></div><div id="pickerGrid"></div><span class="hint">选牌后自动定位下一槽；公共牌更正按已有状态规则处理。</span></section>
       </div>
-      <div class="group">
-        <span class="label">Hero</span>
-        <span id="heroPositionButtons" class="position-buttons"></span>
-      </div>
-      <div class="group">
-        <span class="label">环境</span>
-        <select id="environmentSelect"></select>
-      </div>
-      <div class="group">
-        <span class="label">模式</span>
-        <!--
-          AUTO ANALYZE 的唯一模式开关。
-
-          - **当前决策**：正常打牌。轮到 Hero 且信息齐备 → 自动分析，不用点按钮。
-          - **录入历史**：补录过去已经发生的动作。**永不自动分析**，
-            已显示的建议会先被收起来（否则一条过期的建议会误导正在补录的人）。
-
-          默认「当前决策」，且 `新牌桌 / 下一手` 都会重置回它。
-        -->
-        <span id="modeButtons" class="position-buttons"></span>
-        <span id="autoAnalyzeBadge" class="badge">自动分析：开启</span>
-      </div>
-      <div class="group">
-        <button id="nextHandBtn" class="primary">下一手</button>
-        <button id="resetHandBtn">重置本手</button>
-        <button id="undoBtn">撤销</button>
-        <button id="newTableBtn" class="danger">新牌桌</button>
-        <button id="fillSeatsBtn">一键加入玩家</button>
-        <button id="clearVillainsBtn">清空其他玩家</button>
-      </div>
-      <div class="group" style="margin-left: auto">
-        <button id="gotoGtoBtn">GTO 范围</button>
-        <span id="saveHint" class="hint"></span>
-      </div>
-    </div>
-
-    <div id="main">
-      <div>
-        <div id="notices"></div>
-
-        <!--
-          🔴 **桌型（座位容量）** 与 **本手人数** 是两个数字（Table Topology Correction）。
-
-          9 座桌坐 8 人是现金局最常见的形态。这一行由后端算好的拓扑填充 ——
-          前端不做任何推导，因此不可能出现「前端以为 9 人、后端按 8 人发牌」。
-        -->
-        <div id="handSize" class="banner info">—</div>
-
-        <div class="panel" style="padding: 0; background: transparent; border: none">
-          <div id="tableWrap">
-            <div id="tableCenter">
-              <div id="potLine">底池 —</div>
-              <div id="streetLine">—</div>
-              <div id="boardRow"></div>
-            </div>
-            <div id="seats"></div>
-          </div>
-        </div>
-
-        <div class="panel" id="handPanel" style="margin-top: 12px">
-          <div>
-            <h2>我的手牌</h2>
-            <div id="heroHandRow"></div>
-            <div class="hint" id="handHint" style="margin-top: 6px">点下方牌面选牌</div>
-          </div>
-          <div id="cardPicker">
-            <h2>牌面（点一次即可）</h2>
-            <div id="pickerTarget" class="hint" style="margin-bottom: 6px"></div>
-            <div id="pickerGrid"></div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top: 12px">
-          <h2>行动时间线</h2>
-          <div id="timeline"></div>
-        </div>
-      </div>
-
-      <div>
-        <div class="panel">
-          <h2>当前行动</h2>
-          <div id="actorLine">—</div>
-          <!--
-            自动分析状态条。**必须始终可见**（规范：「禁止用户猜测到底有没有开始分析」）。
-            文案由后端算好的 `preview.decision.state` 决定，前端不做判断。
-          -->
-          <div id="autoAnalyzeLine" class="autoLine">—</div>
-          <div class="statGrid" id="statGrid"></div>
-          <div id="actionButtons"></div>
-          <div id="sizeButtons"></div>
-          <!--
-            ⚠️ 正常流程**不需要**点这个按钮 —— 轮到 Hero 时会自动分析。
-            它只用于：手动重试 / 调试 / 用户主动刷新。
-          -->
-          <button id="analyzeBtn" class="primary" disabled>重新分析</button>
-          <div id="blockers" class="blocked"></div>
-        </div>
-
-        <div class="panel" style="margin-top: 12px">
-          <h2>建议</h2>
-          <div id="result" class="hint">轮到 Hero 时会自动分析。</div>
-        </div>
-
-        <div class="panel" style="margin-top: 12px">
-          <h2>说明</h2>
-          <div class="hint" id="limits"></div>
-        </div>
-
-        <div class="panel" style="margin-top: 12px">
-          <h2>调试</h2>
-          <details class="debug">
-            <summary>当前行动者 / 逻辑位置 / 视觉位置 / playerId 绑定</summary>
-            <pre id="debugSeats">—</pre>
-          </details>
-          <details class="debug">
-            <summary>底池 / 筹码 / 街道</summary>
-            <pre id="debugMath">—</pre>
-          </details>
-          <details class="debug">
-            <summary>实际提交的 ManualHandInput（送进 Alpha Pipeline 的就是它）</summary>
-            <pre id="debugInput">—</pre>
-          </details>
-          <details class="debug">
-            <summary>后端重放出的状态指纹</summary>
-            <pre id="debugFingerprint">—</pre>
-          </details>
-          <details class="debug">
-            <summary>引擎候选 / 动态 Shadow / 版本</summary>
-            <pre id="debugDecision">—</pre>
-          </details>
-        </div>
-      </div>
-    </div>
-
-    <div id="overlay">
-      <div id="modal"></div>
-    </div>
-    <!-- PLAYER PROFILE TABLE UI V1：悬停画像提示（不拦截点击，避免遮挡公共牌/底池/按钮） -->
-    <div id="seatTip" class="seatTip"></div>
-    <div id="toast"></div>
-
-    <script src="/table.js"></script>
-  </body>
+      <details id="timelinePanel"><summary>行动时间线 <span id="recentActions">尚未录入</span></summary><div id="timeline"></div></details>
+      <section id="inputDock" aria-label="快速录入">
+        <div class="actor-heading"><span class="section-label">当前行动</span><strong id="actorLine">—</strong><span class="follow-badge">自动跟随</span><button id="undoBtn" title="撤销上一次牌局操作；编辑文字时 Ctrl+Z 撤销文字">↶ 撤销 <kbd>Ctrl+Z</kbd></button></div>
+        <div id="saveStatus" role="status"></div>
+        <div class="amount-row"><label id="amountLabel" for="amountInput">加注到</label><input id="amountInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="输入金额" aria-describedby="amountHelp amountError" /><div id="amountUnits" aria-label="金额单位"><button id="unitChips" type="button">筹码</button><button id="unitBB" type="button">BB</button></div></div>
+        <div id="amountHelp" class="hint">金额表示本街累计投入目标</div><div id="amountError" role="alert"></div>
+        <div class="quick-row"><span class="hint">快捷金额</span><div id="sizeButtons"></div></div><div id="actionButtons"></div>
+        <div class="dock-footer"><span>金额输入时，快捷键不触发行动</span><span id="statGrid"></span></div>
+      </section>
+    </section>
+    <aside id="rail" aria-label="当前建议">
+      <div class="recommendation-heading"><h1>当前建议</h1><span id="autoAnalyzeBadge" class="badge">自动分析：开启</span></div>
+      <div id="autoAnalyzeLine" class="autoLine" role="status">等待输入</div><div id="result" aria-live="polite">轮到 Hero 时会自动分析。</div>
+      <div class="analysis-controls"><button id="autoToggleBtn" aria-pressed="true">自动分析：开启</button><button id="analyzeBtn" disabled>↻ 重新分析</button></div><div id="blockers" class="blocked"></div>
+      <details class="rail-details"><summary>范围与依据、使用限制</summary><div id="limits" class="hint"></div></details>
+      <details class="rail-details" id="debugPanel"><summary>输入与计算明细（调试）</summary>
+        <details class="debug"><summary>行动者与座位绑定</summary><pre id="debugSeats">—</pre></details><details class="debug"><summary>底池、筹码、街道</summary><pre id="debugMath">—</pre></details><details class="debug"><summary>实际规范化输入</summary><pre id="debugInput">—</pre></details><details class="debug"><summary>状态指纹</summary><pre id="debugFingerprint">—</pre></details><details class="debug"><summary>引擎候选、影子结果与版本</summary><pre id="debugDecision">—</pre></details>
+      </details><span id="saveHint" class="hint"></span>
+    </aside>
+  </main>
+  <div id="overlay"><div id="modal" role="dialog" aria-modal="true"></div></div><div id="seatTip" class="seatTip"></div><div id="toast" role="status"></div>
+  <script src="/fast-input.js"></script><script src="/table.js"></script>
+</body>
 </html>

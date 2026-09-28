@@ -1,0 +1,18 @@
+{
+  "command": "npm run verify",
+  "exitCode": 1,
+  "elapsedMs": 81874,
+  "counts": {
+    "tests": 2268,
+    "suites": 137,
+    "pass": 2255,
+    "fail": 13,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 76124.0984
+  },
+  "manifestMismatch": false,
+  "logPath": "D:\\德州决策\\reports\\fast-input-decision-v2\\baseline-after-verify.log",
+  "sha256": "b0f41726df296734fb2f0330e573e0b9c13035d4b44680f0c3f0155e39ef44ec"
+}
